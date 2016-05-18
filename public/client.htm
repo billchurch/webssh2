@@ -1,0 +1,22 @@
+<html>
+<head>
+  <title>Web SSH</title>
+  <link rel="stylesheet" href="/xterm.css" />
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/term.js"></script>
+  <script src="/client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="header"></div>
+  <div id="terminal" class="terminal">
+    <script>
+      client.run();
+    </script>
+  </div>
+  <div id="bottomdiv">
+    <div id="footer"></div>
+    <div id="status"></div>
+  </div>
+</body>
+</html>
