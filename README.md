@@ -16,8 +16,11 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 # Options (GET request vars)
 host= - ip or host name of SSH server to connect to (reqired) 
+
 port= - port of SSH server (defaults to 22)
+
 header= - optional header to display on page
+
 headerBackground= - optional background color of header to display on page 
 
 Example:
