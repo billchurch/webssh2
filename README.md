@@ -23,9 +23,7 @@ header= - optional header to display on page
 
 headerBackground= - optional background color of header to display on page 
 
-Example:
+# Example:
 
 http://localhost:2222/?host=192.168.1.1&port=2244&header=My%20Header&color=red
-
-# 
 
