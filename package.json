@@ -1,13 +1,9 @@
 {
-  "BIG-IP-comments": [
-    "package.json is the standard npm (www.npmjs.org) package definition file.",
-    "For more information please see www.npmjs.org/doc/package.json.html. "
-  ],
-  "description": "A custom iRulesLX extension for BIG-IP",
+  "description": "A Websocket to SSH2 gateway using term.js, socket.io, ssh2, and express",
   "private": true,
   "repository": {},
   "engines": {
-    "node": "0.11.12"
+    "node": "0.12.7"
   },
   "dependencies": {
     "basic-auth": "^1.0.3",
