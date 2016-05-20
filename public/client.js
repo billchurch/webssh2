@@ -25,8 +25,12 @@ client.run = function(options) {
             socket.on('data', function(data) {
                 term.write(data);
             }).on('disconnect', function() {
+                document.getElementById('status').style.backgroundColor = 'red';
                 document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED';
                 socket.io.reconnection(false);
+            }).on('error', function(err) {
+                document.getElementById('status').style.backgroundColor = 'red';
+                document.getElementById('status').innerHTML = 'ERROR ' + err;
             });
         });
     }, false);

@@ -1,0 +1,18 @@
+{
+  "listen": {
+    "ip": "127.0.0.1",
+    "port": 2222
+  },
+  "user": {
+    "name": null,
+    "password": null
+  },
+  "ssh": {
+    "host": null,
+    "port": 22
+  },
+  "header": {
+    "text": "My Header",
+    "background": "green"
+  }
+}

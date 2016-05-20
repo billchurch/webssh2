@@ -6,13 +6,10 @@ var path = require('path');
 var basicAuth = require('basic-auth');
 var term = require('term.js');
 var ssh = require('ssh2');
+var readConfig = require('read-config'),
+    config = readConfig(__dirname + '/config.json');
 
-var username = null;
-var password = null;
-var host = null;
-var port = 22;
-var header = 'Default Header';
-var headerBackground = 'rgb (0,90,0)';
+console.log(config);
 
 function checkParams(arr) {
     return function(req, res, next) {
@@ -35,8 +32,8 @@ function checkParams(arr) {
 }
 
 server.listen({
-    host: '127.0.0.1',
-    port: 2222
+    host: config.listen.ip,
+    port: config.listen.port
 });
 
 app.use(express.static(__dirname + '/public')).use(term.middleware()).use(function(req, res, next) {
@@ -46,16 +43,16 @@ app.use(express.static(__dirname + '/public')).use(term.middleware()).use(functi
         res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
         res.end('Username and password required for web SSH service.');
     } else {
-        username = myAuth['name'];
-        password = myAuth['pass'];
+        config.user.name = myAuth['name'];
+        config.user.password = myAuth['pass'];
         next();
     }
 }).get('/', checkParams(["host"]), function(req, res) {
     res.sendFile(path.join(__dirname + '/public/client.htm'))
-    host = req.query.host
-    if (typeof req.query.port !== 'undefined' && req.query.port !== null){ port = req.query.port;}
-    if (typeof req.query.header !== 'undefined' && req.query.header !== null){ header = req.query.header;}
-    if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ headerBackground = req.query.headerBackground;}
+    config.ssh.host = req.query.host
+    if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.host.port = req.query.port;}
+    if (typeof req.query.header !== 'undefined' && req.query.header !== null){ config.header.text = req.query.header;}
+    if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ config.header.background = req.query.headerBackground;}
     // debug // console.log('varibles passwd: ' + username + '/' + host + '/' + port);
 });
 
@@ -64,10 +61,10 @@ io.on('connection', function(socket) {
     conn.on('banner', function(msg, lng) {
         socket.emit('data', msg);
     }).on('ready', function() {
-        socket.emit('title', 'ssh://' + host);
-        socket.emit('headerBackground', headerBackground);
-        socket.emit('header', header);
-        socket.emit('footer', 'ssh://' + username + '@' + host + ':' + port);
+        socket.emit('title', 'ssh://' + config.ssh.host);
+        socket.emit('headerBackground', config.header.background);
+        socket.emit('header', config.header.text);
+        socket.emit('footer', 'ssh://' + config.user.name + '@' + config.ssh.host + ':' + config.ssh.port);
         socket.emit('status', 'SSH CONNECTION ESTABLISHED');
         socket.emit('statusBackground', 'green');
         conn.shell(function(err, stream) {
@@ -91,10 +88,10 @@ io.on('connection', function(socket) {
         socket.emit('status', 'SSH CONNECTION ERROR - ' + error)
         socket.emit('statusBackground', 'red');
     }).connect({
-        host: host,
-        port: port,
-        username: username,
-        password: password,
+        host: config.ssh.host,
+        port: config.ssh.port,
+        username: config.user.name,
+        password: config.user.password,
 // some cisco routers need the these cipher strings
         algorithms: {
             'cipher': ['aes128-cbc', '3des-cbc', 'aes256-cbc'],
