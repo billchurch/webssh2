@@ -9,22 +9,6 @@ var ssh = require('ssh2');
 var readConfig = require('read-config'),
     config = readConfig(__dirname + '/config.json');
 
-console.log(config);
-
-var isPortTaken = function(port, fn) {
-  var net = require('net')
-  var tester = net.createServer()
-  .once('error', function (err) {
-    if (err.code != 'EADDRINUSE') return fn(err)
-    fn(null, true)
-  })
-  .once('listening', function() {
-    tester.once('close', function() { fn(null, false) })
-    .close()
-  })
-  .listen(port)
-}
-
 function checkParams(arr) {
     return function(req, res, next) {
         // Make sure each param listed in arr is present in req.query
