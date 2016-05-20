@@ -11,6 +11,20 @@ var readConfig = require('read-config'),
 
 console.log(config);
 
+var isPortTaken = function(port, fn) {
+  var net = require('net')
+  var tester = net.createServer()
+  .once('error', function (err) {
+    if (err.code != 'EADDRINUSE') return fn(err)
+    fn(null, true)
+  })
+  .once('listening', function() {
+    tester.once('close', function() { fn(null, false) })
+    .close()
+  })
+  .listen(port)
+}
+
 function checkParams(arr) {
     return function(req, res, next) {
         // Make sure each param listed in arr is present in req.query
@@ -34,6 +48,14 @@ function checkParams(arr) {
 server.listen({
     host: config.listen.ip,
     port: config.listen.port
+}).on('error', function (err) {
+    if (err.code === 'EADDRINUSE') {
+        config.listen.port++;
+        console.log('Address in use, retrying on port ' + config.listen.port);
+        setTimeout(function () {
+            server.listen(config.listen.port);
+        }, 250);
+    }
 });
 
 app.use(express.static(__dirname + '/public')).use(term.middleware()).use(function(req, res, next) {
