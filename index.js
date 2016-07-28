@@ -18,7 +18,7 @@ function checkParams(arr) {
                 missing_params.push(arr[i]);
             }
         }
-        if (missing_params.length == 0) {
+        if (missing_params.length === 0) {
             next();
         } else {
             next(JSON.stringify({
@@ -26,7 +26,7 @@ function checkParams(arr) {
                 "message": "Parameter(s) missing: " + missing_params.join(",")
             }));
         }
-    }
+    };
 }
 
 server.listen({
@@ -49,13 +49,13 @@ app.use(express.static(__dirname + '/public')).use(term.middleware()).use(functi
         res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
         res.end('Username and password required for web SSH service.');
     } else {
-        config.user.name = myAuth['name'];
-        config.user.password = myAuth['pass'];
+        config.user.name = myAuth.name;
+        config.user.password = myAuth.pass;
         next();
     }
 }).get('/', checkParams(["host"]), function(req, res) {
-    res.sendFile(path.join(__dirname + '/public/client.htm'))
-    config.ssh.host = req.query.host
+    res.sendFile(path.join(__dirname + '/public/client.htm'));
+    config.ssh.host = req.query.host;
     if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.host.port = req.query.port;}
     if (typeof req.query.header !== 'undefined' && req.query.header !== null){ config.header.text = req.query.header;}
     if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ config.header.background = req.query.headerBackground;}
@@ -91,13 +91,17 @@ io.on('connection', function(socket) {
         socket.emit('status', 'SSH CONNECTION CLOSED');
         socket.emit('statusBackground', 'red');
     }).on('error', function(error) {
-        socket.emit('status', 'SSH CONNECTION ERROR - ' + error)
+        socket.emit('status', 'SSH CONNECTION ERROR - ' + error);
         socket.emit('statusBackground', 'red');
+    }).on('keyboard-interactive', function(name, instructions, instructionsLang, prompts, finish) {
+        console.log('Connection :: keyboard-interactive');
+        finish([config.user.password]);
     }).connect({
         host: config.ssh.host,
         port: config.ssh.port,
         username: config.user.name,
         password: config.user.password,
+        tryKeyboard: true,
 // some cisco routers need the these cipher strings
         algorithms: {
             'cipher': ['aes128-cbc', '3des-cbc', 'aes256-cbc'],
