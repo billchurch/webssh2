@@ -14,5 +14,8 @@
   "header": {
     "text": "My Header",
     "background": "green"
+  },
+  "options": {
+    "challengeButton": true
   }
 }

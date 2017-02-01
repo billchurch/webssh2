@@ -34,5 +34,8 @@
     "socket.io": "^1.6.0",
     "ssh2": "^0.5.4",
     "xterm": "^2.2.3"
+  },
+  "scripts": {
+    "start": "node index"
   }
 }
