@@ -59,8 +59,10 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
 
 io.on('connection', function(socket) {
     var conn = new ssh();
-    conn.on('banner', function(msg, lng) {
-        socket.emit('data', msg);
+    conn.on('banner', function(d) {
+        //need to convert to cr/lf for proper formatting
+        d = d.replace(/\n/g, "\r\n");
+        socket.emit('data', d.toString('binary'));
     }).on('ready', function() {
         socket.emit('title', 'ssh://' + config.ssh.host);
         socket.emit('headerBackground', config.header.background);
