@@ -1,16 +1,38 @@
 {
+  "name": "WebSSH2",
+  "version": "0.0.2",
+  "ignore": [
+    ".gitignore"
+  ],
+  "bin": "./index.js",
   "description": "A Websocket to SSH2 gateway using term.js, socket.io, ssh2, and express",
+  "homepage": "https://github.com/billchurch/WebSSH2",
+  "keywords": "ssh webssh terminal webterminal",
+  "license": "SEE LICENSE IN FILE - LICENSE",
   "private": true,
-  "repository": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/billchurch/WebSSH2.git"
+  },
+  "contributors": [
+    {
+      "name": "Bill Church",
+      "email": "wmchurch@gmail.com"
+    }
+  ],
   "engines": {
     "node": "0.12.7"
   },
+  "bugs": {
+    "url" : "https://github.com/billchurch/WebSSH2/issues"
+  },
   "dependencies": {
-    "basic-auth": "^1.0.3",
-    "express": "^4.13.4",
+    "basic-auth": "^1.1.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.14.1",
     "read-config": "^1.6.0",
-    "socket.io": "^1.4.5",
-    "ssh2": "^0.5.0",
-    "term.js": "0.0.7"
+    "socket.io": "^1.6.0",
+    "ssh2": "^0.5.4",
+    "xterm": "^2.2.3"
   }
 }
