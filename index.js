@@ -16,9 +16,30 @@ var ssh = require('ssh2');
 var readConfig = require('read-config'),
     config = readConfig(__dirname + '/config.json');
 
+<<<<<<< HEAD
 function logErrors(err, req, res, next) {
   console.error(err.stack);
   next(err);
+=======
+function checkParams(arr) {
+    return function(req, res, next) {
+        // Make sure each param listed in arr is present in req.query
+        var missing_params = [];
+        for (var i = 0; i < arr.length; i++) {
+            if (!eval("req.query." + arr[i])) {
+                missing_params.push(arr[i]);
+            }
+        }
+        if (missing_params.length === 0) {
+            next();
+        } else {
+            next(JSON.stringify({
+                "error": "query error",
+                "message": "Parameter(s) missing: " + missing_params.join(",")
+            }));
+        }
+    };
+>>>>>>> origin/master
 }
 
 server.listen({
@@ -45,9 +66,15 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
         config.user.password = myAuth.pass;
         next();
     }
+<<<<<<< HEAD
 }).use(cookieParser()).get('/ssh/host/:host?', function(req, res) {
     res.sendFile(path.join(__dirname + '/public/client.htm'));
     config.ssh.host = req.params.host;
+=======
+}).get('/', checkParams(["host"]), function(req, res) {
+    res.sendFile(path.join(__dirname + '/public/client.htm'));
+    config.ssh.host = req.query.host;
+>>>>>>> origin/master
     if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.host.port = req.query.port;}
     if (typeof req.query.header !== 'undefined' && req.query.header !== null){ config.header.text = req.query.header;}
     if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ config.header.background = req.query.headerBackground;}
