@@ -1,22 +1,22 @@
 <html>
 <head>
   <title>Web SSH</title>
-  <link rel="stylesheet" href="/xterm.css" />
-  <link rel="stylesheet" href="/style.css" />
-  <script src="/term.js"></script>
-  <script src="/client.js"></script>
+  <link rel="stylesheet" href="/src/xterm.css" />
+  <link rel="stylesheet" href="/style/style.css" />
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/src/xterm.js"></script>
+  <script src="/addons/fit/fit.js"></script>
+  <script src="/client.js" defer></script>
 </head>
 <body>
-  <div id="header"></div>
-  <div id="terminal" class="terminal">
-    <script>
-      client.run();
-    </script>
-  </div>
-  <div id="bottomdiv">
-    <div id="footer"></div>
-    <div id="status"></div>
+  <div class="box">
+    <div id="header"></div>
+    <div id="terminal-container" class="terminal"></div>
+    <div id="bottomdiv">
+      <div id="footer"></div>
+      <div id="status"></div>
+      <div id="credentials"><a class="credentials" href="" onclick="return false;">CREDENTIALS</a></div>
+    </div>
   </div>
 </body>
 </html>
