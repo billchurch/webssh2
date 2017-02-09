@@ -61,7 +61,7 @@ io.on('connection', function(socket) {
     var conn = new ssh();
     conn.on('banner', function(d) {
         //need to convert to cr/lf for proper formatting
-        d = d.replace(/\n/g, "\r\n");
+        d = d.replace(/\r?\n/g, "\r\n");
         socket.emit('data', d.toString('binary'));
     }).on('ready', function() {
         socket.emit('title', 'ssh://' + config.ssh.host);
