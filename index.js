@@ -15,6 +15,7 @@ var basicAuth = require('basic-auth');
 var ssh = require('ssh2');
 var readConfig = require('read-config'),
     config = readConfig(__dirname + '/config.json');
+var myError = " - ";
 
 function logErrors(err, req, res, next) {
   console.error(err.stack);
@@ -76,7 +77,11 @@ io.on('connection', function(socket) {
         socket.emit('statusBackground', 'green');
         socket.emit('allowreplay', config.options.allowreplay)
         conn.shell(function(err, stream) {
-            if (err) return socket.emit('status', 'SSH EXEC ERROR: ' + err.message).emit('statusBackground', 'red');
+            if (err) { 
+                console.log (err.message);
+                myError = myError + err.message
+                return socket.emit('status', 'SSH EXEC ERROR: ' + err.message).emit('statusBackground', 'red');
+            }
             socket.on('data', function(data) {
                 stream.write(data);
             });
@@ -90,19 +95,24 @@ io.on('connection', function(socket) {
             });
             stream.on('data', function(d) {
                 socket.emit('data', d.toString('binary'));
-            }).on('close', function() {
+            }).on('close', function(code, signal) {
+                console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
                 conn.end();
+            }).stderr.on('data', function(data) {
+                console.log('STDERR: ' + data);
             });
         });
     }).on('end', function() {
-        socket.emit('status', 'SSH CONNECTION CLOSED BY HOST');
+        socket.emit('status', 'SSH CONNECTION CLOSED BY HOST' + myError);
         socket.emit('statusBackground', 'red');
     }).on('close', function() {
-        socket.emit('status', 'SSH CONNECTION CLOSED');
+        socket.emit('status', 'SSH CONNECTION CLOSE' + myError);
         socket.emit('statusBackground', 'red');
-    }).on('error', function(error) {
-        socket.emit('status', 'SSH CONNECTION ERROR - ' + error);
+    }).on('error', function(err) {
+        myError = myError + err
+        socket.emit('status', 'SSH CONNECTION ERROR' + myError);
         socket.emit('statusBackground', 'red');
+        console.log('on.error' + myError);
     }).on('keyboard-interactive', function(name, instructions, instructionsLang, prompts, finish) {
         console.log('Connection :: keyboard-interactive');
         finish([config.user.password]);
