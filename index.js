@@ -40,6 +40,10 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
         res.statusCode = 401;
         res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
         res.end('Username and password required for web SSH service.');
+    } else if (myAuth.name == "") {
+        res.statusCode = 401
+        res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
+        res.end('Username and password required for web SSH service.');
     } else {
         config.user.name = myAuth.name;
         config.user.password = myAuth.pass;
