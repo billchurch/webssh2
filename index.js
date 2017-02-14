@@ -53,7 +53,7 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
 }).use(cookieParser()).get('/ssh/host/:host?', function(req, res) {
     res.sendFile(path.join(__dirname + '/public/client.htm'));
     config.ssh.host = req.params.host;
-    if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.host.port = req.query.port;}
+    if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.ssh.port = req.query.port;}
     if (typeof req.query.header !== 'undefined' && req.query.header !== null){ config.header.text = req.query.header;}
     if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ config.header.background = req.query.headerBackground;}
     console.log ('webssh2 Login: user=' + config.user.name + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.headers['sessionid'] + ' allowreplay=' + req.headers['allowreplay']);
