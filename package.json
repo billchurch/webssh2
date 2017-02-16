@@ -33,7 +33,7 @@
     "read-config": "^1.6.0",
     "socket.io": "^1.6.0",
     "ssh2": "^0.5.4",
-    "xterm": "^2.2.3"
+    "xterm": "^2.3.0"
   },
   "scripts": {
     "start": "node index"
