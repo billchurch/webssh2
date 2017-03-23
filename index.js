@@ -6,7 +6,7 @@
 
 var express = require('express');
 var app = express();
-var cookieParser = require('cookie-parser')
+var cookieParser = require('cookie-parser');
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var path = require('path');
@@ -41,8 +41,8 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
         res.statusCode = 401;
         res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
         res.end('Username and password required for web SSH service.');
-    } else if (myAuth.name == "") {
-        res.statusCode = 401
+    } else if (myAuth.name === "") {
+        res.statusCode = 401;
         res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
         res.end('Username and password required for web SSH service.');
     } else {
@@ -56,9 +56,9 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
     if (typeof req.query.port !== 'undefined' && req.query.port !== null){ config.ssh.port = req.query.port;}
     if (typeof req.query.header !== 'undefined' && req.query.header !== null){ config.header.text = req.query.header;}
     if (typeof req.query.headerBackground !== 'undefined' && req.query.headerBackground !== null){ config.header.background = req.query.headerBackground;}
-    console.log ('webssh2 Login: user=' + config.user.name + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.headers['sessionid'] + ' allowreplay=' + req.headers['allowreplay']);
+    console.log ('webssh2 Login: user=' + config.user.name + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.headers.sessionid + ' allowreplay=' + req.headers.allowreplay);
     console.log ('Headers: ' + JSON.stringify(req.headers));
-    config.options.allowreplay = req.headers['allowreplay'];
+    config.options.allowreplay = req.headers.allowreplay;
 
 }).use('/style',express.static(__dirname + '/public')).use('/src',express.static(__dirname + '/node_modules/xterm/dist')).use('/addons',express.static(__dirname + '/node_modules/xterm/dist/addons'));
 
@@ -75,11 +75,11 @@ io.on('connection', function(socket) {
         socket.emit('footer', 'ssh://' + config.user.name + '@' + config.ssh.host + ':' + config.ssh.port);
         socket.emit('status', 'SSH CONNECTION ESTABLISHED');
         socket.emit('statusBackground', 'green');
-        socket.emit('allowreplay', config.options.allowreplay)
-        conn.shell({ term: 'xterm-256color' },function(err, stream) {
+        socket.emit('allowreplay', config.options.allowreplay);
+        conn.shell( { term: 'xterm-256color' }, function(err, stream) {
             if (err) { 
                 console.log (err.message);
-                myError = myError + err.message
+                myError = myError + err.message;
                 return socket.emit('status', 'SSH EXEC ERROR: ' + err.message).emit('statusBackground', 'red');
             }
             socket.on('data', function(data) {
@@ -89,9 +89,10 @@ io.on('connection', function(socket) {
                 switch(controlData) {
                     case 'replayCredentials':
                         stream.write(config.user.password + '\n');
+                        /* falls through */
                     default:
                         console.log ('controlData: '+ controlData);
-                };
+                }
             });
             stream.on('data', function(d) {
                 socket.emit('data', d.toString('binary'));
@@ -109,7 +110,7 @@ io.on('connection', function(socket) {
         socket.emit('status', 'SSH CONNECTION CLOSE' + myError);
         socket.emit('statusBackground', 'red');
     }).on('error', function(err) {
-        myError = myError + err
+        myError = myError + err;
         socket.emit('status', 'SSH CONNECTION ERROR' + myError);
         socket.emit('statusBackground', 'red');
         console.log('on.error' + myError);
