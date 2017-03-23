@@ -9,7 +9,8 @@
   },
   "ssh": {
     "host": null,
-    "port": 22
+    "port": 22,
+    "term": "xterm-color",
   },
   "header": {
     "text": "My Header",

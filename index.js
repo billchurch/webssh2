@@ -76,7 +76,7 @@ io.on('connection', function(socket) {
         socket.emit('status', 'SSH CONNECTION ESTABLISHED');
         socket.emit('statusBackground', 'green');
         socket.emit('allowreplay', config.options.allowreplay);
-        conn.shell( { term: 'xterm-256color' }, function(err, stream) {
+        conn.shell( { term: config.ssh.term }, function(err, stream) {
             if (err) { 
                 console.log (err.message);
                 myError = myError + err.message;
