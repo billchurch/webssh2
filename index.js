@@ -12,10 +12,12 @@ var io = require('socket.io')(server);
 var path = require('path');
 
 var basicAuth = require('basic-auth');
-var ssh = require('ssh2');
+var ssh = require('ssh2').Client;
 var readConfig = require('read-config'),
     config = readConfig(__dirname + '/config.json');
 var myError = " - ";
+var termCols;
+var termRows;
 
 function logErrors(err, req, res, next) {
   console.error(err.stack);
@@ -64,6 +66,10 @@ app.use(express.static(__dirname + '/public')).use(function(req, res, next) {
 
 io.on('connection', function(socket) {
     var conn = new ssh();
+    socket.on('geometry', function (cols, rows) {
+        termCols = cols;
+        termRows = rows;
+    });
     conn.on('banner', function(d) {
         //need to convert to cr/lf for proper formatting
         d = d.replace(/\r?\n/g, "\r\n");
@@ -76,7 +82,8 @@ io.on('connection', function(socket) {
         socket.emit('status', 'SSH CONNECTION ESTABLISHED');
         socket.emit('statusBackground', 'green');
         socket.emit('allowreplay', config.options.allowreplay);
-        conn.shell( { term: config.ssh.term }, function(err, stream) {
+
+        conn.shell( { term: config.ssh.term, cols: termCols, rows: termRows }, function(err, stream) {
             if (err) { 
                 console.log (err.message);
                 myError = myError + err.message;
@@ -99,6 +106,7 @@ io.on('connection', function(socket) {
             }).on('close', function(code, signal) {
                 console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
                 conn.end();
+                socket.disconnect();
             }).stderr.on('data', function(data) {
                 console.log('STDERR: ' + data);
             });
@@ -106,9 +114,11 @@ io.on('connection', function(socket) {
     }).on('end', function() {
         socket.emit('status', 'SSH CONNECTION CLOSED BY HOST' + myError);
         socket.emit('statusBackground', 'red');
+        socket.disconnect();
     }).on('close', function() {
         socket.emit('status', 'SSH CONNECTION CLOSE' + myError);
         socket.emit('statusBackground', 'red');
+        socket.disconnect();
     }).on('error', function(err) {
         myError = myError + err;
         socket.emit('status', 'SSH CONNECTION ERROR' + myError);
