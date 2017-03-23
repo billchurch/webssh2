@@ -24,7 +24,7 @@
     "node": "0.12.7"
   },
   "bugs": {
-    "url" : "https://github.com/billchurch/WebSSH2/issues"
+    "url": "https://github.com/billchurch/WebSSH2/issues"
   },
   "dependencies": {
     "basic-auth": "^1.1.0",
@@ -33,7 +33,7 @@
     "read-config": "^1.6.0",
     "socket.io": "^1.6.0",
     "ssh2": "^0.5.4",
-    "xterm": "^2.3.0"
+    "xterm": "^2.4.0"
   },
   "scripts": {
     "start": "node index"
