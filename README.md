@@ -3,7 +3,7 @@ Web SSH Client using ssh2, socket.io, xterm.js, and express
 
 Bare bones example of using SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server. 
 
-<img width="1044" alt="screenshot 2016-05-18 13 29 53" src="https://cloud.githubusercontent.com/assets/1668075/15368633/d2c9c4ca-1cfc-11e6-9961-b5b52a07b9ff.png">
+<img width="1044" alt="Screenshot 2017-03-23 18.13.59" src="https://cloud.githubusercontent.com/assets/1668075/24272639/8ad4fef0-0ff4-11e7-8dd0-72b26605e467.png">
 
 # Instructions
 To install:
