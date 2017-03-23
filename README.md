@@ -29,6 +29,39 @@ header= - optional header to display on page
 
 headerBackground= - optional background color of header to display on page 
 
+# Config File Options
+config.json contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
+
+`listen.ip` default `127.0.0.1`
+* IP address node should listen on for client connections
+
+`listen.port` default `2222`
+* Port node should listen on for client connections
+
+`user.name` default `null`
+* Specify user name to authenticate with
+
+`user.password` default `null`
+* Specify password to authenticate with
+
+`ssh.host` default `null`
+* Specify host to connect to
+
+`ssh.port` default `22`
+* Specify SSH port to connect to 
+
+`ssh.term` default `xterm-color`
+* Specify terminal emulation to use
+
+`header.text`
+* Specify header text, defaults to `My Header` but may also be set to `null`
+
+`header.background`
+* Header background, defaults to `green`
+
+`options.challengeButton`
+* Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
+
 # Example:
 
 http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
