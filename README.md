@@ -62,6 +62,9 @@ config.json contains several options which may be specified to customize to your
 `options.challengeButton`
 * Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
 
+# Experimental client-side logging
+Clicking `Start logging` on the status bar will log all data to the client. A `Download log` option will appear after starting the logging. You may download at any time to the client. You may stop logging at any time my pressing the `Logging - STOP LOG`. Note that clicking the `Start logging` option again will cause the current log to be overwritten, so be sure to download first.
+
 # Example:
 
 http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
