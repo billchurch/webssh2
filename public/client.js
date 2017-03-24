@@ -32,10 +32,12 @@ function replayCredentials() {
     return false;
 }
 
-function startLog() {
+// Set variable to toggle log data from client/server to a varialble 
+// for later download
+function toggleLog() {
     if (sessionLogEnable == true) {
         sessionLogEnable = false;
-        document.getElementById('startLog').innerHTML = '<a class="startLog" href="javascript:void(0);" onclick="startLog();">Start Log</a>';
+        document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>';
         console.log("stopping log, " + sessionLogEnable);
         currentDate = new Date();
         sessionLog = sessionLog + "\r\n\r\nLog End for " + sessionFooter + ": " + currentDate.getFullYear() + "/" + (currentDate.getMonth() + 1) + "/" + currentDate.getDate() + " @ " + currentDate.getHours() + ":" + currentDate.getMinutes() + ":" + currentDate.getSeconds() + "\r\n";
@@ -43,7 +45,7 @@ function startLog() {
         return false;
     } else {
         sessionLogEnable = true;
-        document.getElementById('startLog').innerHTML = '<a class="startLog" href="javascript:void(0)" onclick="startLog();">Logging - STOP LOG</a>';
+        document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0)" onclick="toggleLog();">Logging - STOP LOG</a>';
         document.getElementById('downloadLog').style.display = 'inline';
         console.log("starting log, " + sessionLogEnable);
         currentDate = new Date();
@@ -53,6 +55,8 @@ function startLog() {
     }
 }
 
+// cross browser method to "download" an element to the local system
+// used for our client-side logging feature
 function downloadLog() {
     myFile = "WebSSH2-" + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + "_" + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + ".log";
     var blob = new Blob([sessionLog], {
@@ -69,6 +73,7 @@ function downloadLog() {
         document.body.removeChild(elem);
     }
 }
+
 socket.on('connect', function() {
     socket.emit('geometry', term.cols, term.rows);
     term.on('data', function(data) {
@@ -99,7 +104,7 @@ socket.on('connect', function() {
         if (sessionLogEnable) {
             sessionLog = sessionLog + data;
         }
-    }).on('disconnect', function() {
+    }).on('disconnect', function(err) {
         document.getElementById('status').style.backgroundColor = 'red';
         document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err;
         socket.io.reconnection(false);

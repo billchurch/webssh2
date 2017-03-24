@@ -3,9 +3,9 @@
   <title>Web SSH</title>
   <link rel="stylesheet" href="/src/xterm.css" />
   <link rel="stylesheet" href="/style/style.css" />
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/src/xterm.js"></script>
-  <script src="/addons/fit/fit.js"></script>
+  <script src="/socket.io/socket.io.js" defer></script>
+  <script src="/src/xterm.js" defer></script>
+  <script src="/addons/fit/fit.js" defer></script>
   <script src="/client.js" defer></script>
 </head>
 <body>
@@ -17,7 +17,7 @@
       <div id="status"></div>
       <div id="credentials"><a class="credentials" href="javascript:void(0);" onclick="replayCredentials()">CREDENTIALS</a></div>
       <div id="downloadLog"><a class="downloadLog" href="javascript:void(0);" onclick="downloadLog()">Download Log</a></div>      
-      <div id="startLog"><a class="startLog" href="javascript:void(0);" onclick="startLog();">Start Log</a></div>      
+      <div id="toggleLog"><a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a></div>      
     </div>
   </div>
 </body>

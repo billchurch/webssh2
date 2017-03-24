@@ -106,7 +106,7 @@ a.downloadLog {
     color: rgb(240, 240, 240);
     text-decoration: none;    
 }
-#startLog {
+#toggleLog {
     display: inline-block;
     color: rgb(240, 240, 240);
     background-color: rgb(0, 127, 0);
@@ -118,7 +118,7 @@ a.downloadLog {
     text-align: left;
     z-index: 100;
 }
-a.startLog {
+a.toggleLog {
     color: rgb(240, 240, 240);
     text-decoration: none;    
 }
