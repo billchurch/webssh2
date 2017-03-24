@@ -2,7 +2,10 @@ var sessionLog,
     sessionLogEnable = false,
     sessionFooter,
     logDate;
+
 document.getElementById('downloadLog').style.display = 'none';
+document.getElementById('credentials').style.display = 'none';
+
 var terminalContainer = document.getElementById('terminal-container'),
     term = new Terminal({
         cursorBlink: true
