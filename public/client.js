@@ -3,29 +3,7 @@ var sessionLog,
     sessionFooter,
     logDate;
 
-document.getElementById('downloadLog').style.display = 'none';
-document.getElementById('credentials').style.display = 'none';
-
-var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal({
-        cursorBlink: true
-    }),
-    socket,
-    termid;
-term.open(terminalContainer);
-term.fit();
-
-if (document.location.pathname) {
-    var parts = document.location.pathname.split('/'),
-        base = parts.slice(0, parts.length - 1).join('/') + '/',
-        resource = base.substring(1) + 'socket.io';
-    socket = io.connect(null, {
-        resource: resource
-    });
-} else {
-    socket = io.connect();
-}
-
+// replay password to server, requires 
 function replayCredentials() {
     socket.emit('control', 'replayCredentials');
     console.log("replaying credentials");
@@ -59,7 +37,8 @@ function toggleLog() {
 // used for our client-side logging feature
 function downloadLog() {
     myFile = "WebSSH2-" + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + "_" + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + ".log";
-    var blob = new Blob([sessionLog], {
+    // regex should eliminate escape sequences from being logged.
+    var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
         type: 'text/plain'
     });
     if (window.navigator.msSaveOrOpenBlob) {
@@ -72,6 +51,29 @@ function downloadLog() {
         elem.click();
         document.body.removeChild(elem);
     }
+}
+
+document.getElementById('downloadLog').style.display = 'none';
+document.getElementById('credentials').style.display = 'none';
+
+var terminalContainer = document.getElementById('terminal-container'),
+    term = new Terminal({
+        cursorBlink: true
+    }),
+    socket,
+    termid;
+term.open(terminalContainer);
+term.fit();
+
+if (document.location.pathname) {
+    var parts = document.location.pathname.split('/'),
+        base = parts.slice(0, parts.length - 1).join('/') + '/',
+        resource = base.substring(1) + 'socket.io';
+    socket = io.connect(null, {
+        resource: resource
+    });
+} else {
+    socket = io.connect();
 }
 
 socket.on('connect', function() {
@@ -102,7 +104,7 @@ socket.on('connect', function() {
     }).on('data', function(data) {
         term.write(data);
         if (sessionLogEnable) {
-            sessionLog = sessionLog + data;
+            sessionLog = sessionLog + data
         }
     }).on('disconnect', function(err) {
         document.getElementById('status').style.backgroundColor = 'red';
