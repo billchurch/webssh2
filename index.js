@@ -10,7 +10,7 @@ var express = require('express'),
   io = require('socket.io')(server),
   path = require('path'),
   basicAuth = require('basic-auth'),
-  ssh = require('ssh2').Client,
+  SSH = require('ssh2').Client,
   readConfig = require('read-config'),
   config = readConfig(path.join(__dirname, 'config.json')),
   myError = ' - ',
@@ -68,7 +68,7 @@ app.use(express.static(path.join(__dirname, 'public'))).use(function (req, res, 
 }).use('/style', express.static(path.join(__dirname, 'public'))).use('/src', express.static(path.join(__dirname, 'node_modules', 'xterm', 'dist'))).use('/addons', express.static(path.join(__dirname, 'node_modules', 'xterm', 'dist', 'addons')))
 
 io.on('connection', function (socket) {
-  var conn = new ssh()
+  var conn = new SSH()
   socket.on('geometry', function (cols, rows) {
     termCols = cols
     termRows = rows
