@@ -1,117 +1,117 @@
 var sessionLog,
-    sessionLogEnable = false,
-    sessionFooter,
-    logDate;
+  sessionLogEnable = false,
+  sessionFooter,
+  logDate
 
-// replay password to server, requires 
-function replayCredentials() {
-    socket.emit('control', 'replayCredentials');
-    console.log("replaying credentials");
-    return false;
+// replay password to server, requires
+function replayCredentials () {
+  socket.emit('control', 'replayCredentials')
+  console.log('replaying credentials')
+  return false
 }
 
-// Set variable to toggle log data from client/server to a varialble 
+// Set variable to toggle log data from client/server to a varialble
 // for later download
-function toggleLog() {
-    if (sessionLogEnable == true) {
-        sessionLogEnable = false;
-        document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>';
-        console.log("stopping log, " + sessionLogEnable);
-        currentDate = new Date();
-        sessionLog = sessionLog + "\r\n\r\nLog End for " + sessionFooter + ": " + currentDate.getFullYear() + "/" + (currentDate.getMonth() + 1) + "/" + currentDate.getDate() + " @ " + currentDate.getHours() + ":" + currentDate.getMinutes() + ":" + currentDate.getSeconds() + "\r\n";
-        logDate = currentDate;
-        return false;
-    } else {
-        sessionLogEnable = true;
-        document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0)" onclick="toggleLog();">Logging - STOP LOG</a>';
-        document.getElementById('downloadLog').style.display = 'inline';
-        console.log("starting log, " + sessionLogEnable);
-        currentDate = new Date();
-        sessionLog = "Log Start for " + sessionFooter + ": " + currentDate.getFullYear() + "/" + (currentDate.getMonth() + 1) + "/" + currentDate.getDate() + " @ " + currentDate.getHours() + ":" + currentDate.getMinutes() + ":" + currentDate.getSeconds() + "\r\n\r\n";
-        logDate = currentDate;
-        return false;
-    }
+function toggleLog () {
+  if (sessionLogEnable === true) {
+    sessionLogEnable = false
+    document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>'
+    console.log('stopping log, ' + sessionLogEnable)
+    currentDate = new Date()
+    sessionLog = sessionLog + '\r\n\r\nLog End for ' + sessionFooter + ': ' + currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' + currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n'
+    logDate = currentDate
+    return false
+  } else {
+    sessionLogEnable = true
+    document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0)" onclick="toggleLog();">Logging - STOP LOG</a>'
+    document.getElementById('downloadLog').style.display = 'inline'
+    console.log('starting log, ' + sessionLogEnable)
+    currentDate = new Date()
+    sessionLog = 'Log Start for ' + sessionFooter + ': ' + currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' + currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n\r\n'
+    logDate = currentDate
+    return false
+  }
 }
 
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
-function downloadLog() {
-    myFile = "WebSSH2-" + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + "_" + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + ".log";
+function downloadLog () {
+  myFile = 'WebSSH2-' + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + '.log'
     // regex should eliminate escape sequences from being logged.
-    var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
-        type: 'text/plain'
-    });
-    if (window.navigator.msSaveOrOpenBlob) {
-        window.navigator.msSaveBlob(blob, myFile);
-    } else {
-        var elem = window.document.createElement('a');
-        elem.href = window.URL.createObjectURL(blob);
-        elem.download = myFile;
-        document.body.appendChild(elem);
-        elem.click();
-        document.body.removeChild(elem);
-    }
+  var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
+    type: 'text/plain'
+  })
+  if (window.navigator.msSaveOrOpenBlob) {
+    window.navigator.msSaveBlob(blob, myFile)
+  } else {
+    var elem = window.document.createElement('a')
+    elem.href = window.URL.createObjectURL(blob)
+    elem.download = myFile
+    document.body.appendChild(elem)
+    elem.click()
+    document.body.removeChild(elem)
+  }
 }
 
-document.getElementById('downloadLog').style.display = 'none';
-document.getElementById('credentials').style.display = 'none';
+document.getElementById('downloadLog').style.display = 'none'
+document.getElementById('credentials').style.display = 'none'
 
 var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal({
-        cursorBlink: true
-    }),
-    socket,
-    termid;
-term.open(terminalContainer);
-term.fit();
+  term = new Terminal({
+    cursorBlink: true
+  }),
+  socket,
+  termid
+term.open(terminalContainer)
+term.fit()
 
 if (document.location.pathname) {
-    var parts = document.location.pathname.split('/'),
-        base = parts.slice(0, parts.length - 1).join('/') + '/',
-        resource = base.substring(1) + 'socket.io';
-    socket = io.connect(null, {
-        resource: resource
-    });
+  var parts = document.location.pathname.split('/'),
+    base = parts.slice(0, parts.length - 1).join('/') + '/',
+    resource = base.substring(1) + 'socket.io'
+  socket = io.connect(null, {
+    resource: resource
+  })
 } else {
-    socket = io.connect();
+  socket = io.connect()
 }
 
-socket.on('connect', function() {
-    socket.emit('geometry', term.cols, term.rows);
-    term.on('data', function(data) {
-        socket.emit('data', data);
-    });
-    socket.on('title', function(data) {
-        document.title = data;
-    }).on('status', function(data) {
-        document.getElementById('status').innerHTML = data;
-    }).on('headerBackground', function(data) {
-        document.getElementById('header').style.backgroundColor = data;
-    }).on('header', function(data) {
-        document.getElementById('header').innerHTML = data;
-    }).on('footer', function(data) {
-        sessionFooter = data;
-        document.getElementById('footer').innerHTML = data;
-    }).on('statusBackground', function(data) {
-        document.getElementById('status').style.backgroundColor = data;
-    }).on('allowreplay', function(data) {
-        if (data == 'true') {
-            console.log('allowreplay: ' + data);
-            document.getElementById('credentials').style.display = 'inline';
-        } else {
-            document.getElementById('credentials').style.display = 'none';
-        }
-    }).on('data', function(data) {
-        term.write(data);
-        if (sessionLogEnable) {
-            sessionLog = sessionLog + data
-        }
-    }).on('disconnect', function(err) {
-        document.getElementById('status').style.backgroundColor = 'red';
-        document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err;
-        socket.io.reconnection(false);
-    }).on('error', function(err) {
-        document.getElementById('status').style.backgroundColor = 'red';
-        document.getElementById('status').innerHTML = 'ERROR ' + err;
-    });
-});
+socket.on('connect', function () {
+  socket.emit('geometry', term.cols, term.rows)
+  term.on('data', function (data) {
+    socket.emit('data', data)
+  })
+  socket.on('title', function (data) {
+    document.title = data
+  }).on('status', function (data) {
+    document.getElementById('status').innerHTML = data
+  }).on('headerBackground', function (data) {
+    document.getElementById('header').style.backgroundColor = data
+  }).on('header', function (data) {
+    document.getElementById('header').innerHTML = data
+  }).on('footer', function (data) {
+    sessionFooter = data
+    document.getElementById('footer').innerHTML = data
+  }).on('statusBackground', function (data) {
+    document.getElementById('status').style.backgroundColor = data
+  }).on('allowreplay', function (data) {
+    if (data === 'true') {
+      console.log('allowreplay: ' + data)
+      document.getElementById('credentials').style.display = 'inline'
+    } else {
+      document.getElementById('credentials').style.display = 'none'
+    }
+  }).on('data', function (data) {
+    term.write(data)
+    if (sessionLogEnable) {
+      sessionLog = sessionLog + data
+    }
+  }).on('disconnect', function (err) {
+    document.getElementById('status').style.backgroundColor = 'red'
+    document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err
+    socket.io.reconnection(false)
+  }).on('error', function (err) {
+    document.getElementById('status').style.backgroundColor = 'red'
+    document.getElementById('status').innerHTML = 'ERROR ' + err
+  })
+})
