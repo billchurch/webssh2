@@ -33,31 +33,37 @@ headerBackground= - optional background color of header to display on page
 config.json contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
 
 `listen.ip` default `127.0.0.1`
-* IP address node should listen on for client connections
+* IP address node should listen on for client connections.
 
 `listen.port` default `2222`
-* Port node should listen on for client connections
+* Port node should listen on for client connections.
 
 `user.name` default `null`
-* Specify user name to authenticate with
+* Specify user name to authenticate with.
 
 `user.password` default `null`
-* Specify password to authenticate with
+* Specify password to authenticate with.
 
 `ssh.host` default `null`
-* Specify host to connect to
+* Specify host to connect to.
 
 `ssh.port` default `22`
-* Specify SSH port to connect to 
+* Specify SSH port to connect to.
 
 `ssh.term` default `xterm-color`
-* Specify terminal emulation to use
+* Specify terminal emulation to use.
 
 `header.text`
-* Specify header text, defaults to `My Header` but may also be set to `null`
+* Specify header text, defaults to `My Header` but may also be set to `null`.
 
 `header.background`
-* Header background, defaults to `green`
+* Header background, defaults to `green`.
+
+`session.name`
+* Name of session ID cookie. it's not a horrible idea to make this something unique.
+
+`session.secret`
+* Secret key for cookie encryption. You should change this in production.
 
 `options.challengeButton`
 * Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 

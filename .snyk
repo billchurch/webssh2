@@ -1,0 +1,22 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.7.1
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  'npm:ms:20170412':
+    - socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        reason: no patch avail
+        expires: '2017-06-18T14:21:30.266Z'
+    - standard > eslint-plugin-import > eslint-module-utils > debug > ms:
+        reason: no patch avail
+        expires: '2017-06-18T14:21:30.266Z'
+    - socket.io > socket.io-adapter > debug > ms:
+        reason: no patch avail
+        expires: '2017-06-18T14:21:30.267Z'
+    - socket.io > socket.io-client > debug > ms:
+        reason: no patch avail
+        expires: '2017-06-18T14:21:30.267Z'
+  'npm:shelljs:20140723':
+    - standard > eslint > shelljs:
+        reason: no patch avail
+        expires: '2017-06-18T14:21:30.267Z'
+patch: {}

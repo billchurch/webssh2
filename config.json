@@ -16,6 +16,10 @@
     "text": "My Header",
     "background": "green"
   },
+  "session": {
+    "name": "WebSSH2id",
+    "secret": "mysecret"
+  },
   "options": {
     "challengeButton": true
   }

@@ -62,7 +62,9 @@ var terminalContainer = document.getElementById('terminal-container'),
   }),
   socket,
   termid
-term.open(terminalContainer)
+term.open(terminalContainer, {
+  focus: true
+})
 term.fit()
 
 if (document.location.pathname) {
@@ -106,12 +108,12 @@ socket.on('connect', function () {
     if (sessionLogEnable) {
       sessionLog = sessionLog + data
     }
-  }).on('disconnect', function (err) {
-    document.getElementById('status').style.backgroundColor = 'red'
-    document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err
-    socket.io.reconnection(false)
-  }).on('error', function (err) {
-    document.getElementById('status').style.backgroundColor = 'red'
-    document.getElementById('status').innerHTML = 'ERROR ' + err
-  })
+  })// .on('disconnect', function (err) {
+    // document.getElementById('status').style.backgroundColor = 'red'
+    // document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err
+    // socket.io.reconnection(false)
+  // })//.on('error', function (err) {
+    // document.getElementById('status').style.backgroundColor = 'red'
+    // document.getElementById('status').innerHTML = 'ERROR ' + err
+  // })
 })
