@@ -20,7 +20,8 @@ var session = require('express-session')({
   resave: true,
   saveUninitialized: false
 })
-var termCols, termRows, myError
+var colors = require('colors/safe')
+var termCols, termRows
 // var LogPrefix
 // var dataBuffer = ''
 
@@ -72,7 +73,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
   config.header.background = req.query.headerBackground || config.header.background
   console.log('webssh2 Login: user=' + req.session.username + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.sessionID + ' allowreplay=' + req.headers.allowreplay)
   // LogPrefix = req.session.username + '@' + req.ip + ' ssh://' + config.ssh.host + ':' + config.ssh.port + '/' + req.sessionID
-  // console.log('Headers: ' + JSON.stringify(req.headers))
+  debugWebSSH2('Headers: ' + colors.yellow(JSON.stringify(req.headers)))
   config.options.allowreplay = req.headers.allowreplay
 })
 
@@ -158,13 +159,13 @@ io.on('connection', function (socket) {
             console.log('controlData: ' + controlData)
         }
       })
-      
+
       socket.on('disconnecting', function (reason) { debugWebSSH2('SOCKET DISCONNECTING: ' + reason) })
 
       socket.on('disconnect', function (reason) {
         debugWebSSH2('SOCKET DISCONNECT: ' + reason)
         err = { message: reason }
-        socketutil.SSHerror ('CLIENT SOCKET DISCONNECT', err)
+        socketutil.SSHerror('CLIENT SOCKET DISCONNECT', err)
         conn.end()
       })
 
@@ -173,7 +174,7 @@ io.on('connection', function (socket) {
       stream.on('data', function (d) { socket.emit('data', d.toString('binary')) })
 
       stream.on('close', function (code, signal) {
-        err = { message: ((code||signal) ? (((code)? 'CODE: ' + code: '') + ((code&&signal)? ' ':'') +  ((signal)? 'SIGNAL: ' + signal : '')) : undefined) }
+        err = { message: ((code || signal) ? (((code) ? 'CODE: ' + code : '') + ((code && signal) ? ' ' : '') + ((signal) ? 'SIGNAL: ' + signal : '')) : undefined) }
         socketutil.SSHerror('STREAM CLOSE', err)
         conn.end()
       })
@@ -186,7 +187,7 @@ io.on('connection', function (socket) {
 
   conn.on('end', function (err) { socketutil.SSHerror('CONN END BY HOST', err) })
   conn.on('close', function (err) { socketutil.SSHerror('CONN CLOSE', err) })
-  conn.on('error', function (err) { socketutil.SSHerror('CONN ERROR', err ) })
+  conn.on('error', function (err) { socketutil.SSHerror('CONN ERROR', err) })
 
   conn.on('keyboard-interactive', function (name, instructions, instructionsLang, prompts, finish) {
     debugWebSSH2('Connection :: keyboard-interactive')
