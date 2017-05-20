@@ -1,5 +1,5 @@
 var sessionLogEnable = false
-var sessionLog, sessionFooter, logDate, currentDate, myFile
+var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
 // replay password to server, requires
 function replayCredentials () {
@@ -84,6 +84,10 @@ socket.on('connect', function () {
     document.title = data
   }).on('status', function (data) {
     document.getElementById('status').innerHTML = data
+  }).on('ssherror', function (data) {
+    document.getElementById('status').innerHTML = data
+    document.getElementById('status').style.backgroundColor = 'red'
+    errorExists = true
   }).on('headerBackground', function (data) {
     document.getElementById('header').style.backgroundColor = data
   }).on('header', function (data) {
@@ -105,12 +109,16 @@ socket.on('connect', function () {
     if (sessionLogEnable) {
       sessionLog = sessionLog + data
     }
-  })// .on('disconnect', function (err) {
-    // document.getElementById('status').style.backgroundColor = 'red'
-    // document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED' + err
-    // socket.io.reconnection(false)
-  // })//.on('error', function (err) {
-    // document.getElementById('status').style.backgroundColor = 'red'
-    // document.getElementById('status').innerHTML = 'ERROR ' + err
-  // })
+  }).on('disconnect', function (err) {
+    if (!errorExists) {
+      document.getElementById('status').style.backgroundColor = 'red'
+      document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED: ' + err
+    }
+    socket.io.reconnection(false)
+  }).on('error', function (err) {
+    if (!errorExists) {
+      document.getElementById('status').style.backgroundColor = 'red'
+      document.getElementById('status').innerHTML = 'ERROR: ' + err
+    }
+  })
 })
