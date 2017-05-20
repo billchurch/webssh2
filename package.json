@@ -29,7 +29,7 @@
   "dependencies": {
     "basic-auth": "^1.1.0",
     "colors": "^1.1.2",
-    "debug": "^2.6.7",
+    "debug": "^2.6.8",
     "express": "^4.15.3",
     "express-session": "^1.15.3",
     "read-config": "^1.6.0",
@@ -42,6 +42,7 @@
     "test": "snyk test"
   },
   "devDependencies": {
+    "bithound": "^1.7.0",
     "snyk": "^1.30.1"
   }
 }
