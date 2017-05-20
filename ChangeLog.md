@@ -5,10 +5,16 @@
 - Snyk, Bithound, Travis CI
 - Cross platform improvements (path mappings)
 - Session fixup between Express and Socket.io
+- env variable `DEBUG=ssh2` will put the `ssh2` module into debug mode
+- env variable `debug=WebSSH2` will output additional debug messages for functions
+and events in the application (not including the ssh2 module debug)
 
 ### Changed
+- erorr handling in public/client.js
 
 ### Fixed
+- Multiple errors may ovewrite status bar which would cause confusion as to what originally caused the error. Example, ssh server disconnects which prompts a cascade of events (conn.on('end'), socket.on('disconnect'), conn.on('close')) and the original reason (conn.on('end')) would be lost and the user would erroneously receive a WEBSOCKET error as the last event to fire would be the websocket connection closing from the app.
+- ensure ssh session is closed when a browser disconnects from the websocket
 
 ## [0.0.5] - 2017-0323
 ### Added
