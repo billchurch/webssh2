@@ -11,7 +11,6 @@ var path = require('path')
 var SSH = require('ssh2').Client
 var config = require('read-config')(path.join(__dirname, 'config.json'))
 var debug = require('debug')
-var dataBuffer = ''
 var util = require('./util')
 var session = require('express-session')({
   secret: config.session.secret,
@@ -19,7 +18,9 @@ var session = require('express-session')({
   resave: true,
   saveUninitialized: false
 })
-var LogPrefix, termCols, termRows, myError
+var termCols, termRows, myError
+// var LogPrefix
+// var dataBuffer = ''
 
 var expressOptions = {
   dotfiles: 'ignore',
@@ -73,7 +74,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
   config.header.text = req.query.header || config.header.text
   config.header.background = req.query.headerBackground || config.header.background
   console.log('webssh2 Login: user=' + req.session.username + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.sessionID + ' allowreplay=' + req.headers.allowreplay)
-  LogPrefix = req.session.username + '@' + req.ip + ' ssh://' + config.ssh.host + ':' + config.ssh.port + '/' + req.sessionID
+  // LogPrefix = req.session.username + '@' + req.ip + ' ssh://' + config.ssh.host + ':' + config.ssh.port + '/' + req.sessionID
   // console.log('Headers: ' + JSON.stringify(req.headers))
   config.options.allowreplay = req.headers.allowreplay
 })
@@ -111,7 +112,7 @@ io.on('connection', function (socket) {
     socket.emit('status', 'SSH CONNECTION ESTABLISHED')
     socket.emit('statusBackground', config.header.background)
     socket.emit('allowreplay', config.options.allowreplay)
-  
+
     conn.shell({
       term: config.ssh.term,
       cols: termCols,
@@ -184,7 +185,7 @@ io.on('connection', function (socket) {
     console.log('Connection :: keyboard-interactive')
     finish([socket.request.session.userpassword])
   })
-    if (socket.request.session.username && socket.request.session.userpassword) {
+  if (socket.request.session.username && socket.request.session.userpassword) {
     conn.connect({
       host: config.ssh.host,
       port: config.ssh.port,

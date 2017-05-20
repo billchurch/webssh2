@@ -1,16 +1,16 @@
-var colors = require('colors');
+var colors = require('colors')
 var Auth = require('basic-auth')
 
 console.warn = makeColorConsole(console.warn, 'yellow')
 console.error = makeColorConsole(console.error, 'red')
 
-function makeColorConsole(fct, color){
-  return function(){
-    for (var i in arguments)
-      if (arguments[i] instanceof Object)
-        arguments[i] = sys.inspect(arguments[i]);
-    fct(Array.prototype.join.call(arguments," ")[color]);
-  };
+function makeColorConsole (fct, color) {
+  return function () {
+    for (var i in arguments) {
+      if (arguments[i] instanceof Object) { arguments[i] = sys.inspect(arguments[i]) }
+    }
+    fct(Array.prototype.join.call(arguments, ' ')[color])
+  }
 }
 
 exports.basicAuth = function (req, res, next) {

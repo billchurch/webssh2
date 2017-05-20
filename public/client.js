@@ -1,7 +1,5 @@
-var sessionLog,
-  sessionLogEnable = false,
-  sessionFooter,
-  logDate
+var sessionLogEnable = false
+var sessionLog, sessionFooter, logDate, currentDate, myFile
 
 // replay password to server, requires
 function replayCredentials () {
@@ -56,21 +54,20 @@ function downloadLog () {
 document.getElementById('downloadLog').style.display = 'none'
 document.getElementById('credentials').style.display = 'none'
 
-var terminalContainer = document.getElementById('terminal-container'),
-  term = new Terminal({
-    cursorBlink: true
-  }),
-  socket,
-  termid
+var terminalContainer = document.getElementById('terminal-container')
+var term = new Terminal({
+  cursorBlink: true
+})
+var socket, termid
 term.open(terminalContainer, {
   focus: true
 })
 term.fit()
 
 if (document.location.pathname) {
-  var parts = document.location.pathname.split('/'),
-    base = parts.slice(0, parts.length - 1).join('/') + '/',
-    resource = base.substring(1) + 'socket.io'
+  var parts = document.location.pathname.split('/')
+  var base = parts.slice(0, parts.length - 1).join('/') + '/'
+  var resource = base.substring(1) + 'socket.io'
   socket = io.connect(null, {
     resource: resource
   })
