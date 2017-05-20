@@ -1,4 +1,4 @@
-# WebSSH2 [![Build Status](https://travis-ci.org/billchurch/WebSSH2.svg?branch=master)](https://travis-ci.org/billchurch/WebSSH2)
+# WebSSH2 [![Build Status](https://travis-ci.org/billchurch/WebSSH2.svg?branch=master)](https://travis-ci.org/billchurch/WebSSH2) [![Known Vulnerabilities](https://snyk.io/test/github/billchurch/webssh2/badge.svg)](https://snyk.io/test/github/billchurch/webssh2)
 Web SSH Client using ssh2, socket.io, xterm.js, and express
 
 Bare bones example of using SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server. 
