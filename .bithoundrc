@@ -1,10 +1,16 @@
-"critics": {
-  "lint": {"engine": "standard"},
-  "wc": { "limit": 5000 }
-},
-  "dependencies": {
-    "mute": [
-      "read-config",
-      "socket.io"
-    ]
-  }
+{
+    "critics": {
+        "lint": {
+            "engine": "standard"
+        },
+        "wc": {
+            "limit": 5000
+        }
+    },
+    "dependencies": {
+        "mute": [
+            "read-config",
+            "socket.io"
+        ]
+    }
+}
