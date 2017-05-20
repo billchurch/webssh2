@@ -1,5 +1,5 @@
 "critics": {
-  "lint": {"engine": "standard"}
+  "lint": {"engine": "standard"},
   "wc": { "limit": 5000 }
 }
   "dependencies": {
