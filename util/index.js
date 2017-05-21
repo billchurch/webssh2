@@ -8,7 +8,7 @@ console.error = makeColorConsole(console.error, 'red')
 function makeColorConsole (fct, color) {
   return function () {
     for (var i in arguments) {
-      if (arguments[i] instanceof Object) { arguments[i] = sys.inspect(arguments[i]) }
+      if (arguments[i] instanceof Object) { arguments[i] = util.inspect(arguments[i]) }
     }
     fct(Array.prototype.join.call(arguments, ' ')[color])
   }
