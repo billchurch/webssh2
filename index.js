@@ -72,7 +72,6 @@ app.get('/ssh/host/:host?', function (req, res, next) {
   config.header.text = req.query.header || config.header.text
   config.header.background = req.query.headerBackground || config.header.background
   console.log('webssh2 Login: user=' + req.session.username + ' from=' + req.ip + ' host=' + config.ssh.host + ' port=' + config.ssh.port + ' sessionID=' + req.sessionID + ' allowreplay=' + req.headers.allowreplay)
-  // LogPrefix = req.session.username + '@' + req.ip + ' ssh://' + config.ssh.host + ':' + config.ssh.port + '/' + req.sessionID
   debugWebSSH2('Headers: ' + colors.yellow(JSON.stringify(req.headers)))
   config.options.allowreplay = req.headers.allowreplay
 })
