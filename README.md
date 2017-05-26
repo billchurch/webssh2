@@ -68,6 +68,9 @@ config.json contains several options which may be specified to customize to your
 `options.challengeButton`
 * Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
 
+`algorithms`
+* cipher and hmac to negotiate with SSH server. Same as defined in [mscdex/ssh2](https://github.com/mscdex/ssh2)
+
 # Experimental client-side logging
 Clicking `Start logging` on the status bar will log all data to the client. A `Download log` option will appear after starting the logging. You may download at any time to the client. You may stop logging at any time my pressing the `Logging - STOP LOG`. Note that clicking the `Start logging` option again will cause the current log to be overwritten, so be sure to download first.
 
