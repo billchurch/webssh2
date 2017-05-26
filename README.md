@@ -32,44 +32,133 @@ headerBackground= - optional background color of header to display on page
 # Config File Options
 config.json contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
 
-`listen.ip` default `127.0.0.1`
-* IP address node should listen on for client connections.
+* **listen.ip** - _string_ - IP address node should listen on for client connections, defaults to `127.0.0.1`
 
-`listen.port` default `2222`
-* Port node should listen on for client connections.
+* **listen.port** - _integer_ - Port node should listen on for client connections, defaults to `2222`
 
-`user.name` default `null`
-* Specify user name to authenticate with.
+* **user.name** - _string_ - Specify user name to authenticate with. In normal cases this should be left to the default `null` setting.
 
-`user.password` default `null`
-* Specify password to authenticate with.
+* **user.password** - _string_ - Specify password to authenticate with. In normal cases this should be left to the default `null` setting.
 
-`ssh.host` default `null`
-* Specify host to connect to.
+* **ssh.host** - _string_ - Specify host to connect to. May be either hostname or IP address. Defaults to `null`.
 
-`ssh.port` default `22`
-* Specify SSH port to connect to.
+* **ssh.port** - _integer_ - Specify SSH port to connect to, defaults to `22`
 
-`ssh.term` default `xterm-color`
-* Specify terminal emulation to use.
+* **ssh.term** - _string_ - Specify terminal emulation to use, defaults to `xterm-color`
 
-`header.text`
-* Specify header text, defaults to `My Header` but may also be set to `null`.
+* **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`.
 
-`header.background`
-* Header background, defaults to `green`.
+* **header.background** - _string_ - Header background, defaults to `green`.
 
-`session.name`
-* Name of session ID cookie. it's not a horrible idea to make this something unique.
+* **session.name** - _string_ - Name of session ID cookie. it's not a horrible idea to make this something unique.
 
-`session.secret`
-* Secret key for cookie encryption. You should change this in production.
+* **session.secret** - _string_ - Secret key for cookie encryption. You should change this in production.
 
-`options.challengeButton`
-* Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
+* **options.challengeButton** - _boolean_ - Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
 
-`algorithms`
-* cipher and hmac to negotiate with SSH server. Same as defined in [mscdex/ssh2](https://github.com/mscdex/ssh2)
+* **algorithms** - _object_ - This option allows you to explicitly override the default transport layer algorithms used for the connection. Each value must be an array of valid algorithms for that category. The order of the algorithms in the arrays are important, with the most favorable being first. Valid keys:
+
+  * **kex** - _array_ - Key exchange algorithms.
+
+    * Default values:
+
+      1. ecdh-sha2-nistp256 **(node v0.11.14 or newer)**
+      2. ecdh-sha2-nistp384 **(node v0.11.14 or newer)**
+      3. ecdh-sha2-nistp521 **(node v0.11.14 or newer)**
+      4. diffie-hellman-group-exchange-sha256 **(node v0.11.12 or newer)**
+      5. diffie-hellman-group14-sha1
+
+    * Supported values:
+
+      * ecdh-sha2-nistp256 **(node v0.11.14 or newer)**
+      * ecdh-sha2-nistp384 **(node v0.11.14 or newer)**
+      * ecdh-sha2-nistp521 **(node v0.11.14 or newer)**
+      * diffie-hellman-group-exchange-sha256 **(node v0.11.12 or newer)**
+      * diffie-hellman-group14-sha1
+      * diffie-hellman-group-exchange-sha1 **(node v0.11.12 or newer)**
+      * diffie-hellman-group1-sha1
+
+  * **cipher** - _array_ - Ciphers.
+
+    * Default values:
+
+      1. aes128-ctr
+      2. aes192-ctr
+      3. aes256-ctr
+      4. aes128-gcm **(node v0.11.12 or newer)**
+      5. aes128-gcm@openssh.com **(node v0.11.12 or newer)**
+      6. aes256-gcm **(node v0.11.12 or newer)**
+      7. aes256-gcm@openssh.com **(node v0.11.12 or newer)**
+
+    * Supported values:
+
+      * aes128-ctr
+      * aes192-ctr
+      * aes256-ctr
+      * aes128-gcm **(node v0.11.12 or newer)**
+      * aes128-gcm@openssh.com **(node v0.11.12 or newer)**
+      * aes256-gcm **(node v0.11.12 or newer)**
+      * aes256-gcm@openssh.com **(node v0.11.12 or newer)**
+      * aes256-cbc
+      * aes192-cbc
+      * aes128-cbc
+      * blowfish-cbc
+      * 3des-cbc
+      * arcfour256
+      * arcfour128
+      * cast128-cbc
+      * arcfour
+
+  * **serverHostKey** - _array_ - Server host key formats. In server mode, this list must agree with the host private keys set in the `hostKeys` config setting.
+
+    * Default values:
+
+      1. ssh-rsa
+      2. ecdsa-sha2-nistp256 **(node v5.2.0 or newer)**
+      3. ecdsa-sha2-nistp384 **(node v5.2.0 or newer)**
+      4. ecdsa-sha2-nistp521 **(node v5.2.0 or newer)**
+
+    * Supported values:
+
+      * ssh-rsa
+      * ecdsa-sha2-nistp256 **(node v5.2.0 or newer)**
+      * ecdsa-sha2-nistp384 **(node v5.2.0 or newer)**
+      * ecdsa-sha2-nistp521 **(node v5.2.0 or newer)**
+      * ssh-dss
+
+  * **hmac** - _array_ - (H)MAC algorithms.
+
+    * Default values:
+
+      1. hmac-sha2-256
+      2. hmac-sha2-512
+      3. hmac-sha1
+
+    * Supported values:
+
+      * hmac-sha2-256
+      * hmac-sha2-512
+      * hmac-sha1
+      * hmac-md5
+      * hmac-sha2-256-96
+      * hmac-sha2-512-96
+      * hmac-ripemd160
+      * hmac-sha1-96
+      * hmac-md5-96
+
+  * **compress** - _array_ - Compression algorithms.
+
+    * Default values:
+
+      1. none
+      2. zlib@openssh.com
+      3. zlib
+
+    * Supported values:
+
+      * none
+      * zlib@openssh.com
+      * zlib
 
 # Experimental client-side logging
 Clicking `Start logging` on the status bar will log all data to the client. A `Download log` option will appear after starting the logging. You may download at any time to the client. You may stop logging at any time my pressing the `Logging - STOP LOG`. Note that clicking the `Start logging` option again will cause the current log to be overwritten, so be sure to download first.
