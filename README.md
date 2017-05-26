@@ -30,7 +30,7 @@ header= - optional header to display on page
 headerBackground= - optional background color of header to display on page 
 
 # Config File Options
-config.json contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
+`config.json` contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
 
 * **listen.ip** - _string_ - IP address node should listen on for client connections, defaults to `127.0.0.1`
 
