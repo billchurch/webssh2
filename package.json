@@ -39,10 +39,12 @@
   },
   "scripts": {
     "start": "node index",
-    "test": "snyk test"
+    "test": "snyk test",
+    "watch": "nodemon index.js"
   },
   "devDependencies": {
     "bithound": "^1.7.0",
+    "nodemon": "^1.11.0",
     "snyk": "^1.30.1"
   }
 }

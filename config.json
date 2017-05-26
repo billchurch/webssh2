@@ -10,17 +10,32 @@
   "ssh": {
     "host": null,
     "port": 22,
-    "term": "xterm-color",
+    "term": "xterm-color"
   },
   "header": {
     "text": "My Header",
     "background": "green"
   },
   "session": {
-    "name": "WebSSH2id",
+    "name": "WebSSH2",
     "secret": "mysecret"
   },
   "options": {
     "challengeButton": true
+  },
+  "algorithms": {
+    "cipher": [
+      "aes128-cbc",
+      "3des-cbc",
+      "aes256-cbc",
+      "aes128-ctr",
+      "aes192-ctr",
+      "aes256-ctr"
+    ],
+    "hmac": [
+      "hmac-sha1",
+      "hmac-sha1-96",
+      "hmac-md5-96"
+    ]
   }
 }
