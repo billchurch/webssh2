@@ -62,20 +62,20 @@ headerBackground= - optional background color of header to display on page
 
     * Default values:
 
-      1. ecdh-sha2-nistp256 **(node v0.11.14 or newer)**
-      2. ecdh-sha2-nistp384 **(node v0.11.14 or newer)**
-      3. ecdh-sha2-nistp521 **(node v0.11.14 or newer)**
-      4. diffie-hellman-group-exchange-sha256 **(node v0.11.12 or newer)**
+      1. ecdh-sha2-nistp256
+      2. ecdh-sha2-nistp384
+      3. ecdh-sha2-nistp521
+      4. diffie-hellman-group-exchange-sha256
       5. diffie-hellman-group14-sha1
 
     * Supported values:
 
-      * ecdh-sha2-nistp256 **(node v0.11.14 or newer)**
-      * ecdh-sha2-nistp384 **(node v0.11.14 or newer)**
-      * ecdh-sha2-nistp521 **(node v0.11.14 or newer)**
-      * diffie-hellman-group-exchange-sha256 **(node v0.11.12 or newer)**
+      * ecdh-sha2-nistp256
+      * ecdh-sha2-nistp384
+      * ecdh-sha2-nistp521
+      * diffie-hellman-group-exchange-sha256
       * diffie-hellman-group14-sha1
-      * diffie-hellman-group-exchange-sha1 **(node v0.11.12 or newer)**
+      * diffie-hellman-group-exchange-sha1
       * diffie-hellman-group1-sha1
 
   * **cipher** - _array_ - Ciphers.
@@ -86,10 +86,10 @@ headerBackground= - optional background color of header to display on page
       2. aes192-ctr
       3. aes256-ctr
       4. aes128-gcm
-      5. aes128-gcm@openssh.com
+      5. aes128-gcm\@openssh.com
       6. aes256-gcm
-      7. aes256-gcm@openssh.com
-      8. aes256-cbc
+      7. aes256-gcm\@openssh.com
+      8. aes256-cbc **legacy cipher for backward compatibility, should removed :+1:**
 
     * Supported values:
 
@@ -97,9 +97,9 @@ headerBackground= - optional background color of header to display on page
       * aes192-ctr
       * aes256-ctr
       * aes128-gcm
-      * aes128-gcm@openssh.com
+      * aes128-gcm\@openssh.com
       * aes256-gcm
-      * aes256-gcm@openssh.com
+      * aes256-gcm\@openssh.com
       * aes256-cbc
       * aes192-cbc
       * aes128-cbc
@@ -116,7 +116,7 @@ headerBackground= - optional background color of header to display on page
 
       1. hmac-sha2-256
       2. hmac-sha2-512
-      3. hmac-sha1
+      3. hmac-sha1 **legacy hmac for backward compatibility, should removed :+1:**
 
     * Supported values:
 

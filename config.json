@@ -45,6 +45,11 @@
       "hmac-sha2-256",
       "hmac-sha2-512",
       "hmac-sha1" // for some legacy systems
+    ],
+    "compress": [
+      "none",
+      "zlib@openssh.com",
+      "zlib"
     ]
   }
 }
