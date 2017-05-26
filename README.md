@@ -85,20 +85,21 @@ config.json contains several options which may be specified to customize to your
       1. aes128-ctr
       2. aes192-ctr
       3. aes256-ctr
-      4. aes128-gcm **(node v0.11.12 or newer)**
-      5. aes128-gcm@openssh.com **(node v0.11.12 or newer)**
-      6. aes256-gcm **(node v0.11.12 or newer)**
-      7. aes256-gcm@openssh.com **(node v0.11.12 or newer)**
+      4. aes128-gcm
+      5. aes128-gcm@openssh.com
+      6. aes256-gcm
+      7. aes256-gcm@openssh.com
+      8. aes256-cbc
 
     * Supported values:
 
       * aes128-ctr
       * aes192-ctr
       * aes256-ctr
-      * aes128-gcm **(node v0.11.12 or newer)**
-      * aes128-gcm@openssh.com **(node v0.11.12 or newer)**
-      * aes256-gcm **(node v0.11.12 or newer)**
-      * aes256-gcm@openssh.com **(node v0.11.12 or newer)**
+      * aes128-gcm
+      * aes128-gcm@openssh.com
+      * aes256-gcm
+      * aes256-gcm@openssh.com
       * aes256-cbc
       * aes192-cbc
       * aes128-cbc
@@ -108,23 +109,6 @@ config.json contains several options which may be specified to customize to your
       * arcfour128
       * cast128-cbc
       * arcfour
-
-  * **serverHostKey** - _array_ - Server host key formats. In server mode, this list must agree with the host private keys set in the `hostKeys` config setting.
-
-    * Default values:
-
-      1. ssh-rsa
-      2. ecdsa-sha2-nistp256 **(node v5.2.0 or newer)**
-      3. ecdsa-sha2-nistp384 **(node v5.2.0 or newer)**
-      4. ecdsa-sha2-nistp521 **(node v5.2.0 or newer)**
-
-    * Supported values:
-
-      * ssh-rsa
-      * ecdsa-sha2-nistp256 **(node v5.2.0 or newer)**
-      * ecdsa-sha2-nistp384 **(node v5.2.0 or newer)**
-      * ecdsa-sha2-nistp521 **(node v5.2.0 or newer)**
-      * ssh-dss
 
   * **hmac** - _array_ - (H)MAC algorithms.
 
