@@ -101,7 +101,7 @@ module.exports = function (socket) {
 
       socket.on('error', function (error) { debugWebSSH2('SOCKET ERROR: ' + JSON.stringify(error)) })
 
-      stream.on('data', function (d) { socket.emit('data', d.toString('binary')) })
+      stream.on('data', function (d) { socket.emit('data', d.toString('utf-8')) })
 
       stream.on('close', function (code, signal) {
         err = { message: ((code || signal) ? (((code) ? 'CODE: ' + code : '') + ((code && signal) ? ' ' : '') + ((signal) ? 'SIGNAL: ' + signal : '')) : undefined) }
