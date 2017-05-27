@@ -21,7 +21,9 @@ http://localhost:2222/ssh/host/127.0.0.1
 
 You will be prompted for credentials to use on the SSH server via HTTP Basic authentcaiton. This is to permit usage with some SSO systems that can replay credentials over HTTP basic.
 
-# Options (GET request vars)
+# Options
+
+## GET request vars
 
 * **port=** - _integer_ - port of SSH server (defaults to 22)
 
@@ -29,7 +31,11 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 * **headerBackground=** - _string_ - optional background color of header to display on page 
 
-# Config File Options
+## Headers
+
+* **allowreplay** - _boolean_ - Allow use of password replay feature, example `allowreplay: true`
+
+## Config File Options
 `config.json` contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
 
 * **listen.ip** - _string_ - IP address node should listen on for client connections, defaults to `127.0.0.1`
