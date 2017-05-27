@@ -12,7 +12,7 @@
 and events in the application (not including the ssh2 module debug)
 - using Grunt to pull js and css source files from other modules `npm run build` to rebuild these if changed or updated.
 - `useminified` option in `config.json` to enable using minified client side javascript (true) defaults to false (non-minified)
-- term= query option to specify TERM environment variable for host, valid strings are alpha-numeric with a hypen (validated). Otherwise the default ssh.term variable from `config.json` will be used.
+- sshterm= query option to specify TERM environment variable for host, valid strings are alpha-numeric with a hypen (validated). Otherwise the default ssh.term variable from `config.json` will be used.
 - validation for host (v4,v6,fqdn,hostname), port (integer 2-65535), and header (sanitized) from URL input
 
 ### Changed
