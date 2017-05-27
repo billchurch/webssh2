@@ -12605,7 +12605,7 @@ socket.on('connect', function () {
   }).on('statusBackground', function (data) {
     document.getElementById('status').style.backgroundColor = data
   }).on('allowreplay', function (data) {
-    if (data == true) {
+    if (data === true) {
       console.log('allowreplay: ' + data)
       document.getElementById('credentials').style.display = 'inline'
     } else {
