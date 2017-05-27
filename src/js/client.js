@@ -1,8 +1,9 @@
+/* global io, Terminal, Blob */
 var sessionLogEnable = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
 // replay password to server, requires
-function replayCredentials () {
+function replayCredentials () { // eslint-disable-line
   socket.emit('control', 'replayCredentials')
   console.log('replaying credentials')
   return false
@@ -10,7 +11,7 @@ function replayCredentials () {
 
 // Set variable to toggle log data from client/server to a varialble
 // for later download
-function toggleLog () {
+function toggleLog () { // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false
     document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>'
@@ -33,7 +34,7 @@ function toggleLog () {
 
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
-function downloadLog () {
+function downloadLog () { // eslint-disable-line
   myFile = 'WebSSH2-' + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + '.log'
     // regex should eliminate escape sequences from being logged.
   var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
@@ -58,7 +59,7 @@ var terminalContainer = document.getElementById('terminal-container')
 var term = new Terminal({
   cursorBlink: true
 })
-var socket, termid
+var socket, termid // eslint-disable-line
 term.open(terminalContainer, {
   focus: true
 })

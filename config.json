@@ -12,6 +12,7 @@
     "port": 22,
     "term": "xterm-color"
   },
+  "useminified": false,
   "header": {
     "text": "My Header",
     "background": "green"

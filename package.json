@@ -34,17 +34,31 @@
     "express-session": "^1.15.3",
     "read-config": "^1.6.0",
     "socket.io": "^1.6.0",
-    "ssh2": "^0.5.4",
-    "xterm": "^2.6.0"
+    "ssh2": "^0.5.4"
   },
   "scripts": {
     "start": "node index",
     "test": "snyk test",
-    "watch": "nodemon index.js"
+    "watch": "nodemon index.js",
+    "build": "grunt copy concat uglify",
+    "standard": "standard --verbose | snazzy"
   },
   "devDependencies": {
     "bithound": "^1.7.0",
+    "grunt": "^1.0.1",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-uglify": "^3.0.1",
     "nodemon": "^1.11.0",
-    "snyk": "^1.30.1"
+    "snazzy": "^7.0.0",
+    "snyk": "^1.30.1",
+    "standard": "^10.0.2",
+    "xterm": "^2.6.0"
+  },
+  "standard": {
+    "ignore": [
+      "public/webssh2.js",
+      "public/src/js/*.js"
+    ]
   }
 }

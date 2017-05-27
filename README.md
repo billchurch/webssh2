@@ -8,7 +8,7 @@ Bare bones example of using SSH2 as a client on a host to proxy a Websocket / So
 # Instructions
 To install:
 
-1. Clone to a location somewhere and `npm install`
+1. Clone to a location somewhere and `npm install --production`. If you want to develop and rebuild javascript and other files utilize `npm install` instead.
 
 2. If desired, edit config.json to change the listener to your liking. There are also some default options which may be definied for a few of the variables.
 
@@ -45,6 +45,8 @@ headerBackground= - optional background color of header to display on page
 * **ssh.port** - _integer_ - Specify SSH port to connect to, defaults to `22`
 
 * **ssh.term** - _string_ - Specify terminal emulation to use, defaults to `xterm-color`
+
+* **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`.
 
@@ -151,3 +153,7 @@ Clicking `Start logging` on the status bar will log all data to the client. A `D
 
 http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
 
+# Tips
+* If you want to add custom JavaScript to the browser client you can either modify `./public/client-(full|min).html` and add a **<script>** element or check out `Gulpfile.js` and add your custom javascript file to the concat task
+* BIG-IP Acess Policy Manager (APM) doesn't always care for minified javascript when run in portal mode. Be sure to Set `useminified` option in `config.json` to `false` for these environments
+* Set `useminified` option in `config.json` to `true` to utilize minified javascript 

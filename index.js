@@ -9,8 +9,6 @@ var server = require('http').Server(app)
 var io = require('socket.io')(server)
 var path = require('path')
 var config = require('read-config')(path.join(__dirname, 'config.json'))
-// var debug = require('debug')
-// var debugWebSSH2 = debug('WebSSH2')
 var myutil = require('./util')
 var socket = require('./socket/index.js')
 var session = require('express-session')({
@@ -40,7 +38,7 @@ app.use(myutil.basicAuth)
 app.disable('x-powered-by')
 
 app.get('/ssh/host/:host?', function (req, res, next) {
-  res.sendFile(path.join(path.join(__dirname, 'public', 'client.htm')))
+  res.sendFile(path.join(path.join(__dirname, 'public', (config.useminified) ? 'client-min.htm' : 'client-full.htm')))
   // capture and assign variables
   req.session.ssh = {
     host: req.params.host || config.ssh.host,
@@ -57,9 +55,6 @@ app.get('/ssh/host/:host?', function (req, res, next) {
 
 // static files
 app.use(express.static(path.join(__dirname, 'public'), expressOptions))
-app.use('/style', express.static(path.join(__dirname, 'public')))
-app.use('/src', express.static(path.join(__dirname, 'node_modules', 'xterm', 'dist')))
-app.use('/addons', express.static(path.join(__dirname, 'node_modules', 'xterm', 'dist', 'addons')))
 
 // express error handling
 app.use(function (req, res, next) {
