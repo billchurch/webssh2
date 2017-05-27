@@ -1,5 +1,5 @@
 # Change Log
-## [Unreleased]
+## [0.1.0] 2017-05-27
 ### Added
 - This ChangeLog.md file
 - Support for UTF-8 characters (thanks @bara666)
@@ -38,7 +38,7 @@ and events in the application (not including the ssh2 module debug)
 ### Removed
 - Express Static References directly to module source directories due to concatenating and minifying js/css
 
-## [0.0.5] - 2017-0323
+## [0.0.5] - 2017-03-23
 ### Added
 - Added experimental support for logging (see Readme)
 
