@@ -12,7 +12,7 @@
             "read-config",
             "socket.io"
         ]
-    }.
+    },
     "ignore": [
         "public/src/*"
     ]
