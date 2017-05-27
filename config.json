@@ -14,7 +14,7 @@
   },
   "useminified": false,
   "header": {
-    "text": "My Header",
+    "text": null,
     "background": "green"
   },
   "session": {

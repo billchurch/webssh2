@@ -2,6 +2,7 @@
 ## [Unreleased]
 ### Added
 - This ChangeLog.md file
+- Support for UTF-8 characters (thanks @bara666)
 - Snyk, Bithound, Travis CI
 - Cross platform improvements (path mappings)
 - Session fixup between Express and Socket.io
@@ -11,6 +12,8 @@
 and events in the application (not including the ssh2 module debug)
 - using Grunt to pull js and css source files from other modules `npm run build` to rebuild these if changed or updated.
 - `useminified` option in `config.json` to enable using minified client side javascript (true) defaults to false (non-minified)
+- term= query option to specify TERM environment variable for host, valid strings are alpha-numeric with a hypen (validated). Otherwise the default ssh.term variable from `config.json` will be used.
+- validation for host (v4,v6,fqdn,hostname), port (integer 2-65535), and header (sanatized) from URL input
 
 ### Changed
 - error handling in public/client.js
@@ -25,10 +28,12 @@ and events in the application (not including the ssh2 module debug)
 - sourcemaps of all minified code (in /public/src and /public/src/js)
 - renamed `client.htm` to `client-full.htm`
 - created `client-min.htm` to serve minified javascript
+- if header.text is null in config.json and header is not defined as a get parameter the Header will not be displayed. Both of these must be null / undefined and not specified as get parameters.
 
 ### Fixed
 - Multiple errors may ovewrite status bar which would cause confusion as to what originally caused the error. Example, ssh server disconnects which prompts a cascade of events (conn.on('end'), socket.on('disconnect'), conn.on('close')) and the original reason (conn.on('end')) would be lost and the user would erroneously receive a WEBSOCKET error as the last event to fire would be the websocket connection closing from the app.
 - ensure ssh session is closed when a browser disconnects from the websocket
+- if headerBackground is changed, status background is changed to the same color (typo, fixed)
 
 ### Removed
 - Express Static References directly to module source directories due to concatenating and minifying js/css

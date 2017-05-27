@@ -23,11 +23,11 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 # Options (GET request vars)
 
-port= - port of SSH server (defaults to 22)
+* **port=** - _integer_ - port of SSH server (defaults to 22)
 
-header= - optional header to display on page
+* **header=** - _string_ - optional header to display on page
 
-headerBackground= - optional background color of header to display on page 
+* **headerBackground=** - _string_ - optional background color of header to display on page 
 
 # Config File Options
 `config.json` contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
@@ -48,7 +48,7 @@ headerBackground= - optional background color of header to display on page
 
 * **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 
-* **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`.
+* **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.
 
 * **header.background** - _string_ - Header background, defaults to `green`.
 

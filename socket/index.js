@@ -51,13 +51,12 @@ module.exports = function (socket) {
   conn.on('ready', function () {
     console.log('webssh2 Login: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
     socket.emit('title', 'ssh://' + socket.request.session.ssh.host)
-    socket.emit('headerBackground', socket.request.session.ssh.header.background)
-    socket.emit('header', socket.request.session.ssh.header.name)
+    socket.request.session.ssh.header.background && socket.emit('headerBackground', socket.request.session.ssh.header.background)
+    socket.request.session.ssh.header.name && socket.emit('header', socket.request.session.ssh.header.name)
     socket.emit('footer', 'ssh://' + socket.request.session.username + '@' + socket.request.session.ssh.host + ':' + socket.request.session.ssh.port)
     socket.emit('status', 'SSH CONNECTION ESTABLISHED')
-    socket.emit('statusBackground', socket.request.session.ssh.header.background)
+    socket.emit('statusBackground', 'green')
     socket.emit('allowreplay', socket.request.session.ssh.allowreplay)
-
     conn.shell({
       term: socket.request.session.ssh.term,
       cols: termCols,

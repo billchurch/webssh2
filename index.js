@@ -11,6 +11,7 @@ var path = require('path')
 var config = require('read-config')(path.join(__dirname, 'config.json'))
 var myutil = require('./util')
 var socket = require('./socket/index.js')
+var validator = require('validator')
 var session = require('express-session')({
   secret: config.session.secret,
   name: config.session.name,
@@ -40,17 +41,21 @@ app.disable('x-powered-by')
 app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(__dirname, 'public', (config.useminified) ? 'client-min.htm' : 'client-full.htm')))
   // capture and assign variables
+  myHost = validator.isIP(req.params.host) ? req.params.host : undefined
+  console.log('req.params.host: ', myHost)
   req.session.ssh = {
-    host: req.params.host || config.ssh.host,
-    port: req.query.port || config.ssh.port,
+    host: validator.isIP(req.params.host + '') && req.params.host || validator.isFQDN(req.params.host) && req.params.host || /^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) && req.params.host || config.ssh.host,
+    port: validator.isInt(req.query.port + '', {min: 1, max: 65535}) && req.query.port || config.ssh.port,
     header: {
       name: req.query.header || config.header.text,
       background: req.query.headerBackground || config.header.background
     },
     algorithms: config.algorithms,
-    term: config.ssh.term,
-    allowreplay: req.headers.allowreplay || false
+    term: /^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) && req.query.sshterm || config.ssh.term,
+    allowreplay: validator.isBoolean(req.headers.allowreplay + '') || false
   }
+  req.session.ssh.header.name && validator.escape(req.session.ssh.header.name)
+  req.session.ssh.header.background && validator.escape(req.session.ssh.header.background)
 })
 
 // static files
