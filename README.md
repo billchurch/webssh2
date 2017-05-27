@@ -86,9 +86,9 @@ headerBackground= - optional background color of header to display on page
       2. aes192-ctr
       3. aes256-ctr
       4. aes128-gcm
-      5. aes128-gcm\@openssh.com
+      5. aes128-gcm@openssh.com
       6. aes256-gcm
-      7. aes256-gcm\@openssh.com
+      7. aes256-gcm@openssh.com
       8. aes256-cbc **legacy cipher for backward compatibility, should removed :+1:**
 
     * Supported values:
@@ -97,9 +97,9 @@ headerBackground= - optional background color of header to display on page
       * aes192-ctr
       * aes256-ctr
       * aes128-gcm
-      * aes128-gcm\@openssh.com
+      * aes128-gcm@openssh.com
       * aes256-gcm
-      * aes256-gcm\@openssh.com
+      * aes256-gcm@openssh.com
       * aes256-cbc
       * aes192-cbc
       * aes128-cbc
