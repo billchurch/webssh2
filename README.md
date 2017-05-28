@@ -36,7 +36,7 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 * **allowreplay** - _boolean_ - Allow use of password replay feature, example `allowreplay: true`
 
 ## Config File Options
-`config.json` contains several options which may be specified to customize to your needs, vs editing the javascript direclty. This is JSON format so mind your spacing, brackets, etc...
+`config.json` contains several options which may be specified to customize to your needs, vs editing the javascript directly. This is JSON format so mind your spacing, brackets, etc...
 
 * **listen.ip** - _string_ - IP address node should listen on for client connections, defaults to `127.0.0.1`
 
