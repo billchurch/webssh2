@@ -10,17 +10,47 @@
   "ssh": {
     "host": null,
     "port": 22,
-    "term": "xterm-color",
+    "term": "xterm-color"
   },
+  "useminified": false,
   "header": {
-    "text": "My Header",
+    "text": null,
     "background": "green"
   },
   "session": {
-    "name": "WebSSH2id",
+    "name": "WebSSH2",
     "secret": "mysecret"
   },
   "options": {
     "challengeButton": true
+  },
+  "algorithms": {
+    "kex": [
+      "ecdh-sha2-nistp256",
+      "ecdh-sha2-nistp384",
+      "ecdh-sha2-nistp521",
+      "diffie-hellman-group-exchange-sha256",
+      "diffie-hellman-group14-sha1"
+    ],
+    "cipher": [
+      "aes128-ctr",
+      "aes192-ctr",
+      "aes256-ctr",
+      "aes128-gcm",
+      "aes128-gcm@openssh.com",
+      "aes256-gcm",
+      "aes256-gcm@openssh.com",
+      "aes256-cbc" // for some legacy systems
+    ],
+    "hmac": [
+      "hmac-sha2-256",
+      "hmac-sha2-512",
+      "hmac-sha1" // for some legacy systems
+    ],
+    "compress": [
+      "none",
+      "zlib@openssh.com",
+      "zlib"
+    ]
   }
 }
