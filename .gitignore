@@ -3,6 +3,9 @@ logs
 *.log
 npm-debug.log*
 
+# Editor preference files
+*.sublime-*
+
 # Runtime data
 pids
 *.pid

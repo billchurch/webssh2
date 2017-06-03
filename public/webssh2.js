@@ -12520,19 +12520,27 @@ function replayCredentials () { // eslint-disable-line
 function toggleLog () { // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false
-    document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>'
+    document.getElementById('toggleLog').innerHTML =
+      '<a class="toggleLog" href="javascript:void(0);" onclick="toggleLog();">Start Log</a>'
     console.log('stopping log, ' + sessionLogEnable)
     currentDate = new Date()
-    sessionLog = sessionLog + '\r\n\r\nLog End for ' + sessionFooter + ': ' + currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' + currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n'
+    sessionLog = sessionLog + '\r\n\r\nLog End for ' + sessionFooter + ': ' +
+      currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' +
+      currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' +
+      currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n'
     logDate = currentDate
     return false
   } else {
     sessionLogEnable = true
-    document.getElementById('toggleLog').innerHTML = '<a class="toggleLog" href="javascript:void(0)" onclick="toggleLog();">Logging - STOP LOG</a>'
+    document.getElementById('toggleLog').innerHTML =
+      '<a class="toggleLog" href="javascript:void(0)" onclick="toggleLog();">Logging - STOP LOG</a>'
     document.getElementById('downloadLog').style.display = 'inline'
     console.log('starting log, ' + sessionLogEnable)
     currentDate = new Date()
-    sessionLog = 'Log Start for ' + sessionFooter + ': ' + currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' + currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n\r\n'
+    sessionLog = 'Log Start for ' + sessionFooter + ': ' +
+      currentDate.getFullYear() + '/' + (currentDate.getMonth() + 1) + '/' +
+      currentDate.getDate() + ' @ ' + currentDate.getHours() + ':' +
+      currentDate.getMinutes() + ':' + currentDate.getSeconds() + '\r\n\r\n'
     logDate = currentDate
     return false
   }
@@ -12541,7 +12549,9 @@ function toggleLog () { // eslint-disable-line
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
 function downloadLog () { // eslint-disable-line
-  myFile = 'WebSSH2-' + logDate.getFullYear() + (logDate.getMonth() + 1) + logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() + logDate.getSeconds() + '.log'
+  myFile = 'WebSSH2-' + logDate.getFullYear() + (logDate.getMonth() + 1) +
+    logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() +
+    logDate.getSeconds() + '.log'
     // regex should eliminate escape sequences from being logged.
   var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
     type: 'text/plain'
@@ -12619,7 +12629,8 @@ socket.on('connect', function () {
   }).on('disconnect', function (err) {
     if (!errorExists) {
       document.getElementById('status').style.backgroundColor = 'red'
-      document.getElementById('status').innerHTML = 'WEBSOCKET SERVER DISCONNECTED: ' + err
+      document.getElementById('status').innerHTML =
+        'WEBSOCKET SERVER DISCONNECTED: ' + err
     }
     socket.io.reconnection(false)
   }).on('error', function (err) {

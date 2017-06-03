@@ -1,7 +1,7 @@
 # WebSSH2 [![GitHub version](https://badge.fury.io/gh/billchurch%2FWebSSH2.svg)](https://badge.fury.io/gh/billchurch%2FWebSSH2) [![Build Status](https://travis-ci.org/billchurch/WebSSH2.svg?branch=master)](https://travis-ci.org/billchurch/WebSSH2) [![Known Vulnerabilities](https://snyk.io/test/github/billchurch/webssh2/badge.svg)](https://snyk.io/test/github/billchurch/webssh2) [![bitHound Overall Score](https://www.bithound.io/github/billchurch/WebSSH2/badges/score.svg)](https://www.bithound.io/github/billchurch/WebSSH2) [![bitHound Dependencies](https://www.bithound.io/github/billchurch/WebSSH2/badges/dependencies.svg)](https://www.bithound.io/github/billchurch/WebSSH2/master/dependencies/npm) [![NSP Status](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764/badge)](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764)
 Web SSH Client using ssh2, socket.io, xterm.js, and express
 
-Bare bones example of using SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server. 
+Bare bones example of using SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server.
 
 <img width="1044" alt="Screenshot 2017-03-23 18.13.59" src="https://cloud.githubusercontent.com/assets/1668075/24272639/8ad4fef0-0ff4-11e7-8dd0-72b26605e467.png">
 
@@ -29,7 +29,7 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 * **header=** - _string_ - optional header to display on page
 
-* **headerBackground=** - _string_ - optional background color of header to display on page 
+* **headerBackground=** - _string_ - optional background color of header to display on page
 
 ## Headers
 
@@ -62,7 +62,7 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 * **session.secret** - _string_ - Secret key for cookie encryption. You should change this in production.
 
-* **options.challengeButton** - _boolean_ - Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command. 
+* **options.challengeButton** - _boolean_ - Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command.
 
 * **algorithms** - _object_ - This option allows you to explicitly override the default transport layer algorithms used for the connection. Each value must be an array of valid algorithms for that category. The order of the algorithms in the arrays are important, with the most favorable being first. Valid keys:
 
@@ -152,6 +152,11 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
       * zlib@openssh.com
       * zlib
 
+* **serverlog.client** - _boolean_ - Enables client command logging on server log (console.log). Very simple at this point, buffers data from client until it receives a line-feed then dumps buffer to console.log with session information for tracking. Will capture anything send from client, including passwords, so use for testing only... Default: false. Example:
+  * _serverlog.client: GcZDThwA4UahDiKO2gkMYd7YPIfVAEFW/mnf0NUugLMFRHhsWAAAA host: 192.168.99.80 command: ls -lat_
+
+* **serverlog.server** - _boolean_ - not implemented, default: false.
+
 # Experimental client-side logging
 Clicking `Start logging` on the status bar will log all data to the client. A `Download log` option will appear after starting the logging. You may download at any time to the client. You may stop logging at any time my pressing the `Logging - STOP LOG`. Note that clicking the `Start logging` option again will cause the current log to be overwritten, so be sure to download first.
 
@@ -162,4 +167,4 @@ http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=re
 # Tips
 * If you want to add custom JavaScript to the browser client you can either modify `./public/client-(full|min).html` and add a **<script>** element or check out `Gulpfile.js` and add your custom javascript file to the concat task
 * BIG-IP Acess Policy Manager (APM) doesn't always care for minified javascript when run in portal mode. Be sure to Set `useminified` option in `config.json` to `false` for these environments
-* Set `useminified` option in `config.json` to `true` to utilize minified javascript 
+* Set `useminified` option in `config.json` to `true` to utilize minified javascript

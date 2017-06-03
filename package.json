@@ -1,6 +1,6 @@
 {
   "name": "WebSSH2",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "ignore": [
     ".gitignore"
   ],
@@ -32,8 +32,9 @@
     "debug": "^2.6.8",
     "express": "^4.15.3",
     "express-session": "^1.15.3",
+    "morgan": "^1.8.2",
     "read-config": "^1.6.0",
-    "socket.io": "^1.6.0",
+    "socket.io": "^1.7.4",
     "ssh2": "^0.5.4",
     "validator": "^7.0.0"
   },

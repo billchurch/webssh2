@@ -1,4 +1,18 @@
 # Change Log
+## [0.1.1] 2017-06-03
+### Added
+- `serverlog.client` and `serverlog.server` options added to `config.json` to enable logging of client commands to server log (only client portion implemented at this time)
+- morgan express middleware for logging
+### Changed
+- Updated socket.io to 1.7.4
+- continued refactoring, breaking up `index.js`
+- revised error handling methods
+- revised session termination methods
+### Fixed
+### Removed
+- color console decorations from `util/index.js`
+- SanatizeHeaders function from `util/index.js`
+
 ## [0.1.0] 2017-05-27
 ### Added
 - This ChangeLog.md file
@@ -6,7 +20,7 @@
 - Snyk, Bithound, Travis CI
 - Cross platform improvements (path mappings)
 - Session fixup between Express and Socket.io
-- Session secret settings in config.json
+- Session secret settings in `config.json`
 - env variable `DEBUG=ssh2` will put the `ssh2` module into debug mode
 - env variable `DEBUG=WebSSH2` will output additional debug messages for functions
 and events in the application (not including the ssh2 module debug)
@@ -19,7 +33,7 @@ and events in the application (not including the ssh2 module debug)
 - error handling in public/client.js
 - moved socket.io operations to their own file /socket/index.js, more changes like this to come (./socket/index.js)
 - all session based variables are now under the req.session.ssh property or socket.request.ssh (./index.js)
-- moved SSH algorithms to config.json and defined as a session variable (..session.ssh.algorithms)
+- moved SSH algorithms to `config.json` and defined as a session variable (..session.ssh.algorithms)
 -- prep for future feature to define algorithms in header or some other method to enable separate ciphers per host
 - minified and combined all js files to a single js in `./public/webssh2.min.js` also included a sourcemap `./public/webssh2.min.js` which maps to `./public/webssh2.js` for easier troubleshooting.
 - combined all css files to a single css in `./public/webssh2.css`
@@ -28,7 +42,7 @@ and events in the application (not including the ssh2 module debug)
 - sourcemaps of all minified code (in /public/src and /public/src/js)
 - renamed `client.htm` to `client-full.htm`
 - created `client-min.htm` to serve minified javascript
-- if header.text is null in config.json and header is not defined as a get parameter the Header will not be displayed. Both of these must be null / undefined and not specified as get parameters.
+- if header.text is null in `config.json` and header is not defined as a get parameter the Header will not be displayed. Both of these must be null / undefined and not specified as get parameters.
 
 ### Fixed
 - Multiple errors may overwrite status bar which would cause confusion as to what originally caused the error. Example, ssh server disconnects which prompts a cascade of events (conn.on('end'), socket.on('disconnect'), conn.on('close')) and the original reason (conn.on('end')) would be lost and the user would erroneously receive a WEBSOCKET error as the last event to fire would be the websocket connection closing from the app.
