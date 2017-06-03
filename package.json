@@ -33,7 +33,7 @@
     "express": "^4.15.3",
     "express-session": "^1.15.3",
     "read-config": "^1.6.0",
-    "socket.io": "^1.6.0",
+    "socket.io": "^2.0.2",
     "ssh2": "^0.5.4",
     "validator": "^7.0.0"
   },
