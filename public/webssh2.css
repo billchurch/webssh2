@@ -1,3 +1,8 @@
+@font-face{
+    font-family: 'Noto Mono for Powerline';
+    src: url('Noto Mono for Powerline.ttf');
+}
+
 body {
     font-family: helvetica, sans-serif, arial;
     font-size: 1em;
@@ -163,8 +168,8 @@ a.toggleLog {
 .terminal {
     background-color: #000;
     color: #fff;
-    font-family: courier-new, courier, monospace;
-    font-feature-settings: "liga" 0;
+    font-family: 'Noto Mono for Powerline', courier-new, courier, monospace;
+    #font-feature-settings: "liga" 0;
     position: relative;
 }
 
