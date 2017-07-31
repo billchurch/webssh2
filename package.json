@@ -1,6 +1,6 @@
 {
   "name": "WebSSH2",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "ignore": [
     ".gitignore"
   ],
@@ -35,7 +35,7 @@
     "morgan": "^1.8.2",
     "read-config": "^1.6.0",
     "socket.io": "^1.7.4",
-    "ssh2": "^0.5.4",
+    "ssh2": "^0.5.5",
     "validator": "^7.0.0"
   },
   "scripts": {
@@ -43,7 +43,8 @@
     "test": "snyk test",
     "watch": "nodemon index.js",
     "build": "grunt copy concat uglify",
-    "standard": "standard --verbose | snazzy"
+    "standard": "standard --verbose | snazzy",
+    "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
   "devDependencies": {
     "bithound": "^1.7.0",
@@ -55,7 +56,7 @@
     "snazzy": "^7.0.0",
     "snyk": "^1.30.1",
     "standard": "^10.0.2",
-    "xterm": "^2.6.0"
+    "xterm": "^2.8.1"
   },
   "standard": {
     "ignore": [

@@ -1,4 +1,13 @@
 # Change Log
+## [0.1.2] 2017-07-31
+### Changed
+- Updated xterm.js to 2.8.1 from 2.6.0
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.8.1
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.8.0
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.7.0
+- Updated ssh2 to 0.5.5 to keep current, no fixes impacting WebSSH2
+  - ssh-streams to 0.1.19 from 0.1.16
+
 ## [0.1.1] 2017-06-03
 ### Added
 - `serverlog.client` and `serverlog.server` options added to `config.json` to enable logging of client commands to server log (only client portion implemented at this time)
