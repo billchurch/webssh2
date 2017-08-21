@@ -54,7 +54,7 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 * **ssh.term** - _string_ - Specify terminal emulation to use, defaults to `xterm-color`
 
-* **ssh.readyTimeout - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000.
+* **ssh.readyTimeout** - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000.
 
 * **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 
