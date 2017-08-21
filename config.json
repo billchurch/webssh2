@@ -10,7 +10,8 @@
   "ssh": {
     "host": null,
     "port": 22,
-    "term": "xterm-color"
+    "term": "xterm-color",
+    "readyTimeout": 20000
   },
   "useminified": false,
   "header": {

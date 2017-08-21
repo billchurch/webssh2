@@ -29,14 +29,14 @@
   "dependencies": {
     "basic-auth": "^1.1.0",
     "colors": "^1.1.2",
-    "debug": "^2.6.8",
-    "express": "^4.15.3",
-    "express-session": "^1.15.3",
+    "debug": "^3.0.0",
+    "express": "^4.15.4",
+    "express-session": "^1.15.5",
     "morgan": "^1.8.2",
     "read-config": "^1.6.0",
     "socket.io": "^1.7.4",
     "ssh2": "^0.5.5",
-    "validator": "^7.0.0"
+    "validator": "^8.0.0"
   },
   "scripts": {
     "start": "node index",
@@ -54,9 +54,9 @@
     "grunt-contrib-uglify": "^3.0.1",
     "nodemon": "^1.11.0",
     "snazzy": "^7.0.0",
-    "snyk": "^1.30.1",
-    "standard": "^10.0.2",
-    "xterm": "^2.8.1"
+    "snyk": "^1.39.1",
+    "standard": "^10.0.3",
+    "xterm": "^2.9.2"
   },
   "standard": {
     "ignore": [

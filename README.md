@@ -31,6 +31,8 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 * **headerBackground=** - _string_ - optional background color of header to display on page
 
+* **readyTimeout=** - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000. **Enforced Values:** Min: 1, Max: 300000
+
 ## Headers
 
 * **allowreplay** - _boolean_ - Allow use of password replay feature, example `allowreplay: true`
@@ -51,6 +53,8 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 * **ssh.port** - _integer_ - Specify SSH port to connect to, defaults to `22`
 
 * **ssh.term** - _string_ - Specify terminal emulation to use, defaults to `xterm-color`
+
+* **ssh.readyTimeout - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000.
 
 * **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 

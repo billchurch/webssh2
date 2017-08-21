@@ -1,12 +1,27 @@
 # Change Log
 ## [0.1.2] 2017-07-31
+### Added
+- ssh.readyTimeout option in config.json (time in ms, default 20000, 20sec)
 ### Changed
-- Updated xterm.js to 2.8.1 from 2.6.0
+- Updated xterm.js to 2.9.2 from 2.6.0
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.9.2
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.9.1
+  - See https://github.com/sourcelair/xterm.js/releases/tag/2.9.0
   - See https://github.com/sourcelair/xterm.js/releases/tag/2.8.1
   - See https://github.com/sourcelair/xterm.js/releases/tag/2.8.0
   - See https://github.com/sourcelair/xterm.js/releases/tag/2.7.0
 - Updated ssh2 to 0.5.5 to keep current, no fixes impacting WebSSH2
   - ssh-streams to 0.1.19 from 0.1.16
+- Updated validator.js to 8.0.0, no fixes impacting WebSSH2
+  - https://github.com/chriso/validator.js/releases/tag/8.0.0
+- Updated Express to 4.15.4, no fixes impacting WebSSH2
+  - https://github.com/expressjs/express/releases/tag/4.15.4
+- Updated Express-session to 1.15.5, no fixes impacting WebSSH2
+  - https://github.com/expressjs/session/releases/tag/v1.15.5
+- Updated Debug to 3.0.0, no fixes impacting WebSSH2
+  - https://github.com/visionmedia/debug/releases/tag/3.0.0
+- Running in strict mode ('use strict';)
+
 
 ## [0.1.1] 2017-06-03
 ### Added

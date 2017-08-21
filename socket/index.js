@@ -108,6 +108,7 @@ module.exports = function socket (socket) {
       password: socket.request.session.userpassword,
       tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
+      readyTimeout: socket.request.session.ssh.readyTimeout,
       debug: debug('ssh2')
     })
   } else {
