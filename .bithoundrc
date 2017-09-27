@@ -10,7 +10,9 @@
     "dependencies": {
         "mute": [
             "read-config",
-            "socket.io"
+            "socket.io",
+            "standard",
+            "bithound"
         ]
     },
     "ignore": [
