@@ -30,7 +30,7 @@
     "basic-auth": "^1.1.0",
     "colors": "^1.1.2",
     "debug": "^2.6.9",
-    "express": "^4.15.4",
+    "express": "^4.15.5",
     "express-session": "^1.15.5",
     "morgan": "^1.8.2",
     "read-config": "^1.6.0",

@@ -2,6 +2,7 @@
 ## [0.1.3] TBD
 ### Changed
 - Revert to debug@2.6.9 to eliminate ReDoS in %o formatter
+- Upgrade Express to 4.15.5
 ## [0.1.2] 2017-07-31
 ### Added
 - ssh.readyTimeout option in config.json (time in ms, default 20000, 20sec)
