@@ -1,5 +1,5 @@
 {
-  "name": "WebSSH2",
+  "name": "webssh2",
   "version": "0.1.2",
   "ignore": [
     ".gitignore"
