@@ -27,9 +27,9 @@
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
   "dependencies": {
-    "basic-auth": "^1.1.0",
+    "basic-auth": "^2.0.0",
     "colors": "^1.1.2",
-    "debug": "^2.6.9",
+    "debug": "^3.1.0",
     "express": "^4.15.5",
     "express-session": "^1.15.5",
     "morgan": "^1.8.2",
