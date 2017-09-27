@@ -16,6 +16,8 @@
         ]
     },
     "ignore": [
-        "public/src/**"
+        "public/src/**",
+        "public/webssh2.js",
+        "public/webssh2.min.js"
     ]
 }
