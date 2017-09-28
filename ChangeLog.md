@@ -1,5 +1,5 @@
 # Change Log
-## [0.1.3] TBD
+## [0.1.3] 2017-09-28
 ### Changed
 - Upgrade to debug@3.1 to eliminate ReDoS in %o formatter
 - Upgrade Express to 4.15.5 for ReDOS
