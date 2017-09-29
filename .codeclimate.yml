@@ -1,0 +1,32 @@
+---
+engines:
+  csslint:
+    enabled: true
+  duplication:
+    exclude_paths:
+      - "public/src/**"
+      - "public/webssh2.js"
+      - "public/webssh2.min.js"
+    enabled: true
+    config:
+      languages:
+      - ruby
+      - javascript
+      - python
+      - php
+  eslint:
+    enabled: true
+  fixme:
+    enabled: true
+ratings:
+  paths:
+  - "**.css"
+  - "**.inc"
+  - "**.js"
+  - "**.jsx"
+  - "**.module"
+  - "**.php"
+  - "**.py"
+  - "**.rb"
+exclude_paths:
+- node_modules/
