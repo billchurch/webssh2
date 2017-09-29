@@ -54,9 +54,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
       req.query.readyTimeout) || config.ssh.readyTimeout
   }
-  req.session.ssh.header.name && validator.escape(req.session.ssh.header.name)
-  req.session.ssh.header.background &&
-    validator.escape(req.session.ssh.header.background)
+  if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
+  if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
 })
 
 // express error handling
@@ -73,7 +72,7 @@ app.use(function (err, req, res, next) {
 // expose express session with socket.request.session
 io.use(function (socket, next) {
   (socket.request.res) ? session(socket.request, socket.request.res, next)
-    : next()
+    : next(next)
 })
 
 // bring up socket
