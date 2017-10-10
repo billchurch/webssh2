@@ -21,6 +21,26 @@ http://localhost:2222/ssh/host/127.0.0.1
 
 You will be prompted for credentials to use on the SSH server via HTTP Basic authentcaiton. This is to permit usage with some SSO systems that can replay credentials over HTTP basic.
 
+# Docker Instructions
+
+Modify config.json
+
+```json
+{
+  "listen": {
+    "ip": "0.0.0.0",
+    "port": 2222
+  }
+}
+```
+
+Build and run
+
+```bash
+docker build -t webssh2 .
+docker run --name webssh2 -d -p 2222:2222 webssh2
+```
+
 # Options
 
 ## GET request vars
