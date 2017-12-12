@@ -104,7 +104,7 @@ module.exports = function socket (socket) {
     finish([socket.request.session.userpassword])
   })
   if (socket.request.session.username && socket.request.session.userpassword && socket.request.session.ssh) {
-    console.log('hostkeys: ' + hostkeys[0].[0])
+    // console.log('hostkeys: ' + hostkeys[0].[0])
     conn.connect({
       host: socket.request.session.ssh.host,
       port: socket.request.session.ssh.port,
