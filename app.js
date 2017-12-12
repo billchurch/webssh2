@@ -53,7 +53,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       server: config.serverlog.server || false
     },
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
-      req.query.readyTimeout) || config.ssh.readyTimeout
+      req.query.readyTimeout) || config.ssh.readyTimeout,
+    verify: config.verify || false
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
   if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)

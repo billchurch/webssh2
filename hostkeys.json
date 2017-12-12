@@ -1,8 +1,4 @@
-[
-  {
-    "localhost": "ff1d6fd1e63bf07ed1c801692f9e5a44e57cb9ce"
-  },
-  {
-    "127.0.0.1": "ff1d6fd1e63bf07ed1c801692f9e5a44e57cb9ce"
-  }
-]
+{
+   "localhost": "ff1d6fd1e63bf07ed1c801692f9e5a44e57cb9ce",
+   "127.0.0.1": "ff1d6fd1e63bf07ed1c801692f9e5a44e57cb9ce"
+}

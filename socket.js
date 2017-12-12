@@ -4,7 +4,8 @@
 var debug = require('debug')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
-var hostkeys = require('./hostkeys.json')
+var fs = require('fs')
+var hostkeys = JSON.parse(fs.readFileSync('./hostkeys.json', 'utf8'))
 var termCols, termRows
 
 console.log(JSON.stringify(hostkeys))
@@ -115,11 +116,19 @@ module.exports = function socket (socket) {
       readyTimeout: socket.request.session.ssh.readyTimeout,
       hostHash: 'sha1',
       hostVerifier: function (hash) {
-        if (hash === hostkeys['127.0.0.1']) {
-          return (verified = true)
+        if (socket.request.session.ssh.verify) {
+          if (hash === hostkeys[socket.request.session.ssh.host]) {
+            return (verified = true)
+          } else {
+            err = { message: 'SSH HOST KEY HASH MISMATCH: ' + hash }
+            console.error('stored host key hashes: ', JSON.stringify(hostkeys))
+            console.error('reported hash from ' + socket.request.session.ssh.host + ': ', hash)
+            console.error(' host key hash for ' + socket.request.session.ssh.host + ': ', hostkeys[socket.request.session.ssh.host])
+            SSHerror('CONN CONNECT', err)
+          }
         } else {
-          err = { message: 'SSH HOST KEY HASH MISMATCH: ' + hash }
-          SSHerror('CONN CONNECT', err)
+          console.info('host key verification disabled. hash for host ' + socket.request.session.ssh.host + ': ', hash)
+          return (verified = true)
         }
       },
       debug: debug('ssh2')

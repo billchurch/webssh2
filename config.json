@@ -58,5 +58,6 @@
     "client": false, // proof-of-concept to log commands from client to server
     "server": false  // not yet implemented
   },
-  "accesslog": false // http style access logging to console.log
+  "accesslog": false, // http style access logging to console.log
+  "verify": true
 }
