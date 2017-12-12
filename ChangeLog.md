@@ -1,4 +1,9 @@
 # Change Log
+## [0.1.4] 2017-11-09
+### Changed
+- Moved socket and util out of folders into .js in root.
+
+
 ## [0.1.3] 2017-09-28
 ### Changed
 - Upgrade to debug@3.1 to eliminate ReDoS in %o formatter

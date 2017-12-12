@@ -1,10 +1,13 @@
-// socket/index.js
+// socket.js
 
 // private
 var debug = require('debug')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
+var hostkeys = require('./hostkeys.json')
 var termCols, termRows
+
+console.log(JSON.stringify(hostkeys))
 
 // public
 module.exports = function socket (socket) {
@@ -101,6 +104,7 @@ module.exports = function socket (socket) {
     finish([socket.request.session.userpassword])
   })
   if (socket.request.session.username && socket.request.session.userpassword && socket.request.session.ssh) {
+    console.log('hostkeys: ' + hostkeys[0].[0])
     conn.connect({
       host: socket.request.session.ssh.host,
       port: socket.request.session.ssh.port,
@@ -109,6 +113,15 @@ module.exports = function socket (socket) {
       tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
+      hostHash: 'sha1',
+      hostVerifier: function (hash) {
+        if (hash === hostkeys['127.0.0.1']) {
+          return (verified = true)
+        } else {
+          err = { message: 'SSH HOST KEY HASH MISMATCH: ' + hash }
+          SSHerror('CONN CONNECT', err)
+        }
+      },
       debug: debug('ssh2')
     })
   } else {
@@ -137,6 +150,10 @@ module.exports = function socket (socket) {
           ' from=' + socket.handshake.address.yellow.bold.underline)
       } else {
         console.log('WebSSH2 Logout: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
+        if (err) {
+          theError = (err) ? ': ' + err.message : ''
+          console.log('WebSSH2 error' + theError)
+        }
       }
       socket.emit('ssherror', 'SSH ' + myFunc + theError)
       socket.request.session.destroy()

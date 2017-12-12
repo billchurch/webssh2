@@ -47,6 +47,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     term: (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) &&
       req.query.sshterm) || config.ssh.term,
     allowreplay: validator.isBoolean(req.headers.allowreplay + '') || false,
+    sessionID: validator.isAlphanumeric(req.headers.sessionID + '') || false,
     serverlog: {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false

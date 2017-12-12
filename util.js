@@ -1,4 +1,4 @@
-// util/index.js
+// util.js
 
 // private
 require('colors') // allow for color property extensions in log messages
