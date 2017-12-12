@@ -130,6 +130,7 @@ module.exports = function socket (socket) {
           return (noverify = true)
         }
       },
+      keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
       debug: debug('ssh2')
     })
   } else {

@@ -54,7 +54,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     },
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
       req.query.readyTimeout) || config.ssh.readyTimeout,
-    verify: config.verify || false
+    verify: config.verify || false,
+    keepaliveInterval: config.keepaliveInterval || 0
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
   if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)

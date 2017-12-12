@@ -59,5 +59,6 @@
     "server": false  // not yet implemented
   },
   "accesslog": false, // http style access logging to console.log
-  "verify": false // verification of host key hashes, see hostkeyhashes.json
+  "verify": false, // verification of host key hashes, see hostkeyhashes.json
+  "keepaliveInterval": 0 // value in milliseconds, 0 = disable
 }
