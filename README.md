@@ -76,6 +76,10 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 
 * **ssh.readyTimeout** - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000.
 
+* **ssh.keepaliveInterval** - _integer_ - How often (in milliseconds) to send SSH-level keepalive packets to the server (in a similar way as OpenSSH's ServerAliveInterval config option). Set to 0 to disable. **Default:** 120000.
+
+* **ssh.keepaliveCountMax** - _integer_ - How many consecutive, unanswered SSH-level keepalive packets that can be sent to the server before disconnection (similar to OpenSSH's ServerAliveCountMax config option). **Default:** 10.
+
 * **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.

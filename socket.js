@@ -112,6 +112,8 @@ module.exports = function socket (socket) {
       tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
+      keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
+      keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
       debug: debug('ssh2')
     })
   } else {

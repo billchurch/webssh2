@@ -1,8 +1,8 @@
 # Change Log
-## [0.1.4] 2017-11-09
+## [0.1.4] 2018-01-30
 ### Changed
 - Moved socket and util out of folders into .js in root.
-
+- added keepaliveInterval and keepaliveCountMax config options
 
 ## [0.1.3] 2017-09-28
 ### Changed
