@@ -11,7 +11,9 @@
     "host": null,
     "port": 22,
     "term": "xterm-color",
-    "readyTimeout": 20000
+    "readyTimeout": 20000,
+    "keepaliveInterval": 120000,
+    "keepaliveCountMax": 10
   },
   "useminified": false,
   "header": {
@@ -60,5 +62,4 @@
   },
   "accesslog": false, // http style access logging to console.log
   "verify": false, // verification of host key hashes, see hostkeyhashes.json
-  "keepaliveInterval": 0 // value in milliseconds, 0 = disable
 }

@@ -112,25 +112,6 @@ module.exports = function socket (socket) {
       tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
-      hostHash: 'sha1',
-      hostVerifier: function (hash) {
-        if (socket.request.session.ssh.verify) {
-          if (hash === hostkeys[socket.request.session.ssh.host]) {
-            return (verified = true)
-          } else {
-            err = { message: 'SSH HOST KEY HASH MISMATCH: ' + hash }
-            console.error('WEBSSH2 contents of host key hashes: ', JSON.stringify(hostkeys))
-            console.error('WEBSSH2 reported hash from ' + socket.request.session.ssh.host + ': ', hash)
-            console.error('WEBSSH2  host key hash for ' + socket.request.session.ssh.host + ': ', hostkeys[socket.request.session.ssh.host])
-            SSHerror('CONN CONNECT', err)
-            return (verified = false)
-          }
-        } else {
-          console.info('host key verification disabled. hash for host ' + socket.request.session.ssh.host + ': ', hash)
-          return (noverify = true)
-        }
-      },
-      keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
       debug: debug('ssh2')
     })
   } else {

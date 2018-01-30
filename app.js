@@ -44,6 +44,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       background: req.query.headerBackground || config.header.background
     },
     algorithms: config.algorithms,
+    keepaliveInterval: config.ssh.keepaliveInterval,
+    keepaliveCountMax: config.ssh.keepaliveCountMax,
     term: (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) &&
       req.query.sshterm) || config.ssh.term,
     allowreplay: validator.isBoolean(req.headers.allowreplay + '') || false,
@@ -53,9 +55,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       server: config.serverlog.server || false
     },
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
-      req.query.readyTimeout) || config.ssh.readyTimeout,
-    verify: config.verify || false,
-    keepaliveInterval: config.keepaliveInterval || 0
+      req.query.readyTimeout) || config.ssh.readyTimeout
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
   if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
