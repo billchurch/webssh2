@@ -1,24 +1,16 @@
+import * as io from '../../node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js'
+import * as Terminal from '../../node_modules/xterm/dist/xterm'
+import * as fit from '../../node_modules/xterm/dist/addons/fit/fit'
+
 require('../../node_modules/xterm/dist/xterm.css')
 require('../css/style.css')
 
-import * as io from '../../node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js'
-import * as Terminal from '../../node_modules/xterm/dist/xterm'
-// import * as attach from 'node_modules/xterm/dist/addons/attach/attach'
-import * as fit from '../../node_modules/xterm/dist/addons/fit/fit'
-// import * as fullscreen from 'node_modules/xterm/dist/addons/fullscreen/fullscreen'
-// import * as search from 'node_modules/xterm/dist/addons/search/search'
-// import * as winptyCompat from 'node_modules/xterm/dist/addons/winptyCompat/winptyCompat'
-// import * as client from './client.js'
-
-// Terminal.applyAddon(attach);
 Terminal.applyAddon(fit)
-// Terminal.applyAddon(fullscreen);
-// Terminal.applyAddon(search);
-// Terminal.applyAddon(winptyCompat);
-/* global io, Terminal, Blob */
+
+/* global Blob */
 
 var sessionLogEnable = false
-var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExist
+var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
 var downloadLogButton = document.getElementById('downloadLog')
 var credentialsButton = document.getElementById('credentials')

@@ -39,33 +39,33 @@
     "validator": "^9.0.0"
   },
   "scripts": {
-    "start": "node index",
+    "start": "node index.js",
+    "builddev": "webpack --config webpack.dev.js",
     "test": "snyk test",
     "watch": "nodemon index.js",
-    "build": "grunt copy concat uglify",
+    "build": "webpack --config webpack.prod.js",
     "standard": "standard --verbose | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
   "devDependencies": {
     "bithound": "^1.7.0",
+    "clean-webpack-plugin": "^0.1.18",
+    "copy-webpack-plugin": "^4.3.1",
     "css-loader": "^0.28.9",
-    "grunt": "^1.0.1",
-    "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-copy": "^1.0.0",
-    "grunt-contrib-uglify": "^3.0.1",
-    "nodemon": "^1.11.0",
+    "npm on": "^1.11.0",
     "snazzy": "^7.0.0",
     "snyk": "^1.39.1",
     "standard": "^10.0.3",
     "style-loader": "^0.20.1",
+    "uglifyjs-webpack-plugin": "^1.1.8",
     "webpack": "^3.10.0",
+    "webpack-merge": "^4.1.1",
     "webpack-stream": "^4.0.0",
     "xterm": "^3.0.2"
   },
   "standard": {
     "ignore": [
-      "public/webssh2.js",
-      "public/src/js/*.js"
+      "public/webssh2.bundle.js"
     ]
   }
 }
