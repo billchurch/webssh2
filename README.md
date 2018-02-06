@@ -195,6 +195,6 @@ Clicking `Start logging` on the status bar will log all data to the client. A `D
 http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
 
 # Tips
-* If you want to add custom JavaScript to the browser client you can either modify `./public/client-(full|min).html` and add a **<script>** element or check out `Gulpfile.js` and add your custom javascript file to the concat task
+* If you want to add custom JavaScript to the browser client you can either modify `./src/client-(full|min).html` and add a **<script>** element, modify `./src/index.js` directly, or check out `webpack.*.js` and add your custom javascript file to a task there.
 * BIG-IP Acess Policy Manager (APM) doesn't always care for minified javascript when run in portal mode. Be sure to Set `useminified` option in `config.json` to `false` for these environments
 * Set `useminified` option in `config.json` to `true` to utilize minified javascript

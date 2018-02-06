@@ -4,9 +4,7 @@ engines:
     enabled: true
   duplication:
     exclude_paths:
-      - "public/src/**"
-      - "public/webssh2.js"
-      - "public/webssh2.min.js"
+      - "public/webssh2.bundle.js"
     enabled: true
     config:
       languages:
@@ -30,6 +28,5 @@ ratings:
   - "**.rb"
 exclude_paths:
 - node_modules/
-- "public/src/**"
-- "public/webssh2.js"
-- "public/webssh2.min.js"
+- "public/webssh2.bundle.js"
+

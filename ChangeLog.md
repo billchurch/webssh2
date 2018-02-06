@@ -4,6 +4,9 @@ Mostly client (browser) related changes in this release
 
 ### Changed
 - Updated xterm.js to 3.0.2
+  - See https://github.com/xtermjs/xterm.js/releases/tag/3.0.2
+  - See https://github.com/xtermjs/xterm.js/releases/tag/3.0.1
+  - See https://github.com/xtermjs/xterm.js/releases/tag/3.0.0
 - Moved javascript events out of html into javascript
 - Changed asset packaging from grunt to Webpack to be inline with xterm.js direction
 ### Fixed
