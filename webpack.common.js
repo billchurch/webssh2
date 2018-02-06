@@ -1,6 +1,7 @@
 const path = require('path')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
 
 module.exports = {
   entry: {
@@ -12,15 +13,22 @@ module.exports = {
       './src/client-full.htm',
       './src/client-min.htm',
       './src/favicon.ico'
-    ])
+    ]),
+    new ExtractTextPlugin('[name].css')
   ],
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, './public')
   },
   module: {
-    loaders: [
-      { test: /\.css$/, loader: 'style-loader!css-loader' }
+    rules: [
+      {
+        test: /\.css$/,
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: 'css-loader'
+        })
+      }
     ]
   }
 }
