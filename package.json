@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "bithound": "^1.7.0",
+    "css-loader": "^0.28.9",
     "grunt": "^1.0.1",
     "grunt-contrib-concat": "^1.0.1",
     "grunt-contrib-copy": "^1.0.0",
@@ -56,7 +57,10 @@
     "snazzy": "^7.0.0",
     "snyk": "^1.39.1",
     "standard": "^10.0.3",
-    "xterm": "^2.9.2"
+    "style-loader": "^0.20.1",
+    "webpack": "^3.10.0",
+    "webpack-stream": "^4.0.0",
+    "xterm": "^3.0.2"
   },
   "standard": {
     "ignore": [

@@ -21,6 +21,7 @@ module.exports = function (grunt) {
               'node_modules/xterm/dist/xterm.js',
               'node_modules/xterm/dist/xterm.js.map',
               'node_modules/xterm/dist/addons/fit/fit.js',
+              'node_modules/xterm/dist/addons/fit/fit.js.map',
               'node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js',
               'node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js.map',
               'src/js/client.js'

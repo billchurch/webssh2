@@ -70,10 +70,9 @@ var term = new Terminal({
   cursorBlink: true
 })
 var socket, termid // eslint-disable-line
-term.open(terminalContainer, {
-  focus: true
-})
-term.fit()
+term.open(terminalContainer)
+term.focus()
+term.applyAddon(fit)
 
 if (document.location.pathname) {
   var parts = document.location.pathname.split('/')
