@@ -52,7 +52,7 @@
     "clean-webpack-plugin": "^0.1.18",
     "copy-webpack-plugin": "^4.3.1",
     "css-loader": "^0.28.9",
-    "npm on": "^1.11.0",
+    "nodemon": "^1.11.0",
     "snazzy": "^7.0.0",
     "snyk": "^1.39.1",
     "standard": "^10.0.3",
