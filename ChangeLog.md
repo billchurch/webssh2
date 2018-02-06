@@ -1,4 +1,16 @@
 # Change Log
+## [0.2.0] 2018-02-06
+Mostly client (browser) related changes in this release
+
+### Changed
+- Updated xterm.js to 3.0.2
+- Moved javascript events out of html into javascript
+- Changed asset packaging from grunt to Webpack to be inline with xterm.js direction
+### Fixed
+- Resolved loss of terminal foucs when interacting with option buttons (Logging, etc...)
+
+
+# Change Log
 ## [0.1.4] 2018-01-30
 ### Changed
 - Moved socket and util out of folders into .js in root.
