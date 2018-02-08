@@ -9,12 +9,36 @@
     <div id="header"></div>
     <div id="terminal-container" class="terminal"></div>
     <div id="bottomdiv">
+      <div class="dropup" id="menu">
+        <i class="fas fa-bars"></i> Menu
+        <div class="dropup-content">
+          <a id="aboutBtn" class="About" href="javascript:void(0);"><i class="fas fa-question"></i> About</a>
+          <a id="toggleLog" class="toggleLog" href="javascript:void(0);"><i class="fas fa-clipboard"></i> Start Log</a>
+          <a id="downloadLog" href="javascript:void(0);"><i class="fas fa-download"></i> Download Log</a>
+          <a id="credentialsBtn" href="javascript:void(0);"><i class="fas fa-key"></i> Credentials</a>
+        </div>
+      </div>
       <div id="footer"></div>
       <div id="status"></div>
-      <div id="credentials"><a class="credentials" href="javascript:void(0);">CREDENTIALS</a></div>
-      <div id="downloadLog"><a class="downloadLog" href="javascript:void(0);">Download Log</a></div>
-      <div id="toggleLog"><a class="toggleLog" href="javascript:void(0);">Start Log</a></div>
     </div>
   </div>
+<!-- The Modal -->
+<div id="aboutModal" class="modal">
+  <!-- Modal content -->
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="aboutClose">&times;</span>
+      <h1>WebSSH2 0.2.0</h1>
+    </div>
+    <div class="modal-body">
+      <p>Copyright 2017 F5 Networks, Inc. See End User License Agreement (EULA) for license terms. Notwithstanding anything to the contrary in the EULA, Licensee may copy and modify this software product for its internal business purposes.</p>
+    </div>
+    <div class="modal-footer">
+      <p>This is pre-release content. This application may change in final release.</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>
+
+
