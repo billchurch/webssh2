@@ -1,6 +1,10 @@
 # Change Log
-## [0.2.0] 2018-02-06
+## [0.2.0] TBD
 Mostly client (browser) related changes in this release
+
+### Added
+- Menu system
+- Fontawesome icons
 
 ### Changed
 - Updated xterm.js to 3.0.2
@@ -9,9 +13,9 @@ Mostly client (browser) related changes in this release
   - See https://github.com/xtermjs/xterm.js/releases/tag/3.0.0
 - Moved javascript events out of html into javascript
 - Changed asset packaging from grunt to Webpack to be inline with xterm.js direction
+- Moved logging and credentials buttons to menu system
 ### Fixed
 - Resolved loss of terminal foucs when interacting with option buttons (Logging, etc...)
-
 
 # Change Log
 ## [0.1.4] 2018-01-30
