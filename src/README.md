@@ -1,0 +1,1 @@
+Customizations and modifications to the client (browser) go here. Then run "npm run build" to integrate into /public (where client files are served from). Note that /public is a flat directory structure.
