@@ -3,18 +3,15 @@
 import * as io from '../../node_modules/socket.io-client/dist/socket.io.js'
 import * as Terminal from '../../node_modules/xterm/dist/xterm'
 import * as fit from '../../node_modules/xterm/dist/addons/fit/fit'
-// import 'font-awesome/css/font-awesome.css'
-//
-// import '@fortawesome/fontawesome/styles.css'
 import fontawesome from '@fortawesome/fontawesome'
 import faBars from '@fortawesome/fontawesome-free-solid/faBars'
-import faQuestion from '@fortawesome/fontawesome-free-solid/faQuestion'
+// import faQuestion from '@fortawesome/fontawesome-free-solid/faQuestion'
 import faClipboard from '@fortawesome/fontawesome-free-solid/faClipboard'
 import faDownload from '@fortawesome/fontawesome-free-solid/faDownload'
 import faKey from '@fortawesome/fontawesome-free-solid/faKey'
 import faCog from '@fortawesome/fontawesome-free-solid/faCog'
 
-fontawesome.library.add(faBars, faQuestion, faClipboard, faDownload, faKey, faCog)
+fontawesome.library.add(faBars, faClipboard, faDownload, faKey, faCog)
 
 fontawesome.config.searchPseudoElements = true
 
@@ -31,14 +28,13 @@ var sessionLogEnable = false
 var loggedData = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
-var downloadLogButton = document.getElementById('downloadLog')
+var downloadLogBtn = document.getElementById('downloadLogBtn')
 var credentialsBtn = document.getElementById('credentialsBtn')
-var toggleLogButton = document.getElementById('toggleLog')
+var logBtn = document.getElementById('logBtn')
 
-toggleLogButton.addEventListener('click', toggleLog)
+logBtn.addEventListener('click', toggleLog)
 
-downloadLogButton.style.color = '#666'
-credentialsBtn.style.color = '#666'
+logBtn.style.color = '#000'
 
 var terminalContainer = document.getElementById('terminal-container')
 
@@ -113,24 +109,6 @@ socket.on('title', function (data) {
   }
 })
 
-// About Modal Stuff
-var aboutModal = document.getElementById('aboutModal')
-var aboutBtn = document.getElementById('aboutBtn')
-var aboutClose = document.getElementsByClassName('aboutClose')[0]
-aboutBtn.onclick = function () {
-  aboutModal.style.display = 'block'
-}
-aboutClose.onclick = function () {
-  aboutModal.style.display = 'none'
-  term.focus()
-}
-window.onclick = function (event) {
-  if (event.target == aboutModal) {
-    aboutModal.style.display = 'none'
-    term.focus()
-  }
-}
-
 // replay password to server, requires
 function replayCredentials () { // eslint-disable-line
   socket.emit('control', 'replayCredentials')
@@ -145,7 +123,7 @@ function toggleLog () { // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false
     loggedData = true
-    toggleLogButton.innerHTML = '<i class="fas fa-clipboard"></i> Start Log'
+    logBtn.innerHTML = '<i class="fas fa-clipboard fa-fw"></i> Start Log'
     console.log('stopping log, ' + sessionLogEnable)
     currentDate = new Date()
     sessionLog = sessionLog + '\r\n\r\nLog End for ' + sessionFooter + ': ' +
@@ -158,9 +136,9 @@ function toggleLog () { // eslint-disable-line
   } else {
     sessionLogEnable = true
     loggedData = true
-    toggleLogButton.innerHTML = '<i class="fas fa-cog fa-spin"></i> Stop Log'
-    downloadLogButton.style.color = '#000'
-    downloadLogButton.addEventListener('click', downloadLog)
+    logBtn.innerHTML = '<i class="fas fa-cog fa-spin fa-fw"></i> Stop Log'
+    downloadLogBtn.style.color = '#000'
+    downloadLogBtn.addEventListener('click', downloadLog)
     console.log('starting log, ' + sessionLogEnable)
     currentDate = new Date()
     sessionLog = 'Log Start for ' + sessionFooter + ': ' +

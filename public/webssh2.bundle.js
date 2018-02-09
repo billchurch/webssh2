@@ -78,24 +78,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__fortawesome_fontawesome__ = __webpack_require__(4);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__fortawesome_fontawesome_free_solid_faBars__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__fortawesome_fontawesome_free_solid_faBars___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4__fortawesome_fontawesome_free_solid_faBars__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faQuestion__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faQuestion___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faQuestion__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faClipboard__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faClipboard___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faClipboard__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faDownload__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faDownload___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faDownload__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faKey__ = __webpack_require__(10);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faKey___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faKey__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__fortawesome_fontawesome_free_solid_faCog__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__fortawesome_fontawesome_free_solid_faCog___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_9__fortawesome_fontawesome_free_solid_faCog__);
-
-
-
-
-
-// import 'font-awesome/css/font-awesome.css'
-//
-// import '@fortawesome/fontawesome/styles.css'
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faClipboard__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faClipboard___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faClipboard__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faDownload__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faDownload___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faDownload__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faKey__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faKey___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faKey__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faCog__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faCog___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faCog__);
 
 
 
@@ -103,15 +93,20 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
+// import faQuestion from '@fortawesome/fontawesome-free-solid/faQuestion'
 
-__WEBPACK_IMPORTED_MODULE_3__fortawesome_fontawesome__["a" /* default */].library.add(__WEBPACK_IMPORTED_MODULE_4__fortawesome_fontawesome_free_solid_faBars___default.a, __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faQuestion___default.a, __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faClipboard___default.a, __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faDownload___default.a, __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faKey___default.a, __WEBPACK_IMPORTED_MODULE_9__fortawesome_fontawesome_free_solid_faCog___default.a)
+
+
+
+
+__WEBPACK_IMPORTED_MODULE_3__fortawesome_fontawesome__["a" /* default */].library.add(__WEBPACK_IMPORTED_MODULE_4__fortawesome_fontawesome_free_solid_faBars___default.a, __WEBPACK_IMPORTED_MODULE_5__fortawesome_fontawesome_free_solid_faClipboard___default.a, __WEBPACK_IMPORTED_MODULE_6__fortawesome_fontawesome_free_solid_faDownload___default.a, __WEBPACK_IMPORTED_MODULE_7__fortawesome_fontawesome_free_solid_faKey___default.a, __WEBPACK_IMPORTED_MODULE_8__fortawesome_fontawesome_free_solid_faCog___default.a)
 
 __WEBPACK_IMPORTED_MODULE_3__fortawesome_fontawesome__["a" /* default */].config.searchPseudoElements = true
 
 __WEBPACK_IMPORTED_MODULE_3__fortawesome_fontawesome__["a" /* default */].dom.i2svg()
 
+__webpack_require__(11)
 __webpack_require__(12)
-__webpack_require__(13)
 
 __WEBPACK_IMPORTED_MODULE_1__node_modules_xterm_dist_xterm__["applyAddon"](__WEBPACK_IMPORTED_MODULE_2__node_modules_xterm_dist_addons_fit_fit__)
 
@@ -121,14 +116,13 @@ var sessionLogEnable = false
 var loggedData = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
-var downloadLogButton = document.getElementById('downloadLog')
+var downloadLogBtn = document.getElementById('downloadLogBtn')
 var credentialsBtn = document.getElementById('credentialsBtn')
-var toggleLogButton = document.getElementById('toggleLog')
+var logBtn = document.getElementById('logBtn')
 
-toggleLogButton.addEventListener('click', toggleLog)
+logBtn.addEventListener('click', toggleLog)
 
-downloadLogButton.style.color = '#666'
-credentialsBtn.style.color = '#666'
+logBtn.style.color = '#000'
 
 var terminalContainer = document.getElementById('terminal-container')
 
@@ -203,24 +197,6 @@ socket.on('title', function (data) {
   }
 })
 
-// About Modal Stuff
-var aboutModal = document.getElementById('aboutModal')
-var aboutBtn = document.getElementById('aboutBtn')
-var aboutClose = document.getElementsByClassName('aboutClose')[0]
-aboutBtn.onclick = function () {
-  aboutModal.style.display = 'block'
-}
-aboutClose.onclick = function () {
-  aboutModal.style.display = 'none'
-  term.focus()
-}
-window.onclick = function (event) {
-  if (event.target == aboutModal) {
-    aboutModal.style.display = 'none'
-    term.focus()
-  }
-}
-
 // replay password to server, requires
 function replayCredentials () { // eslint-disable-line
   socket.emit('control', 'replayCredentials')
@@ -235,7 +211,7 @@ function toggleLog () { // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false
     loggedData = true
-    toggleLogButton.innerHTML = '<i class="fas fa-clipboard"></i> Start Log'
+    logBtn.innerHTML = '<i class="fas fa-clipboard fa-fw"></i> Start Log'
     console.log('stopping log, ' + sessionLogEnable)
     currentDate = new Date()
     sessionLog = sessionLog + '\r\n\r\nLog End for ' + sessionFooter + ': ' +
@@ -248,9 +224,9 @@ function toggleLog () { // eslint-disable-line
   } else {
     sessionLogEnable = true
     loggedData = true
-    toggleLogButton.innerHTML = '<i class="fas fa-cog fa-spin"></i> Stop Log'
-    downloadLogButton.style.color = '#000'
-    downloadLogButton.addEventListener('click', downloadLog)
+    logBtn.innerHTML = '<i class="fas fa-cog fa-spin fa-fw"></i> Stop Log'
+    downloadLogBtn.style.color = '#000'
+    downloadLogBtn.addEventListener('click', downloadLog)
     console.log('starting log, ' + sessionLogEnable)
     currentDate = new Date()
     sessionLog = 'Log Start for ' + sessionFooter + ': ' +
@@ -8604,40 +8580,34 @@ module.exports = { prefix: 'fas', iconName: 'bars', icon: [448, 512, [], "f0c9",
 /* 7 */
 /***/ (function(module, exports) {
 
-module.exports = { prefix: 'fas', iconName: 'question', icon: [384, 512, [], "f128", "M202.021 0C122.202 0 70.503 32.703 29.914 91.026c-7.363 10.58-5.093 25.086 5.178 32.874l43.138 32.709c10.373 7.865 25.132 6.026 33.253-4.148 25.049-31.381 43.63-49.449 82.757-49.449 30.764 0 68.816 19.799 68.816 49.631 0 22.552-18.617 34.134-48.993 51.164-35.423 19.86-82.299 44.576-82.299 106.405V320c0 13.255 10.745 24 24 24h72.471c13.255 0 24-10.745 24-24v-5.773c0-42.86 125.268-44.645 125.268-160.627C377.504 66.256 286.902 0 202.021 0zM192 373.459c-38.196 0-69.271 31.075-69.271 69.271 0 38.195 31.075 69.27 69.271 69.27s69.271-31.075 69.271-69.271-31.075-69.27-69.271-69.27z"] };
+module.exports = { prefix: 'fas', iconName: 'clipboard', icon: [384, 512, [], "f328", "M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"] };
 
 /***/ }),
 /* 8 */
 /***/ (function(module, exports) {
 
-module.exports = { prefix: 'fas', iconName: 'clipboard', icon: [384, 512, [], "f328", "M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"] };
+module.exports = { prefix: 'fas', iconName: 'download', icon: [512, 512, [], "f019", "M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"] };
 
 /***/ }),
 /* 9 */
 /***/ (function(module, exports) {
 
-module.exports = { prefix: 'fas', iconName: 'download', icon: [512, 512, [], "f019", "M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"] };
+module.exports = { prefix: 'fas', iconName: 'key', icon: [512, 512, [], "f084", "M512 176.001C512 273.203 433.202 352 336 352c-11.22 0-22.19-1.062-32.827-3.069l-24.012 27.014A23.999 23.999 0 0 1 261.223 384H224v40c0 13.255-10.745 24-24 24h-40v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24v-78.059c0-6.365 2.529-12.47 7.029-16.971l161.802-161.802C163.108 213.814 160 195.271 160 176 160 78.798 238.797.001 335.999 0 433.488-.001 512 78.511 512 176.001zM336 128c0 26.51 21.49 48 48 48s48-21.49 48-48-21.49-48-48-48-48 21.49-48 48z"] };
 
 /***/ }),
 /* 10 */
 /***/ (function(module, exports) {
 
-module.exports = { prefix: 'fas', iconName: 'key', icon: [512, 512, [], "f084", "M512 176.001C512 273.203 433.202 352 336 352c-11.22 0-22.19-1.062-32.827-3.069l-24.012 27.014A23.999 23.999 0 0 1 261.223 384H224v40c0 13.255-10.745 24-24 24h-40v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24v-78.059c0-6.365 2.529-12.47 7.029-16.971l161.802-161.802C163.108 213.814 160 195.271 160 176 160 78.798 238.797.001 335.999 0 433.488-.001 512 78.511 512 176.001zM336 128c0 26.51 21.49 48 48 48s48-21.49 48-48-21.49-48-48-48-48 21.49-48 48z"] };
+module.exports = { prefix: 'fas', iconName: 'cog', icon: [512, 512, [], "f013", "M444.788 291.1l42.616 24.599c4.867 2.809 7.126 8.618 5.459 13.985-11.07 35.642-29.97 67.842-54.689 94.586a12.016 12.016 0 0 1-14.832 2.254l-42.584-24.595a191.577 191.577 0 0 1-60.759 35.13v49.182a12.01 12.01 0 0 1-9.377 11.718c-34.956 7.85-72.499 8.256-109.219.007-5.49-1.233-9.403-6.096-9.403-11.723v-49.184a191.555 191.555 0 0 1-60.759-35.13l-42.584 24.595a12.016 12.016 0 0 1-14.832-2.254c-24.718-26.744-43.619-58.944-54.689-94.586-1.667-5.366.592-11.175 5.459-13.985L67.212 291.1a193.48 193.48 0 0 1 0-70.199l-42.616-24.599c-4.867-2.809-7.126-8.618-5.459-13.985 11.07-35.642 29.97-67.842 54.689-94.586a12.016 12.016 0 0 1 14.832-2.254l42.584 24.595a191.577 191.577 0 0 1 60.759-35.13V25.759a12.01 12.01 0 0 1 9.377-11.718c34.956-7.85 72.499-8.256 109.219-.007 5.49 1.233 9.403 6.096 9.403 11.723v49.184a191.555 191.555 0 0 1 60.759 35.13l42.584-24.595a12.016 12.016 0 0 1 14.832 2.254c24.718 26.744 43.619 58.944 54.689 94.586 1.667 5.366-.592 11.175-5.459 13.985L444.788 220.9a193.485 193.485 0 0 1 0 70.2zM336 256c0-44.112-35.888-80-80-80s-80 35.888-80 80 35.888 80 80 80 80-35.888 80-80z"] };
 
 /***/ }),
 /* 11 */
 /***/ (function(module, exports) {
 
-module.exports = { prefix: 'fas', iconName: 'cog', icon: [512, 512, [], "f013", "M444.788 291.1l42.616 24.599c4.867 2.809 7.126 8.618 5.459 13.985-11.07 35.642-29.97 67.842-54.689 94.586a12.016 12.016 0 0 1-14.832 2.254l-42.584-24.595a191.577 191.577 0 0 1-60.759 35.13v49.182a12.01 12.01 0 0 1-9.377 11.718c-34.956 7.85-72.499 8.256-109.219.007-5.49-1.233-9.403-6.096-9.403-11.723v-49.184a191.555 191.555 0 0 1-60.759-35.13l-42.584 24.595a12.016 12.016 0 0 1-14.832-2.254c-24.718-26.744-43.619-58.944-54.689-94.586-1.667-5.366.592-11.175 5.459-13.985L67.212 291.1a193.48 193.48 0 0 1 0-70.199l-42.616-24.599c-4.867-2.809-7.126-8.618-5.459-13.985 11.07-35.642 29.97-67.842 54.689-94.586a12.016 12.016 0 0 1 14.832-2.254l42.584 24.595a191.577 191.577 0 0 1 60.759-35.13V25.759a12.01 12.01 0 0 1 9.377-11.718c34.956-7.85 72.499-8.256 109.219-.007 5.49 1.233 9.403 6.096 9.403 11.723v49.184a191.555 191.555 0 0 1 60.759 35.13l42.584-24.595a12.016 12.016 0 0 1 14.832 2.254c24.718 26.744 43.619 58.944 54.689 94.586 1.667 5.366-.592 11.175-5.459 13.985L444.788 220.9a193.485 193.485 0 0 1 0 70.2zM336 256c0-44.112-35.888-80-80-80s-80 35.888-80 80 35.888 80 80 80 80-35.888 80-80z"] };
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports) {
-
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
