@@ -1,0 +1,1 @@
+This directory contains/serves the browser client files. This directory is transient and is deleted and recreated each time "npm run build" is executed. Utilize ../src and "npm run build" scripts instead.
