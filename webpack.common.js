@@ -10,8 +10,7 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(['./public']),
     new CopyWebpackPlugin([
-      './src/client-full.htm',
-      './src/client-min.htm',
+      './src/client.htm',
       './src/favicon.ico'
     ]),
     new ExtractTextPlugin('[name].css')
@@ -26,7 +25,14 @@ module.exports = {
         test: /\.css$/,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: 'css-loader'
+          use: [
+            {
+              loader: 'css-loader',
+              options: {
+                minimize: {discardComments: {removeAll: true}}
+              }
+            }
+          ]
         })
       }
     ]

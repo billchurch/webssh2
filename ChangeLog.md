@@ -18,6 +18,7 @@ Mostly client (browser) related changes in this release
 - Moved javascript events out of html into javascript
 - Changed asset packaging from grunt to Webpack to be inline with xterm.js direction
 - Moved logging and credentials buttons to menu system
+- Removed non-minified options (if you need to disable minification, modify webpack scripts and 'npm run build')
 ### Fixed
 - Resolved loss of terminal foucs when interacting with option buttons (Logging, etc...)
 

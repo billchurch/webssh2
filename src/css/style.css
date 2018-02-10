@@ -1,11 +1,11 @@
 body {
-    font-family: helvetica, sans-serif, arial;
-    font-size: 1em;
-    color: #111;
-    background-color: rgb(0, 0, 0);
-    color: rgb(240, 240, 240);
-    height: 100%;
-    margin: 0;
+  font-family: helvetica, sans-serif, arial;
+  font-size: 1em;
+  color: #111;
+  background-color: rgb(0, 0, 0);
+  color: rgb(240, 240, 240);
+  height: 100%;
+  margin: 0;
 }
 #header {
     color: rgb(240, 240, 240);
@@ -17,6 +17,8 @@ body {
     text-align: center;
     flex: 0 1 auto;
     z-index: 99;
+    height:19px;
+    display: none;
 }
 .box {
     display: block;
@@ -24,7 +26,7 @@ body {
 }
 #terminal-container {
     display: block;
-    width: 100%;
+    width: calc(100% - 1 px);
     margin: 0 auto;
     padding: 2px;
     height: calc(100% - 19px);
@@ -88,13 +90,13 @@ body {
     display: inline-block;
 }
 .dropup-content {
-    display: none;
-    position: absolute;
-    background-color: #f1f1f1;
-    font-size: 16px;
-    min-width: 160px;
-    bottom: 18px;
-    z-index: 101;
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  font-size: 16px;
+  min-width: 160px;
+  bottom: 18px;
+  z-index: 101;
 }
 .dropup-content a {
     color: #777;

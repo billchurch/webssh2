@@ -63,10 +63,8 @@ if (document.location.pathname) {
 
 socket.on('connect', function () {
   socket.emit('geometry', term.cols, term.rows)
-  console.log('geometry cols: ' + term.cols + ' rows: ' + term.rows)
 })
 socket.on('setTerminalOpts', function (data) {
-  console.log('terminalOpts: ' + JSON.stringify(data))
   term.setOption('cursorBlink', data.cursorBlink)
   term.setOption('scrollback', data.scrollback)
   term.setOption('tabStopWidth', data.tabStopWidth)
@@ -85,7 +83,13 @@ socket.on('title', function (data) {
 }).on('headerBackground', function (data) {
   document.getElementById('header').style.backgroundColor = data
 }).on('header', function (data) {
-  document.getElementById('header').innerHTML = data
+  if (data) {
+    document.getElementById('header').innerHTML = data
+    document.getElementById('header').style.display = 'block'
+    // header is 19px and footer is 19px, recaculate new terminal-container and resize
+    document.getElementById('terminal-container').style.height = 'calc(100% - 38px)'
+    resizeScreen()
+  }
 }).on('footer', function (data) {
   sessionFooter = data
   document.getElementById('footer').innerHTML = data

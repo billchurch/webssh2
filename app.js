@@ -31,8 +31,7 @@ app.disable('x-powered-by')
 app.use(express.static(path.join(__dirname, 'public'), expressOptions))
 
 app.get('/ssh/host/:host?', function (req, res, next) {
-  res.sendFile(path.join(path.join(__dirname, 'public', (config.useminified)
-    ? 'client-min.htm' : 'client-full.htm')))
+  res.sendFile(path.join(path.join(__dirname, 'public', 'client.htm')))
   // capture, assign, and validated variables
   req.session.ssh = {
     host: (validator.isIP(req.params.host + '') && req.params.host) ||
@@ -56,7 +55,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       tabStopWidth: config.terminal.tabStopWidth
     },
     allowreplay: (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
-    MRH_Session: (validator.isAlphanumeric(req.headers.lastMRH_Session + '') ? req.headers.lastMRH_Session : 'none'),
+    mrhsession: ((validator.isAlphanumeric(req.headers.mrhsession + '') && req.headers.mrhsession) ? req.headers.mrhsession : 'none'),
     serverlog: {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false
