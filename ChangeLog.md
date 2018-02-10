@@ -1,14 +1,18 @@
 # Change Log
-## [0.2.0] TBD
+## [0.2.0] 2018-02-10
 Mostly client (browser) related changes in this release
 
 ### Added
 - Menu system
 - Fontawesome icons
 - Resizing browser window sends resize events to terminal container as well as SSH session (pty)
-- Adding terminal options
+- New terminal options (config.json as well as GET vars)
+  - terminal.cursorBlink - boolean - Cursor blinks (true), does not (false) Default: true.
+  - terminal.scrollback - integer - Lines in the scrollback buffer. Default: 10000.
+  - terminal.tabStopWidth - integer - Tab stops at n characters Default: 8.
 - New serverside (nodejs) terminal configuration options (cursorBlink, scrollback, tabStopWidth)
 - Logging of MRH session (unassigned if not present)
+- Express compression feature
 
 ### Changed
 - Updated xterm.js to 3.0.2
@@ -19,6 +23,7 @@ Mostly client (browser) related changes in this release
 - Changed asset packaging from grunt to Webpack to be inline with xterm.js direction
 - Moved logging and credentials buttons to menu system
 - Removed non-minified options (if you need to disable minification, modify webpack scripts and 'npm run build')
+
 ### Fixed
 - Resolved loss of terminal foucs when interacting with option buttons (Logging, etc...)
 
