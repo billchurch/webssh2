@@ -15,6 +15,11 @@
     "keepaliveInterval": 120000,
     "keepaliveCountMax": 10
   },
+  "terminal": {
+    "cursorBlink": true,
+    "scrollback": 10000,
+    "tabStopWidth": 8
+  },
   "useminified": false,
   "header": {
     "text": null,

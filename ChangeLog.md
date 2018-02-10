@@ -5,6 +5,10 @@ Mostly client (browser) related changes in this release
 ### Added
 - Menu system
 - Fontawesome icons
+- Resizing browser window sends resize events to terminal container as well as SSH session (pty)
+- Adding terminal options
+- New serverside (nodejs) terminal configuration options (cursorBlink, scrollback, tabStopWidth)
+- Logging of MRH session (unassigned if not present)
 
 ### Changed
 - Updated xterm.js to 3.0.2

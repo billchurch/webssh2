@@ -37,14 +37,19 @@ logBtn.addEventListener('click', toggleLog)
 logBtn.style.color = '#000'
 
 var terminalContainer = document.getElementById('terminal-container')
-
-var term = new Terminal({
-  cursorBlink: true
-})
 var socket, termid // eslint-disable-line
+var term = new Terminal()
 term.open(terminalContainer)
 term.focus()
 term.fit()
+
+document.body.onresize = function () {
+  term.fit()
+  term.resize(term.cols, term.rows)
+  console.log('document resize...')
+  console.log('geometry cols: ' + term.cols + ' rows: ' + term.rows)
+  socket.emit('resize', {cols: term.cols, rows: term.rows})
+}
 
 if (document.location.pathname) {
   var parts = document.location.pathname.split('/')
@@ -60,6 +65,12 @@ if (document.location.pathname) {
 socket.on('connect', function () {
   socket.emit('geometry', term.cols, term.rows)
   console.log('geometry cols: ' + term.cols + ' rows: ' + term.rows)
+})
+socket.on('setTerminalOpts', function (data) {
+  console.log('terminalOpts: ' + JSON.stringify(data))
+  term.setOption('cursorBlink', data.cursorBlink)
+  term.setOption('scrollback', data.scrollback)
+  term.setOption('tabStopWidth', data.tabStopWidth)
 })
 term.on('data', function (data) {
   socket.emit('data', data)

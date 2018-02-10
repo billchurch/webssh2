@@ -80,6 +80,12 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 
 * **ssh.keepaliveCountMax** - _integer_ - How many consecutive, unanswered SSH-level keepalive packets that can be sent to the server before disconnection (similar to OpenSSH's ServerAliveCountMax config option). **Default:** 10.
 
+* **terminal.cursorBlink** - _boolean_ - Cursor blinks (true), does not (false) **Default:** true.
+
+* **terminal.scrollback** - _integer_ - Lines in the scrollback buffer. **Default:** 10000.
+
+* **terminal.tabStopWidth** - _integer_ - Tab stops at _n_ characters **Default:** 8.
+
 * **useminified** - _boolean_ - Choose between ./public/client-full.htm (false/non-minified) or ./public/client-min.htm (true/minified js), defaults to false (non-minified version)
 
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.
