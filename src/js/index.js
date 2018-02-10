@@ -43,12 +43,11 @@ term.open(terminalContainer)
 term.focus()
 term.fit()
 
-document.body.onresize = function () {
+window.addEventListener('resize', resizeScreen, false)
+
+function resizeScreen () {
   term.fit()
-  term.resize(term.cols, term.rows)
-  console.log('document resize...')
-  console.log('geometry cols: ' + term.cols + ' rows: ' + term.rows)
-  socket.emit('resize', {cols: term.cols, rows: term.rows})
+  socket.emit('resize', {cols: term.cols, rows: term.rows })
 }
 
 if (document.location.pathname) {

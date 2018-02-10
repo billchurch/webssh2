@@ -131,7 +131,6 @@ body {
     height: 100%;
     margin: 0;
 }
-
 #header {
     color: rgb(240, 240, 240);
     background-color: rgb(0, 128, 0);
@@ -143,40 +142,38 @@ body {
     flex: 0 1 auto;
     z-index: 99;
 }
-
 .box {
-  display: flex;
-  flex-flow: column;
-  height: 100%;
+    display: block;
+    height: 100%;
 }
-
 #terminal-container {
-    flex: 1 1 auto;
+    display: block;
     width: 100%;
     margin: 0 auto;
     padding: 2px;
+    height: calc(100% - 19px);
 }
-
 #terminal-container .terminal {
     background-color: #000000;
     color: #fafafa;
     padding: 2px;
+    height: calc(100% - 19px);
 }
-
 #terminal-container .terminal:focus .terminal-cursor {
     background-color: #fafafa;
 }
-
 #bottomdiv {
+    position: fixed;
+    left: 0;
+    bottom: 0;
     width: 100%;
     background-color: rgb(50, 50, 50);
     border-color: white;
     border-style: solid none none none;
     border-width: 1px;
     z-index: 99;
-    flex: 0 1 30px;
+    height: 19px;
 }
-
 #footer {
     display: inline-block;
     color: rgb(240, 240, 240);
@@ -188,7 +185,6 @@ body {
     border-width: 1px;
     text-align: left;
 }
-
 #status {
     display: inline-block;
     color: rgb(240, 240, 240);
@@ -201,51 +197,44 @@ body {
     text-align: left;
     z-index: 100;
 }
-
 #menu {
     display: inline-block;
-    font-size:16px;
+    font-size: 16px;
     color: rgb(255, 255, 255);
     padding-left: 10px;
     z-index: 100;
 }
-
 #menu:hover .dropup-content {
     display: block;
 }
-
 .dropup {
     position: relative;
     display: inline-block;
 }
-
 .dropup-content {
     display: none;
     position: absolute;
     background-color: #f1f1f1;
-    font-size:16px;
+    font-size: 16px;
     min-width: 160px;
-    bottom:18px;
+    bottom: 18px;
     z-index: 101;
 }
-
 .dropup-content a {
     color: #777;
     padding: 12px 16px;
     text-decoration: none;
     display: block;
 }
-
-.dropup-content a:hover {background-color: #ccc}
-
+.dropup-content a:hover {
+    background-color: #ccc
+}
 .dropup:hover .dropup-content {
     display: block;
 }
-
 .dropup:click .dropup-content {
     display: block;
 }
-
 .dropup:hover .dropbtn {
     background-color: #3e8e41;
 }
