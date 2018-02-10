@@ -12,6 +12,7 @@ var session = require('express-session')({
   unset: 'destroy'
 })
 var app = express()
+var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
 var validator = require('validator')
@@ -20,6 +21,7 @@ var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 
 // express
+app.use(compression({level: 9}))
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
