@@ -70,7 +70,8 @@
   },
   "standard": {
     "ignore": [
-      "public/webssh2.bundle.js"
+      "public/webssh2.bundle.js",
+      "bigip/*"
     ]
   }
 }

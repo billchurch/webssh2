@@ -1,6 +1,8 @@
 #Docs
 docs
 
+bigip/*
+
 config.json
 
 # Logs

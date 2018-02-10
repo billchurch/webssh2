@@ -47,7 +47,7 @@ window.addEventListener('resize', resizeScreen, false)
 
 function resizeScreen () {
   term.fit()
-  socket.emit('resize', {cols: term.cols, rows: term.rows })
+  socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
 
 if (document.location.pathname) {

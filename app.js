@@ -54,7 +54,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       tabStopWidth: config.terminal.tabStopWidth
     },
     allowreplay: (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
-    MRH_Session: validator.isAlphanumeric(req.headers.lastMRH_Session + '') && req.headers.lastMRH_Session || 'none',
+    MRH_Session: (validator.isAlphanumeric(req.headers.lastMRH_Session + '') ? req.headers.lastMRH_Session : 'none'),
     serverlog: {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false
