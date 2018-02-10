@@ -63,6 +63,8 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 
 * **allowreplay** - _boolean_ - Allow use of password replay feature, example `allowreplay: true`
 
+* **mrhsession** - _string_ - Can be used to pass APM session for event correlation `mrhsession: abc123`
+
 ## Config File Options
 `config.json` contains several options which may be specified to customize to your needs, vs editing the javascript directly. This is JSON format so mind your spacing, brackets, etc...
 

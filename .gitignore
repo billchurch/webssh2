@@ -1,6 +1,8 @@
 #Docs
 docs
 
+ssl/*
+
 bigip/*
 
 config.json
