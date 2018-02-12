@@ -7,6 +7,7 @@ var SSH = require('ssh2').Client
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
+var menuData = '<a id="logBtn" href="javascript:void(0);"><i class="fas fa-clipboard fa-fw"></i> Start Log</a><a id="downloadLogBtn" href="javascript:void(0);"><i class="fas fa-download fa-fw"></i> Download Log</a>'
 
 // public
 module.exports = function socket (socket) {
@@ -31,6 +32,7 @@ module.exports = function socket (socket) {
   conn.on('ready', function connOnReady () {
     console.log('WebSSH2 Login: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' mrhsession=' + socket.request.session.ssh.mrhsession + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
     socket.emit('setTerminalOpts', socket.request.session.ssh.terminal)
+    socket.emit('menu', menuData)
     socket.emit('title', 'ssh://' + socket.request.session.ssh.host)
     if (socket.request.session.ssh.header.background) socket.emit('headerBackground', socket.request.session.ssh.header.background)
     if (socket.request.session.ssh.header.name) socket.emit('header', socket.request.session.ssh.header.name)

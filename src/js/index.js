@@ -28,13 +28,9 @@ var sessionLogEnable = false
 var loggedData = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 
-var downloadLogBtn = document.getElementById('downloadLogBtn')
-var credentialsBtn = document.getElementById('credentialsBtn')
-var logBtn = document.getElementById('logBtn')
-
-logBtn.addEventListener('click', toggleLog)
-
-logBtn.style.color = '#000'
+var statusID = document.getElementById('status')
+var headerID = document.getElementById('header')
+var menuID = document.getElementById('dropupContent')
 
 var terminalContainer = document.getElementById('terminal-container')
 var socket, termid // eslint-disable-line
@@ -74,30 +70,38 @@ term.on('data', function (data) {
 })
 socket.on('title', function (data) {
   document.title = data
+}).on('menu', function (data) {
+  menuID.innerHTML = data
+  var downloadLogBtn = document.getElementById('downloadLogBtn')
+  var credentialsBtn = document.getElementById('credentialsBtn')
+  var logBtn = document.getElementById('logBtn')
+  logBtn.addEventListener('click', toggleLog)
+  logBtn.style.color = '#000'
 }).on('status', function (data) {
-  document.getElementById('status').innerHTML = data
+  statusID.innerHTML = data
 }).on('ssherror', function (data) {
-  document.getElementById('status').innerHTML = data
-  document.getElementById('status').style.backgroundColor = 'red'
+  statusID.innerHTML = data
+  statusID.style.backgroundColor = 'red'
   errorExists = true
 }).on('headerBackground', function (data) {
-  document.getElementById('header').style.backgroundColor = data
+  headerID.style.backgroundColor = data
 }).on('header', function (data) {
   if (data) {
-    document.getElementById('header').innerHTML = data
-    document.getElementById('header').style.display = 'block'
+    headerID.innerHTML = data
+    headerID.style.display = 'block'
     // header is 19px and footer is 19px, recaculate new terminal-container and resize
-    document.getElementById('terminal-container').style.height = 'calc(100% - 38px)'
+    terminalContainer.style.height = 'calc(100% - 38px)'
     resizeScreen()
   }
 }).on('footer', function (data) {
   sessionFooter = data
   document.getElementById('footer').innerHTML = data
 }).on('statusBackground', function (data) {
-  document.getElementById('status').style.backgroundColor = data
+  statusID.style.backgroundColor = data
 }).on('allowreplay', function (data) {
   if (data === true) {
     console.log('allowreplay: ' + data)
+    menuID.innerHTML = menuID.innerHTML + '<a id="credentialsBtn" href="javascript:void(0);"><i class="fas fa-key fa-fw"></i> Credentials</a>'
     credentialsBtn.style.color = '#000'
     credentialsBtn.addEventListener('click', replayCredentials)
   } else {
@@ -111,15 +115,15 @@ socket.on('title', function (data) {
   }
 }).on('disconnect', function (err) {
   if (!errorExists) {
-    document.getElementById('status').style.backgroundColor = 'red'
-    document.getElementById('status').innerHTML =
+    statusID.style.backgroundColor = 'red'
+    statusID.innerHTML =
       'WEBSOCKET SERVER DISCONNECTED: ' + err
   }
   socket.io.reconnection(false)
 }).on('error', function (err) {
   if (!errorExists) {
-    document.getElementById('status').style.backgroundColor = 'red'
-    document.getElementById('status').innerHTML = 'ERROR: ' + err
+    statusID.style.backgroundColor = 'red'
+    statusID.innerHTML = 'ERROR: ' + err
   }
 })
 
