@@ -1,7 +1,10 @@
 // app.js
 
 var path = require('path')
-var config = require('read-config')(path.join(__dirname, 'config.json'))
+// configPath = path.join(__dirname, 'config.json')
+configPath = path.join(path.dirname(require.main.filename), 'config.json')
+console.log('Reading config from: ' + configPath)
+var config = require('read-config')(configPath)
 var express = require('express')
 var logger = require('morgan')
 var session = require('express-session')({
