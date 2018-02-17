@@ -7,7 +7,6 @@ module.exports = merge(common, {
     new UglifyJSPlugin({
       uglifyOptions: {
         ie8: false,
-        dead_code: true,
         output: {
           comments: false,
           beautify: false
