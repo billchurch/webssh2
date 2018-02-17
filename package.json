@@ -75,7 +75,8 @@
       "client/public/webssh2.bundle.js",
       "bigip/*",
       "screenshots/*",
-      "bin/*"
+      "bin/*",
+      "build/*"
     ]
   }
 }
