@@ -1,6 +1,6 @@
 {
   "listen": {
-    "ip": "127.0.0.1",
+    "ip": "0.0.0.0",
     "port": 2222
   },
   "user": {
@@ -19,7 +19,7 @@
     "cursorBlink": true,
     "scrollback": 10000,
     "tabStopWidth": 8,
-    "bellStyle": "sound",
+    "bellStyle": "sound"
   },
   "header": {
     "text": null,
@@ -48,12 +48,12 @@
       "aes128-gcm@openssh.com",
       "aes256-gcm",
       "aes256-gcm@openssh.com",
-      "aes256-cbc" // for some legacy systems
+      "aes256-cbc"
     ],
     "hmac": [
       "hmac-sha2-256",
       "hmac-sha2-512",
-      "hmac-sha1" // for some legacy systems
+      "hmac-sha1"
     ],
     "compress": [
       "none",
@@ -62,9 +62,9 @@
     ]
   },
   "serverlog": {
-    "client": false, // proof-of-concept to log commands from client to server
-    "server": false  // not yet implemented
+    "client": false,
+    "server": false
   },
-  "accesslog": false, // http style access logging to console.log
-  "verify": false, // verification of host key hashes, see hostkeyhashes.json
+  "accesslog": false,
+  "verify": false
 }
