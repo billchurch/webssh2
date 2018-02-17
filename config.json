@@ -18,7 +18,8 @@
   "terminal": {
     "cursorBlink": true,
     "scrollback": 10000,
-    "tabStopWidth": 8
+    "tabStopWidth": 8,
+    "bellStyle": "sound",
   },
   "header": {
     "text": null,
