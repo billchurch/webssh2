@@ -1,8 +1,10 @@
 'use strict'
 
-import * as io from '../../node_modules/socket.io-client/dist/socket.io.js'
-import * as Terminal from '../../node_modules/xterm/dist/xterm'
-import * as fit from '../../node_modules/xterm/dist/addons/fit/fit'
+import * as io from 'socket.io-client/dist/socket.io.js'
+import * as Terminal from 'xterm/dist/xterm'
+import * as fit from 'xterm/dist/addons/fit/fit'
+// fontawesome, individual icon imports reduces file size dramatically but it's
+// a little messy. this should be fixed by some updates with the fa library at some point
 import fontawesome from '@fortawesome/fontawesome'
 import faBars from '@fortawesome/fontawesome-free-solid/faBars'
 // import faQuestion from '@fortawesome/fontawesome-free-solid/faQuestion'
@@ -10,31 +12,29 @@ import faClipboard from '@fortawesome/fontawesome-free-solid/faClipboard'
 import faDownload from '@fortawesome/fontawesome-free-solid/faDownload'
 import faKey from '@fortawesome/fontawesome-free-solid/faKey'
 import faCog from '@fortawesome/fontawesome-free-solid/faCog'
-
 fontawesome.library.add(faBars, faClipboard, faDownload, faKey, faCog)
-
 fontawesome.config.searchPseudoElements = true
-
 fontawesome.dom.i2svg()
 
-require('../../node_modules/xterm/dist/xterm.css')
+require('xterm/dist/xterm.css')
 require('../css/style.css')
 
 Terminal.applyAddon(fit)
 
-/* global Blob */
+/* global Blob, logBtn, credentialsBtn, downloadLogBtn */
 
 var sessionLogEnable = false
 var loggedData = false
+var allowreplay = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
-
-var statusID = document.getElementById('status')
-var headerID = document.getElementById('header')
-var menuID = document.getElementById('dropupContent')
-
-var terminalContainer = document.getElementById('terminal-container')
 var socket, termid // eslint-disable-line
 var term = new Terminal()
+// DOM properties
+var status = document.getElementById('status')
+var header = document.getElementById('header')
+var dropupContent = document.getElementById('dropupContent')
+var footer = document.getElementById('footer')
+var terminalContainer = document.getElementById('terminal-container')
 term.open(terminalContainer)
 term.focus()
 term.fit()
@@ -57,75 +57,103 @@ if (document.location.pathname) {
   socket = io.connect()
 }
 
+term.on('data', function (data) {
+  socket.emit('data', data)
+})
+
+socket.on('data', function (data) {
+  term.write(data)
+  if (sessionLogEnable) {
+    sessionLog = sessionLog + data
+  }
+})
+
 socket.on('connect', function () {
   socket.emit('geometry', term.cols, term.rows)
 })
+
 socket.on('setTerminalOpts', function (data) {
   term.setOption('cursorBlink', data.cursorBlink)
   term.setOption('scrollback', data.scrollback)
   term.setOption('tabStopWidth', data.tabStopWidth)
 })
-term.on('data', function (data) {
-  socket.emit('data', data)
-})
+
 socket.on('title', function (data) {
   document.title = data
-}).on('menu', function (data) {
-  menuID.innerHTML = data
-  var downloadLogBtn = document.getElementById('downloadLogBtn')
-  var credentialsBtn = document.getElementById('credentialsBtn')
-  var logBtn = document.getElementById('logBtn')
-  logBtn.addEventListener('click', toggleLog)
-  logBtn.style.color = '#000'
-}).on('status', function (data) {
-  statusID.innerHTML = data
-}).on('ssherror', function (data) {
-  statusID.innerHTML = data
-  statusID.style.backgroundColor = 'red'
+})
+
+socket.on('menu', function (data) {
+  drawMenu(data)
+})
+
+socket.on('status', function (data) {
+  status.innerHTML = data
+})
+
+socket.on('ssherror', function (data) {
+  status.innerHTML = data
+  status.style.backgroundColor = 'red'
   errorExists = true
-}).on('headerBackground', function (data) {
-  headerID.style.backgroundColor = data
-}).on('header', function (data) {
+})
+
+socket.on('headerBackground', function (data) {
+  header.style.backgroundColor = data
+})
+
+socket.on('header', function (data) {
   if (data) {
-    headerID.innerHTML = data
-    headerID.style.display = 'block'
+    header.innerHTML = data
+    header.style.display = 'block'
     // header is 19px and footer is 19px, recaculate new terminal-container and resize
     terminalContainer.style.height = 'calc(100% - 38px)'
     resizeScreen()
   }
-}).on('footer', function (data) {
+})
+
+socket.on('footer', function (data) {
   sessionFooter = data
-  document.getElementById('footer').innerHTML = data
-}).on('statusBackground', function (data) {
-  statusID.style.backgroundColor = data
-}).on('allowreplay', function (data) {
+  footer.innerHTML = data
+})
+
+socket.on('statusBackground', function (data) {
+  status.style.backgroundColor = data
+})
+
+socket.on('allowreplay', function (data) {
   if (data === true) {
     console.log('allowreplay: ' + data)
-    menuID.innerHTML = menuID.innerHTML + '<a id="credentialsBtn" href="javascript:void(0);"><i class="fas fa-key fa-fw"></i> Credentials</a>'
-    credentialsBtn.style.color = '#000'
-    credentialsBtn.addEventListener('click', replayCredentials)
+    allowreplay = true
+    drawMenu(dropupContent.innerHTML + '<a id="credentialsBtn"><i class="fas fa-key fa-fw"></i> Credentials</a>')
   } else {
+    allowreplay = false
     console.log('allowreplay: ' + data)
-    credentialsBtn.style.color = '#666'
   }
-}).on('data', function (data) {
-  term.write(data)
-  if (sessionLogEnable) {
-    sessionLog = sessionLog + data
-  }
-}).on('disconnect', function (err) {
+})
+
+socket.on('disconnect', function (err) {
   if (!errorExists) {
-    statusID.style.backgroundColor = 'red'
-    statusID.innerHTML =
+    status.style.backgroundColor = 'red'
+    status.innerHTML =
       'WEBSOCKET SERVER DISCONNECTED: ' + err
   }
   socket.io.reconnection(false)
-}).on('error', function (err) {
+})
+
+socket.on('error', function (err) {
   if (!errorExists) {
-    statusID.style.backgroundColor = 'red'
-    statusID.innerHTML = 'ERROR: ' + err
+    status.style.backgroundColor = 'red'
+    status.innerHTML = 'ERROR: ' + err
   }
 })
+
+// draw/re-draw menu and reattach listeners
+// when dom is changed, listeners are abandonded
+function drawMenu (data) {
+  dropupContent.innerHTML = data
+  logBtn.addEventListener('click', toggleLog)
+  allowreplay && credentialsBtn.addEventListener('click', replayCredentials)
+  loggedData && downloadLogBtn.addEventListener('click', downloadLog)
+}
 
 // replay password to server, requires
 function replayCredentials () { // eslint-disable-line

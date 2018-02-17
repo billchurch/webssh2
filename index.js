@@ -6,8 +6,8 @@
  */
 'use strict'
 
-var config = require('./app').config
-var server = require('./app').server
+var config = require('./server/app').config
+var server = require('./server/app').server
 
 server.listen({ host: config.listen.ip, port: config.listen.port
 })

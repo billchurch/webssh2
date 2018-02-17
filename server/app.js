@@ -3,6 +3,7 @@
 var path = require('path')
 // configPath = path.join(__dirname, 'config.json')
 var configPath = path.join(path.dirname(require.main.filename), 'config.json')
+var publicPath = path.join(path.dirname(require.main.filename), 'client', 'public')
 console.log('Reading config from: ' + configPath)
 var config = require('read-config')(configPath)
 var express = require('express')
@@ -31,10 +32,10 @@ if (config.accesslog) app.use(logger('common'))
 app.disable('x-powered-by')
 
 // static files
-app.use(express.static(path.join(__dirname, 'public'), expressOptions))
+app.use(express.static(publicPath, expressOptions))
 
 app.get('/ssh/host/:host?', function (req, res, next) {
-  res.sendFile(path.join(path.join(__dirname, 'public', 'client.htm')))
+  res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
   req.session.ssh = {
     host: (validator.isIP(req.params.host + '') && req.params.host) ||

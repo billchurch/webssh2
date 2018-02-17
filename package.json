@@ -34,17 +34,17 @@
     "express": "^4.16.1",
     "express-session": "^1.15.6",
     "morgan": "^1.9.0",
-    "read-config": "^2.0.0",
+    "read-config": "^1.6.0",
     "socket.io": "^2.0.4",
     "ssh2": "^0.5.5",
     "validator": "^9.0.0"
   },
   "scripts": {
     "start": "node index.js",
-    "builddev": "webpack --config webpack.dev.js",
+    "build": "webpack --progress --colors --config scripts/webpack.prod.js",
+    "builddev": "webpack --progress --colors --config scripts/webpack.dev.js",
     "test": "snyk test",
     "watch": "nodemon index.js",
-    "build": "webpack --config webpack.prod.js",
     "standard": "standard --verbose | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
@@ -72,8 +72,10 @@
   },
   "standard": {
     "ignore": [
-      "public/webssh2.bundle.js",
-      "bigip/*"
+      "client/public/webssh2.bundle.js",
+      "bigip/*",
+      "screenshots/*",
+      "bin/*"
     ]
   }
 }
