@@ -85,16 +85,9 @@ body {
 #menu:hover .dropup-content {
     display: block;
 }
-#logBtn {
-    color: #000;
-}
-#credentialsBtn {
-    color: #000;
-}
 .dropup {
     position: relative;
     display: inline-block;
-    cursor: pointer;
 }
 .dropup-content {
   display: none;

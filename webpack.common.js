@@ -2,25 +2,22 @@ const path = require('path')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
+
 module.exports = {
-  context: path.resolve('__dirname', '../'),
   entry: {
-    webssh2: './client/src/js/index.js'
+    webssh2: './src/js/index.js'
   },
   plugins: [
-    new CleanWebpackPlugin(['client/public'], {
-      root: path.resolve('__dirname', '../'),
-      verbose: true
-    }),
+    new CleanWebpackPlugin(['./public']),
     new CopyWebpackPlugin([
-      './client/src/client.htm',
-      './client/src/favicon.ico'
+      './src/client.htm',
+      './src/favicon.ico'
     ]),
     new ExtractTextPlugin('[name].css')
   ],
   output: {
     filename: '[name].bundle.js',
-    path: path.resolve(__dirname, '../client/public')
+    path: path.resolve(__dirname, './public')
   },
   module: {
     rules: [

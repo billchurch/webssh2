@@ -7,7 +7,7 @@ var SSH = require('ssh2').Client
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
-var menuData = '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a><a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>'
+var menuData = '<a id="logBtn" href="javascript:void(0);"><i class="fas fa-clipboard fa-fw"></i> Start Log</a><a id="downloadLogBtn" href="javascript:void(0);"><i class="fas fa-download fa-fw"></i> Download Log</a>'
 
 // public
 module.exports = function socket (socket) {
