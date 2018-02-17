@@ -207,7 +207,7 @@ function downloadLog () { // eslint-disable-line
       logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() +
       logDate.getSeconds() + '.log'
       // regex should eliminate escape sequences from being logged.
-    var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')], {
+    var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[\]()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><;]/g, '')], {
       type: 'text/plain'
     })
     if (window.navigator.msSaveOrOpenBlob) {

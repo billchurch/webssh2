@@ -5,6 +5,11 @@
 - Added bellStyle options
   - `GET var`: **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
   - `config.json`: **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
+### Changed
+- Updated xterm.js to 3.1.0
+  - https://github.com/xtermjs/xterm.js/releases/tag/3.1.0
+### Fixed
+- ESC]0; is now removed from log files when using the browser-side logging feature
 
 ## [0.2.0] 2018-02-10
 Mostly client (browser) related changes in this release
