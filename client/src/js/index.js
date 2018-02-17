@@ -73,6 +73,7 @@ socket.on('setTerminalOpts', function (data) {
   term.setOption('cursorBlink', data.cursorBlink)
   term.setOption('scrollback', data.scrollback)
   term.setOption('tabStopWidth', data.tabStopWidth)
+  term.setOption('bellStyle', data.bellStyle)
 })
 
 socket.on('title', function (data) {

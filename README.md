@@ -59,6 +59,8 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 
 * **tabStopWidth** - _integer_ - Tab stops at _n_ characters **Default:** 8. **Enforced Values:** Min: 1, Max: 100
 
+* **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
+
 ## Headers
 
 * **allowreplay** - _boolean_ - Allow use of password replay feature, example `allowreplay: true`
@@ -93,6 +95,8 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 * **terminal.scrollback** - _integer_ - Lines in the scrollback buffer. **Default:** 10000.
 
 * **terminal.tabStopWidth** - _integer_ - Tab stops at _n_ characters **Default:** 8.
+
+* **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
 
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.
 

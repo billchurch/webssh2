@@ -1,6 +1,10 @@
 # Change Log
 ## [0.2.3] 2018-02-TBD
+### Added
 - Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
+- Added bellStyle options
+  - `GET var`: **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
+  - `config.json`: **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
 
 ## [0.2.0] 2018-02-10
 Mostly client (browser) related changes in this release
