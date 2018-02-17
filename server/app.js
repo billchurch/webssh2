@@ -2,8 +2,9 @@
 
 var path = require('path')
 // configPath = path.join(__dirname, 'config.json')
-var configPath = path.join(path.dirname(require.main.filename), 'config.json')
-var publicPath = path.join(path.dirname(require.main.filename), 'client', 'public')
+var nodeRoot = path.dirname(require.main.filename)
+var configPath = path.join(nodeRoot, 'config.json')
+var publicPath = path.join(nodeRoot, 'client', 'public')
 console.log('Reading config from: ' + configPath)
 var config = require('read-config')(configPath)
 var express = require('express')
