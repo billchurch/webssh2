@@ -143,6 +143,10 @@ socket.on('error', function (err) {
   }
 })
 
+term.on('title', function (title) {
+  document.title = title
+})
+
 // draw/re-draw menu and reattach listeners
 // when dom is changed, listeners are abandonded
 function drawMenu (data) {

@@ -1,4 +1,7 @@
 # Change Log
+## [0.2.3] 2018-02-TBD
+- Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
+
 ## [0.2.0] 2018-02-10
 Mostly client (browser) related changes in this release
 
