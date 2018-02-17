@@ -1,6 +1,6 @@
 'use strict'
 
-import * as io from 'socket.io-client/dist/socket.io.js'
+import * as io from 'socket.io-client'
 import * as Terminal from 'xterm/dist/xterm'
 import * as fit from 'xterm/dist/addons/fit/fit'
 // fontawesome, individual icon imports reduces file size dramatically but it's
@@ -13,8 +13,6 @@ import faDownload from '@fortawesome/fontawesome-free-solid/faDownload'
 import faKey from '@fortawesome/fontawesome-free-solid/faKey'
 import faCog from '@fortawesome/fontawesome-free-solid/faCog'
 fontawesome.library.add(faBars, faClipboard, faDownload, faKey, faCog)
-fontawesome.config.searchPseudoElements = true
-fontawesome.dom.i2svg()
 
 require('xterm/dist/xterm.css')
 require('../css/style.css')
@@ -22,7 +20,6 @@ require('../css/style.css')
 Terminal.applyAddon(fit)
 
 /* global Blob, logBtn, credentialsBtn, downloadLogBtn */
-
 var sessionLogEnable = false
 var loggedData = false
 var allowreplay = false
