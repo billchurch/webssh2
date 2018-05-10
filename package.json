@@ -37,7 +37,7 @@
     "read-config": "^2.0.0",
     "socket.io": "^2.0.4",
     "ssh2": "^0.5.5",
-    "validator": "^9.0.0"
+    "validator": "^10.1.0"
   },
   "scripts": {
     "start": "node index.js",
