@@ -1,5 +1,5 @@
 # Change Log
-## [0.2.3] 2018-02-TBD
+## [0.2.3] 2018-05-TBD
 ### Added
 - Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
 - Added bellStyle options
