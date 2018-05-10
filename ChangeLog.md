@@ -8,6 +8,8 @@
   - webpack-cli 2.1.3
   - ajv 6.5.0
 ### Changed
+- Updated ssh2 to v0.6.1
+  - mostly for node v10 compatibility
 - Updated xterm.js to 3.1.0
   - https://github.com/xtermjs/xterm.js/releases/tag/3.1.0
 - Updated dev dependancies
