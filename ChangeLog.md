@@ -20,6 +20,8 @@
   - validator to 10.0.0
   - url-loader to 1.0.1
   - rebuilt /client with updated webpack and plugins
+  - @fortawesome/fontawesome@1.1.7
+  - @fortawesome/fontawesome-free-solid@5.0.11
 
 ### Fixed
 - ESC]0; is now removed from log files when using the browser-side logging feature
