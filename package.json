@@ -21,7 +21,7 @@
     }
   ],
   "engines": {
-    "node": "10"
+    "node": "6"
   },
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
