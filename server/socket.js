@@ -24,7 +24,7 @@ module.exports = function socket (socket) {
     termRows = rows
   })
   conn.on('banner', function connOnBanner (data) {
-        // need to convert to cr/lf for proper formatting
+    // need to convert to cr/lf for proper formatting
     data = data.replace(/\r?\n/g, '\r\n')
     socket.emit('data', data.toString('utf-8'))
   })

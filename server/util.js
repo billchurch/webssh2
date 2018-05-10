@@ -12,7 +12,7 @@ exports.basicAuth = function basicAuth (req, res, next) {
     req.session.userpassword = myAuth.pass
     debug('myAuth.name: ' + myAuth.name.yellow.bold.underline +
       ' and password ' + ((myAuth.pass) ? 'exists'.yellow.bold.underline
-      : 'is blank'.underline.red.bold))
+        : 'is blank'.underline.red.bold))
     next()
   } else {
     res.statusCode = 401
