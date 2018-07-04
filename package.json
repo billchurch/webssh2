@@ -59,7 +59,7 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "file-loader": "^1.1.6",
     "nodemon": "^1.11.0",
-    "postcss-discard-comments": "^2.0.4",
+    "postcss-discard-comments": "^4.0.0",
     "snazzy": "^7.0.0",
     "snyk": "^1.39.1",
     "standard": "^11.0.0",
