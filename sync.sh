@@ -1,6 +1,6 @@
 #!/bin/bash
 ilxhost=root@192.168.30.210
-workspace_name=WebSSH2-0.2.0
+workspace_name=webssh2
 package_name=BIG-IP-13.1.0.8-ILX-WebSSH2
 pua_location=/Users/bill/Documents/GitHub/f5-pua/bin
 
