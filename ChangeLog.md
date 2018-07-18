@@ -1,27 +1,19 @@
 # Change Log
-## [0.2.3] 2018-05-TBD
+## [0.2.4] 2018-07-18
 ### Added
 - Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
 - Added bellStyle options
   - `GET var`: **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
   - `config.json`: **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
-  - webpack-cli 2.1.3
-  - ajv 6.5.0
+  - `workspace` folder on GITHUB for BIG-IP specific fixes/changes
 ### Changed
-- Updated ssh2 to v0.6.1
-  - mostly for node v10 compatibility
 - Updated xterm.js to 3.1.0
   - https://github.com/xtermjs/xterm.js/releases/tag/3.1.0
-- Updated dev dependancies
-  - style-loader to 0.2.1
-  - standard to 11.0.0
-  - webpack to 4.8.1
-  - extract-text-webpack-plugin to 4.0.0-beta.0
-  - validator to 10.0.0
-  - url-loader to 1.0.1
-  - rebuilt /client with updated webpack and plugins
-  - @fortawesome/fontawesome@1.1.7
-  - @fortawesome/fontawesome-free-solid@5.0.11
+- Default listen IP in `config.json` changed back to 127.0.0.1 
+### Fixed
+- ESC]0; is now removed from log files when using the browser-side logging feature
+
+## [0.2.3] unreleased
 
 ### Fixed
 - ESC]0; is now removed from log files when using the browser-side logging feature
