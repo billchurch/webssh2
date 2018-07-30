@@ -35,6 +35,19 @@ app.disable('x-powered-by')
 // static files
 app.use(express.static(publicPath, expressOptions))
 
+app.get('/reauth', function (req, res, next) {
+    var r = req.headers.referer || '/';
+    res.status(401).send(
+        '<html>' +
+        '    <head>' +
+        '        <meta http-equiv="refresh" content="1; url=' + r + '" />' +
+        '    </head>' +
+        '    <body>' +
+        '        <a href="' + r + '">Go Back</a>' +
+        '    </body>' +
+        '</html>');
+})
+
 app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
