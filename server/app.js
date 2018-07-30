@@ -35,7 +35,7 @@ app.disable('x-powered-by')
 // static files
 app.use(express.static(publicPath, expressOptions))
 
-app.get('/logout', function (req, res, next) {
+app.get('/reauth', function (req, res, next) {
     var r = req.headers.referer || '/';
     res.status(401).send(
         '<html>' +
