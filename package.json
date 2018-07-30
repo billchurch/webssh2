@@ -43,6 +43,7 @@
     "start": "node index.js",
     "build": "webpack --progress --colors --config scripts/webpack.prod.js",
     "builddev": "webpack --progress --colors --config scripts/webpack.dev.js",
+    "analyze": "webpack --json --config scripts/webpack.prod.js | webpack-bundle-size-analyzer",
     "test": "snyk test",
     "watch": "nodemon index.js",
     "standard": "standard --verbose | snazzy",
