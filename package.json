@@ -45,7 +45,7 @@
     "builddev": "webpack --progress --colors --config scripts/webpack.dev.js",
     "test": "snyk test",
     "watch": "nodemon index.js",
-    "standard": "standard --verbose | snazzy",
+    "standard": "standard --verbose --fix | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
   "devDependencies": {
@@ -78,7 +78,8 @@
       "bigip/*",
       "screenshots/*",
       "bin/*",
-      "build/*"
+      "build/*",
+      "workspace/*"
     ]
   }
 }
