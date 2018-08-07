@@ -2,9 +2,13 @@
 engines:
   csslint:
     enabled: true
+    exclude_paths:
+      - "client/public/*"
   duplication:
     exclude_paths:
+      - "client/public/*"
       - "public/webssh2.bundle.js"
+      - "workspace/*"
     enabled: true
     config:
       languages:
@@ -29,4 +33,6 @@ ratings:
 exclude_paths:
 - node_modules/
 - "public/webssh2.bundle.js"
+- "workspace/*"
+
 
