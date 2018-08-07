@@ -85,12 +85,10 @@ html, body {
 #menu:hover .dropup-content {
     display: block;
 }
-#logBtn {
+#logBtn, #credentialsBtn, #reauthBtn {
     color: #000;
 }
-#credentialsBtn {
-    color: #000;
-}
+
 .dropup {
     position: relative;
     display: inline-block;

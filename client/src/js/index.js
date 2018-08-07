@@ -19,10 +19,11 @@ require('../css/style.css')
 
 Terminal.applyAddon(fit)
 
-/* global Blob, logBtn, credentialsBtn, downloadLogBtn */
+/* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */
 var sessionLogEnable = false
 var loggedData = false
 var allowreplay = false
+var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var socket, termid // eslint-disable-line
 var term = new Terminal()
@@ -128,6 +129,17 @@ socket.on('allowreplay', function (data) {
   }
 })
 
+socket.on('allowreauth', function (data) {
+  if (data === true) {
+    console.log('allowreauth: ' + data)
+    allowreauth = true
+    drawMenu(dropupContent.innerHTML + '<a id="reauthBtn"><i class="fas fa-key fa-fw"></i> Switch User</a>')
+  } else {
+    allowreauth = false
+    console.log('allowreauth: ' + data)
+  }
+})
+
 socket.on('disconnect', function (err) {
   if (!errorExists) {
     status.style.backgroundColor = 'red'
@@ -153,8 +165,16 @@ term.on('title', function (title) {
 function drawMenu (data) {
   dropupContent.innerHTML = data
   logBtn.addEventListener('click', toggleLog)
+  allowreauth && reauthBtn.addEventListener('click', reauthSession)
   allowreplay && credentialsBtn.addEventListener('click', replayCredentials)
   loggedData && downloadLogBtn.addEventListener('click', downloadLog)
+}
+
+// reauthenticate
+function reauthSession () { // eslint-disable-line
+  console.log('re-authenticating')
+  window.location.href = '/reauth'
+  return false
 }
 
 // replay password to server, requires

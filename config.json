@@ -30,7 +30,8 @@
     "secret": "mysecret"
   },
   "options": {
-    "challengeButton": true
+    "challengeButton": true,
+    "allowreauth": true
   },
   "algorithms": {
     "kex": [

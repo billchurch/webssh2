@@ -35,6 +35,11 @@ app.disable('x-powered-by')
 // static files
 app.use(express.static(publicPath, expressOptions))
 
+app.get('/reauth', function (req, res, next) {
+  var r = req.headers.referer || '/'
+  res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>');
+})
+
 app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
@@ -60,7 +65,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', {min: 1, max: 100}) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
       bellStyle: ((req.query.bellStyle) && (['sound', 'none'].indexOf(req.query.bellStyle) > -1)) ? req.query.bellStyle : config.terminal.bellStyle
     },
-    allowreplay: (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
+    allowreplay: config.options.challengeButton || (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
+    allowreauth: config.options.allowreauth || false,
     mrhsession: ((validator.isAlphanumeric(req.headers.mrhsession + '') && req.headers.mrhsession) ? req.headers.mrhsession : 'none'),
     serverlog: {
       client: config.serverlog.client || false,

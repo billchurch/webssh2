@@ -7,7 +7,8 @@ var SSH = require('ssh2').Client
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
-var menuData = '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a><a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>'
+var menuData = '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>' +
+  '<a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>'
 
 // public
 module.exports = function socket (socket) {
@@ -40,6 +41,7 @@ module.exports = function socket (socket) {
     socket.emit('status', 'SSH CONNECTION ESTABLISHED')
     socket.emit('statusBackground', 'green')
     socket.emit('allowreplay', socket.request.session.ssh.allowreplay)
+    socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
     conn.shell({
       term: socket.request.session.ssh.term,
       cols: termCols,
