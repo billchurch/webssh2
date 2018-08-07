@@ -162,7 +162,7 @@
     height: 1px;
     overflow: hidden;
 }
-html, body {
+body, html  {
   font-family: helvetica, sans-serif, arial;
   font-size: 1em;
   color: #111;
