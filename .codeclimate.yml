@@ -7,7 +7,6 @@ engines:
   duplication:
     exclude_paths:
       - "client/public/*"
-      - "public/webssh2.bundle.js"
       - "workspace/*"
     enabled: true
     config:
@@ -20,6 +19,7 @@ engines:
     enabled: true
   fixme:
     enabled: true
+
 ratings:
   paths:
   - "**.css"
@@ -32,7 +32,7 @@ ratings:
   - "**.rb"
 exclude_paths:
 - node_modules/
-- "public/webssh2.bundle.js"
+- "client/public/*
 - "workspace/*"
 
 
