@@ -50,3 +50,6 @@ jspm_packages
 
 #Mac Files
 .DS_Store
+
+#IDE
+.idea

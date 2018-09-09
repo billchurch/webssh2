@@ -1,5 +1,5 @@
 {
-  "name": "webssh2",
+  "name": "webssh2-server",
   "version": "0.2.3",
   "ignore": [
     ".gitignore"
@@ -41,17 +41,12 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "webpack --progress --colors --config scripts/webpack.prod.js",
-    "builddev": "webpack --progress --colors --config scripts/webpack.dev.js",
-    "analyze": "webpack --json --config scripts/webpack.prod.js | webpack-bundle-size-analyzer",
     "test": "snyk test",
     "watch": "nodemon index.js",
     "standard": "standard --verbose --fix | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome": "^1.1.8",
-    "@fortawesome/fontawesome-free-solid": "^5.0.13",
     "ajv": "^6.5.2",
     "bithound": "^1.7.0",
     "clean-webpack-plugin": "^0.1.19",
@@ -70,8 +65,7 @@
     "webpack": "^4.16.5",
     "webpack-cli": "^3.1.0",
     "webpack-merge": "^4.1.4",
-    "webpack-stream": "^5.1.0",
-    "xterm": "^3.5.1"
+    "webpack-stream": "^5.1.0"
   },
   "standard": {
     "ignore": [
