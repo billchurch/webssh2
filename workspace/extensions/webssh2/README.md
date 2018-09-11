@@ -1,12 +1,21 @@
 # WebSSH2
-[![GitHub version](https://badge.fury.io/gh/billchurch%2Fwebssh2.svg)](https://badge.fury.io/gh/billchurch%2Fwebssh2) [![Build Status](https://travis-ci.org/billchurch/WebSSH2.svg?branch=master)](https://travis-ci.org/billchurch/WebSSH2) [![Known Vulnerabilities](https://snyk.io/test/github/billchurch/webssh2/badge.svg)](https://snyk.io/test/github/billchurch/webssh2) [![bitHound Overall Score](https://www.bithound.io/github/billchurch/WebSSH2/badges/score.svg)](https://www.bithound.io/github/billchurch/WebSSH2) [![bitHound Dependencies](https://www.bithound.io/github/billchurch/WebSSH2/badges/dependencies.svg)](https://www.bithound.io/github/billchurch/WebSSH2/master/dependencies/npm) [![NSP Status](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764/badge)](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764) [![Greenkeeper badge](https://badges.greenkeeper.io/billchurch/WebSSH2.svg)](https://greenkeeper.io/)
+[![GitHub version](https://badge.fury.io/gh/billchurch%2Fwebssh2.svg)](https://badge.fury.io/gh/billchurch%2Fwebssh2) [![Build Status](https://travis-ci.org/billchurch/WebSSH2.svg?branch=master)](https://travis-ci.org/billchurch/WebSSH2) [![Known Vulnerabilities](https://snyk.io/test/github/billchurch/webssh2/badge.svg)](https://snyk.io/test/github/billchurch/webssh2) [![NSP Status](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764/badge)](https://nodesecurity.io/orgs/billchurch/projects/b0a0d9df-1340-43ef-9736-ef983c057764) [![Greenkeeper badge](https://badges.greenkeeper.io/billchurch/WebSSH2.svg)](https://greenkeeper.io/)
 
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
 
 Web SSH Client using ssh2, socket.io, xterm.js, and express
 
 A bare bones example of an HTML5 web-based terminal emulator and SSH client. We use SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server.
 
 <img width="600" height="340" alt="WebSSH2 v0.2.0 demo" src="https://github.com/billchurch/WebSSH2/raw/master/screenshots/demo-800.gif">
+
+# Requirements
+Node v6.x or above. If using <v6.x you should be able to run by replacing the "read-config" package to @1 like this (after a clone):
+
+`npm install --save read-config@1
+`
+
+Just keep in mind that there is no intention to ensure compatability with Node < v6.x
 
 # Instructions
 To install:
