@@ -1,7 +1,7 @@
 #!/bin/bash
 ## Syncs from BIG-IP and builds a release based on version in extensions/ephemeral_auth/package.json
 
-ilxhost=root@192.168.30.210
+ilxhost=root@192.168.30.216
 workspace_name=webssh2
 package_name=BIG-IP-13.1.0.8-ILX-WebSSH2
 pua_location=/Users/bill/Documents/GitHub/f5-pua/bin
