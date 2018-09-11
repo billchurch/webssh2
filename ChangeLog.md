@@ -6,6 +6,7 @@
 ### Changed
 - `options.challengeButton` enabled
   - previously this configuration option did nothing, this now enables the Credentials button site-wide regardless of the `allowreplay` header value
+- Updated debug module to v4
 
 ## [0.2.4] 2018-07-18
 ### Added
