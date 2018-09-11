@@ -1,3 +1,5 @@
+'use strict'
+/* jshint esversion: 6, asi: true, node: true */
 // socket.js
 
 // private
