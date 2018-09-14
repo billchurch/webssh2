@@ -65,7 +65,7 @@
     "snyk": "^1.90.0",
     "standard": "^11.0.1",
     "style-loader": "^0.21.0",
-    "uglifyjs-webpack-plugin": "^1.2.7",
+    "uglifyjs-webpack-plugin": "^2.0.0",
     "url-loader": "^1.0.1",
     "webpack": "^4.16.5",
     "webpack-cli": "^3.1.0",
