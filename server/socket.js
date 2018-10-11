@@ -152,6 +152,8 @@ module.exports = function socket (socket) {
         console.log('WebSSH2 ' + 'error: Authentication failure'.red.bold +
           ' user=' + socket.request.session.username.yellow.bold.underline +
           ' from=' + socket.handshake.address.yellow.bold.underline)
+
+        socket.emit('reauth')
       } else {
         console.log('WebSSH2 Logout: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
         if (err) {
