@@ -1,11 +1,12 @@
 # Change Log
-## [0.2.5] TBD
+## [0.2.5] 20180911
 ### Added
 - Reauth function thanks to @vbeskrovny and @vvalchev (9bbc116)
   - Controlled by `config.json` option `options.allowreauth` true presents reauth dialog and false hides dialog
 ### Changed
 - `options.challengeButton` enabled
-  - previously this configuraiton option did nothing, this now enables the Credentials button site-wide regardless of the `allowreplay` header value
+  - previously this configuration option did nothing, this now enables the Credentials button site-wide regardless of the `allowreplay` header value
+- Updated debug module to v4
 
 ## [0.2.4] 2018-07-18
 ### Added

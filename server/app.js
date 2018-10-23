@@ -1,3 +1,5 @@
+'use strict'
+/* jshint esversion: 6, asi: true, node: true */
 // app.js
 
 var path = require('path')
