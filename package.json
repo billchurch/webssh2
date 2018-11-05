@@ -62,7 +62,7 @@
     "nodemon": "^1.18.3",
     "postcss-discard-comments": "^4.0.0",
     "snazzy": "^7.1.1",
-    "snyk": "^1.90.0",
+    "snyk": "^1.108.0",
     "standard": "^11.0.1",
     "style-loader": "^0.21.0",
     "uglifyjs-webpack-plugin": "^1.2.7",
