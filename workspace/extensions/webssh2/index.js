@@ -7,7 +7,6 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  *
  */
-'use strict'
 
 var config = require('./server/app').config
 var server = require('./server/app').server
