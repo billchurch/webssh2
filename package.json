@@ -58,7 +58,7 @@
     "copy-webpack-plugin": "^4.5.2",
     "css-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
-    "file-loader": "^1.1.11",
+    "file-loader": "^2.0.0",
     "nodemon": "^1.18.3",
     "postcss-discard-comments": "^4.0.0",
     "snazzy": "^7.1.1",
