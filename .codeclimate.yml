@@ -31,8 +31,6 @@ ratings:
   - "**.py"
   - "**.rb"
 exclude_paths:
-- node_modules/
-- "client/public/*
+- "node_modules/"
+- "client/public/*"
 - "workspace/*"
-
-
