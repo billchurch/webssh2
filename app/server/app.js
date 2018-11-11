@@ -28,7 +28,7 @@ var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 
 // express
-app.use(compression({level: 9}))
+app.use(compression({ level: 9 }))
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
@@ -50,7 +50,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) &&
       req.params.host) || config.ssh.host,
-    port: (validator.isInt(req.query.port + '', {min: 1, max: 65535}) &&
+    port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
       req.query.port) || config.ssh.port,
     header: {
       name: req.query.header || config.header.text,
@@ -63,8 +63,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       req.query.sshterm) || config.ssh.term,
     terminal: {
       cursorBlink: (validator.isBoolean(req.query.cursorBlink + '') ? myutil.parseBool(req.query.cursorBlink) : config.terminal.cursorBlink),
-      scrollback: (validator.isInt(req.query.scrollback + '', {min: 1, max: 200000}) && req.query.scrollback) ? req.query.scrollback : config.terminal.scrollback,
-      tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', {min: 1, max: 100}) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
+      scrollback: (validator.isInt(req.query.scrollback + '', { min: 1, max: 200000 }) && req.query.scrollback) ? req.query.scrollback : config.terminal.scrollback,
+      tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', { min: 1, max: 100 }) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
       bellStyle: ((req.query.bellStyle) && (['sound', 'none'].indexOf(req.query.bellStyle) > -1)) ? req.query.bellStyle : config.terminal.bellStyle
     },
     allowreplay: config.options.challengeButton || (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
@@ -74,7 +74,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false
     },
-    readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
+    readyTimeout: (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
       req.query.readyTimeout) || config.ssh.readyTimeout
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
@@ -101,4 +101,4 @@ io.use(function (socket, next) {
 // bring up socket
 io.on('connection', socket)
 
-module.exports = {server: server, config: config}
+module.exports = { server: server, config: config }

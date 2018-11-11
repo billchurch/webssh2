@@ -32,7 +32,7 @@ module.exports = {
             {
               loader: 'css-loader',
               options: {
-                minimize: {discardComments: {removeAll: true}}
+                minimize: { discardComments: { removeAll: true } }
               }
             }
           ]
