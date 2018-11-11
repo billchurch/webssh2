@@ -34,8 +34,9 @@ module.exports = function socket (socket) {
 
   conn.on('ready', function connOnReady () {
     console.log('WebSSH2 Login: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' mrhsession=' + socket.request.session.ssh.mrhsession + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
-    socket.emit('setTerminalOpts', socket.request.session.ssh.terminal)
     socket.emit('menu', menuData)
+    socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
+    socket.emit('setTerminalOpts', socket.request.session.ssh.terminal)
     socket.emit('title', 'ssh://' + socket.request.session.ssh.host)
     if (socket.request.session.ssh.header.background) socket.emit('headerBackground', socket.request.session.ssh.header.background)
     if (socket.request.session.ssh.header.name) socket.emit('header', socket.request.session.ssh.header.name)
@@ -43,7 +44,6 @@ module.exports = function socket (socket) {
     socket.emit('status', 'SSH CONNECTION ESTABLISHED')
     socket.emit('statusBackground', 'green')
     socket.emit('allowreplay', socket.request.session.ssh.allowreplay)
-    socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
     conn.shell({
       term: socket.request.session.ssh.term,
       cols: termCols,
@@ -152,7 +152,7 @@ module.exports = function socket (socket) {
         console.log('WebSSH2 ' + 'error: Authentication failure'.red.bold +
           ' user=' + socket.request.session.username.yellow.bold.underline +
           ' from=' + socket.handshake.address.yellow.bold.underline)
-
+        socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
         socket.emit('reauth')
       } else {
         console.log('WebSSH2 Logout: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)

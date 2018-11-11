@@ -1,8 +1,44 @@
 # Change Log
-## [0.2.5] 20180911
+## [0.2.7] 2018-11-11
+### Changes
+- `config.reauth` was not respected if initial auth presented was incorrect, regardless of `reauth` setting in `config.json` reauth would always be attempted. fixes [#117](../../issues/117) 
+- **BREAKING** moved app files to /app, this may be a breaking change
+- Updated dockerfile for new app path
+- Updated app dependancies
+  - xterm v3.8.0
+    - https://github.com/xtermjs/xterm.js/releases/tag/3.8.0
+  - basic-auth v2.0.1
+    - https://github.com/jshttp/basic-auth/releases/tag/v2.0.1
+  - express v4.16.4
+    - https://github.com/expressjs/express/releases/tag/4.16.4
+  - validator v10.9.0
+    - https://github.com/chriso/validator.js/releases/tag/10.9.0
+- Updated dev dependancies
+  - snazzy v8.0.0 
+  - standard v12.0.1 
+  - uglifyjs-webpack-plugin v2.0.1 
+  - ajv v6.5.5 
+  - copy-webpack-plugin v4.6.0 
+  - css-loader v1.0.1 
+  - nodemon v1.18.6 
+  - postcss-discard-comments v4.0.1 
+  - snyk v1.108.2 
+  - url-loader v1.1.2 
+  - webpack v4.25.1 
+  - webpack-cli v3.1.2 
+
+## [0.2.6] 2018-11-09
+### Changes
+- Reauth didn't work if intial auth presented was incorrect, (see issue #112) fixed thanks @vvalchev
+- Update node version supported to >=6 (PR #115) thanks @perlun
+- Update packages
+  - developer dependencies
+
+## [0.2.5] 2018-09-11
 ### Added
 - Reauth function thanks to @vbeskrovny and @vvalchev (9bbc116)
   - Controlled by `config.json` option `options.allowreauth` true presents reauth dialog and false hides dialog
+
 ### Changed
 - `options.challengeButton` enabled
   - previously this configuration option did nothing, this now enables the Credentials button site-wide regardless of the `allowreplay` header value

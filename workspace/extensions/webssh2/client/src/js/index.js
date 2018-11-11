@@ -156,7 +156,9 @@ socket.on('error', function (err) {
   }
 })
 
-socket.on('reauth',reauthSession)
+socket.on('reauth', function () {
+  (allowreauth) && reauthSession()
+})
 
 term.on('title', function (title) {
   document.title = title
