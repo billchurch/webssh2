@@ -1,6 +1,15 @@
-When opening an issue, please include the follwing information:
-Node Version
-Server OS Version
-WebSSH2 release version
-OS and Version of SSH server connecting to
-Browser Version and OS
+Depending on the type of issue, please include the follwing information:
+- Node and NPM Version
+  - `node -v`
+  - `npm -v`
+- Server OS Version / Distribution / Processor Architecture
+  - `uname -a`
+  - `cat /etc/os-release`
+- WebSSH2 release version
+  - `grep version app/package.json`
+- OS and Version of SSH server connecting to
+  - `uname -a`
+  - `sshd -v`
+- Browser Version and OS
+  - Information from brwoser's About... or a screenshot of the about screen.
+- Any log or messages from the WebSSH2 output
