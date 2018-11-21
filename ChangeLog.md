@@ -1,4 +1,8 @@
 # Change Log
+## [0.2.8] TBD
+### Changes
+- Fixes issue if no password is entered, browser must be closed and restart to attempt to re-auth. See issue [#118](../../issues/118). Thanks @smilesm2 for the idea.
+
 ## [0.2.7] 2018-11-11
 ### Changes
 - `config.reauth` was not respected if initial auth presented was incorrect, regardless of `reauth` setting in `config.json` reauth would always be attempted. fixes [#117](../../issues/117) 
