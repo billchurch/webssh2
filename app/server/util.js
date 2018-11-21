@@ -9,7 +9,7 @@ var Auth = require('basic-auth')
 
 exports.basicAuth = function basicAuth (req, res, next) {
   var myAuth = Auth(req)
-  if (myAuth) {
+  if (myAuth && myAuth.pass !== '') {
     req.session.username = myAuth.name
     req.session.userpassword = myAuth.pass
     debug('myAuth.name: ' + myAuth.name.yellow.bold.underline +
