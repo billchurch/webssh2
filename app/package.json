@@ -50,7 +50,9 @@
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome": "^1.1.8",
     "@fortawesome/fontawesome-free": "^5.5.0",
+    "@fortawesome/fontawesome-free-solid": "^5.0.13",
     "@fortawesome/free-solid-svg-icons": "^5.5.0",
     "ajv": "^6.5.5",
     "bithound": "^1.7.0",
