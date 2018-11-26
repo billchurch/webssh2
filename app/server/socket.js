@@ -121,7 +121,7 @@ module.exports = function socket (socket) {
       port: socket.request.session.ssh.port,
       username: socket.request.session.username,
       password: socket.request.session.userpassword,
-      tryKeyboard: false,
+      tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
       keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
