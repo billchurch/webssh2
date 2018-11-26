@@ -76,7 +76,10 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     },
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
       req.query.readyTimeout) || config.ssh.readyTimeout
-  }
+	}
+  if (config.user.privatekey !== null)
+    req.session.privatekey = require('fs').readFileSync(config.user.privatekey, 'ascii')
+
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
   if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
 })

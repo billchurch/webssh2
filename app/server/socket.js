@@ -114,18 +114,19 @@ module.exports = function socket (socket) {
     debugWebSSH2('conn.on(\'keyboard-interactive\')')
     finish([socket.request.session.userpassword])
   })
-  if (socket.request.session.username && socket.request.session.userpassword && socket.request.session.ssh) {
-    // console.log('hostkeys: ' + hostkeys[0].[0])
+  if (socket.request.session.username && (socket.request.session.userpassword || (socket.request.session.privatekey) && socket.request.session.ssh)) {
+		// console.log('hostkeys: ' + hostkeys[0].[0])
     conn.connect({
       host: socket.request.session.ssh.host,
       port: socket.request.session.ssh.port,
       username: socket.request.session.username,
       password: socket.request.session.userpassword,
-      tryKeyboard: true,
+      tryKeyboard: false,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
       keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
-      keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
+			keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
+      privateKey: socket.request.session.privatekey,
       debug: debug('ssh2')
     })
   } else {
