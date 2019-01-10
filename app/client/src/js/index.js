@@ -3,16 +3,10 @@
 import * as io from 'socket.io-client'
 import * as Terminal from 'xterm/dist/xterm'
 import * as fit from 'xterm/dist/addons/fit/fit'
-// fontawesome, individual icon imports reduces file size dramatically but it's
-// a little messy. this should be fixed by some updates with the fa library at some point
-import fontawesome from '@fortawesome/fontawesome'
-import faBars from '@fortawesome/fontawesome-free-solid/faBars'
-// import faQuestion from '@fortawesome/fontawesome-free-solid/faQuestion'
-import faClipboard from '@fortawesome/fontawesome-free-solid/faClipboard'
-import faDownload from '@fortawesome/fontawesome-free-solid/faDownload'
-import faKey from '@fortawesome/fontawesome-free-solid/faKey'
-import faCog from '@fortawesome/fontawesome-free-solid/faCog'
-fontawesome.library.add(faBars, faClipboard, faDownload, faKey, faCog)
+import { library, dom } from '@fortawesome/fontawesome-svg-core'
+import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons'
+library.add(faBars, faClipboard, faDownload, faKey, faCog)
+dom.watch()
 
 require('xterm/dist/xterm.css')
 require('../css/style.css')
