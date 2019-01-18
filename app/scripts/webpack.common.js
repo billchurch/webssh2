@@ -31,10 +31,7 @@ module.exports = {
           fallback: 'style-loader',
           use: [
             {
-              loader: 'css-loader',
-              options: {
-                minimize: { discardComments: { removeAll: true } }
-              }
+              loader: 'css-loader'
             }
           ]
         })
