@@ -37,16 +37,16 @@ function resizeScreen () {
   term.fit()
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
-
+var szPath = g_szPath || null;
 if (document.location.pathname) {
   var parts = document.location.pathname.split('/')
   var base = parts.slice(0, parts.length - 1).join('/') + '/'
   var resource = base.substring(1) + 'socket.io'
-  socket = io.connect(null, {
+  socket = io.connect(szPath, {
     resource: resource
   })
 } else {
-  socket = io.connect()
+  socket = io.connect(szPath)
 }
 
 term.on('data', function (data) {

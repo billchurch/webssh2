@@ -8,8 +8,9 @@ var nodeRoot = path.dirname(require.main.filename)
 var configPath = path.join(nodeRoot, 'config.json')
 var publicPath = path.join(nodeRoot, 'client', 'public')
 console.log('WebSSH2 service reading config from: ' + configPath)
-var config = require('read-config')(configPath)
-var express = require('express')
+var config = require('read-config')(configPath),
+fs = require('fs'),
+os = require('os');
 var logger = require('morgan')
 var session = require('express-session')({
   secret: config.session.secret,
@@ -18,40 +19,61 @@ var session = require('express-session')({
   saveUninitialized: false,
   unset: 'destroy'
 })
-var app = express()
-var compression = require('compression')
-var server = require('http').Server(app)
+
+
 var myutil = require('./util')
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false })
+
 var socket = require('./socket')
-var expressOptions = require('./expressOptions')
 
-// express
-app.use(compression({ level: 9 }))
-app.use(session)
-app.use(myutil.basicAuth)
-if (config.accesslog) app.use(logger('common'))
-app.disable('x-powered-by')
 
-// static files
-app.use(express.static(publicPath, expressOptions))
 
-app.get('/reauth', function (req, res, next) {
-  var r = req.headers.referer || '/'
-  res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
-})
-
+function mySSH(app, io)
+{
+  app.use(session)
+  app.get('/reauth', function (req, res, next) {
+    var r = req.headers.referer || '/'
+    res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
+  })
+  
+  if (config.accesslog) app.use(logger('common'))
+  app.use(myutil.basicAuth)
+  
+// test:
+// http://127.0.0.1:2222/ssh/host/165.149.12.16?host=165.149.12.16&user=root&port=54321
 app.get('/ssh/host/:host?', function (req, res, next) {
+  var szHost = req.params && req.params.host || null;
+  if(req.query)
+  {
+    req.params = req.query;
+    req.params.host = szHost || req.params.host;
+  }
+  // console.log(req.params);
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
+  if(req.params)
+  {
+      if(req.params.user)
+          req.session.username = req.params.user;
+      if(req.params.pass)
+          req.session.userpassword = req.params.pass;
+  }
+  if(!req.params || !req.params.host)return;
+  var szKey = '';
+  if(!szKey && fs.existsSync(os.userInfo().homedir + config.privateKey))
+  {
+    szKey = fs.readFileSync(os.userInfo().homedir + config.privateKey).toString('utf8');
+    // console.log(szKey);
+  }
+
   // capture, assign, and validated variables
   req.session.ssh = {
+    privateKey: szKey,
     host: (validator.isIP(req.params.host + '') && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) &&
       req.params.host) || config.ssh.host,
-    port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
-      req.query.port) || config.ssh.port,
+    port: (validator.isInt(req.params.port + '', { min: 1, max: 65535 }) &&
+      req.params.port) || config.ssh.port,
     header: {
       name: req.query.header || config.header.text,
       background: req.query.headerBackground || config.header.background
@@ -100,5 +122,5 @@ io.use(function (socket, next) {
 
 // bring up socket
 io.on('connection', socket)
-
-module.exports = { server: server, config: config }
+}
+module.exports = { config: config,mySSH: mySSH }

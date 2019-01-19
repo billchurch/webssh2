@@ -221,6 +221,42 @@ Clicking `Start logging` on the status bar will log all data to the client. A `D
 # Example:
 
 http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
+http://127.0.0.1:2222/ssh/host/165.149.12.16?host=165.149.12.16&user=root&port=54321
+
+# how use 
+```
+WebSSH2/app#cat config.json|grep privateKey
+  "privateKey":"/.ssh/id_rsa",
+# create privateKey
+$ ssh-keygen -t rsa
+# cp ~/.ssh/id_rsa.pub to server ~/.ssh/authorized_keys
+# server:
+chmod 600 ~/.ssh/authorized_keys
+```
 
 # Tips
 * If you want to add custom JavaScript to the browser client you can either modify `./src/client.html` and add a **<script>** element, modify `./src/index.js` directly, or check out `webpack.*.js` and add your custom javascript file to a task there (best option).
+
+# how build webssh2.bundle.js
+```
+cd WebSSH2/app
+# modify:
+client/src/js/index.js
+npm install compression-webpack-plugin --save-dev
+npm install --save-dev mini-css-extract-plugin
+npm i --save '@fortawesome/fontawesome'
+npm i --save '@fortawesome/fontawesome-free-solid'
+npm i --save 'xterm'
+npm i --save 'xterm' 'socket.io-client' 'style-loader'
+npm i --save 'css-loader'
+npm install --save-dev webpack-cli
+npm install --save-dev webpack
+npm install --save-dev webpack-merge
+npm install --save-dev uglifyjs-webpack-plugin
+npm install --save-dev clean-webpack-plugin
+npm install --save-dev copy-webpack-plugin
+npm install --save-dev 'extract-text-webpack-plugin'
+npm install --save '@fortawesome/fontawesome-svg-core' '@fortawesome/free-solid-svg-icons'
+npm install --save acorn chokidar estraverse inflight ms querystring-es3 string-width acorn-dynamic-import chownr esutils inherits nanomatch randombytes strip-ansi after chrome-trace-event events ini neo-async randomfill strip-eof ajv cipher-base evp_bytestokey interpret nice-try readable-stream style-loader ajv-errors class-utils execa invert-kv node-libs-browser readdirp supports-color ajv-keywords clean-webpack-plugin expand-brackets is-accessor-descriptor normalize-path regenerate tapable ansi-regex cliui expand-tilde isarray npm-run-path regex-not terser ansi-styles code-point-at extend-shallow is-binary-path number-is-nan regexpu-core terser-webpack-plugin anymatch collection-visit extglob is-buffer object-component regjsgen through2 aproba color-convert extract-text-webpack-plugin is-data-descriptor object-copy regjsparser timers-browserify arraybuffer.slice color-name fast-deep-equal is-descriptor object.pick remove-trailing-separator to-array array-union commander fast-json-stable-stringify isexe object-visit repeat-element to-arraybuffer array-uniq commondir fastparse is-extendable once repeat-string to-object-path array-unique component-bind figgy-pudding is-extglob os-browserify require-directory to-regex arr-diff component-emitter fill-range is-fullwidth-code-point os-locale require-main-filename to-regex-range arr-flatten component-inherit find-cache-dir is-glob pako resolve-cwd tslib arr-union compression-webpack-plugin find-up is-number parallel-transform resolve-dir tty-browserify asn1.js concat-map findup-sync isobject parse-asn1 resolve-from typedarray assert concat-stream flush-write-stream is-plain-object parse-passwd resolve-url uglify-js assign-symbols console-browserify for-in is-stream parseqs ret uglifyjs-webpack-plugin async constants-browserify @fortawesome is-windows parseuri rimraf union-value async-each copy-concurrently fragment-cache jsesc pascalcase ripemd160 unique-filename async-limiter copy-descriptor from2 json5 path-browserify run-queue unique-slug atob copy-webpack-plugin fs.realpath json-parse-better-errors path-dirname safe-buffer unset-value babel-code-frame core-util-is fs-write-stream-atomic json-schema-traverse path-exists safe-regex upath backo2 create-ecdh get-caller-file js-tokens path-is-absolute schema-utils uri-js balanced-match create-hash get-stream kind-of path-key semver urix base create-hmac get-value lcid path-type serialize-javascript url base64-arraybuffer cross-spawn glob lightercollective pbkdf2 set-blocking use base64-js crypto-browserify global-modules loader-runner p-defer setimmediate util better-assert cssesc global-modules-path loader-utils p-finally set-value util-deprecate big.js css-loader global-prefix locate-path pify sha.js v8-compile-cache binary-extensions css-selector-tokenizer globby lodash p-is-promise shebang-command vm-browserify blob cyclist glob-parent lodash.debounce pkg-dir shebang-regex watchpack bluebird date-now graceful-fs lru-cache p-limit signal-exit @webassemblyjs bn.js decamelize has-ansi make-dir p-locate slash webpack brace-expansion decode-uri-component has-binary2 map-age-cleaner posix-character-classes snapdragon webpack-cli braces define-property has-cors map-cache postcss snapdragon-node webpack-merge brorand des.js has-flag map-visit postcss-modules-extract-imports snapdragon-util webpack-sources browserify-aes detect-file hash-base md5.js postcss-modules-local-by-default socket.io-client which browserify-cipher diffie-hellman hash.js mem postcss-modules-scope socket.io-parser which-module browserify-des dir-glob has-value memory-fs postcss-modules-values source-list-map worker-farm browserify-rsa domain-browser has-values micromatch postcss-value-parser source-map wrap-ansi browserify-sign duplexify hmac-drbg miller-rabin process source-map-resolve wrappy browserify-zlib elliptic homedir-polyfill mimic-fn process-nextick-args source-map-support ws buffer emojis-list https-browserify mini-css-extract-plugin promise-inflight source-map-url xmlhttprequest-ssl buffer-from end-of-stream icss-replace-symbols minimalistic-assert prr split-string xtend buffer-xor engine.io-client icss-utils minimalistic-crypto-utils pseudomap ssri xterm builtin-status-codes engine.io-parser ieee754 minimatch p-try static-extend @xtuc cacache enhanced-resolve iferr minimist public-encrypt stream-browserify y18n cache-base errno ignore mississippi pump stream-each yallist callsite escape-string-regexp import-local mixin-deep pumpify stream-http yargs camelcase eslint-scope imurmurhash mkdirp punycode stream-shift yargs-parser chalk esrecurse indexof move-concurrently querystring string_decoder yeast
+npm run build
+```
