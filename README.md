@@ -120,7 +120,7 @@ docker run --name webssh2 -d -p 2222:2222 webssh2
 
 * **options.challengeButton** - _boolean_ - Challenge button. This option, which is still under development, allows the user to resend the password to the server (in cases of step-up authentication for things like `sudo` or a router `enable` command.
 
-* **options.allowreauth** - _boolean_ - Reauth button. This option creates an option to provide a button to create a new session with new credentials. See [pull 85](../../pull/85) for more detail.
+* **options.allowreauth** - _boolean_ - Reauth button. This option creates an option to provide a button to create a new session with new credentials. See [issue 51](../../issues/51) and [pull 85](../../pull/85) for more detail.
 
 * **algorithms** - _object_ - This option allows you to explicitly override the default transport layer algorithms used for the connection. Each value must be an array of valid algorithms for that category. The order of the algorithms in the arrays are important, with the most favorable being first. Valid keys:
 
