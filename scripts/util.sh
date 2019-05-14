@@ -1,9 +1,8 @@
 #!/bin/bash
-## Syncs from BIG-IP and builds a release based on version in extensions/ephemeral_auth/package.json
+# Utility functions / scripts
 
-source env.sh
-
-which jq
+# check for jq and try to install...
+output=$(which jq 2>&1)
 if [[ $? -ne 0 ]]; then
   echo -e "You need to install jq: https://stedolan.github.io/jq\n"
   echo -e "If you have *brew* you can install with:\n"
@@ -29,15 +28,3 @@ if [[ $? -ne 0 ]]; then
     fi
   fi
 fi
-
-./sync.sh
-
-package_version=$(jq -r ".version" workspace/extensions/$workspace_name/package.json)
-
-ssh $ilxhost /bin/tar czf - -C /var/ilx/workspaces/Common/$workspace_name . > Build/Release/$package_name-$package_version.tgz
-
-cp Build/Release/$package_name-$package_version.tgz $pua_location/$package_name-current.tgz
-shasum -a 256 $pua_location/$package_name-current.tgz > $pua_location/$package_name-current.tgz.sha256
-
-find . -name '.DS_Store' -type f -delete
-find $pua_location -name '.DS_Store' -type f -delete
