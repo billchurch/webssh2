@@ -47,3 +47,5 @@ jspm_packages
 
 #Mac Files
 .DS_Store
+
+Build/Release
