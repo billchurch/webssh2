@@ -41,20 +41,6 @@ echo "Pushing ./workspace to $webssh_ilxhost at $webssh_workspace_name"
 rsync -e 'ssh -o ClearAllForwardings=yes -ax' -avq --delete --exclude='.DS_Store' --exclude extensions/webssh2/node_modules workspace/. $webssh_ilxhost:/var/ilx/workspaces/Common/$webssh_workspace_name/.
 
 echo -e "\n"
-echo "Setting permissions at $webssh_workspace_name on $webssh_ilxhost"
-output=$(ssh -o ClearAllForwardings=yes $webssh_ilxhost "chown -R root.sdm /var/ilx/workspaces/Common/$webssh_workspace_name/; \
-  chmod -R ug+rwX,o-w /var/ilx/workspaces/Common/$webssh_workspace_name/; \
-  chmod u+rw,go-w /var/ilx/workspaces/Common/$webssh_workspace_name/version; \
-  chmod u+rw,go-w /var/ilx/workspaces/Common/$webssh_workspace_name/node_version" 2>&1)
-result="$?" 2>&1
-if [ $result -ne 0 ]; then
-  echo -e "\n\n"
-  echo "Error setting permissions... I give up, not sure what's going on..."
-  echo -e "\n\n"
-  exit 255
-fi
-
-echo -e "\n"
 echo "Installing node modules at $webssh_workspace_name on $webssh_ilxhost"
 output=$(ssh -o ClearAllForwardings=yes $webssh_ilxhost "cd /var/ilx/workspaces/Common/$webssh_workspace_name/extensions/webssh2; npm i --production" 2>&1)
 result="$?" 2>&1
@@ -67,6 +53,20 @@ if [ $result -ne 0 ]; then
   echo -e "\n"
   echo $output
 
+  exit 255
+fi
+
+echo -e "\n"
+echo "Setting permissions at $webssh_workspace_name on $webssh_ilxhost"
+output=$(ssh -o ClearAllForwardings=yes $webssh_ilxhost "chown -R root.sdm /var/ilx/workspaces/Common/$webssh_workspace_name/; \
+  chmod -R ug+rwX,o-w /var/ilx/workspaces/Common/$webssh_workspace_name/; \
+  chmod u+rw,go-w /var/ilx/workspaces/Common/$webssh_workspace_name/version; \
+  chmod u+rw,go-w /var/ilx/workspaces/Common/$webssh_workspace_name/node_version" 2>&1)
+result="$?" 2>&1
+if [ $result -ne 0 ]; then
+  echo -e "\n\n"
+  echo "Error setting permissions... I give up, not sure what's going on..."
+  echo -e "\n\n"
   exit 255
 fi
 
