@@ -3,14 +3,102 @@
 // app.js
 
 var path = require('path')
-// configPath = path.join(__dirname, 'config.json')
 var nodeRoot = path.dirname(require.main.filename)
 var configPath = path.join(nodeRoot, 'config.json')
 var publicPath = path.join(nodeRoot, 'client', 'public')
 console.log('WebSSH2 service reading config from: ' + configPath)
-var config = require('read-config')(configPath)
 var express = require('express')
 var logger = require('morgan')
+
+// sane defaults if config.json or parts are missing
+let config = {
+  'listen': {
+    'ip': '0.0.0.0',
+    'port': 2222
+  },
+  'user': {
+    'name': null,
+    'password': null
+  },
+  'ssh': {
+    'host': null,
+    'port': 22,
+    'term': 'xterm-color',
+    'readyTimeout': 20000,
+    'keepaliveInterval': 120000,
+    'keepaliveCountMax': 10
+  },
+  'terminal': {
+    'cursorBlink': true,
+    'scrollback': 10000,
+    'tabStopWidth': 8,
+    'bellStyle': 'sound'
+  },
+  'header': {
+    'text': null,
+    'background': 'green'
+  },
+  'session': {
+    'name': 'WebSSH2',
+    'secret': 'mysecret'
+  },
+  'options': {
+    'challengeButton': true,
+    'allowreauth': true
+  },
+  'algorithms': {
+    'kex': [
+      'ecdh-sha2-nistp256',
+      'ecdh-sha2-nistp384',
+      'ecdh-sha2-nistp521',
+      'diffie-hellman-group-exchange-sha256',
+      'diffie-hellman-group14-sha1'
+    ],
+    'cipher': [
+      'aes128-ctr',
+      'aes192-ctr',
+      'aes256-ctr',
+      'aes128-gcm',
+      'aes128-gcm@openssh.com',
+      'aes256-gcm',
+      'aes256-gcm@openssh.com',
+      'aes256-cbc'
+    ],
+    'hmac': [
+      'hmac-sha2-256',
+      'hmac-sha2-512',
+      'hmac-sha1'
+    ],
+    'compress': [
+      'none',
+      'zlib@openssh.com',
+      'zlib'
+    ]
+  },
+  'serverlog': {
+    'client': false,
+    'server': false
+  },
+  'accesslog': false,
+  'verify': false
+}
+
+// test if config.json exists, if not provide error message but try to run
+// anyway
+try {
+  if (fs.existsSync(configPath)) {
+    console.log('ephemeral_auth service reading config from: ' + configPath)
+    config = require('read-config')(configPath)
+  } else {
+    console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
+    console.error('\n  See config.json.sample for details\n\n')
+  }
+} catch (err) {
+  console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
+  console.error('\n  See config.json.sample for details\n\n')
+  console.error('ERROR:\n\n  ' + err)
+}
+
 var session = require('express-session')({
   secret: config.session.secret,
   name: config.session.name,
@@ -28,7 +116,7 @@ var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 
 // express
-app.use(compression({level: 9}))
+app.use(compression({ level: 9 }))
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
@@ -50,7 +138,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) &&
       req.params.host) || config.ssh.host,
-    port: (validator.isInt(req.query.port + '', {min: 1, max: 65535}) &&
+    port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
       req.query.port) || config.ssh.port,
     header: {
       name: req.query.header || config.header.text,
@@ -63,8 +151,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       req.query.sshterm) || config.ssh.term,
     terminal: {
       cursorBlink: (validator.isBoolean(req.query.cursorBlink + '') ? myutil.parseBool(req.query.cursorBlink) : config.terminal.cursorBlink),
-      scrollback: (validator.isInt(req.query.scrollback + '', {min: 1, max: 200000}) && req.query.scrollback) ? req.query.scrollback : config.terminal.scrollback,
-      tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', {min: 1, max: 100}) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
+      scrollback: (validator.isInt(req.query.scrollback + '', { min: 1, max: 200000 }) && req.query.scrollback) ? req.query.scrollback : config.terminal.scrollback,
+      tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', { min: 1, max: 100 }) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
       bellStyle: ((req.query.bellStyle) && (['sound', 'none'].indexOf(req.query.bellStyle) > -1)) ? req.query.bellStyle : config.terminal.bellStyle
     },
     allowreplay: config.options.challengeButton || (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
@@ -74,7 +162,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false
     },
-    readyTimeout: (validator.isInt(req.query.readyTimeout + '', {min: 1, max: 300000}) &&
+    readyTimeout: (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
       req.query.readyTimeout) || config.ssh.readyTimeout
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
@@ -101,4 +189,4 @@ io.use(function (socket, next) {
 // bring up socket
 io.on('connection', socket)
 
-module.exports = {server: server, config: config}
+module.exports = { server: server, config: config }

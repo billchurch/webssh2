@@ -70,6 +70,11 @@ if [ $result -ne 0 ]; then
   exit 255
 fi
 
+echo -e "\n"
+echo "Deleting $webssh_workspace_name/node_modules/.bin on $webssh_ilxhost"
+output=$(ssh -o ClearAllForwardings=yes $webssh_ilxhost "cd /var/ilx/workspaces/Common/$webssh_workspace_name/extensions/webssh2; rm -rf node_modules/.bin" 2>&1)
+result="$?" 2>&1
+
 echo "Switching plugin to new workspace..."
 # switch plugin to new workspace
 output=$(ssh -o ClearAllForwardings=yes $webssh_ilxhost tmsh modify ilx plugin WebSSH_plugin from-workspace $webssh_workspace_name 2>&1)
