@@ -1,11 +1,14 @@
 # Change Log
-## [0.2.8] TBD
+## [0.2.8] 2019-05-25
 ### Changes
 - Fixes issue if no password is entered, browser must be closed and restart to attempt to re-auth. See issue [#118](../../issues/118). Thanks @smilesm2 for the idea.
 - fixes broken `npm run (build|builddev)`
   - update font-awesome fonts to 5.6.3
   - update webpack and dependancies
   - update xterm to 3.8.0
+
+### Fixes
+- ILX workspace may not always import properly due to symbolic links (specifically ./node_modules/.bin). This is removed from the ILX package
 
 ## [0.2.7] 2018-11-11
 ### Changes

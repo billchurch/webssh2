@@ -1,6 +1,19 @@
 #!/bin/bash
 # Utility functions / scripts
 
+echoNotice () { echo -e -n "\n$@... "; }
+
+fgLtRed=$(tput bold;tput setaf 1)
+fgLtGrn=$(tput bold;tput setaf 2)
+fgLtYel=$(tput bold;tput setaf 3)
+fgLtBlu=$(tput bold;tput setaf 4)
+fgLtMag=$(tput bold;tput setaf 5)
+fgLtCya=$(tput bold;tput setaf 6)
+fgLtWhi=$(tput bold;tput setaf 7)
+fgLtGry=$(tput bold;tput setaf 8)
+
+echo ${fgLtWhi}
+
 # check for jq and try to install...
 output=$(which jq 2>&1)
 if [[ $? -ne 0 ]]; then
@@ -28,3 +41,34 @@ if [[ $? -ne 0 ]]; then
     fi
   fi
 fi
+
+# checks the output of a command to get the status and report/handle failure
+checkOutput() {
+  if [ $result -eq 0 ]; then
+    # success
+    #echo "${fgLtGrn}[OK]${fgLtWhi}"
+    echo "✅"
+    return
+  else
+    # failure
+    tput bel;tput bel;tput bel;tput bel
+    #echo "${fgLtRed}[FAILED]${fgLtWhi}"
+    echo "❌"
+    echo -e "\nPrevious command failed in ${script_path}/${scriptname} with error level: ${result}"
+    echo -e "\nCommand:\n"
+    echo "  ${command}"
+    echo -e "\nSTDOUT/STDERR:\n"
+    echo ${output}
+    exit 255
+  fi
+}
+
+# run a comand and check call checkOutput
+runCommand() {
+  # $1 command
+  command=$@
+  output=$((eval $command) 2>&1)
+  result="$?" 2>&1
+  prevline=$(($LINENO-2))
+  checkOutput
+}
