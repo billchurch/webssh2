@@ -26,3 +26,5 @@ echoNotice "Pulling ${fgLtCya}$webssh_workspace_name${fgLtWhi} from ${fgLtCya}$w
 runCommand "rsync -e 'ssh -o ClearAllForwardings=yes -ax' -avq --include=\"extensions/ephemeral_auth/node_modules/f5-*\" --exclude=\".DS_Store\" --exclude=\"extensions/ephemeral_auth/node_modules/*\" $webssh_ilxhost:/var/ilx/workspaces/Common/$webssh_workspace_name/. workspace/. 2>&1"
 
 echo -e "\n👍 Pull complete 👍\n"
+
+exit 0

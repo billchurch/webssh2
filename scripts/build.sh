@@ -5,6 +5,13 @@ source ./scripts/env.sh
 source ./scripts/util.sh
 
 ./scripts/pull.sh
+if [ $? -ne 0 ]; then
+  # failure
+  tput bel;tput bel;tput bel;tput bel
+  echo -e "\n${fgLtRed}Pull command failed. Giving up.${fgLtWhi}\n"
+  echo ${output}
+  exit 255
+fi
 
 # get version of package from package.json
 package_version=$(jq -r ".version" workspace/extensions/webssh2/package.json)
@@ -31,3 +38,5 @@ echo "  $webssh_pua_location/$webssh_package_name-current.tgz"
 echo "  $webssh_pua_location/$webssh_package_name-current.tgz.sha256"
 
 echo -e "\n👍 Build Complete 👍\n"
+
+exit 0

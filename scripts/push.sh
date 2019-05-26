@@ -57,3 +57,5 @@ else
 fi
 
 echo -e "\n👍 Push complete 👍\n"
+
+exit 0
