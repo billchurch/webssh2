@@ -13,7 +13,7 @@ var logger = require('morgan')
 // sane defaults if config.json or parts are missing
 let config = {
   'listen': {
-    'ip': '0.0.0.0',
+    'ip': '127.0.0.1',
     'port': 2222
   },
   'user': {
