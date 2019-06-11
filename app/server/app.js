@@ -2,6 +2,7 @@
 /* jshint esversion: 6, asi: true, node: true */
 // app.js
 
+var fs = require('fs')
 var path = require('path')
 var nodeRoot = path.dirname(require.main.filename)
 var configPath = path.join(nodeRoot, 'config.json')
