@@ -1,4 +1,13 @@
 # Change Log
+## [0.2.9] 2019-06-13
+### Changes
+- Missing require('fs') in `server/app.js` See issue [#135](../../issues/135)
+- Patched read-config to mitigate vulnerability in js-yaml
+  - issue not exploitable on webssh2 implementation
+  - patched anyway
+  - sending my patch upstream to read-config, webssh2 package.json points to patched version in my repository https://github.com/billchurch/nodejs-read-config
+  - See https://github.com/nodeca/js-yaml/issues/475 for more detail
+
 ## [0.2.8] 2019-05-25
 ### Changes
 - Fixes issue if no password is entered, browser must be closed and restart to attempt to re-auth. See issue [#118](../../issues/118). Thanks @smilesm2 for the idea.

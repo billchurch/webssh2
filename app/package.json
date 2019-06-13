@@ -1,6 +1,6 @@
 {
   "name": "webssh2",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "ignore": [
     ".gitignore"
   ],
@@ -34,7 +34,7 @@
     "express": "^4.16.4",
     "express-session": "^1.15.6",
     "morgan": "^1.9.1",
-    "read-config": "^2.0.0",
+    "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
     "socket.io": "^2.1.1",
     "ssh2": "^0.6.1",
     "validator": "^10.9.0"

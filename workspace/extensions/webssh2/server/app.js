@@ -3,6 +3,7 @@
 // app.js
 
 var path = require('path')
+var fs = require('fs')
 var nodeRoot = path.dirname(require.main.filename)
 var configPath = path.join(nodeRoot, 'config.json')
 var publicPath = path.join(nodeRoot, 'client', 'public')
@@ -13,7 +14,7 @@ var logger = require('morgan')
 // sane defaults if config.json or parts are missing
 let config = {
   'listen': {
-    'ip': '127.0.0.1',
+    'ip': '0.0.0.0',
     'port': 2222
   },
   'user': {

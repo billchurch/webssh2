@@ -1,6 +1,6 @@
 {
   "name": "webssh2",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "ignore": [
     ".gitignore"
   ],
@@ -34,7 +34,7 @@
     "express": "^4.16.4",
     "express-session": "^1.15.6",
     "morgan": "^1.9.1",
-    "read-config": "^2.0.0",
+    "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
     "socket.io": "^2.1.1",
     "ssh2": "^0.6.1",
     "validator": "^10.9.0"
@@ -49,30 +49,6 @@
     "standard": "standard --verbose --fix | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
-  "devDependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.12",
-    "@fortawesome/free-solid-svg-icons": "^5.6.3",
-    "ajv": "^6.5.5",
-    "bithound": "^1.7.0",
-    "clean-webpack-plugin": "^1.0.0",
-    "copy-webpack-plugin": "^4.6.0",
-    "css-loader": "^2.1.0",
-    "extract-text-webpack-plugin": "^4.0.0-beta.0",
-    "file-loader": "^3.0.1",
-    "nodemon": "^1.18.6",
-    "postcss-discard-comments": "^4.0.1",
-    "snazzy": "^8.0.0",
-    "snyk": "^1.108.2",
-    "standard": "^12.0.1",
-    "style-loader": "^0.23.1",
-    "uglifyjs-webpack-plugin": "^2.0.1",
-    "url-loader": "^1.1.2",
-    "webpack": "^4.25.1",
-    "webpack-cli": "^3.1.2",
-    "webpack-merge": "^4.1.4",
-    "webpack-stream": "^5.1.1",
-    "xterm": "^3.8.0"
-  },
   "standard": {
     "ignore": [
       "client/public/webssh2.bundle.js",
@@ -82,5 +58,27 @@
       "build/*",
       "workspace/*"
     ]
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.12",
+    "@fortawesome/free-solid-svg-icons": "^5.6.3",
+    "clean-webpack-plugin": "^1.0.0",
+    "copy-webpack-plugin": "^4.6.0",
+    "cross-env": "^5.2.0",
+    "css-loader": "^2.1.0",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "file-loader": "^3.0.1",
+    "nodaemon": "0.0.5",
+    "postcss-discard-comments": "^4.0.1",
+    "snazzy": "^8.0.0",
+    "standard": "^12.0.1",
+    "style-loader": "^0.23.1",
+    "uglifyjs-webpack-plugin": "^2.1.1",
+    "url-loader": "^1.1.2",
+    "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.1",
+    "webpack-merge": "^4.2.1",
+    "webpack-stream": "^5.2.1",
+    "xterm": "^3.10.1"
   }
 }
