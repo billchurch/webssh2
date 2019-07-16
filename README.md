@@ -222,7 +222,7 @@ Clicking `Start logging` on the status bar will log all data to the client. A `D
 
 # Example:
 
-http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&color=red
+http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&headerBackground=red
 
 # Tips
 * If you want to add custom JavaScript to the browser client you can either modify `./src/client.html` and add a **<script>** element, modify `./src/index.js` directly, or check out `webpack.*.js` and add your custom javascript file to a task there (best option).
