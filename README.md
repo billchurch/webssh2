@@ -22,7 +22,7 @@ To install:
 
 1. Clone to a location somewhere and `npm install --production`. If you want to develop and rebuild javascript and other files utilize `npm install` instead.
 
-2. If desired, edit config.json to change the listener to your liking. There are also some default options which may be definied for a few of the variables.
+2. If desired, edit app/config.json to change the listener to your liking. There are also some default options which may be definied for a few of the variables.
 
 3. Run `npm start`
 
@@ -35,23 +35,32 @@ You will be prompted for credentials to use on the SSH server via HTTP Basic aut
 
 # Docker Instructions
 
-Modify config.json
+Copy app/config.json.template to app/config.json and modify the latter:
 
-```json
+```js
 {
+  // ...
   "listen": {
     "ip": "0.0.0.0",
     "port": 2222
   }
+  // ...
 }
 ```
 
-Build and run
+Rebuild and run
 
 ```bash
 docker build -t webssh2 .
 docker run --name webssh2 -d -p 2222:2222 webssh2
 ```
+
+Alternatively if you don't want to rebuild, mount the config at runtime:
+
+```bash
+docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/config.json webssh2
+```
+
 
 # Options
 
