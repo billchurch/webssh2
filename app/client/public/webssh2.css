@@ -36,7 +36,6 @@
  */
 
 .xterm {
-    font-family: courier-new, courier, monospace;
     font-feature-settings: "liga" 0;
     position: relative;
     user-select: none;
@@ -162,6 +161,14 @@
     height: 1px;
     overflow: hidden;
 }
+
+.xterm-dim {
+    opacity: 0.5;
+}
+
+.xterm-underline {
+    text-decoration: underline;
+}
 body, html  {
   font-family: helvetica, sans-serif, arial;
   font-size: 1em;
@@ -285,3 +292,5 @@ body, html  {
 .dropup:hover .dropbtn {
     background-color: #3e8e41;
 }
+
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJ3ZWJzc2gyLmNzcyIsInNvdXJjZVJvb3QiOiIifQ==*/
