@@ -112,7 +112,7 @@ var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false })
+var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 

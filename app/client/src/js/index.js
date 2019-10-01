@@ -1,6 +1,6 @@
 'use strict'
 
-import * as io from 'socket.io-client'
+import io from 'socket.io-client'
 import * as Terminal from 'xterm/dist/xterm'
 import * as fit from 'xterm/dist/addons/fit/fit'
 import { library, dom } from '@fortawesome/fontawesome-svg-core'
@@ -19,7 +19,9 @@ var loggedData = false
 var allowreplay = false
 var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
-var socket, termid // eslint-disable-line
+var termid // eslint-disable-line
+// change path here and in the /app/server/app.js line 115
+var socket = io({path: '/ssh/socket.io'})
 var term = new Terminal()
 // DOM properties
 var status = document.getElementById('status')
@@ -30,7 +32,6 @@ var terminalContainer = document.getElementById('terminal-container')
 term.open(terminalContainer)
 term.focus()
 term.fit()
-
 window.addEventListener('resize', resizeScreen, false)
 
 function resizeScreen () {
@@ -38,16 +39,21 @@ function resizeScreen () {
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
 
-if (document.location.pathname) {
+// this area seems unneccessary now, tested out in Chrome 77 - bill
+//
+/* if (document.location.pathname) {
   var parts = document.location.pathname.split('/')
   var base = parts.slice(0, parts.length - 1).join('/') + '/'
-  var resource = base.substring(1) + 'socket.io'
-  socket = io.connect(null, {
+  var resource = base.substring(1) + '/ssh/socket.io'
+  socket = io(null, {
+    path: '/ssh/socket.io',
     resource: resource
   })
+  // socket.connect()
 } else {
-  socket = io.connect()
-}
+  socket = io('http://localhost:2222', {path: '/ssh/socket.io'})
+  // socket.connect()
+} */
 
 term.on('data', function (data) {
   socket.emit('data', data)
