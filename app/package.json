@@ -36,7 +36,7 @@
     "morgan": "^1.9.1",
     "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
     "socket.io": "^2.3.0",
-    "ssh2": "^0.6.1",
+    "ssh2": "^0.8.5",
     "validator": "^11.1.0"
   },
   "scripts": {
