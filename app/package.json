@@ -73,12 +73,13 @@
     "snazzy": "^8.0.0",
     "standard": "^12.0.1",
     "style-loader": "^0.23.1",
-    "uglifyjs-webpack-plugin": "^2.1.1",
+    "terser-webpack-plugin": "^2.1.2",
     "url-loader": "^1.1.2",
     "webpack": "^4.28.4",
     "webpack-cli": "^3.2.1",
     "webpack-merge": "^4.2.1",
     "webpack-stream": "^5.2.1",
-    "xterm": "^3.10.1"
+    "xterm": "^4.0.2",
+    "xterm-addon-fit": "^0.2.1"
   }
 }
