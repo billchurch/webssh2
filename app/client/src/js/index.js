@@ -20,7 +20,10 @@ var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var termid // eslint-disable-line
 // change path here and in the /app/server/app.js line 115
-var socket = io({ path: '/ssh/socket.io' })
+
+var resource = window.location.search
+var c_query = resource.substring(1)
+var socket = io({ path: '/ssh/socket.io', query: c_query })
 var term = new Terminal()
 const fitAddon = new FitAddon()
 // DOM properties
@@ -34,6 +37,7 @@ term.open(terminalContainer)
 term.focus()
 fitAddon.fit()
 window.addEventListener('resize', resizeScreen, false)
+
 
 function resizeScreen () {
   fitAddon.fit()
