@@ -1,8 +1,8 @@
 'use strict'
 
 import io from 'socket.io-client'
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit'
 import { library, dom } from '@fortawesome/fontawesome-svg-core'
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons'
 library.add(faBars, faClipboard, faDownload, faKey, faCog)
@@ -20,23 +20,23 @@ var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var termid // eslint-disable-line
 // change path here and in the /app/server/app.js line 115
-var socket = io({path: '/ssh/socket.io'})
+var socket = io({ path: '/ssh/socket.io' })
 var term = new Terminal()
-const fitAddon = new FitAddon();
+const fitAddon = new FitAddon()
 // DOM properties
 var status = document.getElementById('status')
 var header = document.getElementById('header')
 var dropupContent = document.getElementById('dropupContent')
 var footer = document.getElementById('footer')
 var terminalContainer = document.getElementById('terminal-container')
-term.loadAddon(fitAddon);
+term.loadAddon(fitAddon)
 term.open(terminalContainer)
 term.focus()
-fitAddon.fit();
+fitAddon.fit()
 window.addEventListener('resize', resizeScreen, false)
 
 function resizeScreen () {
-  fitAddon.fit();
+  fitAddon.fit()
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
 
@@ -56,7 +56,7 @@ function resizeScreen () {
   // socket.connect()
 } */
 
-term.onData(data => socket.emit('data', data));
+term.onData(data => socket.emit('data', data))
 
 socket.on('data', function (data) {
   term.write(data)
@@ -159,7 +159,7 @@ socket.on('reauth', function () {
   (allowreauth) && reauthSession()
 })
 
-term.onTitleChange(title => document.title = title)
+term.onTitleChange(title => (document.title = title))
 
 // draw/re-draw menu and reattach listeners
 // when dom is changed, listeners are abandonded

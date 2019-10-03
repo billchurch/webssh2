@@ -1,8 +1,8 @@
 const merge = require('webpack-merge')
 const common = require('./webpack.common.js')
-const TerserPlugin = require('terser-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin')
 
-module.exports = merge(common,{
+module.exports = merge(common, {
   optimization: {
     minimize: true,
     minimizer: [
@@ -20,9 +20,9 @@ module.exports = merge(common,{
           ie8: false,
           keep_classnames: undefined,
           keep_fnames: false,
-          safari10: false,
-        },
-      }),
-    ],
+          safari10: false
+        }
+      })
+    ]
   }
 })
