@@ -20,10 +20,9 @@ var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var termid // eslint-disable-line
 // change path here and in the /app/server/app.js line 115
-
 var resource = window.location.search
-var c_query = resource.substring(1)
-var socket = io({ path: '/ssh/socket.io', query: c_query })
+var custom_path = '/f5-webssh/socket.io'
+var socket = io({ path: custom_path , query: resource.substring(1)})
 var term = new Terminal()
 const fitAddon = new FitAddon()
 // DOM properties
@@ -38,27 +37,10 @@ term.focus()
 fitAddon.fit()
 window.addEventListener('resize', resizeScreen, false)
 
-
 function resizeScreen () {
   fitAddon.fit()
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
-
-// this area seems unneccessary now, tested out in Chrome 77 - bill
-//
-/* if (document.location.pathname) {
-  var parts = document.location.pathname.split('/')
-  var base = parts.slice(0, parts.length - 1).join('/') + '/'
-  var resource = base.substring(1) + '/ssh/socket.io'
-  socket = io(null, {
-    path: '/ssh/socket.io',
-    resource: resource
-  })
-  // socket.connect()
-} else {
-  socket = io('http://localhost:2222', {path: '/ssh/socket.io'})
-  // socket.connect()
-} */
 
 term.onData(data => socket.emit('data', data))
 
