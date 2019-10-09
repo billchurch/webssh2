@@ -7,7 +7,12 @@
   "bin": "./index.js",
   "description": "A Websocket to SSH2 gateway using term.js, socket.io, ssh2, and express",
   "homepage": "https://github.com/billchurch/WebSSH2",
-  "keywords": "ssh webssh terminal webterminal",
+  "keywords": [
+    "ssh",
+    "webssh",
+    "terminal",
+    "webterminal"
+  ],
   "license": "SEE LICENSE IN FILE - LICENSE",
   "private": false,
   "repository": {
@@ -34,8 +39,8 @@
     "express": "^4.17.1",
     "express-session": "^1.16.2",
     "morgan": "^1.9.1",
-    "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
-    "socket.io": "^2.3.0",
+    "read-config": "https://codeload.github.com/billchurch/nodejs-read-config/tar.gz/1.6.1",
+    "socket.io": "2.1.1",
     "ssh2": "^0.8.5",
     "validator": "^11.1.0"
   },

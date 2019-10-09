@@ -1,9 +1,10 @@
 # Change Log
-## [0.3.0] 2019-10-01
+## [0.3.0] 2019-10-04
 ### Changes
 - Update to xterm.js 4.0.2
 - path to socket.io has changed to /ssh/socket.io **potentially breaking**
 - Update Webpack 
+- Locked Socket.io at 2.1.1 for compatability with BIG-IP node 6.9 runtime
 ## [0.2.9] 2019-06-13
 ### Changes
 - Missing require('fs') in `server/app.js` See issue [#135](../../issues/135)
