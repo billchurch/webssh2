@@ -13,6 +13,7 @@ require('xterm/css/xterm.css')
 require('../css/style.css')
 
 /* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */
+var geometrySent = false
 var sessionLogEnable = false
 var loggedData = false
 var allowreplay = false
@@ -22,7 +23,7 @@ var termid // eslint-disable-line
 // change path here and in the /app/server/app.js line 115
 var resource = window.location.search
 var custom_path = '/f5-webssh/socket.io'
-var socket = io({ path: custom_path , query: resource.substring(1)})
+var socket = io({ path: custom_path , query: resource.substring(1), reconnectionAttempts: 2 })
 var term = new Terminal()
 const fitAddon = new FitAddon()
 // DOM properties
@@ -49,10 +50,13 @@ socket.on('data', function (data) {
   if (sessionLogEnable) {
     sessionLog = sessionLog + data
   }
+  if (geometrySent == false) {
+    resizeScreen();
+    geometrySent = true;
+  }
 })
 
 socket.on('connect', function () {
-  socket.emit('geometry', term.cols, term.rows)
 })
 
 socket.on('setTerminalOpts', function (data) {
