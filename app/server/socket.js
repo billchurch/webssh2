@@ -119,6 +119,8 @@ module.exports = function socket (socket) {
     conn.connect({
       host: socket.request.session.ssh.host,
       port: socket.request.session.ssh.port,
+      localAddress: socket.request.session.ssh.localAddress,
+      localPort: socket.request.session.ssh.localPort,
       username: socket.request.session.username,
       password: socket.request.session.userpassword,
       tryKeyboard: true,

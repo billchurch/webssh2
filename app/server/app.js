@@ -142,6 +142,8 @@ app.get('/ssh/host/:host?', function (req, res, next) {
       req.params.host) || config.ssh.host,
     port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
       req.query.port) || config.ssh.port,
+    localAddress: config.ssh.localAddress,
+    localPort: config.ssh.localPort,
     header: {
       name: req.query.header || config.header.text,
       background: req.query.headerBackground || config.header.background
