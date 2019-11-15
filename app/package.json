@@ -1,6 +1,6 @@
 {
   "name": "webssh2",
-  "version": "0.2.9",
+  "version": "0.2.10-0",
   "ignore": [
     ".gitignore"
   ],
@@ -51,7 +51,8 @@
     "test": "snyk test",
     "watch": "nodemon index.js",
     "standard": "standard --verbose --fix | snazzy",
-    "cleanmac": "find . -name '.DS_Store' -type f -delete"
+    "cleanmac": "find . -name '.DS_Store' -type f -delete",
+    "release": "standard-version"
   },
   "standard": {
     "ignore": [
@@ -76,6 +77,7 @@
     "postcss-discard-comments": "^4.0.2",
     "snazzy": "^8.0.0",
     "standard": "^14.3.1",
+    "standard-version": "^7.0.0",
     "style-loader": "^1.0.0",
     "url-loader": "^2.2.0",
     "webpack": "^4.41.2",
