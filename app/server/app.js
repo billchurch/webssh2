@@ -111,6 +111,7 @@ var app = express()
 var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
+myutil.setDefaultCredentials(config.user.name, config.user.password);
 var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false })
 var socket = require('./socket')
