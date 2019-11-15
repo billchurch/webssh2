@@ -19,7 +19,8 @@ let config = {
   },
   user: {
     name: null,
-    password: null
+    password: null,
+    privatekey: null
   },
   ssh: {
     host: null,
@@ -111,7 +112,7 @@ var app = express()
 var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
-myutil.setDefaultCredentials(config.user.name, config.user.password);
+myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
 var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false })
 var socket = require('./socket')
@@ -132,6 +133,7 @@ app.get('/reauth', function (req, res, next) {
   res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
 })
 
+// eslint-disable-next-line complexity
 app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables

@@ -7,11 +7,12 @@ require('colors') // allow for color property extensions in log messages
 var debug = require('debug')('WebSSH2')
 var Auth = require('basic-auth')
 
-let defaultCredentials = {username: null, password: null};
+let defaultCredentials = {username: null, password: null, privatekey: null};
 
-exports.setDefaultCredentials = function (username, password) {
-    defaultCredentials.username = username;
-    defaultCredentials.password = password;
+exports.setDefaultCredentials = function (username, password, privatekey) {
+    defaultCredentials.username = username
+    defaultCredentials.password = password
+    defaultCredentials.privatekey = privatekey
 }
 
 exports.basicAuth = function basicAuth (req, res, next) {
@@ -25,8 +26,9 @@ exports.basicAuth = function basicAuth (req, res, next) {
   } else {
     req.session.username = defaultCredentials.username;
     req.session.userpassword = defaultCredentials.password;
+    req.session.privatekey = defaultCredentials.privatekey;
   }
-  if (!req.session.userpassword) {
+  if ( (!req.session.userpassword) && (!req.session.privatekey) ) {
     res.statusCode = 401
     debug('basicAuth credential request (401)')
     res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"')
