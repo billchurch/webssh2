@@ -1,17 +1,17 @@
 'use strict'
 
 import * as io from 'socket.io-client'
-import * as Terminal from 'xterm/dist/xterm'
-import * as fit from 'xterm/dist/addons/fit/fit'
+import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit'
+/* import * as fit from 'xterm/dist/addons/fit/fit'
+ */
 import { library, dom } from '@fortawesome/fontawesome-svg-core'
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons'
 library.add(faBars, faClipboard, faDownload, faKey, faCog)
 dom.watch()
 
-require('xterm/dist/xterm.css')
+require('xterm/css/xterm.css')
 require('../css/style.css')
-
-Terminal.applyAddon(fit)
 
 /* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */
 var sessionLogEnable = false
@@ -20,21 +20,23 @@ var allowreplay = false
 var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var socket, termid // eslint-disable-line
-var term = new Terminal()
+const term = new Terminal()
 // DOM properties
 var status = document.getElementById('status')
 var header = document.getElementById('header')
 var dropupContent = document.getElementById('dropupContent')
 var footer = document.getElementById('footer')
+var fitAddon = new FitAddon()
 var terminalContainer = document.getElementById('terminal-container')
+term.loadAddon(fitAddon)
 term.open(terminalContainer)
 term.focus()
-term.fit()
+fitAddon.fit()
 
 window.addEventListener('resize', resizeScreen, false)
 
 function resizeScreen () {
-  term.fit()
+  fitAddon.fit()
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
 
@@ -49,7 +51,7 @@ if (document.location.pathname) {
   socket = io.connect()
 }
 
-term.on('data', function (data) {
+term.onData(function (data) {
   socket.emit('data', data)
 })
 
@@ -154,7 +156,7 @@ socket.on('reauth', function () {
   (allowreauth) && reauthSession()
 })
 
-term.on('title', function (title) {
+term.onTitleChange(function (title) {
   document.title = title
 })
 

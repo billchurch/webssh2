@@ -1,6 +1,6 @@
-const webpack = require('webpack')
 const path = require('path')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+/* const CleanWebpackPlugin = require('clean-webpack-plugin') */
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 module.exports = {
@@ -9,10 +9,7 @@ module.exports = {
     webssh2: './client/src/js/index.js'
   },
   plugins: [
-    new CleanWebpackPlugin(['client/public'], {
-      root: path.resolve('__dirname', '../'),
-      verbose: true
-    }),
+    new CleanWebpackPlugin(),
     new CopyWebpackPlugin([
       './client/src/client.htm',
       './client/src/favicon.ico'
