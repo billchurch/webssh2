@@ -108,13 +108,13 @@ module.exports = function socket (socket) {
   })
 
   conn.on('end', function connOnEnd (err) { SSHerror('CONN END BY HOST', err) })
-  conn.on('close', function connOnClose (err) { SSHerror('CONN CLOSE', err) })
+  conn.on('close', function connOnClose (err) { SSHerror('CONN CLOSE', err) }) 
   conn.on('error', function connOnError (err) { SSHerror('CONN ERROR', err) })
   conn.on('keyboard-interactive', function connOnKeyboardInteractive (name, instructions, instructionsLang, prompts, finish) {
     debugWebSSH2('conn.on(\'keyboard-interactive\')')
     finish([socket.request.session.userpassword])
   })
-  if (socket.request.session.username && socket.request.session.userpassword && socket.request.session.ssh) {
+  if (socket.request.session.username && (socket.request.session.userpassword || socket.request.session.privatekey) && socket.request.session.ssh) {
     // console.log('hostkeys: ' + hostkeys[0].[0])
     conn.connect({
       host: socket.request.session.ssh.host,
@@ -123,6 +123,7 @@ module.exports = function socket (socket) {
       localPort: socket.request.session.ssh.localPort,
       username: socket.request.session.username,
       password: socket.request.session.userpassword,
+      privateKey: socket.request.session.privatekey,
       tryKeyboard: true,
       algorithms: socket.request.session.ssh.algorithms,
       readyTimeout: socket.request.session.ssh.readyTimeout,
@@ -143,6 +144,7 @@ module.exports = function socket (socket) {
   * @param {string} myFunc Function calling this function
   * @param {object} err    error object or error message
   */
+  // eslint-disable-next-line complexity
   function SSHerror (myFunc, err) {
     var theError
     if (socket.request.session) {

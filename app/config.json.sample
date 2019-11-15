@@ -6,10 +6,13 @@
   "user": {
     "name": null,
     "password": null
+    "privatekey": null,
   },
   "ssh": {
     "host": null,
     "port": 22,
+    "localAddress": null,
+    "localPort": null,
     "term": "xterm-color",
     "readyTimeout": 20000,
     "keepaliveInterval": 120000,
