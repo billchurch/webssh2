@@ -26,8 +26,6 @@ exports.basicAuth = function basicAuth (req, res, next) {
     req.session.username = defaultCredentials.username;
     req.session.userpassword = defaultCredentials.password;
   }
-    console.log("req.session: " +req.session.username + " pass: " + req.session.userpassword);
-    console.log("def: " +defaultCredentials.username + " pass: " + defaultCredentials.password);
   if (!req.session.userpassword) {
     res.statusCode = 401
     debug('basicAuth credential request (401)')
