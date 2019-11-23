@@ -6,7 +6,7 @@
 var debug = require('debug')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
-var Netmask = require('netmask').Netmask
+var CIDRMatcher = require('cidr-matcher');
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
@@ -25,19 +25,12 @@ module.exports = function socket (socket) {
 
   // If configured, check that requsted host is in a permitted subnet
   if (socket.request.session.ssh.allowedSubnets.length > 0) {
-    var permitted = false;
-    for (const subnet of socket.request.session.ssh.allowedSubnets) {
-      var subnetBlock = new Netmask(subnet);
-      if (subnetBlock.contains(socket.request.session.ssh.host)) {
-        permitted = true;
-        break;
-      }
-    }
-    if (!permitted) {
-        socket.emit('401 UNAUTHORIZED')
-        debugWebSSH2('SOCKET: Requested host outside configured subnets / REJECTED')
-        socket.disconnect(true)
-        return
+    var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
+    if (!matcher.contains(socket.request.session.ssh.host)) {
+      socket.emit('401 UNAUTHORIZED')
+      debugWebSSH2('SOCKET: Requested host outside configured subnets / REJECTED')
+      socket.disconnect(true)
+      return
     }
   }
 
