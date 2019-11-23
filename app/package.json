@@ -41,7 +41,8 @@
     "validator": "~12.0.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-search": "^0.3.0",
-    "xterm-addon-web-links": "^0.2.1"
+    "xterm-addon-web-links": "^0.2.1",
+    "netmask": "1.0.6"
   },
   "scripts": {
     "start": "node index.js",

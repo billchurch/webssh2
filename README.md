@@ -111,6 +111,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **ssh.keepaliveCountMax** - _integer_ - How many consecutive, unanswered SSH-level keepalive packets that can be sent to the server before disconnection (similar to OpenSSH's ServerAliveCountMax config option). **Default:** 10.
 
+* **allowedSubnets** - _array_ - A list of subnets that the server is allowed to connect to via SSH. An empty array means all subnets are permitted; no restriction. **Default:** empty array.
+
 * **terminal.cursorBlink** - _boolean_ - Cursor blinks (true), does not (false) **Default:** true.
 
 * **terminal.scrollback** - _integer_ - Lines in the scrollback buffer. **Default:** 10000.
