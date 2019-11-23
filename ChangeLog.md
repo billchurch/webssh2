@@ -1,5 +1,5 @@
 # Change Log
-### 0.3.0 [TBD]
+### 0.2.10 [TBD]
 ### Added
 - Add configuration option to restrict connections to specified subnets thanks to @Mierdin
 
