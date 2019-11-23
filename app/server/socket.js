@@ -35,7 +35,6 @@ module.exports = function socket (socket) {
     }
     if (!permitted) {
         socket.emit('401 UNAUTHORIZED')
-        socket.emit('status', 'SSH CONNECTION ESTABLISHED')
         debugWebSSH2('SOCKET: Requested host outside configured subnets / REJECTED')
         socket.disconnect(true)
         return
