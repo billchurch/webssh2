@@ -16,7 +16,8 @@
     "term": "xterm-color",
     "readyTimeout": 20000,
     "keepaliveInterval": 120000,
-    "keepaliveCountMax": 10
+    "keepaliveCountMax": 10,
+    "allowedSubnets": []
   },
   "terminal": {
     "cursorBlink": true,

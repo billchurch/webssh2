@@ -28,7 +28,8 @@ let config = {
     term: 'xterm-color',
     readyTimeout: 20000,
     keepaliveInterval: 120000,
-    keepaliveCountMax: 10
+    keepaliveCountMax: 10,
+    allowedSubnets: []
   },
   terminal: {
     cursorBlink: true,
@@ -153,6 +154,7 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     algorithms: config.algorithms,
     keepaliveInterval: config.ssh.keepaliveInterval,
     keepaliveCountMax: config.ssh.keepaliveCountMax,
+    allowedSubnets: config.ssh.allowedSubnets,
     term: (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) &&
       req.query.sshterm) || config.ssh.term,
     terminal: {
