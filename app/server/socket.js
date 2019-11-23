@@ -28,8 +28,10 @@ module.exports = function socket (socket) {
   if ( (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && ( socket.request.session.ssh.allowedSubnets.length > 0 ) )  {
     var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
     if (!matcher.contains(socket.request.session.ssh.host)) {
-      socket.emit('401 UNAUTHORIZED')
-      debugWebSSH2('SOCKET: Requested host outside configured subnets / REJECTED')
+      console.log('WebSSH2 ' + 'error: Requested host outside configured subnets / REJECTED'.red.bold +
+      ' user=' + socket.request.session.username.yellow.bold.underline +
+      ' from=' + socket.handshake.address.yellow.bold.underline)
+      socket.emit('ssherror', '401 UNAUTHORIZED')
       socket.disconnect(true)
       return
     }
