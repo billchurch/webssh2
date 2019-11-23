@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use strict'
 /* jshint esversion: 6, asi: true, node: true */
 // socket.js
@@ -24,7 +25,7 @@ module.exports = function socket (socket) {
   }
 
   // If configured, check that requsted host is in a permitted subnet
-  if (socket.request.session.ssh.allowedSubnets.length > 0) {
+  if ( (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && ( socket.request.session.ssh.allowedSubnets.length > 0 ) )  {
     var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
     if (!matcher.contains(socket.request.session.ssh.host)) {
       socket.emit('401 UNAUTHORIZED')
