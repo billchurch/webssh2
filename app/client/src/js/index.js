@@ -16,7 +16,7 @@ require('../css/style.css')
 var geometrySent = false
 var sessionLogEnable = false
 var loggedData = false
-var allowreplay = false
+var allowreplay = false 
 var allowreauth = false
 var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
 var termid // eslint-disable-line
@@ -135,7 +135,13 @@ socket.on('disconnect', function (err) {
     status.innerHTML =
       'WEBSOCKET SERVER DISCONNECTED: ' + err
   }
-  socket.io.reconnection(false)
+  socket.io.reconnection(false);
+})
+
+socket.on('teardown', function (teardown_reason) {
+  reason.style.backgroundColor = 'red'
+  reason.innerHTML = teardown_reason
+  socket.io.disconnect();
 })
 
 socket.on('error', function (err) {
