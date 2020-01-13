@@ -4,44 +4,214 @@
 // socket.js
 
 // private
+var config = require('./config')
+var validator = require('validator')
 var debug = require('debug')
+var myutil = require('./util')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
-var CIDRMatcher = require('cidr-matcher');
+var CIDRMatcher = require('cidr-matcher')
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
 var menuData = '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>' +
   '<a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>'
 
+// return a subset of keys from an object if they exist
+function pick (obj, keys) {
+  return keys.reduce((acc, key) => {
+    if (obj[key]) {
+      acc[key] = obj[key]
+    }
+    return acc
+  }, {})
+}
+
+const baseSocketConfig = {
+  host: config.ssh.host,
+  port: config.ssh.port,
+  localAddress: config.ssh.localAddress,
+  localPort: config.ssh.localPort,
+  term: config.ssh.term,
+  readyTimeout: config.ssh.readyTimeout,
+  algorithms: config.algorithms,
+  keepaliveInterval: config.ssh.keepaliveInterval,
+  keepaliveCountMax: config.ssh.keepaliveCountMax,
+  allowedSubnets: config.ssh.allowedSubnets || [],
+  header: {
+    name: config.header.text,
+    background: config.header.background
+  },
+  terminal: {
+    cursorBlink: config.terminal.cursorBlink,
+    scrollBack: config.terminal.scrollback,
+    tabStopWidth: config.terminal.tabStopWidth,
+    bellStyle: config.terminal.bellStyle
+  },
+  serverlog: {
+    client: config.serverlog.client || false,
+    server: config.serverlog.server || false
+  }
+}
+
+function getValidatedRequestConfig (queryParams) {
+  const processedParams = {}
+  const validators = {
+    host: (host) => validator.isIP(host + '') || validator.isFQDN(host) || /^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(host),
+    port: (port) => validator.isInt(port + '', { min: 1, max: 65535 }),
+    sshterm: (sshterm) => /^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(sshterm),
+    cursorBlink: (cursorBlink) => validator.isBoolean(cursorBlink + ''),
+    scrollback: (scrollback) => validator.isInt(scrollback + '', { min: 1, max: 200000 }),
+    tabStopWidth: (tabStopWidth) => validator.isInt(tabStopWidth + '', { min: 1, max: 100 }),
+    bellStyle: (bellStyle) => (['sound', 'none'].indexOf(bellStyle) > -1),
+    readyTimeout: (readyTimeout) => validator.isInt(readyTimeout + '', { min: 1, max: 300000 }),
+    header: () => true,
+    headerBackground: () => true
+  }
+  const transformations = {
+    cursorBlink: (cursorBlink) => myutil.parseBool(cursorBlink)
+  }
+  const rename = {
+    sshterm: 'term'
+  }
+
+  // validate & transform and rename query parameters
+  for (const key in queryParams) {
+    const value = queryParams[key]
+    const validator = validators[key] || (() => false)
+    const transformation = transformations[key] || ((i) => i)
+    const newName = rename[key] || key
+
+    if (value !== undefined && validator(value)) {
+      processedParams[newName] = transformation(value)
+    }
+  }
+
+  // todo: address all this!!
+  // const allowreplay = config.options.challengeButton || (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false)
+  // const allowreauth = config.options.allowreauth || false
+  // const mrhsession = ((validator.isAlphanumeric(req.headers.mrhsession + '') && req.headers.mrhsession) ? req.headers.mrhsession : 'none')
+  // if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
+  // if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
+  // todo: do this when creating base config?
+  // if (socketConfig.header.name) {
+  //   validator.escape(socketConfig.header.name)
+  // }
+  // if (socketConfig.header.background) {
+  //   validator.escape(socketConfig.header.background)
+  // }
+
+  // create config object from query parameters
+  const config = pick(processedParams, ['host', 'port', 'readyTimeout', 'term'])
+  config.terminal = pick(processedParams, ['cursorBlink', 'scrollback', 'tabStopWidth', 'bellStyle'])
+  config.header = pick(processedParams, ['header', 'headerBackground'])
+
+  return config
+}
+
+function getCredentials (session) {
+  if (session.username && session.userpassword) {
+    return {
+      username: session.username,
+      userpassword: session.userpassword
+    }
+  } else {
+    return myutil.defaultCredentials
+  }
+}
+
+/**
+ * Error handling for various events. Outputs error to client, logs to
+ * server, destroys session and disconnects socket.
+ * @param {string} callerName            Function calling this function
+ * @param {object} err                   Error object or error message
+ * @param {object} context               Additional information about the state when the error occurred
+ * @param {object} context.socket        The socket.io socket object at the time of failure
+ * @param {object} context.socketConfig  The config object based on the base config and the request query parameters
+ * @param {object} context.credentials   The credentials used during the connection that failed
+ */
+// eslint-disable-next-line complexity
+function SSHError (callerName, err, { socket, credentials, socketConfig }) {
+  var theError
+  const session = socket.request.session
+
+  if (session) {
+    // we just want the first error of the session to pass to the client
+    session.error = session.error || ((err) ? err.message : undefined)
+    theError = session.error ? ': ' + session.error : ''
+
+    // log unsuccessful login attempt
+    if (err && (err.level === 'client-authentication')) {
+      console.log('WebSSH2 ' + 'error: Authentication failure'.red.bold +
+        ' user=' + credentials.username.yellow.bold.underline +
+        ' from=' + socket.handshake.address.yellow.bold.underline)
+
+      socket.emit('allowreauth', socketConfig.allowreauth)
+      socket.emit('reauth')
+    } else {
+      console.log('WebSSH2 Logout: user=' + credentials.username +
+        ' from=' + socket.handshake.address +
+        ' host=' + socketConfig.host +
+        ' port=' + socketConfig.port +
+        ' sessionID=' + socket.request.sessionID + '/' + socket.id +
+        ' allowreplay=' + socketConfig.allowreplay +
+        ' term=' + socketConfig.term
+      )
+      if (err) {
+        theError = err ? ': ' + err.message : ''
+        console.log('WebSSH2 error' + theError)
+      }
+    }
+
+    socket.emit('ssherror', 'SSH ' + callerName + theError)
+    session.destroy()
+  } else {
+    theError = (err) ? ': ' + err.message : ''
+  }
+
+  socket.disconnect(true)
+
+  debugWebSSH2('SSHError ' + callerName + theError)
+}
+
 // public
 module.exports = function socket (socket) {
-  // if websocket connection arrives without an express session, kill it
-  if (!socket.request.session) {
-    socket.emit('401 UNAUTHORIZED')
-    debugWebSSH2('SOCKET: No Express Session / REJECTED')
+  // create new config by merging config object from disk with config object from the request
+  const socketConfig = Object.assign({}, baseSocketConfig, getValidatedRequestConfig(socket.handshake.query))
+  const credentials = getCredentials(socket.request.session)
+  const hasCredentials = credentials.username && (credentials.userpassword || credentials.privatekey)
+  const errorContext = { socket, credentials, socketConfig };
+
+  if (!(hasCredentials && socketConfig)) {
+    debugWebSSH2('Attempt to connect without session.username/password or session varialbles defined, ' +
+      'potentially previously abandoned client session. disconnecting websocket client.\r\n' +
+      'Handshake information: \r\n  ' + JSON.stringify(socket.handshake))
+    socket.emit('ssherror', 'WEBSOCKET ERROR - Refresh the browser and try again')
+    socket.request.session.destroy()
     socket.disconnect(true)
     return
   }
 
   // If configured, check that requsted host is in a permitted subnet
-  if ( (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && ( socket.request.session.ssh.allowedSubnets.length > 0 ) )  {
-    var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
-    if (!matcher.contains(socket.request.session.ssh.host)) {
+  if (socketConfig.allowedSubnets.length > 0) {
+    const matcher = new CIDRMatcher(socketConfig.allowedSubnets)
+    if (!matcher.contains(socketConfig.host)) {
       console.log('WebSSH2 ' + 'error: Requested host outside configured subnets / REJECTED'.red.bold +
-      ' user=' + socket.request.session.username.yellow.bold.underline +
-      ' from=' + socket.handshake.address.yellow.bold.underline)
+        ' user=' + credentials.username.yellow.bold.underline +
+        ' from=' + socket.handshake.address.yellow.bold.underline)
       socket.emit('ssherror', '401 UNAUTHORIZED')
       socket.disconnect(true)
       return
     }
   }
 
-  var conn = new SSH()
+  const conn = new SSH()
+
   socket.on('geometry', function socketOnGeometry (cols, rows) {
     termCols = cols
     termRows = rows
   })
+
   conn.on('banner', function connOnBanner (data) {
     // need to convert to cr/lf for proper formatting
     data = data.replace(/\r?\n/g, '\r\n')
@@ -49,35 +219,45 @@ module.exports = function socket (socket) {
   })
 
   conn.on('ready', function connOnReady () {
-    console.log('WebSSH2 Login: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' mrhsession=' + socket.request.session.ssh.mrhsession + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
+    console.log('WebSSH2 Login: user=' + credentials.username +
+      ' from=' + socket.handshake.address +
+      ' host=' + socketConfig.host +
+      ' port=' + socketConfig.port +
+      ' sessionID=' + socket.request.sessionID + '/' + socket.id +
+      ' mrhsession=' + socketConfig.mrhsession +
+      ' allowreplay=' + socketConfig.allowreplay +
+      ' term=' + socketConfig.term
+    )
+
     socket.emit('menu', menuData)
-    socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
-    socket.emit('setTerminalOpts', socket.request.session.ssh.terminal)
-    socket.emit('title', 'ssh://' + socket.request.session.ssh.host)
-    if (socket.request.session.ssh.header.background) socket.emit('headerBackground', socket.request.session.ssh.header.background)
-    if (socket.request.session.ssh.header.name) socket.emit('header', socket.request.session.ssh.header.name)
-    socket.emit('footer', 'ssh://' + socket.request.session.username + '@' + socket.request.session.ssh.host + ':' + socket.request.session.ssh.port)
+    socket.emit('allowreauth', socketConfig.allowreauth)
+    socket.emit('setTerminalOpts', socketConfig.terminal)
+    socket.emit('title', 'ssh://' + socketConfig.host)
+    if (socketConfig.header.background) socket.emit('headerBackground', socketConfig.header.background)
+    if (socketConfig.header.name) socket.emit('header', socketConfig.header.name)
+    socket.emit('footer', 'ssh://' + credentials.username + '@' + socketConfig.host + ':' + socketConfig.port)
     socket.emit('status', 'SSH CONNECTION ESTABLISHED')
     socket.emit('statusBackground', 'green')
-    socket.emit('allowreplay', socket.request.session.ssh.allowreplay)
+    socket.emit('allowreplay', socketConfig.allowreplay)
+
     conn.shell({
-      term: socket.request.session.ssh.term,
+      term: socketConfig.term,
       cols: termCols,
       rows: termRows
     }, function connShell (err, stream) {
       if (err) {
-        SSHerror('EXEC ERROR' + err)
+        SSHError('EXEC ERROR', err, errorContext)
         conn.end()
         return
       }
       // poc to log commands from client
-      if (socket.request.session.ssh.serverlog.client) var dataBuffer
+      if (socketConfig.serverlog.client) var dataBuffer
       socket.on('data', function socketOnData (data) {
         stream.write(data)
         // poc to log commands from client
-        if (socket.request.session.ssh.serverlog.client) {
+        if (socketConfig.serverlog.client) {
           if (data === '\r') {
-            console.log('serverlog.client: ' + socket.request.session.id + '/' + socket.id + ' host: ' + socket.request.session.ssh.host + ' command: ' + dataBuffer)
+            console.log('serverlog.client: ' + socket.request.session.id + '/' + socket.id + ' host: ' + socketConfig.host + ' command: ' + dataBuffer)
             dataBuffer = undefined
           } else {
             dataBuffer = (dataBuffer) ? dataBuffer + data : data
@@ -87,8 +267,8 @@ module.exports = function socket (socket) {
       socket.on('control', function socketOnControl (controlData) {
         switch (controlData) {
           case 'replayCredentials':
-            if (socket.request.session.ssh.allowreplay) {
-              stream.write(socket.request.session.userpassword + '\n')
+            if (socketConfig.allowreplay) {
+              stream.write(credentials.userpassword + '\n')
             }
           /* falls through */
           default:
@@ -102,19 +282,19 @@ module.exports = function socket (socket) {
       socket.on('disconnect', function socketOnDisconnect (reason) {
         debugWebSSH2('SOCKET DISCONNECT: ' + reason)
         err = { message: reason }
-        SSHerror('CLIENT SOCKET DISCONNECT', err)
+        SSHError('CLIENT SOCKET DISCONNECT', err, errorContext)
         conn.end()
         // socket.request.session.destroy()
       })
       socket.on('error', function socketOnError (err) {
-        SSHerror('SOCKET ERROR', err)
+        SSHError('SOCKET ERROR', err, errorContext)
         conn.end()
       })
 
       stream.on('data', function streamOnData (data) { socket.emit('data', data.toString('utf-8')) })
       stream.on('close', function streamOnClose (code, signal) {
         err = { message: ((code || signal) ? (((code) ? 'CODE: ' + code : '') + ((code && signal) ? ' ' : '') + ((signal) ? 'SIGNAL: ' + signal : '')) : undefined) }
-        SSHerror('STREAM CLOSE', err)
+        SSHError('STREAM CLOSE', err, errorContext)
         conn.end()
       })
       stream.stderr.on('data', function streamStderrOnData (data) {
@@ -123,71 +303,28 @@ module.exports = function socket (socket) {
     })
   })
 
-  conn.on('end', function connOnEnd (err) { SSHerror('CONN END BY HOST', err) })
-  conn.on('close', function connOnClose (err) { SSHerror('CONN CLOSE', err) }) 
-  conn.on('error', function connOnError (err) { SSHerror('CONN ERROR', err) })
+  conn.on('end', function connOnEnd (err) { SSHError('CONN END BY HOST', err, errorContext) })
+  conn.on('close', function connOnClose (err) { SSHError('CONN CLOSE', err, errorContext) })
+  conn.on('error', function connOnError (err) { SSHError('CONN ERROR', err, errorContext) })
   conn.on('keyboard-interactive', function connOnKeyboardInteractive (name, instructions, instructionsLang, prompts, finish) {
     debugWebSSH2('conn.on(\'keyboard-interactive\')')
-    finish([socket.request.session.userpassword])
+    finish([credentials.userpassword])
   })
-  if (socket.request.session.username && (socket.request.session.userpassword || socket.request.session.privatekey) && socket.request.session.ssh) {
-    // console.log('hostkeys: ' + hostkeys[0].[0])
-    conn.connect({
-      host: socket.request.session.ssh.host,
-      port: socket.request.session.ssh.port,
-      localAddress: socket.request.session.ssh.localAddress,
-      localPort: socket.request.session.ssh.localPort,
-      username: socket.request.session.username,
-      password: socket.request.session.userpassword,
-      privateKey: socket.request.session.privatekey,
-      tryKeyboard: true,
-      algorithms: socket.request.session.ssh.algorithms,
-      readyTimeout: socket.request.session.ssh.readyTimeout,
-      keepaliveInterval: socket.request.session.ssh.keepaliveInterval,
-      keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
-      debug: debug('ssh2')
-    })
-  } else {
-    debugWebSSH2('Attempt to connect without session.username/password or session varialbles defined, potentially previously abandoned client session. disconnecting websocket client.\r\nHandshake information: \r\n  ' + JSON.stringify(socket.handshake))
-    socket.emit('ssherror', 'WEBSOCKET ERROR - Refresh the browser and try again')
-    socket.request.session.destroy()
-    socket.disconnect(true)
-  }
 
-  /**
-  * Error handling for various events. Outputs error to client, logs to
-  * server, destroys session and disconnects socket.
-  * @param {string} myFunc Function calling this function
-  * @param {object} err    error object or error message
-  */
-  // eslint-disable-next-line complexity
-  function SSHerror (myFunc, err) {
-    var theError
-    if (socket.request.session) {
-      // we just want the first error of the session to pass to the client
-      socket.request.session.error = (socket.request.session.error) || ((err) ? err.message : undefined)
-      theError = (socket.request.session.error) ? ': ' + socket.request.session.error : ''
-      // log unsuccessful login attempt
-      if (err && (err.level === 'client-authentication')) {
-        console.log('WebSSH2 ' + 'error: Authentication failure'.red.bold +
-          ' user=' + socket.request.session.username.yellow.bold.underline +
-          ' from=' + socket.handshake.address.yellow.bold.underline)
-        socket.emit('allowreauth', socket.request.session.ssh.allowreauth)
-        socket.emit('reauth')
-      } else {
-        console.log('WebSSH2 Logout: user=' + socket.request.session.username + ' from=' + socket.handshake.address + ' host=' + socket.request.session.ssh.host + ' port=' + socket.request.session.ssh.port + ' sessionID=' + socket.request.sessionID + '/' + socket.id + ' allowreplay=' + socket.request.session.ssh.allowreplay + ' term=' + socket.request.session.ssh.term)
-        if (err) {
-          theError = (err) ? ': ' + err.message : ''
-          console.log('WebSSH2 error' + theError)
-        }
-      }
-      socket.emit('ssherror', 'SSH ' + myFunc + theError)
-      socket.request.session.destroy()
-      socket.disconnect(true)
-    } else {
-      theError = (err) ? ': ' + err.message : ''
-      socket.disconnect(true)
-    }
-    debugWebSSH2('SSHerror ' + myFunc + theError)
-  }
+  // console.log('hostkeys: ' + hostkeys[0].[0])
+  conn.connect({
+    host: socketConfig.host,
+    port: socketConfig.port,
+    localAddress: socketConfig.localAddress,
+    localPort: socketConfig.localPort,
+    username: credentials.username,
+    password: credentials.userpassword,
+    privateKey: credentials.privatekey,
+    tryKeyboard: true,
+    algorithms: socketConfig.algorithms,
+    readyTimeout: socketConfig.readyTimeout,
+    keepaliveInterval: socketConfig.keepaliveInterval,
+    keepaliveCountMax: socketConfig.keepaliveCountMax,
+    debug: debug('ssh2')
+  })
 }
