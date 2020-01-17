@@ -5,8 +5,8 @@
   },
   "user": {
     "name": null,
-    "password": null
-    "privatekey": null,
+    "password": null,
+    "privatekey": null
   },
   "ssh": {
     "host": null,
