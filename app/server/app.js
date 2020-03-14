@@ -90,7 +90,7 @@ let config = {
 try {
   if (fs.existsSync(configPath)) {
     console.log('ephemeral_auth service reading config from: ' + configPath)
-    config = require('read-config')(configPath)
+    config = require('read-config-ng')(configPath)
   } else {
     console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
     console.error('\n  See config.json.sample for details\n\n')
