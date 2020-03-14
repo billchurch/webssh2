@@ -1,4 +1,8 @@
 # Change Log
+### 0.2.10 [TBD]
+### Added
+- Add configuration option to restrict connections to specified subnets thanks to @Mierdin
+
 ### 0.2.9 [2019-06-13]
 ### Changes
 - Missing require('fs') in `server/app.js` See issue [#135](../../issues/135)
