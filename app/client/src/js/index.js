@@ -41,7 +41,7 @@ function resizeScreen () {
 }
 
 socket = io.connect({
-  path: "/ssh/socket.io"
+  path: '/ssh/socket.io'
 })
 
 term.onData(function (data) {

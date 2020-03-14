@@ -110,17 +110,16 @@ var session = require('express-session')({
   unset: 'destroy'
 })
 var app = express()
-var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
-myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
+myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey)
 var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
+var favicon = require('serve-favicon');
 
 // express
-app.use(compression({ level: 9 }))
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
@@ -128,6 +127,9 @@ app.disable('x-powered-by')
 
 // static files
 app.use('/ssh', express.static(publicPath, expressOptions))
+
+// favicon from root if being pre-fetched by browser to prevent a 404
+app.use(favicon(path.join(publicPath,'favicon.ico')));
 
 app.get('/ssh/reauth', function (req, res, next) {
   var r = req.headers.referer || '/'

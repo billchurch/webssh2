@@ -1,10 +1,30 @@
 # Change Log
-### 0.2.10-1 [TBD]
+### 0.3.0-pre-release-1 [TBD]
 ### Added
 - Add configuration option to restrict connections to specified subnets thanks to @Mierdin
+- favicon
+  - added module `serve-favicon` to serve favicon from root if pre-fetched by browser
+  - added `link rel=icon` line in client.htm to serve favico.ico out of /ssh/
 
 ### Changed
-- Using new repo for read-config -> read-config-ng
+- Using new repo for read-config -> read-config-ng-
+- removed express compression feature, added no real value.
+- module updates
+  - ssh2 to 0.8.8
+  - xterm 4.4.0
+- development module updates (does not impact production, only for development and rebuilding)
+  - fortawesome/fontawesome-svg-core 1.2.27
+  - fortawesome/free-solid-svg-icons 5.12.1
+  - standard-version 7.1.0
+  - webpack 4.42.0
+    - webpack-cli 3.3.11
+    - terser-webpack-plugin 2.3.5
+    - copy-webpack-plugin 5.1.1
+    - cross-env 7.0.2
+    - css-loader 3.4.2
+    - file-loader 5.1.0
+    - style-loader 1.1.3
+    - url-loader 3.0.0
 
 ### Potentially Breaking Changes
 - Move all child resources to start from under /ssh
