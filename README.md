@@ -1,4 +1,5 @@
 # WebSSH2
+<ignorestart>
 [![GitHub version](https://badge.fury.io/gh/billchurch%2Fwebssh2.svg)](https://badge.fury.io/gh/billchurch%2Fwebssh2)
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
@@ -61,7 +62,7 @@ Alternatively if you don't want to rebuild, mount the config at runtime:
 docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/config.json webssh2
 ```
 
-
+<ignoreend>
 # Options
 
 ## GET request vars
