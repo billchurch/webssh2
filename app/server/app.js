@@ -117,6 +117,7 @@ var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
+var favicon = require('serve-favicon');
 
 // express
 app.use(session)
@@ -126,6 +127,9 @@ app.disable('x-powered-by')
 
 // static files
 app.use('/ssh', express.static(publicPath, expressOptions))
+
+// favicon from root if being pre-fetched by browser to prevent a 404
+app.use(favicon(path.join(publicPath,'favicon.ico')));
 
 app.get('/ssh/reauth', function (req, res, next) {
   var r = req.headers.referer || '/'
