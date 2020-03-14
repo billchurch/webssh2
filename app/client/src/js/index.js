@@ -40,20 +40,9 @@ function resizeScreen () {
   socket.emit('resize', { cols: term.cols, rows: term.rows })
 }
 
-// if (document.location.pathname) {
-//   var parts = document.location.pathname.split('/')
-//   var base = parts.slice(0, parts.length - 1).join('/') + '/'
-//   var resource = base.substring(1) + 'socket.io'
-//   console.log('document.location.pathname resource: ' + resource)
-
-//   socket = io.connect(null, {
-//     resource: resource,
-//     path: "/ssh/socket.io"
-//   })
-// } else {
-  socket = io.connect({
-    path: "/ssh/socket.io"
-  })
+socket = io.connect({
+  path: "/ssh/socket.io"
+})
 
 term.onData(function (data) {
   socket.emit('data', data)

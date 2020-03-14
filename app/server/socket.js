@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use strict'
 /* jshint esversion: 6, asi: true, node: true */
 // socket.js
@@ -6,6 +7,7 @@
 var debug = require('debug')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
+var CIDRMatcher = require('cidr-matcher');
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
@@ -21,6 +23,20 @@ module.exports = function socket (socket) {
     socket.disconnect(true)
     return
   }
+
+  // If configured, check that requsted host is in a permitted subnet
+  if ( (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && ( socket.request.session.ssh.allowedSubnets.length > 0 ) )  {
+    var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
+    if (!matcher.contains(socket.request.session.ssh.host)) {
+      console.log('WebSSH2 ' + 'error: Requested host outside configured subnets / REJECTED'.red.bold +
+      ' user=' + socket.request.session.username.yellow.bold.underline +
+      ' from=' + socket.handshake.address.yellow.bold.underline)
+      socket.emit('ssherror', '401 UNAUTHORIZED')
+      socket.disconnect(true)
+      return
+    }
+  }
+
   var conn = new SSH()
   socket.on('geometry', function socketOnGeometry (cols, rows) {
     termCols = cols
