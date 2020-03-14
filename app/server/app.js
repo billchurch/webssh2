@@ -110,17 +110,15 @@ var session = require('express-session')({
   unset: 'destroy'
 })
 var app = express()
-var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
-myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
+myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey)
 var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 
 // express
-app.use(compression({ level: 9 }))
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))

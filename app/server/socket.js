@@ -7,7 +7,7 @@
 var debug = require('debug')
 var debugWebSSH2 = require('debug')('WebSSH2')
 var SSH = require('ssh2').Client
-var CIDRMatcher = require('cidr-matcher');
+var CIDRMatcher = require('cidr-matcher')
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 var termCols, termRows
@@ -25,8 +25,8 @@ module.exports = function socket (socket) {
   }
 
   // If configured, check that requsted host is in a permitted subnet
-  if ( (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && ( socket.request.session.ssh.allowedSubnets.length > 0 ) )  {
-    var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
+  if ((((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length && (socket.request.session.ssh.allowedSubnets.length > 0)) {
+    var matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets)
     if (!matcher.contains(socket.request.session.ssh.host)) {
       console.log('WebSSH2 ' + 'error: Requested host outside configured subnets / REJECTED'.red.bold +
       ' user=' + socket.request.session.username.yellow.bold.underline +
@@ -124,7 +124,7 @@ module.exports = function socket (socket) {
   })
 
   conn.on('end', function connOnEnd (err) { SSHerror('CONN END BY HOST', err) })
-  conn.on('close', function connOnClose (err) { SSHerror('CONN CLOSE', err) }) 
+  conn.on('close', function connOnClose (err) { SSHerror('CONN CLOSE', err) })
   conn.on('error', function connOnError (err) { SSHerror('CONN ERROR', err) })
   conn.on('keyboard-interactive', function connOnKeyboardInteractive (name, instructions, instructionsLang, prompts, finish) {
     debugWebSSH2('conn.on(\'keyboard-interactive\')')
