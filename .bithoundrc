@@ -9,7 +9,7 @@
     },
     "dependencies": {
         "mute": [
-            "read-config",
+            "read-config-ng",
             "socket.io",
             "standard",
             "bithound"

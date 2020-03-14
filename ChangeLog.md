@@ -1,7 +1,24 @@
 # Change Log
-### 0.2.10 [TBD]
+### 0.2.10-1 [TBD]
 ### Added
 - Add configuration option to restrict connections to specified subnets thanks to @Mierdin
+
+### Changed
+- Using new repo for read-config -> read-config-ng
+
+### Potentially Breaking Changes
+- Move all child resources to start from under /ssh
+  - /socket.io -> /ssh/socket.io
+  - /webssh2.css -> /ssh/webssh2.css
+  - /webssh2.bundle.js -> /ssh/webssh2.bundle.js
+  - /reauth -> /ssh/reauth
+  - perhaps more
+
+### Fixes
+- Typo in config.json.sample, thanks @wuchihsu, fixes #173
+
+### Housekeeping
+- Removed irrelavant build scripts from /scripts
 
 ### 0.2.9 [2019-06-13]
 ### Changes
