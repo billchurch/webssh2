@@ -34,7 +34,7 @@
     "express": "~4.17.1",
     "express-session": "~1.17.0",
     "morgan": "~1.9.1",
-    "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
+    "read-config-ng": "~1.6.1",
     "socket.io": "2.2.0",
     "ssh2": "~0.8.6",
     "terser-webpack-plugin": "^2.2.1",
