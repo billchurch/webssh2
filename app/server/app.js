@@ -114,7 +114,7 @@ var server = require('http').Server(app)
 var myutil = require('./util')
 myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false })
+var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 
@@ -126,9 +126,9 @@ if (config.accesslog) app.use(logger('common'))
 app.disable('x-powered-by')
 
 // static files
-app.use(express.static(publicPath, expressOptions))
+app.use('/ssh', express.static(publicPath, expressOptions))
 
-app.get('/reauth', function (req, res, next) {
+app.get('/ssh/reauth', function (req, res, next) {
   var r = req.headers.referer || '/'
   res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
 })
