@@ -1,5 +1,6 @@
 # Change Log
-### 0.3.0-pre-release-1 [TBD]
+## 0.3.0 [20200315]
+🍀🍀🍀
 ### Added
 - Add configuration option to restrict connections to specified subnets thanks to @Mierdin
 - favicon
@@ -10,8 +11,9 @@
 - Using new repo for read-config -> read-config-ng-
 - removed express compression feature, added no real value.
 - module updates
-  - ssh2 to 0.8.8
-  - xterm 4.4.0
+  - ssh2 to 0.8.6 -> 0.8.8 - [comparison at ssh2 repo](https://github.com/mscdex/ssh2/compare/v0.8.6...v0.8.8)
+  - xterm 4.2.0 -> 4.4.0 - [comparison at xtermjs repo](https://github.com/xtermjs/xterm.js/compare/4.2.0...4.4.0)
+  - read-config-ng 3.0.1 - (taking over abandoned repo)n
 - development module updates (does not impact production, only for development and rebuilding)
   - fortawesome/fontawesome-svg-core 1.2.27
   - fortawesome/free-solid-svg-icons 5.12.1
@@ -40,7 +42,7 @@
 ### Housekeeping
 - Removed irrelavant build scripts from /scripts
 
-### 0.2.9 [2019-06-13]
+## 0.2.9 [2019-06-13]
 ### Changes
 - Missing require('fs') in `server/app.js` See issue [#135](../../issues/135)
 - Patched read-config to mitigate vulnerability in js-yaml
@@ -49,7 +51,7 @@
   - sending my patch upstream to read-config, webssh2 package.json points to patched version in my repository https://github.com/billchurch/nodejs-read-config
   - See https://github.com/nodeca/js-yaml/issues/475 for more detail
 
-### 0.2.8 [2019-05-25]
+## 0.2.8 [2019-05-25]
 ### Changes
 - Fixes issue if no password is entered, browser must be closed and restart to attempt to re-auth. See issue [#118](../../issues/118). Thanks @smilesm2 for the idea.
 - fixes broken `npm run (build|builddev)`
@@ -60,7 +62,7 @@
 ### Fixes
 - ILX workspace may not always import properly due to symbolic links (specifically ./node_modules/.bin). This is removed from the ILX package
 
-### 0.2.7 [2018-11-11]
+## 0.2.7 [2018-11-11]
 ### Changes
 - `config.reauth` was not respected if initial auth presented was incorrect, regardless of `reauth` setting in `config.json` reauth would always be attempted. fixes [#117](../../issues/117) 
 - **BREAKING** moved app files to /app, this may be a breaking change
@@ -88,14 +90,14 @@
   - webpack v4.25.1 
   - webpack-cli v3.1.2 
 
-### 0.2.6 [2018-11-09]
+## 0.2.6 [2018-11-09]
 ### Changes
 - Reauth didn't work if intial auth presented was incorrect, (see issue #112) fixed thanks @vvalchev
 - Update node version supported to >=6 (PR #115) thanks @perlun
 - Update packages
   - developer dependencies
 
-### 0.2.5 [2018-09-11]
+## 0.2.5 [2018-09-11]
 ### Added
 - Reauth function thanks to @vbeskrovny and @vvalchev (9bbc116)
   - Controlled by `config.json` option `options.allowreauth` true presents reauth dialog and false hides dialog
@@ -105,7 +107,7 @@
   - previously this configuration option did nothing, this now enables the Credentials button site-wide regardless of the `allowreplay` header value
 - Updated debug module to v4
 
-### 0.2.4 [2018-07-18]
+## 0.2.4 [2018-07-18]
 ### Added
 - Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
 - Added bellStyle options
@@ -119,12 +121,12 @@
 ### Fixed
 - ESC]0; is now removed from log files when using the browser-side logging feature
 
-### 0.2.3 unreleased
+## 0.2.3 unreleased
 
 ### Fixed
 - ESC]0; is now removed from log files when using the browser-side logging feature
 
-### 0.2.0 [2018-02-10]
+## 0.2.0 [2018-02-10]
 Mostly client (browser) related changes in this release
 
 ### Added
@@ -152,17 +154,17 @@ Mostly client (browser) related changes in this release
 ### Fixed
 - Resolved loss of terminal foucs when interacting with option buttons (Logging, etc...)
 
-### 0.1.4 [2018-01-30]
+## 0.1.4 [2018-01-30]
 ### Changed
 - Moved socket and util out of folders into .js in root.
 - added keepaliveInterval and keepaliveCountMax config options
 
-### 0.1.3 [2017-09-28]
+## 0.1.3 [2017-09-28]
 ### Changed
 - Upgrade to debug@3.1 to eliminate ReDoS in %o formatter
 - Upgrade Express to 4.15.5 for ReDOS
 - Upgrade basic-auth to v2.0
-### 0.1.2 [2017-07-31]
+## 0.1.2 [2017-07-31]
 ### Added
 - ssh.readyTimeout option in config.json (time in ms, default 20000, 20sec)
 ### Changed
@@ -186,7 +188,7 @@ Mostly client (browser) related changes in this release
 - Running in strict mode ('use strict';)
 
 
-### 0.1.1 [2017-06-03]
+## 0.1.1 [2017-06-03]
 ### Added
 - `serverlog.client` and `serverlog.server` options added to `config.json` to enable logging of client commands to server log (only client portion implemented at this time)
 - morgan express middleware for logging
@@ -200,7 +202,7 @@ Mostly client (browser) related changes in this release
 - color console decorations from `util/index.js`
 - SanatizeHeaders function from `util/index.js`
 
-### 0.1.0 [2017-05-27]
+## 0.1.0 [2017-05-27]
 ### Added
 - This ChangeLog.md file
 - Support for UTF-8 characters (thanks @bara666)
@@ -239,14 +241,14 @@ and events in the application (not including the ssh2 module debug)
 ### Removed
 - Express Static References directly to module source directories due to concatenating and minifying js/css
 
-### 0.0.5 - [2017-03-23]
+## 0.0.5 - [2017-03-23]
 ### Added
 - Added experimental support for logging (see Readme)
 
 ### Fixed
 - Terminal geometry now properly fills the browser screen and communicates this to the ssh session. Tested with IE 11 and recent versions of Chrome/Safari/Firefox.
 
-### 0.0.4 - [2017-03-23]
+## 0.0.4 - [2017-03-23]
 ### Added
 - Set default terminal to xterm-color
 - Mouse event support
@@ -256,13 +258,13 @@ and events in the application (not including the ssh2 module debug)
 - Update to Xterm.js 2.4.0
 - Minor code formatting cleanup
 
-### 0.0.3 - [2017-02-16]
+## 0.0.3 - [2017-02-16]
 ### Changed
 - Update xterm to latest (2.3.0)
 ### Fixed
 - Fixed misspelled config.ssh.port property
 
-### 0.0.2 - [2017-02-01]
+## 0.0.2 - [2017-02-01]
 ### Changed
 - Moving terminal emulation to xterm.js
 - updating module version dependencies
@@ -270,6 +272,6 @@ and events in the application (not including the ssh2 module debug)
 ### Fixed
 - Fixed issue with banners not being displayed properly from UNIX hosts when only lf is used
 
-### 0.0.1 - [2016-06-28]
+## 0.0.1 - [2016-06-28]
 ### Added
 - Initial proof of concept and release. For historical purposes only.
