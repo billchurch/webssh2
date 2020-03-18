@@ -121,6 +121,7 @@ var expressOptions = require('./expressOptions')
 var favicon = require('serve-favicon');
 
 // express
+app.use(safeShutdownGuard)
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
@@ -204,6 +205,11 @@ io.on('connection', socket)
 var shutdownMode = false
 var shutdownInterval = 0
 var connectionCount = 0
+
+function safeShutdownGuard (req, res, next) {
+  if (shutdownMode) res.status(503).end('Service unavailable: Server shutting down')
+  else return next()
+}
 
 io.on('connection', function (socket) {
   connectionCount++
