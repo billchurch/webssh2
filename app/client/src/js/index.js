@@ -26,6 +26,7 @@ var status = document.getElementById('status')
 var header = document.getElementById('header')
 var dropupContent = document.getElementById('dropupContent')
 var footer = document.getElementById('footer')
+var countdown = document.getElementById('countdown')
 var fitAddon = new FitAddon()
 var terminalContainer = document.getElementById('terminal-container')
 term.loadAddon(fitAddon)
@@ -136,6 +137,7 @@ socket.on('disconnect', function (err) {
       'WEBSOCKET SERVER DISCONNECTED: ' + err
   }
   socket.io.reconnection(false)
+  countdown.classList.remove('active')
 })
 
 socket.on('error', function (err) {
@@ -147,6 +149,18 @@ socket.on('error', function (err) {
 
 socket.on('reauth', function () {
   (allowreauth) && reauthSession()
+})
+
+// safe shutdown
+var hasCountdownStarted = false
+
+socket.on('shutdownCountdownUpdate', function (remainingSeconds) {
+  if (!hasCountdownStarted) {
+    countdown.classList.add('active')
+    hasCountdownStarted = true
+  }
+
+  countdown.innerText = 'Shutting down in ' + remainingSeconds + 's'
 })
 
 term.onTitleChange(function (title) {

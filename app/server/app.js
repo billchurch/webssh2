@@ -199,4 +199,50 @@ io.use(function (socket, next) {
 // bring up socket
 io.on('connection', socket)
 
+// safe shutdown
+var shutdownMode = false
+var shutdownInterval = 0
+var connectionCount = 0
+
+io.on('connection', function (socket) {
+  connectionCount++
+
+  socket.on('disconnect', function () {
+    if ((--connectionCount <= 0) && shutdownMode) {
+      stop('All clients disconnected')
+    }
+  })
+})
+
+process.on('SIGINT', function () {
+  if (shutdownMode) stop('Safe shutdown aborted, force quitting')
+  else if (connectionCount > 0) {
+    var remainingSeconds = 300
+    shutdownMode = true
+
+    var message = (connectionCount === 1) ? ' client is still connected'
+      : ' clients are still connected'
+    console.error(connectionCount + message)
+    console.error('Starting a ' + remainingSeconds + ' seconds countdown')
+    console.error('Press Ctrl+C again to force quit')
+
+    shutdownInterval = setInterval(function () {
+      if ((remainingSeconds--) <= 0) {
+        stop('Countdown is over')
+      } else {
+        io.sockets.emit('shutdownCountdownUpdate', remainingSeconds)
+      }
+    }, 1000)
+  } else stop()
+})
+
+// clean stop
+function stop (reason) {
+  shutdownMode = false
+  if (reason) console.log('Stopping: ' + reason)
+  if (shutdownInterval) clearInterval(shutdownInterval)
+  io.close()
+  server.close()
+}
+
 module.exports = { server: server, config: config }
