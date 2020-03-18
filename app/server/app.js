@@ -83,7 +83,8 @@ let config = {
     server: false
   },
   accesslog: false,
-  verify: false
+  verify: false,
+  safeShutdownDuration: 300
 }
 
 // test if config.json exists, if not provide error message but try to run
@@ -217,7 +218,7 @@ io.on('connection', function (socket) {
 process.on('SIGINT', function () {
   if (shutdownMode) stop('Safe shutdown aborted, force quitting')
   else if (connectionCount > 0) {
-    var remainingSeconds = 300
+    var remainingSeconds = config.safeShutdownDuration
     shutdownMode = true
 
     var message = (connectionCount === 1) ? ' client is still connected'
