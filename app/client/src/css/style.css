@@ -75,6 +75,30 @@ body, html  {
     text-align: left;
     z-index: 100;
 }
+#countdown {
+    display: none;
+    color: rgb(240, 240, 240);
+    background-color: rgb(50, 50, 50);
+    padding-left: 10px;
+    padding-right: 10px;
+    border-color: white;
+    border-style: none solid none solid;
+    border-width: 1px;
+    text-align: left;
+    z-index: 100;
+}
+#countdown.active {
+    display: inline-block;
+    animation: countdown infinite alternate 200ms;
+}
+@keyframes countdown {
+    from {
+        background-color: rgb(255, 255, 0);
+    }
+    to {
+        background-color: inherit;
+    }
+}
 #menu {
     display: inline-block;
     font-size: 16px;

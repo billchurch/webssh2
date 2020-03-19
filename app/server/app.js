@@ -83,7 +83,8 @@ let config = {
     server: false
   },
   accesslog: false,
-  verify: false
+  verify: false,
+  safeShutdownDuration: 300
 }
 
 // test if config.json exists, if not provide error message but try to run
@@ -120,6 +121,7 @@ var expressOptions = require('./expressOptions')
 var favicon = require('serve-favicon');
 
 // express
+app.use(safeShutdownGuard)
 app.use(session)
 app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
@@ -198,5 +200,57 @@ io.use(function (socket, next) {
 
 // bring up socket
 io.on('connection', socket)
+
+// safe shutdown
+var shutdownMode = false
+var shutdownInterval = 0
+var connectionCount = 0
+
+function safeShutdownGuard (req, res, next) {
+  if (shutdownMode) res.status(503).end('Service unavailable: Server shutting down')
+  else return next()
+}
+
+io.on('connection', function (socket) {
+  connectionCount++
+
+  socket.on('disconnect', function () {
+    if ((--connectionCount <= 0) && shutdownMode) {
+      stop('All clients disconnected')
+    }
+  })
+})
+
+const signals = ['SIGTERM', 'SIGINT']
+signals.forEach(signal => process.on(signal, function () {
+  if (shutdownMode) stop('Safe shutdown aborted, force quitting')
+  else if (connectionCount > 0) {
+    var remainingSeconds = config.safeShutdownDuration
+    shutdownMode = true
+
+    var message = (connectionCount === 1) ? ' client is still connected'
+      : ' clients are still connected'
+    console.error(connectionCount + message)
+    console.error('Starting a ' + remainingSeconds + ' seconds countdown')
+    console.error('Press Ctrl+C again to force quit')
+
+    shutdownInterval = setInterval(function () {
+      if ((remainingSeconds--) <= 0) {
+        stop('Countdown is over')
+      } else {
+        io.sockets.emit('shutdownCountdownUpdate', remainingSeconds)
+      }
+    }, 1000)
+  } else stop()
+}))
+
+// clean stop
+function stop (reason) {
+  shutdownMode = false
+  if (reason) console.log('Stopping: ' + reason)
+  if (shutdownInterval) clearInterval(shutdownInterval)
+  io.close()
+  server.close()
+}
 
 module.exports = { server: server, config: config }
