@@ -221,7 +221,8 @@ io.on('connection', function (socket) {
   })
 })
 
-process.on('SIGINT', function () {
+const signals = ['SIGTERM', 'SIGINT']
+signals.forEach(signal => process.on(signal, function () {
   if (shutdownMode) stop('Safe shutdown aborted, force quitting')
   else if (connectionCount > 0) {
     var remainingSeconds = config.safeShutdownDuration
@@ -241,7 +242,7 @@ process.on('SIGINT', function () {
       }
     }, 1000)
   } else stop()
-})
+}))
 
 // clean stop
 function stop (reason) {
