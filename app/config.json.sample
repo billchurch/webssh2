@@ -71,5 +71,6 @@
     "server": false
   },
   "accesslog": false,
-  "verify": false
+  "verify": ,
+  "safeShutdownDuration": 300
 }
