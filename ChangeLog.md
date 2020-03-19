@@ -1,4 +1,9 @@
 # Change Log
+## 0.3.1-pre-release-0.0 [20200319]
+### Added
+- Safe Shutdown Feature - thanks to @edgarogh
+  - Sending SIGINT or SIGTERM to node process responsible for WebSSH2 or Docker process will result in a "safe" shutdown
+  - Timer is configured in config.safeShutdownDuration
 ## 0.3.0 [20200315]
 🍀🍀🍀
 ### Added
