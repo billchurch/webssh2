@@ -1,0 +1,25 @@
+name: Build and publish image
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        name: Build image job
+        steps:
+            - name: Checkout master
+              uses: actions/checkout@master
+            - name: Build and publish image
+              uses: ilteoood/docker_buildx@master
+              with:
+                tag: latest,0.3.0
+                imageName: ilteoood/webssh2
+                platform: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
+                publish: true
+                dockerHubUser: ${{ secrets.DOCKER_HUB_USER }}
+                dockerHubPassword: ${{ secrets.DOCKER_HUB_PASSWORD }}
+            - name: Update badge
+              run: curl -X POST ${{ secrets.BADGE_UPDATE_URL }}
