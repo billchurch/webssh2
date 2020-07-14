@@ -16,7 +16,7 @@ jobs:
               uses: ilteoood/docker_buildx@master
               with:
                 tag: latest,0.3.0
-                imageName: ilteoood/webssh2
+                imageName: ${{ secrets.DOCKER_HUB_USER }}/webssh2
                 platform: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
                 publish: true
                 dockerHubUser: ${{ secrets.DOCKER_HUB_USER }}
