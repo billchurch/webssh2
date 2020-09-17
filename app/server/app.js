@@ -118,7 +118,7 @@ var validator = require('validator')
 var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
-var favicon = require('serve-favicon');
+var favicon = require('serve-favicon')
 
 // express
 app.use(safeShutdownGuard)
@@ -143,10 +143,10 @@ app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
   req.session.ssh = {
-    host: (validator.isIP(req.params.host + '') && req.params.host) ||
+    host: config.ssh.host || (validator.isIP(req.params.host + '') && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) &&
-      req.params.host) || config.ssh.host,
+      req.params.host),
     port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
       req.query.port) || config.ssh.port,
     localAddress: config.ssh.localAddress,
