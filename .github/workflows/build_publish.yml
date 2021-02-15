@@ -3,7 +3,7 @@ on:
   release:
     types: [published]
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 1 * * 1'
 
 jobs:
     build:
@@ -19,5 +19,5 @@ jobs:
                 imageName: ${{ secrets.DOCKER_HUB_USER }}/webssh2
                 platform: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/arm/v7
                 publish: true
-                dockerHubUser: ${{ secrets.DOCKER_HUB_USER }}
-                dockerHubPassword: ${{ secrets.DOCKER_HUB_PASSWORD }}
+                dockerUser: ${{ secrets.DOCKER_HUB_USER }}
+                dockerPassword: ${{ secrets.DOCKER_HUB_PASSWORD }}
