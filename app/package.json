@@ -41,7 +41,7 @@
     "morgan": "~1.9.1",
     "read-config-ng": "^3.0.1",
     "serve-favicon": "^2.5.0",
-    "socket.io": "2.2.0",
+    "socket.io": "^2.4.0",
     "ssh2": "~0.8.8",
     "validator": "^12.2.0"
   },
