@@ -4,6 +4,8 @@
 - Safe Shutdown Feature - thanks to @edgarogh
   - Sending SIGINT or SIGTERM to node process responsible for WebSSH2 or Docker process will result in a "safe" shutdown
   - Timer is configured in config.safeShutdownDuration
+### Fixes
+- Lookup ip address for hostname in URL #199
 ## 0.3.0 [20200315]
 🍀🍀🍀
 ### Added
