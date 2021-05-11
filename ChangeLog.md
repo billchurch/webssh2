@@ -1,9 +1,9 @@
 # Change Log
 ## 0.3.1-pre-release-0.1 [20210511]
+### BREAKING
+- Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information how this may break exisiting deployments
 ### Fixed
 - obey host ssh.host in config fixes #190
-### Added
-- Ability to configure CORS settings for socket.io see [#240](../../issues/240)
 ### Changed
 - `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
 - update ssh2 to 0.8.9
