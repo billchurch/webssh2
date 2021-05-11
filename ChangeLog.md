@@ -2,6 +2,17 @@
 ## 0.3.1-pre-release-0.1 [20210511]
 ### Changed
 - `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
+- build(deps): bump ssri from 6.0.1 to 6.0.2 in /app (#233)
+- build(deps): bump hosted-git-info from 2.8.5 to 2.8.9 in /app (#237)
+- build(deps): bump lodash from 4.17.19 to 4.17.21 in /app (#236)
+- build(deps): bump handlebars from 4.7.6 to 4.7.7 in /app (#235)
+- build(deps): bump y18n from 4.0.0 to 4.0.1 in /app (#230)
+- build(deps): bump elliptic from 6.5.3 to 6.5.4 in /app (#228)
+- build(deps): bump ini from 1.3.5 to 1.3.8 in /app (#217)
+- fix: obey host ssh.host in config fixes #190
+### Added
+- feat: Use docker build to create multi-arch images (#202)
+
 ## 0.3.1-pre-release-0.0 [20200319]
 ### Added
 - Safe Shutdown Feature - thanks to @edgarogh
