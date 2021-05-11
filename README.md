@@ -99,6 +99,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **listen.port** - _integer_ - Port node should listen on for client connections, defaults to `2222`
 
+* **http.origins** - _array_ - COORS origins to allow connections from to socket.io server, defaults to `localhost:2222`. Changed in 0.3.1, to enable previous, less secure, default behavior of everything use `*:*` (not recommended). Check [#240](../../issues/240)
+
 * **user.name** - _string_ - Specify user name to authenticate with. In normal cases this should be left to the default `null` setting.
 
 * **user.password** - _string_ - Specify password to authenticate with. In normal cases this should be left to the default `null` setting.

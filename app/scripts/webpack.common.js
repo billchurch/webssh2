@@ -1,7 +1,7 @@
 const path = require('path')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = {
   context: path.resolve('__dirname', '../'),
   entry: {
@@ -9,11 +9,13 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new CopyWebpackPlugin([
-      './client/src/client.htm',
-      './client/src/favicon.ico'
-    ]),
-    new ExtractTextPlugin('[name].css')
+    new CopyWebpackPlugin({
+      patterns: [
+        './client/src/client.htm',
+        './client/src/favicon.ico'
+      ]
+    }),
+    new MiniCssExtractPlugin()
   ],
   output: {
     filename: '[name].bundle.js',
@@ -23,14 +25,7 @@ module.exports = {
     rules: [
       {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: 'css-loader'
-            }
-          ]
-        })
+        use: [MiniCssExtractPlugin.loader, 'css-loader']
       }
     ]
   }

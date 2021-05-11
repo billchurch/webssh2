@@ -17,6 +17,9 @@ let config = {
     ip: '0.0.0.0',
     port: 2222
   },
+  http: {
+    origins: ['localhost:2222']
+  },
   user: {
     name: null,
     password: null,
@@ -115,7 +118,7 @@ var server = require('http').Server(app)
 var myutil = require('./util')
 myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey)
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io' })
+var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 var favicon = require('serve-favicon')
