@@ -1,15 +1,47 @@
 # Change Log
 ## 0.3.1-pre-release-0.1 [20210511]
+### Fixed
+- obey host ssh.host in config fixes #190
+### Added
+- Ability to configure CORS settings for socket.io see [#240](../../issues/240)
 ### Changed
 - `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
-- build(deps): bump ssri from 6.0.1 to 6.0.2 in /app (#233)
-- build(deps): bump hosted-git-info from 2.8.5 to 2.8.9 in /app (#237)
-- build(deps): bump lodash from 4.17.19 to 4.17.21 in /app (#236)
-- build(deps): bump handlebars from 4.7.6 to 4.7.7 in /app (#235)
-- build(deps): bump y18n from 4.0.0 to 4.0.1 in /app (#230)
-- build(deps): bump elliptic from 6.5.3 to 6.5.4 in /app (#228)
-- build(deps): bump ini from 1.3.5 to 1.3.8 in /app (#217)
-- fix: obey host ssh.host in config fixes #190
+- update ssh2 to 0.8.9
+- update read-config-ng to 3.0.2
+- update morgan to 1.10.0
+- update debug to 4.3.1
+- update express-session to 1.17.1
+- update validator to 13.6.0
+- development tools updates
+  - update @fortawesome/fontawesome-svg-core to 1.2.35
+  - update @fortawesome/free-solid-svg-icons to 5.15.3
+  - update copy-webpack-plugin to 8.1.1
+  - update cross-env to 7.0.3
+  - update css-loader to 5.2.4
+  - update file-loader to 6.2.0
+  - update mini-css-extract-plugin to 1.6.0
+  - update postcss-discard-comments to 5.0.0
+  - update snazzy to 9.0.0
+  - update standard to 16.0.3
+  - update standard-version to 9.3.0
+  - update style-loader to 2.0.0
+  - update terser-webpack-plugin to 5.1.1
+  - update url-loader to 4.1.1
+  - update webpack to 5.37.0
+  - update webpack-cli to 4.7.0
+  - update webpack-merge to 5.7.3
+  - update webpack-stream to 6.1.2
+  - update xterm to 4.12.0
+  - update xterm-addon-fit to 0.5.0
+  - update xterm-addon-search to 0.8.0
+  - update xterm-addon-web-links to 0.4.0
+  - build(deps): bump ssri from 6.0.1 to 6.0.2 in /app (#233)
+  - build(deps): bump hosted-git-info from 2.8.5 to 2.8.9 in /app (#237)
+  - build(deps): bump lodash from 4.17.19 to 4.17.21 in /app (#236)
+  - build(deps): bump handlebars from 4.7.6 to 4.7.7 in /app (#235)
+  - build(deps): bump y18n from 4.0.0 to 4.0.1 in /app (#230)
+  - build(deps): bump elliptic from 6.5.3 to 6.5.4 in /app (#228)
+  - build(deps): bump ini from 1.3.5 to 1.3.8 in /app (#217)
 ### Added
 - feat: Use docker build to create multi-arch images (#202)
 
@@ -130,7 +162,7 @@
 ### Added
 - Browser title window now changes with xterm escape sequences (see http://tldp.org/HOWTO/Xterm-Title-3.html)
 - Added bellStyle options
-  - `GET var`: **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
+  - `GET var`: **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound "none"
   - `config.json`: **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
   - `workspace` folder on GITHUB for BIG-IP specific fixes/changes
 ### Changed
