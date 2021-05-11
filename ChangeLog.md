@@ -1,4 +1,7 @@
 # Change Log
+## 0.3.1-pre-release-0.1 [20210511]
+### Changed
+- `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
 ## 0.3.1-pre-release-0.0 [20200319]
 ### Added
 - Safe Shutdown Feature - thanks to @edgarogh
