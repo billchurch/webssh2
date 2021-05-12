@@ -1,5 +1,5 @@
 # Change Log
-## 0.3.1-pre-release-0.1 [20210511]
+## 0.3.1-pre-release-0.1 [20210512]
 ### BREAKING
 - Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break exisiting deployments
 ### Fixed
