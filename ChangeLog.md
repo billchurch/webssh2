@@ -1,4 +1,20 @@
 # Change Log
+## [0.2.11] 2020-05-12
+BIG-IP Specific version
+### BREAKING
+- Not compatible with versions of ephemeral_auth before 0.4.8 due to child resources moving under /ssh
+### Changes
+- in `config.json.sample` - `allowreauth` set to `false` by default
+- in `config.json.sample` - potential future proofing for CORS support `http.origins`
+- `ssh` module updated to 0.8.9
+- Move all child resources to start from under /ssh
+  - /socket.io -> /ssh/socket.io
+  - /webssh2.css -> /ssh/webssh2.css
+  - /webssh2.bundle.js -> /ssh/webssh2.bundle.js
+  - /reauth -> /ssh/reauth
+  - perhaps more
+
+## [0.2.10] not actually released
 ## [0.2.9] 2019-06-13
 ### Changes
 - Missing require('fs') in `server/app.js` See issue [#135](../../issues/135)

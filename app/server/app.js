@@ -13,49 +13,52 @@ var logger = require('morgan')
 
 // sane defaults if config.json or parts are missing
 let config = {
-  'listen': {
-    'ip': '0.0.0.0',
-    'port': 2222
+  listen: {
+    ip: '0.0.0.0',
+    port: 2222
   },
-  'user': {
-    'name': null,
-    'password': null
+  http: {
+    origins: ['*:*']
   },
-  'ssh': {
-    'host': null,
-    'port': 22,
-    'term': 'xterm-color',
-    'readyTimeout': 20000,
-    'keepaliveInterval': 120000,
-    'keepaliveCountMax': 10
+  user: {
+    name: null,
+    password: null
   },
-  'terminal': {
-    'cursorBlink': true,
-    'scrollback': 10000,
-    'tabStopWidth': 8,
-    'bellStyle': 'sound'
+  ssh: {
+    host: null,
+    port: 22,
+    term: 'xterm-color',
+    readyTimeout: 20000,
+    keepaliveInterval: 120000,
+    keepaliveCountMax: 10
   },
-  'header': {
-    'text': null,
-    'background': 'green'
+  terminal: {
+    cursorBlink: true,
+    scrollback: 10000,
+    tabStopWidth: 8,
+    bellStyle: 'sound'
   },
-  'session': {
-    'name': 'WebSSH2',
-    'secret': 'mysecret'
+  header: {
+    text: null,
+    background: 'green'
   },
-  'options': {
-    'challengeButton': true,
-    'allowreauth': true
+  session: {
+    name: 'WebSSH2',
+    secret: 'mysecret'
   },
-  'algorithms': {
-    'kex': [
+  options: {
+    challengeButton: true,
+    allowreauth: true
+  },
+  algorithms: {
+    kex: [
       'ecdh-sha2-nistp256',
       'ecdh-sha2-nistp384',
       'ecdh-sha2-nistp521',
       'diffie-hellman-group-exchange-sha256',
       'diffie-hellman-group14-sha1'
     ],
-    'cipher': [
+    cipher: [
       'aes128-ctr',
       'aes192-ctr',
       'aes256-ctr',
@@ -65,23 +68,23 @@ let config = {
       'aes256-gcm@openssh.com',
       'aes256-cbc'
     ],
-    'hmac': [
+    hmac: [
       'hmac-sha2-256',
       'hmac-sha2-512',
       'hmac-sha1'
     ],
-    'compress': [
+    compress: [
       'none',
       'zlib@openssh.com',
       'zlib'
     ]
   },
-  'serverlog': {
-    'client': false,
-    'server': false
+  serverlog: {
+    client: false,
+    server: false
   },
-  'accesslog': false,
-  'verify': false
+  accesslog: false,
+  verify: false
 }
 
 // test if config.json exists, if not provide error message but try to run
@@ -112,9 +115,10 @@ var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false })
+var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
+var favicon = require('serve-favicon')
 
 // express
 app.use(compression({ level: 9 }))
@@ -124,13 +128,18 @@ if (config.accesslog) app.use(logger('common'))
 app.disable('x-powered-by')
 
 // static files
-app.use(express.static(publicPath, expressOptions))
+app.use('/ssh', express.static(publicPath, expressOptions))
+// app.use(express.static(publicPath, expressOptions))
 
-app.get('/reauth', function (req, res, next) {
+// favicon from root if being pre-fetched by browser to prevent a 404
+app.use(favicon(path.join(publicPath,'favicon.ico')))
+
+app.get('/ssh/reauth', function (req, res, next) {
   var r = req.headers.referer || '/'
   res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
 })
 
+// eslint-disable-next-line complexity
 app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
