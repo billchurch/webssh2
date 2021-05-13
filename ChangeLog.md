@@ -1,18 +1,24 @@
 # Change Log
-## 0.3.1-pre-release-0.1 [20210512]
+## 0.3.1 [20210513]
 ### BREAKING
-- Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break exisiting deployments
+- Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break exisiting deployments. Default settings in example `config.json` are currently permissive `http.origins: ["*:*"]` please note that if a `config.json` is not present, the default is `http.origins: ["localhost:2222"]
+### Added
+- Safe Shutdown Feature - thanks to @edgarogh
+  - Sending SIGINT or SIGTERM to node process responsible for WebSSH2 or Docker process will result in a "safe" shutdown
+  - Timer is configured in config.safeShutdownDuration
+- feat: Use docker build to create multi-arch images (#202)
 ### Fixed
 - obey host ssh.host in config fixes #190
 ### Changed
 - `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
-- update ssh2 to 0.8.9
+- update ssh2 to 0.8.8 -> 0.8.9 - [comparison at ssh2 repo](https://github.com/mscdex/ssh2/compare/v0.8.8...v0.8.9)
+- update xterm to 4.12.0 [comparsion at xtermjs repo](https://github.com/xtermjs/xterm.js/compare/4.4.0...4.12.0)
 - update read-config-ng to 3.0.2
 - update morgan to 1.10.0
 - update debug to 4.3.1
 - update express-session to 1.17.1
 - update validator to 13.6.0
-- development tools updates
+- development tools updates (build environment requires minimum of Node 10, only needed for customization)
   - update @fortawesome/fontawesome-svg-core to 1.2.35
   - update @fortawesome/free-solid-svg-icons to 5.15.3
   - update copy-webpack-plugin to 8.1.1
@@ -31,25 +37,16 @@
   - update webpack-cli to 4.7.0
   - update webpack-merge to 5.7.3
   - update webpack-stream to 6.1.2
-  - update xterm to 4.12.0
   - update xterm-addon-fit to 0.5.0
   - update xterm-addon-search to 0.8.0
   - update xterm-addon-web-links to 0.4.0
-  - build(deps): bump ssri from 6.0.1 to 6.0.2 in /app (#233)
-  - build(deps): bump hosted-git-info from 2.8.5 to 2.8.9 in /app (#237)
-  - build(deps): bump lodash from 4.17.19 to 4.17.21 in /app (#236)
-  - build(deps): bump handlebars from 4.7.6 to 4.7.7 in /app (#235)
-  - build(deps): bump y18n from 4.0.0 to 4.0.1 in /app (#230)
-  - build(deps): bump elliptic from 6.5.3 to 6.5.4 in /app (#228)
-  - build(deps): bump ini from 1.3.5 to 1.3.8 in /app (#217)
-### Added
-- feat: Use docker build to create multi-arch images (#202)
-
-## 0.3.1-pre-release-0.0 [20200319]
-### Added
-- Safe Shutdown Feature - thanks to @edgarogh
-  - Sending SIGINT or SIGTERM to node process responsible for WebSSH2 or Docker process will result in a "safe" shutdown
-  - Timer is configured in config.safeShutdownDuration
+  - update ssri from 6.0.1 to 6.0.2 [#233](../../pull/233)
+  - update hosted-git-info from 2.8.5 to 2.8.9 [#237](../../pull/237)
+  - update lodash from 4.17.19 to 4.17.21 [#236](../../pull/236)
+  - update handlebars from 4.7.6 to 4.7.7 [#235](../../pull/235)
+  - update y18n from 4.0.0 to 4.0.1 [#230](../../pull/230)
+  - update elliptic from 6.5.3 to 6.5.4 [#228](../../pull/222833)
+  - update ini from 1.3.5 to 1.3.8 [#217](../../pull/217)
 ## 0.3.0 [20200315]
 🍀🍀🍀
 ### Added

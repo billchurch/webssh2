@@ -4,7 +4,7 @@
     "port": 2222
   },
   "http": {
-    "origins": ["localhost:2222"]
+    "origins": ["*:*"]
   },
   "user": {
     "name": null,
