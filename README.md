@@ -36,6 +36,10 @@ http://localhost:2222/ssh/host/127.0.0.1
 
 You will be prompted for credentials to use on the SSH server via HTTP Basic authentcaiton. This is to permit usage with some SSO systems that can replay credentials over HTTP basic.
 
+# Customizing client files
+
+See [BUILDING.md](BUILDING.md) for more details.
+
 # Docker Instructions
 
 Copy app/config.json.template to app/config.json and modify the latter:
