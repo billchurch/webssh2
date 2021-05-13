@@ -1,15 +1,16 @@
 'use strict'
 /* jshint esversion: 6, asi: true, node: true */
+/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }] */
 // app.js
 
-var path = require('path')
-var fs = require('fs')
-var nodeRoot = path.dirname(require.main.filename)
-var configPath = path.join(nodeRoot, 'config.json')
-var publicPath = path.join(nodeRoot, 'client', 'public')
+const path = require('path')
+const fs = require('fs')
+const nodeRoot = path.dirname(require.main.filename)
+const configPath = path.join(nodeRoot, 'config.json')
+const publicPath = path.join(nodeRoot, 'client', 'public')
 console.log('WebSSH2 service reading config from: ' + configPath)
-var express = require('express')
-var logger = require('morgan')
+const express = require('express')
+const logger = require('morgan')
 
 // sane defaults if config.json or parts are missing
 let config = {
@@ -95,7 +96,7 @@ let config = {
 try {
   if (fs.existsSync(configPath)) {
     console.log('ephemeral_auth service reading config from: ' + configPath)
-    config = require('read-config-ng')(configPath)
+    config = require('read-config-ng')(configPath) // eslint-disable-line
   } else {
     console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
     console.error('\n  See config.json.sample for details\n\n')
@@ -106,22 +107,22 @@ try {
   console.error('ERROR:\n\n  ' + err)
 }
 
-var session = require('express-session')({
+const session = require('express-session')({
   secret: config.session.secret,
   name: config.session.name,
   resave: true,
   saveUninitialized: false,
   unset: 'destroy'
 })
-var app = express()
-var server = require('http').Server(app)
-var myutil = require('./util')
+const app = express()
+const server = require('http').Server(app)
+const myutil = require('./util')
 myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey)
-var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
-var socket = require('./socket')
-var expressOptions = require('./expressOptions')
-var favicon = require('serve-favicon')
+const validator = require('validator')
+const io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
+const socket = require('./socket')
+const expressOptions = require('./expressOptions')
+const favicon = require('serve-favicon')
 
 // express
 app.use(safeShutdownGuard)
@@ -134,10 +135,10 @@ app.disable('x-powered-by')
 app.use('/ssh', express.static(publicPath, expressOptions))
 
 // favicon from root if being pre-fetched by browser to prevent a 404
-app.use(favicon(path.join(publicPath,'favicon.ico')))
+app.use(favicon(path.join(publicPath, 'favicon.ico')))
 
 app.get('/ssh/reauth', function (req, res, next) {
-  var r = req.headers.referer || '/'
+  const r = req.headers.referer || '/'
   res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
 })
 
@@ -197,17 +198,18 @@ app.use(function (err, req, res, next) {
 // socket.io
 // expose express session with socket.request.session
 io.use(function (socket, next) {
-  (socket.request.res) ? session(socket.request, socket.request.res, next)
-    : next(next)
+  (socket.request.res)
+    ? session(socket.request, socket.request.res, next)
+    : next(next) // eslint disable-line
 })
 
 // bring up socket
 io.on('connection', socket)
 
 // safe shutdown
-var shutdownMode = false
-var shutdownInterval = 0
-var connectionCount = 0
+let shutdownMode = false
+let shutdownInterval = 0
+let connectionCount = 0
 
 function safeShutdownGuard (req, res, next) {
   if (shutdownMode) res.status(503).end('Service unavailable: Server shutting down')
@@ -228,10 +230,10 @@ const signals = ['SIGTERM', 'SIGINT']
 signals.forEach(signal => process.on(signal, function () {
   if (shutdownMode) stop('Safe shutdown aborted, force quitting')
   else if (connectionCount > 0) {
-    var remainingSeconds = config.safeShutdownDuration
+    let remainingSeconds = config.safeShutdownDuration
     shutdownMode = true
-
-    var message = (connectionCount === 1) ? ' client is still connected'
+    const message = (connectionCount === 1)
+      ? ' client is still connected'
       : ' clients are still connected'
     console.error(connectionCount + message)
     console.error('Starting a ' + remainingSeconds + ' seconds countdown')
