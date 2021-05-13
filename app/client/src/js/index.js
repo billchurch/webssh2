@@ -3,8 +3,6 @@
 import * as io from 'socket.io-client/dist/socket.io.js'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
-/* import * as fit from 'xterm/dist/addons/fit/fit'
- */
 import { library, dom } from '@fortawesome/fontawesome-svg-core'
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons'
 library.add(faBars, faClipboard, faDownload, faKey, faCog)
@@ -14,21 +12,21 @@ require('xterm/css/xterm.css')
 require('../css/style.css')
 
 /* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */
-var sessionLogEnable = false
-var loggedData = false
-var allowreplay = false
-var allowreauth = false
-var sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
-var socket, termid // eslint-disable-line
+let sessionLogEnable = false
+let loggedData = false
+let allowreplay = false
+let allowreauth = false
+let sessionLog, sessionFooter, logDate, currentDate, myFile, errorExists
+let socket, termid // eslint-disable-line
 const term = new Terminal()
 // DOM properties
-var status = document.getElementById('status')
-var header = document.getElementById('header')
-var dropupContent = document.getElementById('dropupContent')
-var footer = document.getElementById('footer')
-var countdown = document.getElementById('countdown')
-var fitAddon = new FitAddon()
-var terminalContainer = document.getElementById('terminal-container')
+const status = document.getElementById('status')
+const header = document.getElementById('header')
+const dropupContent = document.getElementById('dropupContent')
+const footer = document.getElementById('footer')
+const countdown = document.getElementById('countdown')
+const fitAddon = new FitAddon()
+const terminalContainer = document.getElementById('terminal-container')
 term.loadAddon(fitAddon)
 term.open(terminalContainer)
 term.focus()
@@ -148,18 +146,19 @@ socket.on('error', function (err) {
 })
 
 socket.on('reauth', function () {
-  (allowreauth) && reauthSession()
+  if (allowreauth) {
+    reauthSession()
+  }
 })
 
 // safe shutdown
-var hasCountdownStarted = false
+let hasCountdownStarted = false
 
 socket.on('shutdownCountdownUpdate', function (remainingSeconds) {
   if (!hasCountdownStarted) {
     countdown.classList.add('active')
     hasCountdownStarted = true
   }
-
   countdown.innerText = 'Shutting down in ' + remainingSeconds + 's'
 })
 
@@ -172,9 +171,15 @@ term.onTitleChange(function (title) {
 function drawMenu (data) {
   dropupContent.innerHTML = data
   logBtn.addEventListener('click', toggleLog)
-  allowreauth && reauthBtn.addEventListener('click', reauthSession)
-  allowreplay && credentialsBtn.addEventListener('click', replayCredentials)
-  loggedData && downloadLogBtn.addEventListener('click', downloadLog)
+  if (allowreauth) {
+    reauthBtn.addEventListener('click', reauthSession)
+  }
+  if (allowreplay) {
+    credentialsBtn.addEventListener('click', replayCredentials)
+  }
+  if (loggedData) {
+    downloadLogBtn.addEventListener('click', downloadLog)
+  }
 }
 
 // reauthenticate
@@ -231,16 +236,16 @@ function toggleLog () { // eslint-disable-line
 function downloadLog () { // eslint-disable-line
   if (loggedData === true) {
     myFile = 'WebSSH2-' + logDate.getFullYear() + (logDate.getMonth() + 1) +
-      logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() +
-      logDate.getSeconds() + '.log'
+    logDate.getDate() + '_' + logDate.getHours() + logDate.getMinutes() +
+    logDate.getSeconds() + '.log'
     // regex should eliminate escape sequences from being logged.
-    var blob = new Blob([sessionLog.replace(/[\u001b\u009b][[\]()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><;]/g, '')], { // eslint-disable-line no-control-regex
+    const blob = new Blob([sessionLog.replace(/[\u001b\u009b][[\]()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><;]/g, '')], { // eslint-disable-line no-control-regex
       type: 'text/plain'
     })
     if (window.navigator.msSaveOrOpenBlob) {
       window.navigator.msSaveBlob(blob, myFile)
     } else {
-      var elem = window.document.createElement('a')
+      const elem = window.document.createElement('a')
       elem.href = window.URL.createObjectURL(blob)
       elem.download = myFile
       document.body.appendChild(elem)
