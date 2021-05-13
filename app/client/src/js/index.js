@@ -11,7 +11,7 @@ dom.watch()
 require('xterm/css/xterm.css')
 require('../css/style.css')
 
-/* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */
+/* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */ // eslint-disable-line
 let sessionLogEnable = false
 let loggedData = false
 let allowreplay = false
