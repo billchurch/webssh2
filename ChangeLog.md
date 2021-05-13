@@ -1,7 +1,7 @@
 # Change Log
 ## 0.3.1 [20210513]
 ### BREAKING
-- Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break exisiting deployments. Default settings in example `config.json` are currently permissive `http.origins: ["*:*"]` please note that if a `config.json` is not present, the default is `http.origins: ["localhost:2222"]
+- Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break existing deployments. Default settings in example `config.json` are currently permissive `http.origins: ["*:*"]` please note that if a `config.json` is not present, the default is `http.origins: ["localhost:2222"]
 ### Added
 - Safe Shutdown Feature - thanks to @edgarogh
   - Sending SIGINT or SIGTERM to node process responsible for WebSSH2 or Docker process will result in a "safe" shutdown
@@ -12,7 +12,7 @@
 ### Changed
 - `config.json.sample`: `allowreauth` now defaults to `false` fixes #238
 - update ssh2 to 0.8.8 -> 0.8.9 - [comparison at ssh2 repo](https://github.com/mscdex/ssh2/compare/v0.8.8...v0.8.9)
-- update xterm to 4.12.0 [comparsion at xtermjs repo](https://github.com/xtermjs/xterm.js/compare/4.4.0...4.12.0)
+- update xterm to 4.12.0 [comparison at xtermjs repo](https://github.com/xtermjs/xterm.js/compare/4.4.0...4.12.0)
 - update read-config-ng to 3.0.2
 - update morgan to 1.10.0
 - update debug to 4.3.1
