@@ -173,7 +173,7 @@ app.get('/ssh/reauth', (req, res, next) => {
 // eslint-disable-next-line complexity
 app.get('/ssh/host/:host?', (req, res) => {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
-  // capture, assign, and validated variables
+  // capture, assign, and validate variables
   req.session.ssh = {
     host: config.ssh.host || (validator.isIP(`${req.params.host}`) && req.params.host)
       || (validator.isFQDN(req.params.host) && req.params.host)
@@ -215,7 +215,7 @@ app.get('/ssh/host/:host?', (req, res) => {
 
 // express error handling
 app.use((req, res, next) => {
-  res.status(404).send("Sorry can't find that!");
+  res.status(404).send("Sorry, can't find that!");
   next();
 });
 
