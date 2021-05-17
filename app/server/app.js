@@ -164,10 +164,9 @@ app.use('/ssh', express.static(publicPath, expressOptions));
 // favicon from root if being pre-fetched by browser to prevent a 404
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
 
-app.get('/ssh/reauth', (req, res, next) => {
+app.get('/ssh/reauth', (req, res) => {
   const r = req.headers.referer || '/';
   res.status(401).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${r}"></head><body bgcolor="#000"></body></html>`);
-  next();
 });
 
 // eslint-disable-next-line complexity
@@ -214,15 +213,13 @@ app.get('/ssh/host/:host?', (req, res) => {
 });
 
 // express error handling
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).send("Sorry, can't find that!");
-  next();
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
-  next();
 });
 
 // bring up socket
