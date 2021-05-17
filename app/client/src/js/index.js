@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import * as io from 'socket.io-client/dist/socket.io.js';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
