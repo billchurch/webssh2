@@ -13,9 +13,6 @@ const CIDRMatcher = require('cidr-matcher');
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 let termCols;
 let termRows;
-const menuData =
-  '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>' +
-  '<a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>';
 
 // public
 module.exports = function appSocket(socket) {
@@ -27,6 +24,13 @@ module.exports = function appSocket(socket) {
     return;
   }
 
+  /**
+   * Error handling for various events. Outputs error to client, logs to
+   * server, destroys session and disconnects socket.
+   * @param {string} myFunc Function calling this function
+   * @param {object} err    error object or error message
+   */
+  // eslint-disable-next-line complexity
   function SSHerror(myFunc, err) {
     let theError;
     if (socket.request.session) {
@@ -93,7 +97,7 @@ module.exports = function appSocket(socket) {
     debugWebSSH2(
       `WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
     );
-    socket.emit('menu', menuData);
+    socket.emit('menu');
     socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
     socket.emit('setTerminalOpts', socket.request.session.ssh.terminal);
     socket.emit('title', `ssh://${socket.request.session.ssh.host}`);
@@ -230,12 +234,4 @@ module.exports = function appSocket(socket) {
     socket.request.session.destroy();
     socket.disconnect(true);
   }
-
-  /**
-   * Error handling for various events. Outputs error to client, logs to
-   * server, destroys session and disconnects socket.
-   * @param {string} myFunc Function calling this function
-   * @param {object} err    error object or error message
-   */
-  // eslint-disable-next-line complexity
 };
