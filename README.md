@@ -239,7 +239,7 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **safeShutdownDuration** - _integer_ - maximum delay, in seconds, given to users before the server stops when doing a safe shutdown
 
-# Experimental client-side logging
+# Client-side logging
 Clicking `Start logging` on the status bar will log all data to the client. A `Download log` option will appear after starting the logging. You may download at any time to the client. You may stop logging at any time my pressing the `Logging - STOP LOG`. Note that clicking the `Start logging` option again will cause the current log to be overwritten, so be sure to download first.
 
 # Example:
@@ -248,3 +248,9 @@ http://localhost:2222/ssh/host/192.168.1.1?port=2244&header=My%20Header&headerBa
 
 # Tips
 * If you want to add custom JavaScript to the browser client you can either modify `./src/client.html` and add a **<script>** element, modify `./src/index.js` directly, or check out `webpack.*.js` and add your custom javascript file to a task there (best option).
+# CONTRIBUTING
+As of 0.4.0, we're trying our best to conform to the [Airbnb Javascript Style Guide](https://airbnb.io/projects/javascript/). I'm hoping this will make contributions easier and keep the code readable. I love shortcuts more than anyone but I've found when making changes to code I've not looked at in a while, it can take me a few momements to deconstruct what was being done due to readbility issues. While I don't agree with every decision in the style guide (semi-colons, yuk), it is a good base to keep the code consistent.
+
+If you've not used it before, I recommend installing the [vscode extensions](https://blog.echobind.com/integrating-prettier-eslint-airbnb-style-guide-in-vscode-47f07b5d7d6a) for that and [Prettier](https://prettier.io/) and getting familiar. The autocorrections are great (especially if you hate dealing with semi-colons...)
+
+All contributions are welcome, all may not make it into a release... To increase the chances of your contribution making it into a release, try your best to conform to the style guides and targets of the project.
