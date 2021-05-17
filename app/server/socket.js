@@ -13,8 +13,9 @@ const CIDRMatcher = require('cidr-matcher');
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 let termCols;
 let termRows;
-const menuData = '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>'
-  + '<a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>';
+const menuData =
+  '<a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>' +
+  '<a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>';
 
 // public
 module.exports = function appSocket(socket) {
@@ -30,21 +31,24 @@ module.exports = function appSocket(socket) {
     let theError;
     if (socket.request.session) {
       // we just want the first error of the session to pass to the client
-      const firstError = (socket.request.session.error)
-      || ((err) ? err.message : undefined);
-      theError = (firstError) ? `: ${firstError}` : '';
+      const firstError = socket.request.session.error || (err ? err.message : undefined);
+      theError = firstError ? `: ${firstError}` : '';
       // log unsuccessful login attempt
-      if (err && (err.level === 'client-authentication')) {
-        console.error(`WebSSH2 ${'error: Authentication failure'.red.bold
-        } user=${socket.request.session.username.yellow.bold.underline
-        } from=${socket.handshake.address.yellow.bold.underline}`);
+      if (err && err.level === 'client-authentication') {
+        console.error(
+          `WebSSH2 ${'error: Authentication failure'.red.bold} user=${
+            socket.request.session.username.yellow.bold.underline
+          } from=${socket.handshake.address.yellow.bold.underline}`
+        );
         socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
         socket.emit('reauth');
       } else {
         // eslint-disable-next-line no-console
-        console.log(`WebSSH2 Logout: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`);
+        console.log(
+          `WebSSH2 Logout: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
+        );
         if (err) {
-          theError = (err) ? `: ${err.message}` : '';
+          theError = err ? `: ${err.message}` : '';
           console.error(`WebSSH2 error${theError}`);
         }
       }
@@ -52,19 +56,23 @@ module.exports = function appSocket(socket) {
       socket.request.session.destroy();
       socket.disconnect(true);
     } else {
-      theError = (err) ? `: ${err.message}` : '';
+      theError = err ? `: ${err.message}` : '';
       socket.disconnect(true);
     }
     debugWebSSH2(`SSHerror ${myFunc}${theError}`);
   }
   // If configured, check that requsted host is in a permitted subnet
-  if ((((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length
-  && (socket.request.session.ssh.allowedSubnets.length > 0)) {
+  if (
+    (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length &&
+    socket.request.session.ssh.allowedSubnets.length > 0
+  ) {
     const matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
     if (!matcher.contains(socket.request.session.ssh.host)) {
-      console.error(`WebSSH2 ${'error: Requested host outside configured subnets / REJECTED'.red.bold
-      } user=${socket.request.session.username.yellow.bold.underline
-      } from=${socket.handshake.address.yellow.bold.underline}`);
+      console.error(
+        `WebSSH2 ${'error: Requested host outside configured subnets / REJECTED'.red.bold} user=${
+          socket.request.session.username.yellow.bold.underline
+        } from=${socket.handshake.address.yellow.bold.underline}`
+      );
       socket.emit('ssherror', '401 UNAUTHORIZED');
       socket.disconnect(true);
       return;
@@ -82,33 +90,42 @@ module.exports = function appSocket(socket) {
   });
 
   conn.on('ready', () => {
-    debugWebSSH2(`WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`);
+    debugWebSSH2(
+      `WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
+    );
     socket.emit('menu', menuData);
     socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
     socket.emit('setTerminalOpts', socket.request.session.ssh.terminal);
     socket.emit('title', `ssh://${socket.request.session.ssh.host}`);
-    if (socket.request.session.ssh.header.background) socket.emit('headerBackground', socket.request.session.ssh.header.background);
-    if (socket.request.session.ssh.header.name) socket.emit('header', socket.request.session.ssh.header.name);
-    socket.emit('footer', `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`);
+    if (socket.request.session.ssh.header.background)
+      socket.emit('headerBackground', socket.request.session.ssh.header.background);
+    if (socket.request.session.ssh.header.name)
+      socket.emit('header', socket.request.session.ssh.header.name);
+    socket.emit(
+      'footer',
+      `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
+    );
     socket.emit('status', 'SSH CONNECTION ESTABLISHED');
     socket.emit('statusBackground', 'green');
     socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
-    conn.shell({
-      term: socket.request.session.ssh.term,
-      cols: termCols,
-      rows: termRows,
-    }, (err, stream) => {
-      if (err) {
-        SSHerror(`EXEC ERROR${err}`);
-        conn.end();
-        return;
-      }
-      // poc to log commands from client
-      // if (socket.request.session.ssh.serverlog.client) var dataBuffer;
-      socket.on('data', (data) => {
-        stream.write(data);
+    conn.shell(
+      {
+        term: socket.request.session.ssh.term,
+        cols: termCols,
+        rows: termRows,
+      },
+      (err, stream) => {
+        if (err) {
+          SSHerror(`EXEC ERROR${err}`);
+          conn.end();
+          return;
+        }
         // poc to log commands from client
-        /*         if (socket.request.session.ssh.serverlog.client) {
+        // if (socket.request.session.ssh.serverlog.client) var dataBuffer;
+        socket.on('data', (data) => {
+          stream.write(data);
+          // poc to log commands from client
+          /*         if (socket.request.session.ssh.serverlog.client) {
           if (data === '\r') {
             console.log(`serverlog.client: ${socket.request.session.id}/${socket.id}
             host: ${socket.request.session.ssh.host} command: ${dataBuffer}`);
@@ -117,56 +134,76 @@ module.exports = function appSocket(socket) {
             dataBuffer = (dataBuffer) ? dataBuffer + data : data;
           }
         } */
-      });
-      socket.on('control', (controlData) => {
-        switch (controlData) {
-          case 'replayCredentials':
-            if (socket.request.session.ssh.allowreplay) {
-              stream.write(`${socket.request.session.userpassword}\n`);
-            }
-          /* falls through */
-          default:
-            debugWebSSH2(`controlData: ${controlData}`);
-        }
-      });
-      socket.on('resize', (data) => {
-        stream.setWindow(data.rows, data.cols);
-      });
-      socket.on('disconnecting', (reason) => { debugWebSSH2(`SOCKET DISCONNECTING: ${reason}`); });
-      socket.on('disconnect', (reason) => {
-        debugWebSSH2(`SOCKET DISCONNECT: ${reason}`);
-        const errMsg = { message: reason };
-        SSHerror('CLIENT SOCKET DISCONNECT', errMsg);
-        conn.end();
-        // socket.request.session.destroy()
-      });
-      socket.on('error', (errMsg) => {
-        SSHerror('SOCKET ERROR', errMsg);
-        conn.end();
-      });
+        });
+        socket.on('control', (controlData) => {
+          switch (controlData) {
+            case 'replayCredentials':
+              if (socket.request.session.ssh.allowreplay) {
+                stream.write(`${socket.request.session.userpassword}\n`);
+              }
+            /* falls through */
+            default:
+              debugWebSSH2(`controlData: ${controlData}`);
+          }
+        });
+        socket.on('resize', (data) => {
+          stream.setWindow(data.rows, data.cols);
+        });
+        socket.on('disconnecting', (reason) => {
+          debugWebSSH2(`SOCKET DISCONNECTING: ${reason}`);
+        });
+        socket.on('disconnect', (reason) => {
+          debugWebSSH2(`SOCKET DISCONNECT: ${reason}`);
+          const errMsg = { message: reason };
+          SSHerror('CLIENT SOCKET DISCONNECT', errMsg);
+          conn.end();
+          // socket.request.session.destroy()
+        });
+        socket.on('error', (errMsg) => {
+          SSHerror('SOCKET ERROR', errMsg);
+          conn.end();
+        });
 
-      stream.on('data', (data) => { socket.emit('data', data.toString('utf-8')); });
-      stream.on('close', (code, signal) => {
-        const errMsg = { message: ((code || signal) ? (((code) ? `CODE: ${code}` : '') + ((code && signal) ? ' ' : '') + ((signal) ? `SIGNAL: ${signal}` : '')) : undefined) };
-        SSHerror('STREAM CLOSE', errMsg);
-        conn.end();
-      });
-      stream.stderr.on('data', (data) => {
-        console.error(`STDERR: ${data}`);
-      });
-    });
+        stream.on('data', (data) => {
+          socket.emit('data', data.toString('utf-8'));
+        });
+        stream.on('close', (code, signal) => {
+          const errMsg = {
+            message:
+              code || signal
+                ? (code ? `CODE: ${code}` : '') +
+                  (code && signal ? ' ' : '') +
+                  (signal ? `SIGNAL: ${signal}` : '')
+                : undefined,
+          };
+          SSHerror('STREAM CLOSE', errMsg);
+          conn.end();
+        });
+        stream.stderr.on('data', (data) => {
+          console.error(`STDERR: ${data}`);
+        });
+      }
+    );
   });
 
-  conn.on('end', (err) => { SSHerror('CONN END BY HOST', err); });
-  conn.on('close', (err) => { SSHerror('CONN CLOSE', err); });
-  conn.on('error', (err) => { SSHerror('CONN ERROR', err); });
+  conn.on('end', (err) => {
+    SSHerror('CONN END BY HOST', err);
+  });
+  conn.on('close', (err) => {
+    SSHerror('CONN CLOSE', err);
+  });
+  conn.on('error', (err) => {
+    SSHerror('CONN ERROR', err);
+  });
   conn.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-    debugWebSSH2('conn.on(\'keyboard-interactive\')');
+    debugWebSSH2("conn.on('keyboard-interactive')");
     finish([socket.request.session.userpassword]);
   });
-  if (socket.request.session.username
-    && (socket.request.session.userpassword || socket.request.session.privatekey)
-    && socket.request.session.ssh) {
+  if (
+    socket.request.session.username &&
+    (socket.request.session.userpassword || socket.request.session.privatekey) &&
+    socket.request.session.ssh
+  ) {
     // console.log('hostkeys: ' + hostkeys[0].[0])
     conn.connect({
       host: socket.request.session.ssh.host,
@@ -184,17 +221,21 @@ module.exports = function appSocket(socket) {
       debug: debug('ssh2'),
     });
   } else {
-    debugWebSSH2(`Attempt to connect without session.username/password or session varialbles defined, potentially previously abandoned client session. disconnecting websocket client.\r\nHandshake information: \r\n  ${JSON.stringify(socket.handshake)}`);
+    debugWebSSH2(
+      `Attempt to connect without session.username/password or session varialbles defined, potentially previously abandoned client session. disconnecting websocket client.\r\nHandshake information: \r\n  ${JSON.stringify(
+        socket.handshake
+      )}`
+    );
     socket.emit('ssherror', 'WEBSOCKET ERROR - Refresh the browser and try again');
     socket.request.session.destroy();
     socket.disconnect(true);
   }
 
   /**
-  * Error handling for various events. Outputs error to client, logs to
-  * server, destroys session and disconnects socket.
-  * @param {string} myFunc Function calling this function
-  * @param {object} err    error object or error message
-  */
+   * Error handling for various events. Outputs error to client, logs to
+   * server, destroys session and disconnects socket.
+   * @param {string} myFunc Function calling this function
+   * @param {object} err    error object or error message
+   */
   // eslint-disable-next-line complexity
 };
