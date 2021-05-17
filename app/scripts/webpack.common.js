@@ -6,8 +6,12 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   context: path.resolve('__dirname', '../'),
+  resolve: {
+    // Add '.ts' and '.tsx' as resolvable extensions.
+    extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+  },
   entry: {
-    webssh2: './client/src/js/index.js',
+    webssh2: './client/src/js/index.ts',
   },
   plugins: [
     new CleanWebpackPlugin(),
@@ -25,6 +29,16 @@ module.exports = {
       {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
+      },
+      // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
+      {
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+      },
+      // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
+      {
+        test: /\.js$/,
+        loader: 'source-map-loader',
       },
     ],
   },

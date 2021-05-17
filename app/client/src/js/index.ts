@@ -1,5 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
@@ -17,18 +17,27 @@ let sessionLogEnable = false;
 let loggedData = false;
 let allowreplay = false;
 let allowreauth = false;
-let sessionLog;
-let sessionFooter;
-let logDate;
-let currentDate;
-let myFile;
-let errorExists;
-let socket, termid // eslint-disable-line
+let sessionLog: string;
+let sessionFooter: any;
+let logDate: {
+  getFullYear: () => any;
+  getMonth: () => number;
+  getDate: () => any;
+  getHours: () => any;
+  getMinutes: () => any;
+  getSeconds: () => any;
+};
+let currentDate: Date;
+let myFile: string;
+let errorExists: boolean;
 const term = new Terminal();
 // DOM properties
+const logBtn = document.getElementById('logBtn');
+const credentialsBtn = document.getElementById('credentialsBtn');
+const reauthBtn = document.getElementById('reauthBtn');
+const downloadLogBtn = document.getElementById('downloadLogBtn');
 const status = document.getElementById('status');
 const header = document.getElementById('header');
-const dropupContent = document.getElementById('dropupContent');
 const footer = document.getElementById('footer');
 const countdown = document.getElementById('countdown');
 const fitAddon = new FitAddon();
@@ -37,6 +46,10 @@ term.loadAddon(fitAddon);
 term.open(terminalContainer);
 term.focus();
 fitAddon.fit();
+
+const socket = io({
+  path: '/ssh/socket.io',
+});
 
 // reauthenticate
 function reauthSession () { // eslint-disable-line
@@ -120,17 +133,19 @@ function replayCredentials () { // eslint-disable-line
 
 // draw/re-draw menu and reattach listeners
 // when dom is changed, listeners are abandonded
-function drawMenu(data) {
-  dropupContent.innerHTML = data;
+function drawMenu() {
   logBtn.addEventListener('click', toggleLog);
   if (allowreauth) {
     reauthBtn.addEventListener('click', reauthSession);
+    reauthBtn.style.display = 'block';
   }
   if (allowreplay) {
     credentialsBtn.addEventListener('click', replayCredentials);
+    credentialsBtn.style.display = 'block';
   }
   if (loggedData) {
     downloadLogBtn.addEventListener('click', downloadLog);
+    downloadLogBtn.style.display = 'block';
   }
 }
 
@@ -141,15 +156,11 @@ function resizeScreen() {
 
 window.addEventListener('resize', resizeScreen, false);
 
-socket = io.connect({
-  path: '/ssh/socket.io',
-});
-
 term.onData((data) => {
   socket.emit('data', data);
 });
 
-socket.on('data', (data) => {
+socket.on('data', (data: string | Uint8Array) => {
   term.write(data);
   if (sessionLogEnable) {
     sessionLog += data;
@@ -160,36 +171,39 @@ socket.on('connect', () => {
   socket.emit('geometry', term.cols, term.rows);
 });
 
-socket.on('setTerminalOpts', (data) => {
-  term.setOption('cursorBlink', data.cursorBlink);
-  term.setOption('scrollback', data.scrollback);
-  term.setOption('tabStopWidth', data.tabStopWidth);
-  term.setOption('bellStyle', data.bellStyle);
-});
+socket.on(
+  'setTerminalOpts',
+  (data: { cursorBlink: any; scrollback: any; tabStopWidth: any; bellStyle: any }) => {
+    term.setOption('cursorBlink', data.cursorBlink);
+    term.setOption('scrollback', data.scrollback);
+    term.setOption('tabStopWidth', data.tabStopWidth);
+    term.setOption('bellStyle', data.bellStyle);
+  }
+);
 
-socket.on('title', (data) => {
+socket.on('title', (data: string) => {
   document.title = data;
 });
 
-socket.on('menu', (data) => {
-  drawMenu(data);
+socket.on('menu', () => {
+  drawMenu();
 });
 
-socket.on('status', (data) => {
+socket.on('status', (data: string) => {
   status.innerHTML = data;
 });
 
-socket.on('ssherror', (data) => {
+socket.on('ssherror', (data: string) => {
   status.innerHTML = data;
   status.style.backgroundColor = 'red';
   errorExists = true;
 });
 
-socket.on('headerBackground', (data) => {
+socket.on('headerBackground', (data: string) => {
   header.style.backgroundColor = data;
 });
 
-socket.on('header', (data) => {
+socket.on('header', (data: string) => {
   if (data) {
     header.innerHTML = data;
     header.style.display = 'block';
@@ -199,42 +213,38 @@ socket.on('header', (data) => {
   }
 });
 
-socket.on('footer', (data) => {
+socket.on('footer', (data: string) => {
   sessionFooter = data;
   footer.innerHTML = data;
 });
 
-socket.on('statusBackground', (data) => {
+socket.on('statusBackground', (data: string) => {
   status.style.backgroundColor = data;
 });
 
-socket.on('allowreplay', (data) => {
+socket.on('allowreplay', (data: boolean) => {
   if (data === true) {
     debug(`allowreplay: ${data}`);
     allowreplay = true;
-    drawMenu(
-      `${dropupContent.innerHTML}<a id="credentialsBtn"><i class="fas fa-key fa-fw"></i> Credentials</a>`
-    );
+    drawMenu();
   } else {
     allowreplay = false;
     debug(`allowreplay: ${data}`);
   }
 });
 
-socket.on('allowreauth', (data) => {
+socket.on('allowreauth', (data: boolean) => {
   if (data === true) {
     debug(`allowreauth: ${data}`);
     allowreauth = true;
-    drawMenu(
-      `${dropupContent.innerHTML}<a id="reauthBtn"><i class="fas fa-key fa-fw"></i> Switch User</a>`
-    );
+    drawMenu();
   } else {
     allowreauth = false;
     debug(`allowreauth: ${data}`);
   }
 });
 
-socket.on('disconnect', (err) => {
+socket.on('disconnect', (err: any) => {
   if (!errorExists) {
     status.style.backgroundColor = 'red';
     status.innerHTML = `WEBSOCKET SERVER DISCONNECTED: ${err}`;
@@ -243,7 +253,7 @@ socket.on('disconnect', (err) => {
   countdown.classList.remove('active');
 });
 
-socket.on('error', (err) => {
+socket.on('error', (err: any) => {
   if (!errorExists) {
     status.style.backgroundColor = 'red';
     status.innerHTML = `ERROR: ${err}`;
@@ -259,7 +269,7 @@ socket.on('reauth', () => {
 // safe shutdown
 let hasCountdownStarted = false;
 
-socket.on('shutdownCountdownUpdate', (remainingSeconds) => {
+socket.on('shutdownCountdownUpdate', (remainingSeconds: any) => {
   if (!hasCountdownStarted) {
     countdown.classList.add('active');
     hasCountdownStarted = true;
