@@ -122,11 +122,35 @@ const server = require('http').Server(app);
 const validator = require('validator');
 const io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins });
 const favicon = require('serve-favicon');
-const socket = require('./socket');
+const appSocket = require('./socket');
 const expressOptions = require('./expressOptions');
 const myutil = require('./util');
 
 myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
+
+// safe shutdown
+let shutdownMode = false;
+let shutdownInterval = 0;
+let connectionCount = 0;
+// eslint-disable-next-line consistent-return
+function safeShutdownGuard(req, res, next) {
+  if (shutdownMode) {
+    res.status(503).end('Service unavailable: Server shutting down');
+  } else {
+    return next();
+  }
+}
+// clean stop
+function stopApp(reason) {
+  shutdownMode = false;
+  // eslint-disable-next-line no-console
+  if (reason) console.log(`Stopping: ${reason}`);
+  if (shutdownInterval) clearInterval(shutdownInterval);
+  io.close();
+  server.close();
+}
+
+module.exports = { server, config };
 // express
 app.use(safeShutdownGuard);
 app.use(session);
@@ -147,7 +171,7 @@ app.get('/ssh/reauth', (req, res, next) => {
 });
 
 // eslint-disable-next-line complexity
-app.get('/ssh/host/:host?', (req, res, next) => {
+app.get('/ssh/host/:host?', (req, res) => {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
   // capture, assign, and validated variables
   req.session.ssh = {
@@ -201,6 +225,9 @@ app.use((err, req, res, next) => {
   next();
 });
 
+// bring up socket
+io.on('connection', appSocket);
+
 // socket.io
 // expose express session with socket.request.session
 io.use((socket, next) => {
@@ -209,33 +236,20 @@ io.use((socket, next) => {
     : next(next); // eslint disable-line
 });
 
-// bring up socket
-io.on('connection', socket);
-
-// safe shutdown
-let shutdownMode = false;
-let shutdownInterval = 0;
-let connectionCount = 0;
-
-function safeShutdownGuard(req, res, next) {
-  if (shutdownMode) res.status(503).end('Service unavailable: Server shutting down');
-  else return next();
-}
-
 io.on('connection', (socket) => {
   connectionCount += 1;
 
   socket.on('disconnect', () => {
     connectionCount -= 1;
     if ((connectionCount <= 0) && shutdownMode) {
-      stop('All clients disconnected');
+      stopApp('All clients disconnected');
     }
   });
 });
 
 const signals = ['SIGTERM', 'SIGINT'];
 signals.forEach((signal) => process.on(signal, () => {
-  if (shutdownMode) stop('Safe shutdown aborted, force quitting');
+  if (shutdownMode) stopApp('Safe shutdown aborted, force quitting');
   else if (connectionCount > 0) {
     let remainingSeconds = config.safeShutdownDuration;
     shutdownMode = true;
@@ -249,22 +263,10 @@ signals.forEach((signal) => process.on(signal, () => {
     shutdownInterval = setInterval(() => {
       remainingSeconds -= 1;
       if ((remainingSeconds) <= 0) {
-        stop('Countdown is over');
+        stopApp('Countdown is over');
       } else {
         io.sockets.emit('shutdownCountdownUpdate', remainingSeconds);
       }
     }, 1000);
-  } else stop();
+  } else stopApp();
 }));
-
-// clean stop
-function stop(reason) {
-  shutdownMode = false;
-  // eslint-disable-next-line no-console
-  if (reason) console.log(`Stopping: ${reason}`);
-  if (shutdownInterval) clearInterval(shutdownInterval);
-  io.close();
-  server.close();
-}
-
-module.exports = { server, config };
