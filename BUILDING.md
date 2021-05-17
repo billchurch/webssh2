@@ -1,6 +1,6 @@
 # Buliding 
 
-To rebuild the client files, you need at least Node v10.
+To rebuild the client files, you need at least Node v14.
 
 The source of the client files are located in `./app/client/source`
 
