@@ -1,5 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import * as io from 'socket.io-client/dist/socket.io.js';
+import io from 'socket.io-client';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
