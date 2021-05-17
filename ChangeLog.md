@@ -2,10 +2,18 @@
 ## 0.4.0 [TBD]
 ### BREAKING
 - Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. Code still exists but is commented out in roughly lines 103-116 of ./app/server/socket.js
+### Changes
+- Removed HTML menu code from ./app/server/socket.js, the menu is now fully laid out in the ./app/client/src/index.html and the option elements are hidden by default. Not sure why it wasn't done this way from the start, but there it is.
+- Updated socket.io to v4.1.1
+- Build environment changes
+  - removed unused xterm-addon-search, xterm-addon-weblinks, standard, postcss-discard-comments
+  - added prettier 2.3.0, typescript modules, socket.io-client 4.1.1, airbnb linting tools
 ### CONTRIBUTING
 In this release, we're trying our best to conform to the [Airbnb Javascript Style Guide](https://airbnb.io/projects/javascript/). I'm hoping this will make contributions easier and keep the code readable. I love shortcuts more than anyone but I've found when making changes to code I've not looked at in a while, it can take me a few momements to deconstruct what was being done due to readbility issues. While I don't agree with every decision in the style guide (semi-colons, yuk), it is a good base to keep the code consistent.
 
 If you've not used it before, I recommend installing the [vscode extensions](https://blog.echobind.com/integrating-prettier-eslint-airbnb-style-guide-in-vscode-47f07b5d7d6a) for that and [Prettier](https://prettier.io/) and getting familiar. The autocorrections are great (especially if you hate dealing with semi-colons...)
+
+As of 0.4.0-testing-0, the client code is written in [TypeScript](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html). It's not that much different from JavaScript, and the introduction strong typing will ultimately help to produce better code. Eventually we want to move the whole project to TypeScript but that make take a bit more time. Take a moment to look at ./app/client/src/js/index.ts to see what TypeScript looks like.
 ## 0.3.1 [20210513]
 ### BREAKING
 - Ability to configure CORS settings for socket.io see [#240](../../issues/240) for more information on how this may break existing deployments. Default settings in example `config.json` are currently permissive `http.origins: ["*:*"]` please note that if a `config.json` is not present, the default is `http.origins: ["localhost:2222"]
