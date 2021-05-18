@@ -109,6 +109,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **user.password** - _string_ - Specify password to authenticate with. In normal cases this should be left to the default `null` setting.
 
+* **user.overridebasic** - _boolean_ - When set to `true` ignores `Authorization: Basic` header sent from client and use credentials defined in `user.name` and `user.password` instead. Defaults to `false`. [issue 242](../../issues/242) for more information.
+
 * **ssh.host** - _string_ - Specify host to connect to. May be either hostname or IP address. Defaults to `null`.
 
 * **ssh.port** - _integer_ - Specify SSH port to connect to, defaults to `22`

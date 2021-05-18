@@ -10,6 +10,7 @@
   - added prettier 2.3.0, typescript modules, socket.io-client 4.1.1, airbnb linting tools
 ### Added
 - Lookup ip address for hostname in URL, fixes #199 thanks to @zwiy
+- Ability to override `Authorization: Basic` header and replace with credentials specified in `config.json` fixes #243. New config.json option `user.overridebasic`
 ### CONTRIBUTING
 In this release, we're trying our best to conform to the [Airbnb Javascript Style Guide](https://airbnb.io/projects/javascript/). I'm hoping this will make contributions easier and keep the code readable. I love shortcuts more than anyone but I've found when making changes to code I've not looked at in a while, it can take me a few momements to deconstruct what was being done due to readbility issues. While I don't agree with every decision in the style guide (semi-colons, yuk), it is a good base to keep the code consistent.
 

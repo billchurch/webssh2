@@ -8,15 +8,24 @@ const Auth = require('basic-auth');
 
 const defaultCredentials = { username: null, password: null, privatekey: null };
 
-exports.setDefaultCredentials = function setDefaultCredentials(username, password, privatekey) {
+exports.setDefaultCredentials = function setDefaultCredentials(
+  username,
+  password,
+  privatekey,
+  overridebasic
+) {
   defaultCredentials.username = username;
   defaultCredentials.password = password;
   defaultCredentials.privatekey = privatekey;
+  defaultCredentials.overridebasic = overridebasic;
 };
 
 exports.basicAuth = function basicAuth(req, res, next) {
   const myAuth = Auth(req);
-  if (myAuth && myAuth.pass !== '') {
+  // If Authorize: Basic header exists and the password isn't blank
+  // AND config.user.overridebasic is false, extract basic credentials
+  // from client
+  if (myAuth && myAuth.pass !== '' && !defaultCredentials.overridebasic) {
     req.session.username = myAuth.name;
     req.session.userpassword = myAuth.pass;
     debug(

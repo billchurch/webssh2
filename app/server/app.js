@@ -32,7 +32,12 @@ const appSocket = require('./socket');
 const expressOptions = require('./expressOptions');
 const myutil = require('./util');
 
-myutil.setDefaultCredentials(config.user.name, config.user.password, config.user.privatekey);
+myutil.setDefaultCredentials(
+  config.user.name,
+  config.user.password,
+  config.user.privatekey,
+  config.user.overridebasic
+);
 
 // safe shutdown
 let shutdownMode = false;

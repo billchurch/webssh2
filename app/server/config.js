@@ -19,6 +19,7 @@ let config = {
     name: null,
     password: null,
     privatekey: null,
+    overridebasic: false,
   },
   ssh: {
     host: null,
