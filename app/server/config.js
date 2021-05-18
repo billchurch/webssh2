@@ -86,13 +86,13 @@ try {
     config = require('read-config-ng')(configPath);
   } else {
     console.error(
-      `\n\nERROR: Missing config.json for webssh. Current config: ${JSON.stringify(config)}`
+      `\n\nERROR: Missing config.json for WebSSH2. Current config: ${JSON.stringify(config)}`
     );
     console.error('\n  See config.json.sample for details\n\n');
   }
 } catch (err) {
   console.error(
-    `\n\nERROR: Missing config.json for webssh. Current config: ${JSON.stringify(config)}`
+    `\n\nERROR: Missing config.json for WebSSH2. Current config: ${JSON.stringify(config)}`
   );
   console.error('\n  See config.json.sample for details\n\n');
   console.error(`ERROR:\n\n  ${err}`);
