@@ -1,11 +1,12 @@
 # Change Log
-## 0.4.0 [TBD]
+## 0.4.0 [20210519]
 ### BREAKING
 - Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. 
 - Dropping support for node versions under 14
 ### Changes
 - Removed HTML menu code from ./app/server/socket.js, the menu is now fully laid out in the ./app/client/src/index.html and the option elements are hidden by default. Not sure why it wasn't done this way from the start, but there it is.
 - Updated socket.io to v4.1.1
+- Client javascript `./app/client/src/js/index.ts` is now built on TypeScript (`npm run build` will generate javascript for client and place into `app/client/public/webssh2.bundle.js` as before)
 - Build environment changes
   - removed unused xterm-addon-search, xterm-addon-weblinks, standard, postcss-discard-comments
   - added prettier 2.3.0, typescript modules, socket.io-client 4.1.1, airbnb linting tools
