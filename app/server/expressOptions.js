@@ -5,7 +5,7 @@ module.exports = {
   index: false,
   maxAge: '1s',
   redirect: false,
-  setHeaders: function (res, path, stat) {
-    res.set('x-timestamp', Date.now())
-  }
-}
+  setHeaders(res) {
+    res.set('x-timestamp', Date.now());
+  },
+};
