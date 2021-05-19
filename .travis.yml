@@ -3,4 +3,4 @@ node_js:
   - 14
   - 16
 before_install:
-  - npm -i -g snyk
+  - npm i -g snyk
