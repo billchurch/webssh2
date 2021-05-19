@@ -147,20 +147,8 @@ module.exports = function appSocket(socket) {
             conn.end();
             return;
           }
-          // poc to log commands from client
-          // if (socket.request.session.ssh.serverlog.client) var dataBuffer;
           socket.on('data', (data) => {
             stream.write(data);
-            // poc to log commands from client
-            /*         if (socket.request.session.ssh.serverlog.client) {
-          if (data === '\r') {
-            console.log(`serverlog.client: ${socket.request.session.id}/${socket.id}
-            host: ${socket.request.session.ssh.host} command: ${dataBuffer}`);
-            dataBuffer = undefined;
-          } else {
-            dataBuffer = (dataBuffer) ? dataBuffer + data : data;
-          }
-        } */
           });
           socket.on('control', (controlData) => {
             switch (controlData) {

@@ -1,7 +1,8 @@
 # Change Log
 ## 0.4.0 [TBD]
 ### BREAKING
-- Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. Code still exists but is commented out in roughly lines 103-116 of ./app/server/socket.js
+- Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. 
+- Dropping support for node versions under 14
 ### Changes
 - Removed HTML menu code from ./app/server/socket.js, the menu is now fully laid out in the ./app/client/src/index.html and the option elements are hidden by default. Not sure why it wasn't done this way from the start, but there it is.
 - Updated socket.io to v4.1.1
