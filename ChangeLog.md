@@ -3,6 +3,7 @@
 ## 0.5.0 [TBD]
 ### BREAKING
 - Debug environment for webssh2 changed from `WebSSH2` to `webssh2`
+- Remove auto port increment from `./app/index.js` (f36af08)
 ### Changes
 - Credentials are now retreived using passport.js (should make it easier to expand to other methods in the future) for #247
 - Refactored ./app/server/app.js 
