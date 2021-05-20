@@ -83,6 +83,14 @@ let config = {
   safeShutdownDuration: 300,
 };
 
+// We want our environment varaibles to take priority if they're set
+function setOverrides() {
+  config.listen.ip = process.env.LISTEN_IP || config.listen.ip;
+  config.listen.port = process.env.PORT || config.listen.port;
+  config.session.name = process.env.SESSION_NAME || config.session.name;
+  config.session.secret = process.env.SESSION_SECRET || config.session.secret;
+}
+
 // test if config.json exists, if not provide error message but try to run anyway
 try {
   if (fs.existsSync(configPath)) {
@@ -90,11 +98,14 @@ try {
     console.info(`WebSSH2 service reading config from: ${configPath}`);
     // eslint-disable-next-line global-require
     config = require('read-config-ng')(configPath);
+    // setup overrides for environment variables
+    setOverrides();
   } else {
     console.error(
       `\n\nERROR: Missing config.json for WebSSH2. Current config: ${JSON.stringify(config)}`
     );
     console.error('\n  See config.json.sample for details\n\n');
+    setOverrides();
   }
 } catch (err) {
   console.error(
