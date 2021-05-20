@@ -1,5 +1,3 @@
-/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
-/* jshint esversion: 6, asi: true, node: true */
 /*
  * index.js
  *

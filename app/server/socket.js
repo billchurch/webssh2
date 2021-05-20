@@ -1,7 +1,3 @@
-/* eslint-disable complexity */
-/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error"] }] */
-/* jshint esversion: 6, asi: true, node: true */
 // socket.js
 
 // private

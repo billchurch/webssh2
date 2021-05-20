@@ -19,6 +19,8 @@
         "prettier"
     ],
     "rules": {
-        "prettier/prettier": ["error"]
+        "prettier/prettier": ["error"],
+        "no-unused-expressions": ["error", { "allowShortCircuit": true, "allowTernary": true }],
+        "no-console": ["error", { "allow": ["warn", "error"] }]
     }
 }
