@@ -1,6 +1,6 @@
 {
   "name": "webssh2",
-  "version": "0.5.0-dev-0",
+  "version": "0.5.0-dev-1",
   "ignore": [
     ".gitignore"
   ],
@@ -42,6 +42,7 @@
     "passport": "^0.4.1",
     "passport-custom": "^1.1.1",
     "passport-http": "^0.3.0",
+    "passport-local": "^1.0.0",
     "read-config-ng": "^3.0.2",
     "serve-favicon": "^2.5.0",
     "socket.io": "^4.1.1",

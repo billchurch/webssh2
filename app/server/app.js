@@ -1,6 +1,3 @@
-/* jshint esversion: 6, asi: true, node: true */
-/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error"] }] */
 // app.js
 
 // eslint-disable-next-line import/order
@@ -17,32 +14,27 @@ const logger = require('morgan');
 const passport = require('passport');
 const { BasicStrategy } = require('passport-http');
 const CustomStrategy = require('passport-custom').Strategy;
+const LocalStrategy = require('passport-local').Strategy;
 
 const app = express();
 const server = require('http').Server(app);
-const validator = require('validator');
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, {
   serveClient: false,
   path: '/ssh/socket.io',
   origins: config.http.origins,
 });
-const session = require('express-session')({
-  secret: config.session.secret,
-  name: config.session.name,
-  resave: false,
-  saveUninitialized: false,
-  unset: 'destroy',
-});
+const session = require('express-session')(config.session);
+const { setupSession } = require('./setupSession');
 const appSocket = require('./socket');
 const expressOptions = require('./expressOptions');
-const myutil = require('./util');
+const safeShutdown = require('./safeShutdown');
 
 // Static credentials strategy
 // when config.user.overridebasic is true, those credentials
 // are used instead of HTTP basic auth.
 passport.use(
-  'custom',
+  'overridebasic',
   new CustomStrategy((req, done) => {
     if (config.user.overridebasic) {
       const user = {
@@ -72,31 +64,34 @@ passport.use(
   })
 );
 
-// safe shutdown
-let shutdownMode = false;
-let shutdownInterval = 0;
-let connectionCount = 0;
-// eslint-disable-next-line consistent-return
-function safeShutdownGuard(req, res, next) {
-  if (shutdownMode) {
-    res.status(503).end('Service unavailable: Server shutting down');
-  } else {
-    return next();
-  }
-}
-// clean stop
-function stopApp(reason) {
-  shutdownMode = false;
-  // eslint-disable-next-line no-console
-  if (reason) console.log(`Stopping: ${reason}`);
-  if (shutdownInterval) clearInterval(shutdownInterval);
-  io.close();
-  server.close();
-}
+// Local auth strategy
+// for taking credentials from GET/POST
+passport.use(
+  new LocalStrategy((username, password, done) => {
+    const user = {
+      username,
+      password,
+    };
+    debug(
+      `myAuth.name: ${username.yellow.bold.underline} and password ${
+        password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
+      }`
+    );
+    return done(null, user);
+  })
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
 module.exports = { server, config };
 // express
-app.use(safeShutdownGuard);
+app.use(safeShutdown.safeShutdownGuard);
 app.use(session);
 app.use(passport.initialize());
 app.use(passport.session());
@@ -122,85 +117,23 @@ app.get('/ssh/reauth', (req, res) => {
     );
 });
 
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
+// This route allows for collection of credentials from POST/GET
+app.get(
+  '/ssh/login/host/:host?',
+  passport.authenticate(['overridebasic', 'local'], { session: true }),
+  (req, res) => {
+    setupSession(req, config);
+    res.sendFile(path.join(path.join(publicPath, 'client.htm')));
+  }
+);
 
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
-
-// eslint-disable-next-line complexity
+// This route allows for collection of credentials from HTTP Basic
 app.get(
   '/ssh/host/:host?',
-  passport.authenticate(['custom', 'basic'], { session: true }),
+  passport.authenticate(['overridebasic', 'basic'], { session: true }),
   (req, res) => {
-    req.session.username = req.user.username;
-    req.session.userpassword = req.user.password;
+    setupSession(req, config);
     res.sendFile(path.join(path.join(publicPath, 'client.htm')));
-    // capture, assign, and validate variables
-    req.session.ssh = {
-      host:
-        config.ssh.host ||
-        (validator.isIP(`${req.params.host}`) && req.params.host) ||
-        (validator.isFQDN(req.params.host) && req.params.host) ||
-        (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) && req.params.host),
-      port:
-        (validator.isInt(`${req.query.port}`, { min: 1, max: 65535 }) && req.query.port) ||
-        config.ssh.port,
-      localAddress: config.ssh.localAddress,
-      localPort: config.ssh.localPort,
-      header: {
-        name: req.query.header || config.header.text,
-        background: req.query.headerBackground || config.header.background,
-      },
-      algorithms: config.algorithms,
-      keepaliveInterval: config.ssh.keepaliveInterval,
-      keepaliveCountMax: config.ssh.keepaliveCountMax,
-      allowedSubnets: config.ssh.allowedSubnets,
-      term:
-        (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) && req.query.sshterm) ||
-        config.ssh.term,
-      terminal: {
-        cursorBlink: validator.isBoolean(`${req.query.cursorBlink}`)
-          ? myutil.parseBool(req.query.cursorBlink)
-          : config.terminal.cursorBlink,
-        scrollback:
-          validator.isInt(`${req.query.scrollback}`, { min: 1, max: 200000 }) &&
-          req.query.scrollback
-            ? req.query.scrollback
-            : config.terminal.scrollback,
-        tabStopWidth:
-          validator.isInt(`${req.query.tabStopWidth}`, { min: 1, max: 100 }) &&
-          req.query.tabStopWidth
-            ? req.query.tabStopWidth
-            : config.terminal.tabStopWidth,
-        bellStyle:
-          req.query.bellStyle && ['sound', 'none'].indexOf(req.query.bellStyle) > -1
-            ? req.query.bellStyle
-            : config.terminal.bellStyle,
-      },
-      allowreplay:
-        config.options.challengeButton ||
-        (validator.isBoolean(`${req.headers.allowreplay}`)
-          ? myutil.parseBool(req.headers.allowreplay)
-          : false),
-      allowreauth: config.options.allowreauth || false,
-      mrhsession:
-        validator.isAlphanumeric(`${req.headers.mrhsession}`) && req.headers.mrhsession
-          ? req.headers.mrhsession
-          : 'none',
-      serverlog: {
-        client: config.serverlog.client || false,
-        server: config.serverlog.server || false,
-      },
-      readyTimeout:
-        (validator.isInt(`${req.query.readyTimeout}`, { min: 1, max: 300000 }) &&
-          req.query.readyTimeout) ||
-        config.ssh.readyTimeout,
-    };
-    if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name);
-    if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background);
   }
 );
 
@@ -220,41 +153,17 @@ io.on('connection', appSocket);
 // socket.io
 // expose express session with socket.request.session
 io.use((socket, next) => {
-  socket.request.res ? session(socket.request, socket.request.res, next) : next(next); // eslint disable-line
+  socket.request.res ? session(socket.request, socket.request.res, next) : next(next);
 });
 
 io.on('connection', (socket) => {
-  connectionCount += 1;
-
   socket.on('disconnect', () => {
-    connectionCount -= 1;
-    if (connectionCount <= 0 && shutdownMode) {
-      stopApp('All clients disconnected');
+    if (io.of('/').sockets.size <= 1 && safeShutdown.shutdownMode) {
+      safeShutdown.stopApp(io, server, 'All clients disconnected');
     }
   });
 });
 
+// trap SIGTERM and SIGINT (CTRL-C) and handle shutdown gracefully
 const signals = ['SIGTERM', 'SIGINT'];
-signals.forEach((signal) =>
-  process.on(signal, () => {
-    if (shutdownMode) stopApp('Safe shutdown aborted, force quitting');
-    else if (connectionCount > 0) {
-      let remainingSeconds = config.safeShutdownDuration;
-      shutdownMode = true;
-      const message =
-        connectionCount === 1 ? ' client is still connected' : ' clients are still connected';
-      console.error(connectionCount + message);
-      console.error(`Starting a ${remainingSeconds} seconds countdown`);
-      console.error('Press Ctrl+C again to force quit');
-
-      shutdownInterval = setInterval(() => {
-        remainingSeconds -= 1;
-        if (remainingSeconds <= 0) {
-          stopApp('Countdown is over');
-        } else {
-          io.sockets.emit('shutdownCountdownUpdate', remainingSeconds);
-        }
-      }, 1000);
-    } else stopApp();
-  })
-);
+signals.forEach((signal) => process.on(signal, () => safeShutdown.doShutdown(io, server, config)));
