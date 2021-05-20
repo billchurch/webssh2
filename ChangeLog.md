@@ -1,4 +1,16 @@
 # Change Log
+
+## 0.5.0 [TBD]
+### BREAKING
+- Debug environment for webssh2 changed from `WebSSH2` to `webssh2`
+### Changes
+- Credentials are now retreived using passport.js (should make it easier to expand to other methods in the future) for #247
+- Refactored ./app/server/app.js 
+  - Safe shutdown feature moved to ./app/server/safeShutdown.js and re-worked
+  - Session setup moved out of `/ssh/host` route into ./app/server/sessionSetup.js for readability and reuse for #247
+### Added
+- New route `/ssh/login/host` to gather `username` and `password` credentials from either GET or POST 
+
 ## 0.4.0 [20210519]
 ### BREAKING
 - Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. 

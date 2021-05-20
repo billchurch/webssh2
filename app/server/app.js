@@ -3,7 +3,7 @@
 // eslint-disable-next-line import/order
 const config = require('./config');
 const path = require('path');
-const debug = require('debug')('WebSSH2');
+const debug = require('debug')('webssh2');
 
 require('colors');
 // allow for color property extensions in log messages
@@ -42,6 +42,11 @@ passport.use(
         password: config.user.password,
         privatekey: config.user.privatekey,
       };
+      debug(
+        `overridebasic username: ${user.username.yellow.bold.underline} and password ${
+          user.password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
+        }`
+      );
       return done(null, user);
     }
     return done(null, false);
@@ -56,8 +61,8 @@ passport.use(
       password,
     };
     debug(
-      `myAuth.name: ${username.yellow.bold.underline} and password ${
-        password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
+      `HTTP Basic username: ${user.username.yellow.bold.underline} and password ${
+        user.password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
       }`
     );
     return done(null, user);
@@ -73,8 +78,8 @@ passport.use(
       password,
     };
     debug(
-      `myAuth.name: ${username.yellow.bold.underline} and password ${
-        password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
+      `HTTP GET/POST username: ${user.username.yellow.bold.underline} and password ${
+        user.password ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
       }`
     );
     return done(null, user);
