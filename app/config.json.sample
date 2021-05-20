@@ -35,7 +35,11 @@
   },
   "session": {
     "name": "WebSSH2",
-    "secret": "mysecret"
+    "secret": "mysecret",
+    "resave": false,
+    "saveUninitialized": false,
+    "unset": "destroy"
+  },
   },
   "options": {
     "challengeButton": true,

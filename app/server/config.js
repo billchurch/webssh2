@@ -1,5 +1,5 @@
-/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error"] }] */
+// config.js
+
 const fs = require('fs');
 const path = require('path');
 
@@ -24,6 +24,8 @@ let config = {
   ssh: {
     host: null,
     port: 22,
+    localAddress: null,
+    localPort: null,
     term: 'xterm-color',
     readyTimeout: 20000,
     keepaliveInterval: 120000,
@@ -43,6 +45,9 @@ let config = {
   session: {
     name: 'WebSSH2',
     secret: 'mysecret',
+    resave: false,
+    saveUninitialized: false,
+    unset: 'destroy',
   },
   options: {
     challengeButton: true,
