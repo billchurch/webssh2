@@ -1,4 +1,15 @@
 # Change Log
+
+## 0.4.1 [20210703]
+- 
+### Fixes
+- lost comma in config.json.sample 71fe377
+### Changes
+- bump ws@7.4.6 to [mitigate potential ReDoS vulnerability](https://github.com/websockets/ws/releases/tag/7.4.6)
+- dev: update CI tools
+- dev: update dev tools
+- dev: update build tools 
+
 ## 0.4.0 [20210519]
 ### BREAKING
 - Disabled ssh.serverlog.client option, this disables the POC which allowed for logging of the data sent between the client/server to the console.log. 
