@@ -10,7 +10,7 @@ Web SSH Client using ssh2, socket.io, xterm.js, and express
 
 A bare bones example of an HTML5 web-based terminal emulator and SSH client. We use SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server.
 
-<img width="600" height="340" alt="WebSSH2 v0.2.0 demo" src="https://github.com/billchurch/WebSSH2/raw/master/screenshots/demo-800.gif">
+<img width="600" height="340" alt="WebSSH2 v0.2.0 demo" src="https://github.com/billchurch/WebSSH2/raw/main/screenshots/demo-800.gif">
 
 # Requirements
 Node v6.x or above. If using <v6.x you should be able to run by replacing the "read-config" package to @1 like this (after a clone):
