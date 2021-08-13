@@ -2,7 +2,7 @@
 
 <ignorestart>
 
-[![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](releases/latest)
+[![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](https://github.com/billchurch/webssh2/releases/latest)
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
 
