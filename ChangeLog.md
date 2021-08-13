@@ -1,8 +1,11 @@
 # Change Log
-## 0.4.2 [TBD]
-
+## 0.4.2 [20210813]
+### changes
+- update dependencies
+  - socket.io to 4.1.1
+  - read-config-ng to 3.0.2
+  - debug to 4.3.1
 ## 0.4.1 [20210703]
-- 
 ### Fixes
 - lost comma in config.json.sample 71fe377
 ### Changes
