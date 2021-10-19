@@ -1,4 +1,7 @@
 # Change Log
+## 0.4.3 [20211019]
+- update dependencies
+  - ssh2 to 1.4.0 [to mitigate potential command injection in windows](https://snyk.io/vuln/SNYK-JS-SSH2-1656673)
 ## 0.4.2 [20210813]
 ### changes
 - update dependencies
