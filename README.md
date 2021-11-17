@@ -67,7 +67,13 @@ Alternatively if you don't want to rebuild, mount the config at runtime:
 ```bash
 docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/config.json webssh2
 ```
+  
+Alternatively if you don't want to build either and mount the config at runtime relying on the community image :
 
+```bash
+docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/config.json billchurch/webssh2
+```
+  
 <ignoreend>
 
 # Options
