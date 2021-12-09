@@ -169,6 +169,10 @@
     text-decoration: underline;
 }
 
+.xterm-strikethrough {
+    text-decoration: line-through;
+}
+
 body, html  {
   font-family: helvetica, sans-serif, arial;
   font-size: 1em;
