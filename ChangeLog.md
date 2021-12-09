@@ -1,7 +1,7 @@
 # Change Log
 ## 0.4.4 [20211209]
 ### Fixes
-- Add ./node_modules to .dockerignore [#240](../../issues/240)
+- Add ./node_modules to .dockerignore [#240](../../issues/240) thanks @UncleSamSwiss
 - validator to 13.7.0 [to mitigate potential Regular Expression Denial of Service (ReDoS)](https://snyk.io/vuln/SNYK-JS-VALIDATOR-1090600)
 - cidr-matcher should be [re-installed to pickup >json-schema@4.0.0 due to prototype pollution vulnerability](https://snyk.io/vuln/SNYK-JS-JSONSCHEMA-1920922)
 
