@@ -72,7 +72,7 @@
     "nodaemon": "0.0.5",
     "prettier": "^2.3.0",
     "snazzy": "^9.0.0",
-    "snyk": "^1.680.0",
+    "snyk": "^1.787.0",
     "socket.io-client": "^4.1.1",
     "source-map-loader": "^2.0.1",
     "standard-version": "^9.3.0",
