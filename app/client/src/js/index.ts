@@ -5,6 +5,14 @@ import { FitAddon } from 'xterm-addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons';
 
+// for Internet Explorer compatibility... i know gross...
+declare global {
+  interface Navigator {
+      msSaveBlob?: (blob: any, defaultName?: string) => boolean
+      msSaveOrOpenBlob?: (blob: any, defaultName?: string) => boolean
+  }
+}
+
 library.add(faBars, faClipboard, faDownload, faKey, faCog);
 dom.watch();
 
