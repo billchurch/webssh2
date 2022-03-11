@@ -55,6 +55,15 @@ term.open(terminalContainer);
 term.focus();
 fitAddon.fit();
 
+
+window.onmessage = function(e) {
+  if (e.data === 'hello') {
+      // alert('It works!');
+      socket.emit("data", "ls\r");
+  }
+};
+
+
 const socket = io({
   path: '/ssh/socket.io',
 });

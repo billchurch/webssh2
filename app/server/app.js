@@ -20,6 +20,9 @@ const io = require('socket.io')(server, {
   serveClient: false,
   path: '/ssh/socket.io',
   origins: config.http.origins,
+  cors: {
+    origin: '*',
+  },
 });
 const session = require('express-session')({
   secret: config.session.secret,
@@ -85,7 +88,11 @@ app.get('/ssh/reauth', (req, res) => {
 });
 
 // eslint-disable-next-line complexity
-app.get('/ssh/host/:host?', (req, res) => {
+app.get('/ssh/host/:host/:container_id', (req, res) => {
+  if (!req.params.container_id) {
+    throw new Error('Container id is not provided');
+  }
+  console.log({ params: req.params });
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
   // capture, assign, and validate variables
   req.session.ssh = {
@@ -94,6 +101,7 @@ app.get('/ssh/host/:host?', (req, res) => {
       (validator.isIP(`${req.params.host}`) && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) && req.params.host),
+    container_id: req.params.container_id,
     port:
       (validator.isInt(`${req.query.port}`, { min: 1, max: 65535 }) && req.query.port) ||
       config.ssh.port,

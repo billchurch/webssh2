@@ -147,6 +147,23 @@ module.exports = function appSocket(socket) {
             conn.end();
             return;
           }
+          // stream.exec('ls');
+          // stream.write(`
+          // docker exec -ti ${socket.request.session.ssh.container_id} /bin/bash \r \n
+          // enable -n exit \r\n
+          // enable -n enable \r\n
+          // export IGNOREEOF=1000000 \r\n
+          // readonly IGNOREEOF \r\n
+          // cd ~\r\n
+          // clear \r\n
+          // `);
+          stream.write('clear \n');
+          stream.write(`docker exec -ti ${socket.request.session.ssh.container_id} /bin/bash \r`);
+          stream.write('enable -n exit \r');
+          stream.write('enable -n enable \r');
+          stream.write('export IGNOREEOF=1000000 \r');
+          stream.write('readonly IGNOREEOF \r');
+          stream.write('clear \r');
           socket.on('data', (data) => {
             stream.write(data);
           });
@@ -222,6 +239,7 @@ module.exports = function appSocket(socket) {
       // console.log('hostkeys: ' + hostkeys[0].[0])
       conn.connect({
         host: socket.request.session.ssh.host,
+        container_id: socket.request.session.ssh.container_id,
         port: socket.request.session.ssh.port,
         localAddress: socket.request.session.ssh.localAddress,
         localPort: socket.request.session.ssh.localPort,
