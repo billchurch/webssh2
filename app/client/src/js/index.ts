@@ -57,9 +57,10 @@ fitAddon.fit();
 
 
 window.onmessage = function(e) {
-  if (e.data === 'hello') {
-      // alert('It works!');
-      socket.emit("data", "ls\r");
+  const commandWithPrefix = `${e.data}`;
+  if (commandWithPrefix.substring(0,13) === "dt_ui_command") {
+      let command = commandWithPrefix.replace("dt_ui_command ", '');
+      socket.emit("data", `${command}\r`);
   }
 };
 
