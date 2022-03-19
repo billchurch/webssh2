@@ -174,6 +174,7 @@ module.exports = function appSocket(socket) {
       debugWebSSH2(
         `WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
       );
+      /*
       socket.emit('menu');
       socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
       socket.emit('setTerminalOpts', socket.request.session.ssh.terminal);
@@ -186,6 +187,7 @@ module.exports = function appSocket(socket) {
         'footer',
         `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
       );
+      */
       socket.emit('status', 'SSH CONNECTION ESTABLISHED');
       socket.emit('statusBackground', 'green');
       socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
