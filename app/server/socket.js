@@ -11,11 +11,65 @@ const SSH = require('ssh2').Client;
 const CIDRMatcher = require('cidr-matcher');
 const validator = require('validator');
 const dnsPromises = require('dns').promises;
+const input_hash_map = new Map();
 
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 let termCols;
 let termRows;
+
+function checkdata(data, hash_key) {
+  input_str = input_hash_map.get(hash_key);
+  if (input_str === undefined) {
+    input_str = "";
+  }
+  let close = 0;
+  if (data === '\x04') { // ctrl + d
+    close = 1;
+    input_hash_map.delete(hash_key);
+  }
+  if (data === '\x7F') { // backspace
+    console.log('backspace');
+    if (input_str.length > 0) {
+      input_str = input_str.slice(0, -1);
+      console.log("new_str: ", input_str);
+    }
+  }
+  if (data === 'e') {
+    console.log('1st condition');
+    input_str += data;
+  }
+  if (data === 'x') {
+    if (input_str[0] === 'e') {
+      console.log('2nd condition');
+      input_str += data;
+    }
+  }
+  if (data === 'i') {
+    if ((input_str[0] === 'e') && (input_str[1] === 'x')) {
+      console.log('3rd condition');
+      input_str += data;
+    }
+  }
+  if (data === 't') {
+    if ((input_str[0] === 'e') && (input_str[1] === 'x') && (input_str[2] === 'i')) {
+      console.log('4th condition');
+      input_str += data;
+    }
+  }
+  if (data === '\r') { // enter
+    if ((input_str[0] === 'e') && (input_str[1] === 'x') && (input_str[2] === 'i') && (input_str[3] === 't')) {
+      console.log('5th condition');
+      input_str = "";
+      close = 1;
+      input_hash_map.delete(hash_key);
+    } else {
+      input_str = "";
+    }
+  }
+  input_hash_map.set(hash_key, input_str);
+  return close;
+}
 
 // public
 module.exports = function appSocket(socket) {
@@ -158,14 +212,16 @@ module.exports = function appSocket(socket) {
           // clear \r\n
           // `);
           stream.write('clear \n');
-          stream.write(`docker exec -ti ${socket.request.session.ssh.container_id} /bin/bash \r`);
-          stream.write('enable -n exit \r');
-          stream.write('enable -n enable \r');
-          stream.write('export IGNOREEOF=1000000 \r');
-          stream.write('readonly IGNOREEOF \r');
+          stream.write(`docker exec -ti ${socket.request.session.ssh.container_id} /bin/sh \r`);
           stream.write('clear \r');
           socket.on('data', (data) => {
-            stream.write(data);
+            let exit_val = checkdata(data, socket.request.sessionID + socket.id);
+            if (exit_val === 1) {
+              stream.write(data);
+              conn.end();
+            } else {
+              stream.write(data);
+            }
           });
           socket.on('control', (controlData) => {
             switch (controlData) {
