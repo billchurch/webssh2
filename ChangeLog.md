@@ -1,5 +1,5 @@
 # Change Log
-## 0.4.5 [TBD]
+## 0.4.5 [20220331]
 ### Fixes
 - Update socket.io to 4.2.0
 - Update read-config-ng to 3.0.4
