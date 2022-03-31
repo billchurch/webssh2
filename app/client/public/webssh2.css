@@ -92,9 +92,11 @@
 .xterm .xterm-viewport {
     /* On OS X this is required in order for the scroll bar to appear fully opaque */
     background-color: #000;
+    color: #000;
     overflow-y: scroll;
     cursor: default;
     position: absolute;
+    visibility: hidden;
     right: 0;
     left: 0;
     top: 0;
@@ -197,8 +199,11 @@ body, html  {
 }
 .box {
     display: block;
-    height: 100%;
+    height: 97%;
+    scroll-behavior: smooth;
+    overflow: hidden;
 }
+
 #terminal-container {
     display: block;
     width: calc(100% - 1 px);
