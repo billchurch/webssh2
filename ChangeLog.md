@@ -1,4 +1,9 @@
 # Change Log
+## 0.4.5 [TBD]
+### Fixes
+- Update socket.io to 4.2.0
+- Update read-config-ng to 3.0.4
+
 ## 0.4.4 [20211209]
 ### Fixes
 - Add ./node_modules to .dockerignore [#240](../../issues/240) thanks @UncleSamSwiss
