@@ -1,4 +1,8 @@
 # Change Log
+
+## 0.4.5 [20220417]
+### Fixes
+- update read-config-ng to 3.0.5, fixes [#277](../../issues/277)
 ## 0.4.5 [20220331]
 ### Fixes
 - Update socket.io to 4.2.0
