@@ -65,7 +65,7 @@ module.exports = { server, config };
 // express
 app.use(safeShutdownGuard);
 app.use(session);
-app.use(myutil.basicAuth);
+// app.use(myutil.basicAuth);
 if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 
@@ -85,7 +85,7 @@ app.get('/ssh/reauth', (req, res) => {
 });
 
 // eslint-disable-next-line complexity
-app.get('/ssh/host/:host?', (req, res) => {
+app.get('/ssh/host/:host?', myutil.basicAuth, (req, res) => {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
   // capture, assign, and validate variables
   req.session.ssh = {

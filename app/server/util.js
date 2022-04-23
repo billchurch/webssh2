@@ -38,7 +38,15 @@ exports.basicAuth = function basicAuth(req, res, next) {
     req.session.userpassword = defaultCredentials.password;
     req.session.privatekey = defaultCredentials.privatekey;
   }
-  if (!req.session.userpassword && !req.session.privatekey) {
+  if (
+    (req.query.username !== '' || req.query.username !== undefined) &&
+    (req.query.password !== '' || req.query.password !== undefined)
+  ) {
+    // eslint-disable-next-line
+    // console.log(`username: ${req.query.username} and password: ${req.query.password}`);
+    req.session.username = req.query.username;
+    req.session.userpassword = req.query.password;
+  } else {
     res.statusCode = 401;
     debug('basicAuth credential request (401)');
     res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');
