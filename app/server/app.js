@@ -93,7 +93,7 @@ app.get('/ssh/host/:host?', (req, res) => {
       config.ssh.host ||
       (validator.isIP(`${req.params.host}`) && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
-      (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) && req.params.host),
+      (/^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(req.params.host) && req.params.host),
     port:
       (validator.isInt(`${req.query.port}`, { min: 1, max: 65535 }) && req.query.port) ||
       config.ssh.port,
@@ -108,7 +108,7 @@ app.get('/ssh/host/:host?', (req, res) => {
     keepaliveCountMax: config.ssh.keepaliveCountMax,
     allowedSubnets: config.ssh.allowedSubnets,
     term:
-      (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) && req.query.sshterm) ||
+      (/^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) && req.query.sshterm) ||
       config.ssh.term,
     terminal: {
       cursorBlink: validator.isBoolean(`${req.query.cursorBlink}`)
