@@ -79,9 +79,7 @@ module.exports = function appSocket(socket) {
           ipaddress = result.address;
         } catch (err) {
           console.error(
-            `WebSSH2 ${`error: ${err.code} ${err.hostname}`.red.bold} user=${
-              socket.request.session.username.yellow.bold.underline
-            } from=${socket.handshake.address.yellow.bold.underline}`
+            `WebSSH2 error: ${err.code} ${err.hostname} user=${socket.request.session.username.yellow.bold.underline} from=${socket.handshake.address.yellow.bold.underline}`
           );
           socket.emit('ssherror', '404 HOST IP NOT FOUND');
           socket.disconnect(true);
@@ -180,7 +178,7 @@ module.exports = function appSocket(socket) {
               message:
                 code || signal
                   ? (code ? `CODE: ${code}` : '') +
-                    (code && signal ? ' ' : '') +
+                    (code && signal ? ', ' : '') +
                     (signal ? `SIGNAL: ${signal}` : '')
                   : undefined,
             };
