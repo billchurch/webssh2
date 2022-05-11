@@ -149,15 +149,10 @@ module.exports = function appSocket(socket) {
             stream.write(data);
           });
           socket.on('control', (controlData) => {
-            switch (controlData) {
-              case 'replayCredentials':
-                if (socket.request.session.ssh.allowreplay) {
-                  stream.write(`${socket.request.session.userpassword}\n`);
-                }
-              /* falls through */
-              default:
-                debugWebSSH2(`controlData: ${controlData}`);
+            if (controlData === 'replayCredentials' && socket.request.session.ssh.allowreplay) {
+              stream.write(`${socket.request.session.userpassword}\n`);
             }
+            debugWebSSH2(`controlData: ${controlData}`);
           });
           socket.on('resize', (data) => {
             stream.setWindow(data.rows, data.cols);
