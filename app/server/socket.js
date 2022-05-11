@@ -12,8 +12,6 @@ const CIDRMatcher = require('cidr-matcher');
 const validator = require('validator');
 const dnsPromises = require('dns').promises;
 
-// var fs = require('fs')
-// var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 let termCols;
 let termRows;
 
