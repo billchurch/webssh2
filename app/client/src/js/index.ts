@@ -107,7 +107,6 @@ function toggleLog () { // eslint-disable-line
     sessionLogEnable = false;
     loggedData = true;
     logBtn.innerHTML = '<i class="fas fa-clipboard fa-fw"></i> Start Log';
-    // console.log(`stopping log, ${sessionLogEnable}`);
     currentDate = new Date();
     sessionLog = `${sessionLog}\r\n\r\nLog End for ${sessionFooter}: ${currentDate.getFullYear()}/${
       currentDate.getMonth() + 1
@@ -121,7 +120,6 @@ function toggleLog () { // eslint-disable-line
   logBtn.innerHTML = '<i class="fas fa-cog fa-spin fa-fw"></i> Stop Log';
   downloadLogBtn.style.color = '#000';
   downloadLogBtn.addEventListener('click', downloadLog);
-  // console.log(`starting log, ${sessionLogEnable}`);
   currentDate = new Date();
   sessionLog = `Log Start for ${sessionFooter}: ${currentDate.getFullYear()}/${
     currentDate.getMonth() + 1
@@ -134,7 +132,6 @@ function toggleLog () { // eslint-disable-line
 // replay password to server, requires
 function replayCredentials () { // eslint-disable-line
   socket.emit('control', 'replayCredentials');
-  // console.log('replaying credentials');
   term.focus();
   return false;
 }
