@@ -8,8 +8,8 @@ import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free
 // for Internet Explorer compatibility... i know gross...
 declare global {
   interface Navigator {
-      msSaveBlob?: (blob: any, defaultName?: string) => boolean
-      msSaveOrOpenBlob?: (blob: any, defaultName?: string) => boolean
+    msSaveBlob?: (blob: any, defaultName?: string) => boolean;
+    msSaveOrOpenBlob?: (blob: any, defaultName?: string) => boolean;
   }
 }
 
@@ -78,7 +78,7 @@ function downloadLog () { // eslint-disable-line
       [
         sessionLog.replace(
           // eslint-disable-next-line no-control-regex
-          /[\u001b\u009b][[\]()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><;]/g,
+          /[\u001b\u009b][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[0-9A-ORZcf-nqry=><;]/g,
           ''
         ),
       ],
