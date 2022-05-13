@@ -15,6 +15,79 @@ const dnsPromises = require('dns').promises;
 let termCols;
 let termRows;
 
+/**
+ * Error handling for various events. Outputs error to client, logs to
+ * server, destroys session and disconnects socket.
+ * @param {object} socket Socket information
+ * @param {string} myFunc Function calling this function
+ * @param {object} err    error object or error message
+ */
+// eslint-disable-next-line complexity
+function SSHerror(socket, myFunc, err) {
+  let theError;
+  if (socket.request.session) {
+    // we just want the first error of the session to pass to the client
+    const firstError = socket.request.session.error || (err ? err.message : undefined);
+    theError = firstError ? `: ${firstError}` : '';
+    // log unsuccessful login attempt
+    if (err && err.level === 'client-authentication') {
+      console.error(
+        `WebSSH2 ${'error: Authentication failure'.red.bold} user=${
+          socket.request.session.username.yellow.bold.underline
+        } from=${socket.handshake.address.yellow.bold.underline}`
+      );
+      socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
+      socket.emit('reauth');
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(
+        `WebSSH2 Logout: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
+      );
+      if (err) {
+        theError = err ? `: ${err.message}` : '';
+        console.error(`WebSSH2 error${theError}`);
+      }
+    }
+    socket.emit('ssherror', `SSH ${myFunc}${theError}`);
+    socket.request.session.destroy();
+    socket.disconnect(true);
+  } else {
+    theError = err ? `: ${err.message}` : '';
+    socket.disconnect(true);
+  }
+  debugWebSSH2(`SSHerror ${myFunc}${theError}`);
+}
+
+async function checkSubnet(socket) {
+  let ipaddress = socket.request.session.ssh.host;
+  if (!validator.isIP(`${ipaddress}`)) {
+    try {
+      const result = await dnsPromises.lookup(socket.request.session.ssh.host);
+      ipaddress = result.address;
+    } catch (err) {
+      console.error(
+        `WebSSH2 error: ${err.code} ${err.hostname} user=${socket.request.session.username.yellow.bold.underline} from=${socket.handshake.address.yellow.bold.underline}`
+      );
+      socket.emit('ssherror', '404 HOST IP NOT FOUND');
+      socket.disconnect(true);
+      return;
+    }
+  }
+
+  const matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
+  if (!matcher.contains(ipaddress)) {
+    console.error(
+      `WebSSH2 ${
+        `error: Requested host ${ipaddress} outside configured subnets / REJECTED`.red.bold
+      } user=${socket.request.session.username.yellow.bold.underline} from=${
+        socket.handshake.address.yellow.bold.underline
+      }`
+    );
+    socket.emit('ssherror', '401 UNAUTHORIZED');
+    socket.disconnect(true);
+  }
+}
+
 // public
 module.exports = function appSocket(socket) {
   async function setupConnection() {
@@ -26,80 +99,9 @@ module.exports = function appSocket(socket) {
       return;
     }
 
-    /**
-     * Error handling for various events. Outputs error to client, logs to
-     * server, destroys session and disconnects socket.
-     * @param {string} myFunc Function calling this function
-     * @param {object} err    error object or error message
-     */
-    // eslint-disable-next-line complexity
-    function SSHerror(myFunc, err) {
-      let theError;
-      if (socket.request.session) {
-        // we just want the first error of the session to pass to the client
-        const firstError = socket.request.session.error || (err ? err.message : undefined);
-        theError = firstError ? `: ${firstError}` : '';
-        // log unsuccessful login attempt
-        if (err && err.level === 'client-authentication') {
-          console.error(
-            `WebSSH2 ${'error: Authentication failure'.red.bold} user=${
-              socket.request.session.username.yellow.bold.underline
-            } from=${socket.handshake.address.yellow.bold.underline}`
-          );
-          socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
-          socket.emit('reauth');
-        } else {
-          // eslint-disable-next-line no-console
-          console.log(
-            `WebSSH2 Logout: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
-          );
-          if (err) {
-            theError = err ? `: ${err.message}` : '';
-            console.error(`WebSSH2 error${theError}`);
-          }
-        }
-        socket.emit('ssherror', `SSH ${myFunc}${theError}`);
-        socket.request.session.destroy();
-        socket.disconnect(true);
-      } else {
-        theError = err ? `: ${err.message}` : '';
-        socket.disconnect(true);
-      }
-      debugWebSSH2(`SSHerror ${myFunc}${theError}`);
-    }
     // If configured, check that requsted host is in a permitted subnet
-    if (
-      (((socket.request.session || {}).ssh || {}).allowedSubnets || {}).length &&
-      socket.request.session.ssh.allowedSubnets.length > 0
-    ) {
-      let ipaddress = socket.request.session.ssh.host;
-      if (!validator.isIP(`${ipaddress}`)) {
-        try {
-          const result = await dnsPromises.lookup(socket.request.session.ssh.host);
-          ipaddress = result.address;
-        } catch (err) {
-          console.error(
-            `WebSSH2 error: ${err.code} ${err.hostname} user=${socket.request.session.username.yellow.bold.underline} from=${socket.handshake.address.yellow.bold.underline}`
-          );
-          socket.emit('ssherror', '404 HOST IP NOT FOUND');
-          socket.disconnect(true);
-          return;
-        }
-      }
-
-      const matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
-      if (!matcher.contains(ipaddress)) {
-        console.error(
-          `WebSSH2 ${
-            `error: Requested host ${ipaddress} outside configured subnets / REJECTED`.red.bold
-          } user=${socket.request.session.username.yellow.bold.underline} from=${
-            socket.handshake.address.yellow.bold.underline
-          }`
-        );
-        socket.emit('ssherror', '401 UNAUTHORIZED');
-        socket.disconnect(true);
-        return;
-      }
+    if (socket.request.session?.ssh?.allowedSubnets?.length > 0) {
+      checkSubnet(socket);
     }
 
     const conn = new SSH();
@@ -139,7 +141,7 @@ module.exports = function appSocket(socket) {
         },
         (err, stream) => {
           if (err) {
-            SSHerror(`EXEC ERROR${err}`);
+            SSHerror(socket, `EXEC ERROR`, err);
             conn.end();
             return;
           }
@@ -161,12 +163,12 @@ module.exports = function appSocket(socket) {
           socket.on('disconnect', (reason) => {
             debugWebSSH2(`SOCKET DISCONNECT: ${reason}`);
             const errMsg = { message: reason };
-            SSHerror('CLIENT SOCKET DISCONNECT', errMsg);
+            SSHerror(socket, 'CLIENT SOCKET DISCONNECT', errMsg);
             conn.end();
             // socket.request.session.destroy()
           });
           socket.on('error', (errMsg) => {
-            SSHerror('SOCKET ERROR', errMsg);
+            SSHerror(socket, 'SOCKET ERROR', errMsg);
             conn.end();
           });
 
@@ -174,15 +176,7 @@ module.exports = function appSocket(socket) {
             socket.emit('data', data.toString('utf-8'));
           });
           stream.on('close', (code, signal) => {
-            const errMsg = {
-              message:
-                code || signal
-                  ? (code ? `CODE: ${code}` : '') +
-                    (code && signal ? ', ' : '') +
-                    (signal ? `SIGNAL: ${signal}` : '')
-                  : undefined,
-            };
-            SSHerror('STREAM CLOSE', errMsg);
+            SSHerror(socket, 'STREAM CLOSE', { message: code, signal });
             conn.end();
           });
           stream.stderr.on('data', (data) => {
@@ -193,15 +187,15 @@ module.exports = function appSocket(socket) {
     });
 
     conn.on('end', (err) => {
-      SSHerror('CONN END BY HOST', err);
+      SSHerror(socket, 'CONN END BY HOST', err);
     });
     conn.on('close', (err) => {
-      SSHerror('CONN CLOSE', err);
+      SSHerror(socket, 'CONN CLOSE', err);
     });
     conn.on('error', (err) => {
-      SSHerror('CONN ERROR', err);
+      SSHerror(socket, 'CONN ERROR', err);
     });
-    conn.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+    conn.on('keyboard-interactive', (_name, _instructions, _instructionsLang, _prompts, finish) => {
       debugWebSSH2("conn.on('keyboard-interactive')");
       finish([socket.request.session.userpassword]);
     });
