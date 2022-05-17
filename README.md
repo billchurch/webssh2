@@ -21,16 +21,21 @@ Node v14.x or above. If using <v14.x you should be able to run by replacing the 
 Just keep in mind that there is no intention to ensure compatability with Node < v14
 
 # Instructions
+The instructions previously showed cloning directly from main, while normally safe may include "work in progress". It's recommended that after you clone, you switch to a particular tag.
+
 To install:
 
-1. Clone to a location somewhere and then `cd app` and `npm install --production`. If you want to develop and rebuild javascript and other files utilize `npm install` instead.
+1. Clone to a location somewhere
 
-2. If desired, edit app/config.json to change the listener to your liking. There are also some default options which may be definied for a few of the variables.
+2. Switch to the `current` tag or choose a particular [release](releases/) tag
 
-3. Run `npm start`
+3. `cd app` and `npm install --production`. If you want to develop and rebuild javascript and other files utilize `npm install` instead.
 
-4. Fire up a browser, navigate to IP/port of your choice and specify a host (https isn't used here because it's assumed it will be off-loaded to
-some sort of proxy):
+4. If desired, edit app/config.json to change the listener to your liking. There are also some default options which may be definied for a few of the variables.
+
+5. Run `npm start`
+
+6. Fire up a browser, navigate to IP/port of your choice and specify a host (https isn't used here because it's assumed it will be off-loaded to some sort of proxy):
 
 http://localhost:2222/ssh/host/127.0.0.1
 
