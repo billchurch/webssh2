@@ -1,19 +1,45 @@
 /* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error"] }] */
+   no-console: ["error", { allow: ["warn", "error", "info"] }] */
 const fs = require('fs');
 const path = require('path');
+const merger = require('json-merger');
+const debugWebSSH2 = require('debug')('WebSSH2');
+const crypto = require('crypto');
+const util = require('util');
+const readconfig = require('read-config-ng');
 
 const nodeRoot = path.dirname(require.main.filename);
 const configPath = path.join(nodeRoot, 'config.json');
 
-// sane defaults if config.json or parts are missing
-let config = {
+let myConfig;
+// establish defaults
+const configDefault = {
   listen: {
     ip: '0.0.0.0',
     port: 2222,
   },
-  http: {
+  socketio: {
+    serveClient: false,
+    path: '/ssh/socket.io',
     origins: ['localhost:2222'],
+  },
+  express: {
+    secret: crypto.randomBytes(20).toString('hex'),
+    name: 'WebSSH2',
+    resave: true,
+    saveUninitialized: false,
+    unset: 'destroy',
+    ssh: {
+      dotfiles: 'ignore',
+      etag: false,
+      extensions: ['htm', 'html'],
+      index: false,
+      maxAge: '1s',
+      redirect: false,
+      setHeaders(res) {
+        res.set('x-timestamp', Date.now());
+      },
+    },
   },
   user: {
     name: null,
@@ -39,10 +65,6 @@ let config = {
   header: {
     text: null,
     background: 'green',
-  },
-  session: {
-    name: 'WebSSH2',
-    secret: 'mysecret',
   },
   options: {
     challengeButton: true,
@@ -80,23 +102,24 @@ let config = {
 
 // test if config.json exists, if not provide error message but try to run anyway
 try {
-  if (fs.existsSync(configPath)) {
-    // eslint-disable-next-line no-console
-    console.info(`WebSSH2 service reading config from: ${configPath}`);
-    // eslint-disable-next-line global-require
-    config = require('read-config-ng')(configPath);
-  } else {
+  if (!fs.existsSync(configPath)) {
     console.error(
-      `\n\nERROR: Missing config.json for WebSSH2. Current config: ${JSON.stringify(config)}`
+      `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`
     );
     console.error('\n  See config.json.sample for details\n\n');
   }
+  console.info(`WebSSH2 service reading config from: ${configPath}`);
+  const configFile = readconfig(configPath, { override: true });
+  myConfig = merger.mergeObjects([configDefault, configFile]);
+  debugWebSSH2(`\nCurrent config: ${util.inspect(myConfig)}`);
 } catch (err) {
+  myConfig = configDefault;
   console.error(
-    `\n\nERROR: Missing config.json for WebSSH2. Current config: ${JSON.stringify(config)}`
+    `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`
   );
   console.error('\n  See config.json.sample for details\n\n');
   console.error(`ERROR:\n\n  ${err}`);
 }
+const config = myConfig;
 
 module.exports = config;

@@ -16,20 +16,9 @@ const app = express();
 const server = require('http').Server(app);
 const validator = require('validator');
 const favicon = require('serve-favicon');
-const io = require('socket.io')(server, {
-  serveClient: false,
-  path: '/ssh/socket.io',
-  origins: config.http.origins,
-});
-const session = require('express-session')({
-  secret: config.session.secret,
-  name: config.session.name,
-  resave: true,
-  saveUninitialized: false,
-  unset: 'destroy',
-});
+const io = require('socket.io')(server, config.socketio);
+const session = require('express-session')(config.express);
 const appSocket = require('./socket');
-const expressOptions = require('./expressOptions');
 const myutil = require('./util');
 
 myutil.setDefaultCredentials(
@@ -70,7 +59,7 @@ if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 
 // static files
-app.use('/ssh', express.static(publicPath, expressOptions));
+app.use('/ssh', express.static(publicPath, config.express.ssh));
 
 // favicon from root if being pre-fetched by browser to prevent a 404
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
