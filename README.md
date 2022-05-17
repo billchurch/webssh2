@@ -18,7 +18,7 @@ Node v6.x or above. If using <v6.x you should be able to run by replacing the "r
 `npm install --save read-config@1
 `
 
-Just keep in mind that there is no intention to ensure compatability with Node < v6.x
+Just keep in mind that there is no intention to ensure compatability with Node < v14
 
 # Instructions
 To install:
