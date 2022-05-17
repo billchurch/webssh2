@@ -27,7 +27,7 @@ To install:
 
 1. Clone to a location somewhere
 
-2. Switch to the `current` tag or choose a particular [release](releases/) tag
+2. Checkout to the `current` tag using `git checkout current` or choose a particular [release](https://github.com/billchurch/webssh2/releases/) tag
 
 3. `cd app` and `npm install --production`. If you want to develop and rebuild javascript and other files utilize `npm install` instead.
 
