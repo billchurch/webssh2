@@ -132,6 +132,7 @@ function toggleLog () { // eslint-disable-line
 // replay password to server, requires
 function replayCredentials () { // eslint-disable-line
   socket.emit('control', 'replayCredentials');
+  debug(`control: replayCredentials`);
   term.focus();
   return false;
 }
@@ -157,6 +158,7 @@ function drawMenu() {
 function resizeScreen() {
   fitAddon.fit();
   socket.emit('resize', { cols: term.cols, rows: term.rows });
+  debug(`resize: ${JSON.stringify({ cols: term.cols, rows: term.rows })}`);
 }
 
 window.addEventListener('resize', resizeScreen, false);
@@ -174,6 +176,7 @@ socket.on('data', (data: string | Uint8Array) => {
 
 socket.on('connect', () => {
   socket.emit('geometry', term.cols, term.rows);
+  debug(`geometry: ${term.cols}, ${term.rows}`);
 });
 
 socket.on(
