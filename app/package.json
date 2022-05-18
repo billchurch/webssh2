@@ -35,7 +35,7 @@
     "basic-auth": "~2.0.1",
     "cidr-matcher": "^2.1.1",
     "colors": "~1.4.0",
-    "debug": "^4.3.2",
+    "debug": "^4.3.4",
     "express": "~4.17.1",
     "express-session": "~1.17.1",
     "json-merger": "^1.1.9",
