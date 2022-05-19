@@ -2,7 +2,6 @@
 // util.js
 
 // private
-require('colors'); // allow for color property extensions in log messages
 const debug = require('debug')('WebSSH2');
 const Auth = require('basic-auth');
 
@@ -28,11 +27,7 @@ exports.basicAuth = function basicAuth(req, res, next) {
   if (myAuth && myAuth.pass !== '' && !defaultCredentials.overridebasic) {
     req.session.username = myAuth.name;
     req.session.userpassword = myAuth.pass;
-    debug(
-      `myAuth.name: ${myAuth.name.yellow.bold.underline} and password ${
-        myAuth.pass ? 'exists'.yellow.bold.underline : 'is blank'.underline.red.bold
-      }`
-    );
+    debug(`myAuth.name: ${myAuth.name} and password ${myAuth.pass ? 'exists' : 'is blank'}`);
   } else {
     req.session.username = defaultCredentials.username;
     req.session.userpassword = defaultCredentials.password;
