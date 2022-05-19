@@ -23,7 +23,7 @@ let termRows;
  */
 function connError(socket, err) {
   let msg = util.inspect(err);
-  const { session } = socket.request.session;
+  const { session } = socket.request;
   if (err?.level === 'client-authentication') {
     msg = `Authentication failure user=${session.username} from=${socket.handshake.address}`;
     socket.emit('allowreauth', session.ssh.allowreauth);
