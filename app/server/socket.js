@@ -22,25 +22,20 @@ let termRows;
  * @param {object} err    Error object
  */
 function connError(socket, err) {
+  let msg = util.inspect(err);
+  const { session } = socket.request.session;
   if (err?.level === 'client-authentication') {
-    logError(
-      socket,
-      'CONN ERROR',
-      `Authentication failure user=${socket.request.session.username} from=${socket.handshake.address}`
-    );
-    socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
+    msg = `Authentication failure user=${session.username} from=${socket.handshake.address}`;
+    socket.emit('allowreauth', session.ssh.allowreauth);
     socket.emit('reauth');
-    return;
   }
   if (err?.code === 'ENOTFOUND') {
-    logError(socket, 'CONN ERROR', `Host not found: ${err.hostname}`);
-    return;
+    msg = `Host not found: ${err.hostname}`;
   }
   if (err?.level === 'client-timeout') {
-    logError(socket, 'CONN ERROR', `Connection Timeout: ${socket.request.session.ssh.host}`);
-    return;
+    msg = `Connection Timeout: ${session.ssh.host}`;
   }
-  logError(socket, 'CONN ERROR', util.inspect(err));
+  logError(socket, 'CONN ERROR', msg);
 }
 
 /**
@@ -157,9 +152,7 @@ module.exports = function appSocket(socket) {
             return;
           }
           socket.once('disconnect', (reason) => {
-            webssh2debug(socket, `SOCKET DISCONNECT: ${reason}`);
-            const errMsg = { message: reason };
-            // logError(socket, 'CLIENT SOCKET DISCONNECT', util.inspect(errMsg));
+            webssh2debug(socket, `CLIENT SOCKET DISCONNECT: ${util.inspect(reason)}`);
             conn.end();
             socket.request.session.destroy();
           });
