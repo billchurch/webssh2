@@ -62,6 +62,7 @@ const socket = io({
 // reauthenticate
 function reauthSession () { // eslint-disable-line
   debug('re-authenticating');
+  socket.emit('control', 'reauth');
   window.location.href = '/ssh/reauth';
   return false;
 }
