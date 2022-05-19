@@ -5,33 +5,31 @@
 const debug = require('debug')('WebSSH2');
 const Auth = require('basic-auth');
 
-const defaultCredentials = { username: null, password: null, privatekey: null };
+let defaultCredentials = { username: null, password: null, privatekey: null };
 
-exports.setDefaultCredentials = function setDefaultCredentials(
-  username,
+exports.setDefaultCredentials = function setDefaultCredentials({
+  name: username,
   password,
   privatekey,
-  overridebasic
-) {
-  defaultCredentials.username = username;
-  defaultCredentials.password = password;
-  defaultCredentials.privatekey = privatekey;
-  defaultCredentials.overridebasic = overridebasic;
+  overridebasic,
+}) {
+  defaultCredentials = { username, password, privatekey, overridebasic };
 };
 
 exports.basicAuth = function basicAuth(req, res, next) {
   const myAuth = Auth(req);
   // If Authorize: Basic header exists and the password isn't blank
   // AND config.user.overridebasic is false, extract basic credentials
-  // from client
-  if (myAuth && myAuth.pass !== '' && !defaultCredentials.overridebasic) {
+  // from client]
+  const { username, password, privatekey, overridebasic } = defaultCredentials;
+  if (myAuth && myAuth.pass !== '' && !overridebasic) {
     req.session.username = myAuth.name;
     req.session.userpassword = myAuth.pass;
     debug(`myAuth.name: ${myAuth.name} and password ${myAuth.pass ? 'exists' : 'is blank'}`);
   } else {
-    req.session.username = defaultCredentials.username;
-    req.session.userpassword = defaultCredentials.password;
-    req.session.privatekey = defaultCredentials.privatekey;
+    req.session.username = username;
+    req.session.userpassword = password;
+    req.session.privatekey = privatekey;
   }
   if (!req.session.userpassword && !req.session.privatekey) {
     res.statusCode = 401;

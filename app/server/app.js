@@ -1,6 +1,6 @@
 /* jshint esversion: 6, asi: true, node: true */
 /* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error"] }] */
+   no-console: ["error", { allow: ["warn", "error", "info"] }] */
 // app.js
 
 // eslint-disable-next-line import/order
@@ -21,12 +21,7 @@ const session = require('express-session')(config.express);
 const appSocket = require('./socket');
 const myutil = require('./util');
 
-myutil.setDefaultCredentials(
-  config.user.name,
-  config.user.password,
-  config.user.privatekey,
-  config.user.overridebasic
-);
+myutil.setDefaultCredentials(config);
 
 // safe shutdown
 let shutdownMode = false;
@@ -43,8 +38,7 @@ function safeShutdownGuard(req, res, next) {
 // clean stop
 function stopApp(reason) {
   shutdownMode = false;
-  // eslint-disable-next-line no-console
-  if (reason) console.log(`Stopping: ${reason}`);
+  if (reason) console.info(`Stopping: ${reason}`);
   if (shutdownInterval) clearInterval(shutdownInterval);
   io.close();
   server.close();
