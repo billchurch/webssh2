@@ -17,23 +17,23 @@ const server = require('http').Server(app);
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, config.socketio);
 const session = require('express-session')(config.express);
+
 const appSocket = require('./socket');
-const myutil = require('./util');
+const { setDefaultCredentials, basicAuth } = require('./util');
+const { webssh2debug, auditLog, logError } = require('./logging');
 const { reauth, connect, notfound, handleErrors } = require('./routes');
 
-myutil.setDefaultCredentials(config);
+setDefaultCredentials(config);
 
 // safe shutdown
+let remainingSeconds = config.safeShutdownDuration;
 let shutdownMode = false;
-let shutdownInterval = 0;
+let shutdownInterval;
 let connectionCount = 0;
 // eslint-disable-next-line consistent-return
 function safeShutdownGuard(req, res, next) {
-  if (shutdownMode) {
-    res.status(503).end('Service unavailable: Server shutting down');
-  } else {
-    return next();
-  }
+  if (!shutdownMode) return next();
+  res.status(503).end('Service unavailable: Server shutting down');
 }
 // express
 app.use(safeShutdownGuard);
@@ -42,7 +42,7 @@ if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
 app.use('/ssh', express.static(publicPath, config.express.ssh));
-app.use(myutil.basicAuth);
+app.use(basicAuth);
 app.get('/ssh/reauth', reauth);
 app.get('/ssh/host/:host?', connect);
 app.use(notfound);
@@ -52,7 +52,7 @@ app.use(handleErrors);
 function stopApp(reason) {
   shutdownMode = false;
   if (reason) console.info(`Stopping: ${reason}`);
-  if (shutdownInterval) clearInterval(shutdownInterval);
+  clearInterval(shutdownInterval);
   io.close();
   server.close();
 }
@@ -66,39 +66,41 @@ io.use((socket, next) => {
   socket.request.res ? session(socket.request, socket.request.res, next) : next(next); // eslint disable-line
 });
 
-io.on('connection', (socket) => {
-  connectionCount += 1;
+function countdownTimer() {
+  if (!shutdownMode) clearInterval(shutdownInterval);
+  remainingSeconds -= 1;
+  if (remainingSeconds <= 0) {
+    stopApp('Countdown is over');
+  } else io.emit('shutdownCountdownUpdate', remainingSeconds);
+}
 
+const signals = ['SIGTERM', 'SIGINT'];
+signals.forEach((signal) =>
+  process.on(signal, () => {
+    if (shutdownMode) stopApp('Safe shutdown aborted, force quitting');
+    if (!connectionCount > 0) stopApp('All connections ended');
+    shutdownMode = true;
+    console.error(
+      `\r\n${connectionCount} client(s) are still connected.\r\nStarting a ${remainingSeconds} seconds countdown.\r\nPress Ctrl+C again to force quit`
+    );
+    if (!shutdownInterval) shutdownInterval = setInterval(countdownTimer, 1000);
+  })
+);
+
+module.exports = { server, config };
+
+const onConnection = (socket) => {
+  connectionCount += 1;
   socket.on('disconnect', () => {
     connectionCount -= 1;
     if (connectionCount <= 0 && shutdownMode) {
       stopApp('All clients disconnected');
     }
   });
-});
+  socket.on('geometry', (cols, rows) => {
+    socket.request.session.ssh.terminfo = { cols, rows };
+    webssh2debug(socket, `SOCKET GEOMETRY: termCols = ${cols}, termRows = ${rows}`);
+  });
+};
 
-const signals = ['SIGTERM', 'SIGINT'];
-signals.forEach((signal) =>
-  process.on(signal, () => {
-    if (shutdownMode) stopApp('Safe shutdown aborted, force quitting');
-    else if (connectionCount > 0) {
-      let remainingSeconds = config.safeShutdownDuration;
-      shutdownMode = true;
-      const message =
-        connectionCount === 1 ? ' client is still connected' : ' clients are still connected';
-      console.error(connectionCount + message);
-      console.error(`Starting a ${remainingSeconds} seconds countdown`);
-      console.error('Press Ctrl+C again to force quit');
-
-      shutdownInterval = setInterval(() => {
-        remainingSeconds -= 1;
-        if (remainingSeconds <= 0) {
-          stopApp('Countdown is over');
-        } else {
-          io.sockets.emit('shutdownCountdownUpdate', remainingSeconds);
-        }
-      }, 1000);
-    } else stopApp();
-  })
-);
-module.exports = { server, config };
+io.on('connection', onConnection);

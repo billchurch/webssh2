@@ -13,9 +13,6 @@ const dnsPromises = require('dns').promises;
 const util = require('util');
 const { webssh2debug, auditLog, logError } = require('./logging');
 
-let termCols;
-let termRows;
-
 /**
  * parse conn errors
  * @param {object} socket Socket object
@@ -75,11 +72,6 @@ async function checkSubnet(socket) {
 // public
 module.exports = function appSocket(socket) {
   let login = false;
-  socket.once('geometry', (cols, rows) => {
-    termCols = cols;
-    termRows = rows;
-    webssh2debug(socket, `SOCKET GEOMETRY: termCols = ${cols}, termRows = ${rows}`);
-  });
 
   socket.once('disconnecting', (reason) => {
     webssh2debug(socket, `SOCKET DISCONNECTING: ${reason}`);
@@ -138,74 +130,68 @@ module.exports = function appSocket(socket) {
       socket.emit('status', 'SSH CONNECTION ESTABLISHED');
       socket.emit('statusBackground', 'green');
       socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
-      conn.shell(
-        {
-          term: socket.request.session.ssh.term,
-          cols: termCols,
-          rows: termRows,
-        },
-        (err, stream) => {
-          if (err) {
-            logError(socket, `EXEC ERROR`, err);
-            conn.end();
-            socket.disconnect(true);
-            return;
-          }
-          socket.once('disconnect', (reason) => {
-            webssh2debug(socket, `CLIENT SOCKET DISCONNECT: ${util.inspect(reason)}`);
-            conn.end();
-            socket.request.session.destroy();
-          });
-          socket.on('error', (errMsg) => {
-            webssh2debug(socket, `SOCKET ERROR: ${errMsg}`);
-            logError(socket, 'SOCKET ERROR', errMsg);
-            conn.end();
-            socket.disconnect(true);
-          });
-          socket.on('control', (controlData) => {
-            if (controlData === 'replayCredentials' && socket.request.session.ssh.allowreplay) {
-              stream.write(`${socket.request.session.userpassword}\n`);
-            }
-            if (controlData === 'reauth' && socket.request.session.username && login === true) {
-              auditLog(
-                socket,
-                `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-              );
-              login = false;
-              conn.end();
-              socket.disconnect(true);
-            }
-            webssh2debug(socket, `SOCKET CONTROL: ${controlData}`);
-          });
-          socket.on('resize', (data) => {
-            stream.setWindow(data.rows, data.cols);
-            webssh2debug(socket, `SOCKET RESIZE: ${JSON.stringify([data.rows, data.cols])}`);
-          });
-          socket.on('data', (data) => {
-            stream.write(data);
-          });
-          stream.on('data', (data) => {
-            socket.emit('data', data.toString('utf-8'));
-          });
-          stream.on('close', (code, signal) => {
-            webssh2debug(socket, `STREAM CLOSE: ${util.inspect([code, signal])}`);
-            if (socket.request.session?.username && login === true) {
-              auditLog(
-                socket,
-                `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-              );
-              login = false;
-            }
-            if (code !== 0 && typeof code !== 'undefined')
-              logError(socket, 'STREAM CLOSE', util.inspect({ message: [code, signal] }));
-            socket.disconnect(true);
-            conn.end();
-          });
-          stream.stderr.on('data', (data) => {
-            console.error(`STDERR: ${data}`);
-          });
+      const { term, cols, rows } = socket.request.session.ssh;
+      conn.shell({ term, cols, rows }, (err, stream) => {
+        if (err) {
+          logError(socket, `EXEC ERROR`, err);
+          conn.end();
+          socket.disconnect(true);
+          return;
         }
-      );
+        socket.once('disconnect', (reason) => {
+          webssh2debug(socket, `CLIENT SOCKET DISCONNECT: ${util.inspect(reason)}`);
+          conn.end();
+          socket.request.session.destroy();
+        });
+        socket.on('error', (errMsg) => {
+          webssh2debug(socket, `SOCKET ERROR: ${errMsg}`);
+          logError(socket, 'SOCKET ERROR', errMsg);
+          conn.end();
+          socket.disconnect(true);
+        });
+        socket.on('control', (controlData) => {
+          if (controlData === 'replayCredentials' && socket.request.session.ssh.allowreplay) {
+            stream.write(`${socket.request.session.userpassword}\n`);
+          }
+          if (controlData === 'reauth' && socket.request.session.username && login === true) {
+            auditLog(
+              socket,
+              `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
+            );
+            login = false;
+            conn.end();
+            socket.disconnect(true);
+          }
+          webssh2debug(socket, `SOCKET CONTROL: ${controlData}`);
+        });
+        socket.on('resize', (data) => {
+          stream.setWindow(data.rows, data.cols);
+          webssh2debug(socket, `SOCKET RESIZE: ${JSON.stringify([data.rows, data.cols])}`);
+        });
+        socket.on('data', (data) => {
+          stream.write(data);
+        });
+        stream.on('data', (data) => {
+          socket.emit('data', data.toString('utf-8'));
+        });
+        stream.on('close', (code, signal) => {
+          webssh2debug(socket, `STREAM CLOSE: ${util.inspect([code, signal])}`);
+          if (socket.request.session?.username && login === true) {
+            auditLog(
+              socket,
+              `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
+            );
+            login = false;
+          }
+          if (code !== 0 && typeof code !== 'undefined')
+            logError(socket, 'STREAM CLOSE', util.inspect({ message: [code, signal] }));
+          socket.disconnect(true);
+          conn.end();
+        });
+        stream.stderr.on('data', (data) => {
+          console.error(`STDERR: ${data}`);
+        });
+      });
     });
 
     conn.on('end', (err) => {
