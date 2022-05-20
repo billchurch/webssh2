@@ -10,11 +10,15 @@ const { parseBool } = require('./util');
 const config = require('./config');
 
 exports.reauth = function reauth(req, res) {
-  const r = req.headers.referer || '/';
+  let { referer } = req.headers;
+  console.log(`referer: ${referer}`);
+  if (!validator.isURL(referer, { host_whitelist: ['localhost'] })) referer = '/';
+  console.log(`referer: ${referer}`);
+
   res
     .status(401)
     .send(
-      `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${r}"></head><body bgcolor="#000"></body></html>`
+      `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${referer}"></head><body bgcolor="#000"></body></html>`
     );
 };
 
