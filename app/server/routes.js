@@ -11,10 +11,12 @@ const config = require('./config');
 
 exports.reauth = function reauth(req, res) {
   let { referer } = req.headers;
-  console.log(`referer: ${referer}`);
-  if (!validator.isURL(referer, { host_whitelist: ['localhost'] })) referer = '/';
-  console.log(`referer: ${referer}`);
-
+  if (!validator.isURL(referer, { host_whitelist: ['localhost'] })) {
+    console.error(
+      `WebSSH2 (${req.sessionID}) ERROR: Referrer '${referer}' for '/reauth' invalid. Setting to '/' which will probably fail.`
+    );
+    referer = '/';
+  }
   res
     .status(401)
     .send(
@@ -87,11 +89,11 @@ exports.connect = function connect(req, res) {
   if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background);
 };
 
-exports.notfound = function notfound(req, res) {
+exports.notfound = function notfound(_req, res) {
   res.status(404).send("Sorry, can't find that!");
 };
 
-exports.handleErrors = function handleErrors(err, req, res) {
+exports.handleErrors = function handleErrors(err, _req, res) {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 };

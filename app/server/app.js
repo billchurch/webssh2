@@ -20,7 +20,7 @@ const session = require('express-session')(config.express);
 
 const appSocket = require('./socket');
 const { setDefaultCredentials, basicAuth } = require('./util');
-const { webssh2debug, auditLog, logError } = require('./logging');
+const { webssh2debug } = require('./logging');
 const { reauth, connect, notfound, handleErrors } = require('./routes');
 
 setDefaultCredentials(config);
