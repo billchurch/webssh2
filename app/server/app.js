@@ -23,7 +23,7 @@ const { setDefaultCredentials, basicAuth } = require('./util');
 const { webssh2debug } = require('./logging');
 const { reauth, connect, notfound, handleErrors } = require('./routes');
 
-setDefaultCredentials(config);
+setDefaultCredentials(config.user);
 
 // safe shutdown
 let remainingSeconds = config.safeShutdownDuration;
