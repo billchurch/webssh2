@@ -26,6 +26,12 @@ exports.reauth = function reauth(req, res) {
 
 exports.connect = function connect(req, res) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
+
+  if (req.method === 'POST' && req.body.username && req.body.userpassword) {
+    req.session.username = req.body.username;
+    req.session.userpassword = req.body.userpassword;
+  }
+
   // capture, assign, and validate variables
   req.session.ssh = {
     host:

@@ -41,6 +41,8 @@ http://localhost:2222/ssh/host/127.0.0.1
 
 You will be prompted for credentials to use on the SSH server via HTTP Basic authentcaiton. This is to permit usage with some SSO systems that can replay credentials over HTTP basic.
 
+Alternatively in main for testing, you can send credentials via POST with the variables "username" and "userpassword".
+
 # Customizing client files
 
 See [BUILDING.md](BUILDING.md) for more details.
@@ -82,6 +84,13 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 <ignoreend>
 
 # Options
+
+## POST request vars (in main branch for testing)
+
+* **username** - _string_ - username to log into ssh with
+* **userpassword** _string_ password to log into ssh with
+
+TODO: Add the vars from the GET requests below as well.
 
 ## GET request vars
 

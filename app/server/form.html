@@ -1,0 +1,14 @@
+<html>
+<head><title>Post Test</title></head>
+<body>
+    <h1>Credentials over HTTP POST test</h1>
+    <p>This is a test to demonstrate sending credentials over POST instead of requiring HTTP Basic. If you use this, be sure to secure the app/site with HTTPS!</p>
+    <form method="POST" action="http://localhost:2222/ssh/host/192.168.0.1">
+        <label for="username">Username</label>
+        <input name="username">
+        <label for="userpassword">Password</label>
+        <input name="userpassword" type="password">
+        <button>Login</button>
+    </form>
+</body>
+</html>
