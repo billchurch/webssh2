@@ -1,13 +1,35 @@
-<html>
 <head><title>Post Test</title></head>
+<html>
 <body>
     <h1>Credentials over HTTP POST test</h1>
     <p>This is a test to demonstrate sending credentials over POST instead of requiring HTTP Basic. If you use this, be sure to secure the app/site with HTTPS!</p>
     <form method="POST" action="http://localhost:2222/ssh/host/192.168.0.1">
-        <label for="username">Username</label>
-        <input name="username">
-        <label for="userpassword">Password</label>
-        <input name="userpassword" type="password">
+        <p>
+            <label for="username">Username</label>
+            <input name="username">
+        </p>
+            <label for="userpassword">Password</label>
+            <input name="userpassword" type="password">
+        </p>
+        <p> 
+            <label for="header">Header text</label>
+            <input name="header" value="This is a test">
+        <p>
+            <label for="headerBackground">Header Background Color</label>
+            <input name="headerBackground" value="red">
+        </p>
+        <fieldset>
+            <legend>Cursor Blink:</legend>
+            <div>
+              <input type="radio" id="false" name="cursorBlink" value="false"
+                     checked>
+              <label for="false">False</label>
+            </div>
+            <div>
+              <input type="radio" id="true" name="cursorBlink" value="true">
+              <label for="true">True</label>
+            </div>
+        </fieldset>
         <button>Login</button>
     </form>
 </body>
