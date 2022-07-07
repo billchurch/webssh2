@@ -8,7 +8,6 @@ const nodeRoot = path.dirname(require.main.filename);
 const publicPath = path.join(nodeRoot, 'client', 'public');
 const { parseBool } = require('./util');
 const config = require('./config');
-const { query } = require('express');
 
 exports.reauth = function reauth(req, res) {
   let { referer } = req.headers;
