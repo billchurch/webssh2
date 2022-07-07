@@ -88,9 +88,26 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 ## POST request vars (in main branch for testing)
 
 * **username** - _string_ - username to log into ssh with
+
 * **userpassword** _string_ password to log into ssh with
 
-TODO: Add the vars from the GET requests below as well.
+* **port=** - _integer_ - port of SSH server (defaults to 22)
+
+* **header=** - _string_ - optional header to display on page
+
+* **headerBackground=** - _string_ - optional background color of header to display on page
+
+* **sshterm=** - _string_ - optional specify terminal emulation to use, defaults to `ssh.term` in `config.json` or `vt100` if that is null
+
+* **readyTimeout=** - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000. **Enforced Values:** Min: 1, Max: 300000
+
+* **cursorBlink** - _boolean_ - Cursor blinks (true), does not (false) **Default:** true.
+
+* **scrollback** - _integer_ - Lines in the scrollback buffer. **Default:** 10000. **Enforced Values:** Min: 1, Max: 200000
+
+* **tabStopWidth** - _integer_ - Tab stops at _n_ characters **Default:** 8. **Enforced Values:** Min: 1, Max: 100
+
+* **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
 
 ## GET request vars
 
@@ -98,9 +115,9 @@ TODO: Add the vars from the GET requests below as well.
 
 * **header=** - _string_ - optional header to display on page
 
-* **sshterm=** - _string_ - optional specify terminal emulation to use, defaults to `ssh.term` in `config.json` or `vt100` if that is null
-
 * **headerBackground=** - _string_ - optional background color of header to display on page
+
+* **sshterm=** - _string_ - optional specify terminal emulation to use, defaults to `ssh.term` in `config.json` or `vt100` if that is null
 
 * **readyTimeout=** - _integer_ - How long (in milliseconds) to wait for the SSH handshake to complete. **Default:** 20000. **Enforced Values:** Min: 1, Max: 300000
 
