@@ -54,12 +54,14 @@ exports.connect = function connect(req, res) {
     if (req.body.headerBackground) {
       headerBackground = req.body.headerBackground;
       console.log(`background: ${req.body.headerBackground}`);
-    };
+    }
     if (req.body.sshterm && /^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(req.body.sshterm))
       sshterm = req.body.sshterm;
-    if (req.body.cursorBlink && validator.isBoolean(`${req.body.cursorBlink}`)) cursorBlink = parseBool(req.body.cursorBlink);
+    if (req.body.cursorBlink && validator.isBoolean(`${req.body.cursorBlink}`))
+      cursorBlink = parseBool(req.body.cursorBlink);
     if (req.body.scrollback && validator.isInt(`${req.body.scrollback}`, { min: 1, max: 200000 }))
-      scrollback = req.body.scrollback;    if (req.body.tabStopWidth) tabStopWidth = req.body.tabStopWidth;
+      scrollback = req.body.scrollback;
+    if (req.body.tabStopWidth) tabStopWidth = req.body.tabStopWidth;
     if (req.body.tabStopWidth && validator.isInt(`${req.body.tabStopWidth}`, { min: 1, max: 100 }))
       tabStopWidth = req.body.tabStopWidth;
     if (req.body.bellStyle && ['sound', 'none'].indexOf(req.body.bellStyle) > -1)
