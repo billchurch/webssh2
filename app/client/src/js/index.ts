@@ -5,14 +5,6 @@ import { FitAddon } from 'xterm-addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons';
 
-// for Internet Explorer compatibility... i know gross...
-declare global {
-  interface Navigator {
-    msSaveBlob?: (blob: any, defaultName?: string) => boolean;
-    msSaveOrOpenBlob?: (blob: any, defaultName?: string) => boolean;
-  }
-}
-
 library.add(faBars, faClipboard, faDownload, faKey, faCog);
 dom.watch();
 
@@ -88,16 +80,12 @@ function downloadLog () { // eslint-disable-line
         type: 'text/plain',
       }
     );
-    if (window.navigator.msSaveOrOpenBlob) {
-      window.navigator.msSaveBlob(blob, myFile);
-    } else {
-      const elem = window.document.createElement('a');
-      elem.href = window.URL.createObjectURL(blob);
-      elem.download = myFile;
-      document.body.appendChild(elem);
-      elem.click();
-      document.body.removeChild(elem);
-    }
+    const elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = myFile;
+    document.body.appendChild(elem);
+    elem.click();
+    document.body.removeChild(elem);
   }
   term.focus();
 }
