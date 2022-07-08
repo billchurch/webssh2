@@ -1,8 +1,9 @@
-name: Docker Image CI
+name: Docker Image Tags
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - '**'
 
 jobs:
 
