@@ -18,7 +18,7 @@ jobs:
       name: Build & push Docker image
       with:
         image: billchurch/webssh2
-        tags: latest
+        tags: main
         registry: docker.io
         dockerfile: Dockerfile
         username: ${{ secrets.DOCKER_USERNAME }}
