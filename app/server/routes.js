@@ -44,28 +44,28 @@ exports.connect = function connect(req, res) {
     }
   }
 
-  if (req.method === 'POST' && req.body?.username && req.body?.userpassword) {
+  if (req.method === 'POST' && req.body.username && req.body.userpassword) {
     req.session.username = req.body.username;
     req.session.userpassword = req.body.userpassword;
 
-    if (req.body?.port && validator.isInt(`${req.body.port}`, { min: 1, max: 65535 }))
+    if (req.body.port && validator.isInt(`${req.body.port}`, { min: 1, max: 65535 }))
       port = req.body.port;
-    if (req.body?.header) header = req.body.header;
-    if (req.body?.headerBackground) {
+    if (req.body.header) header = req.body.header;
+    if (req.body.headerBackground) {
       headerBackground = req.body.headerBackground;
       console.log(`background: ${req.body.headerBackground}`);
     };
-    if (req.body?.sshterm && /^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(req.body.sshterm))
+    if (req.body.sshterm && /^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(req.body.sshterm))
       sshterm = req.body.sshterm;
-    if (req.body?.cursorBlink && validator.isBoolean(`${req.body.cursorBlink}`)) cursorBlink = parseBool(req.body.cursorBlink);
-    if (req.body?.scrollback && validator.isInt(`${req.body.scrollback}`, { min: 1, max: 200000 }))
-      scrollback = req.body.scrollback;    if (req.body?.tabStopWidth) tabStopWidth = req.body.tabStopWidth;
-    if (req.body?.tabStopWidth && validator.isInt(`${req.body.tabStopWidth}`, { min: 1, max: 100 }))
+    if (req.body.cursorBlink && validator.isBoolean(`${req.body.cursorBlink}`)) cursorBlink = parseBool(req.body.cursorBlink);
+    if (req.body.scrollback && validator.isInt(`${req.body.scrollback}`, { min: 1, max: 200000 }))
+      scrollback = req.body.scrollback;    if (req.body.tabStopWidth) tabStopWidth = req.body.tabStopWidth;
+    if (req.body.tabStopWidth && validator.isInt(`${req.body.tabStopWidth}`, { min: 1, max: 100 }))
       tabStopWidth = req.body.tabStopWidth;
-    if (req.body?.bellStyle && ['sound', 'none'].indexOf(req.body.bellStyle) > -1)
+    if (req.body.bellStyle && ['sound', 'none'].indexOf(req.body.bellStyle) > -1)
       bellStyle = req.body.bellStyle;
     if (
-      req.body?.readyTimeout &&
+      req.body.readyTimeout &&
       validator.isInt(`${req.body.readyTimeout}`, { min: 1, max: 300000 })
     )
       readyTimeout = req.body.readyTimeout;
