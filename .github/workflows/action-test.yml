@@ -42,3 +42,5 @@ jobs:
 
       - name: get env
         run: env
+      - name: test
+        run: "echo ${{ steps.prep.outputs.tags }}"
