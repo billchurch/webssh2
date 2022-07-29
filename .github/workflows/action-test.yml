@@ -20,10 +20,19 @@ jobs:
 
       - name: 'get sha'
         run: |
-          git rev-parse --short ${{ inputs.tag }}
-          export MYSHA=$(git rev-parse ${{ inputs.tag }})
+          mysha=$(git rev-parse ${{ inputs.tag }})
+          echo "MYSHA=$mysha" >> $GITHUB_ENV
 
       - name: env
         run: env
       
 
+steps:
+  - name: Set the value
+    id: step_one
+    run: |
+      echo "action_state=yellow" >> $GITHUB_ENV
+  - name: Use the value
+    id: step_two
+    run: |
+      echo "${{ env.action_state }}" # This will output 'yellow'
