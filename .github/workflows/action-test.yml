@@ -25,7 +25,6 @@ jobs:
           SHORTREF=$(git rev-parse --short=8 ${{ inputs.tag }})
 
           VERSION=${{ inputs.tag }}
-          fi
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
 
           # Set output parameters.
