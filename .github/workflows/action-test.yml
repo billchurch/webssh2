@@ -20,6 +20,8 @@ jobs:
 
       - name: 'get sha'
         run: |
+          echo "SHORTREF=${GITHUB_SHA::8}" >> $GITHUB_ENV
+
           echo "MYSHA=$(git rev-parse --short ${{ inputs.tag }})" >> $GITHUB_ENV
 
       - name: env
