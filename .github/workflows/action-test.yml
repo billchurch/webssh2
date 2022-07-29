@@ -13,10 +13,19 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 'Checkout'
         uses: actions/checkout@v3
         with: 
           ref: ${{ inputs.tag }}
 
+      - name: 'get sha'
+        run: |
+          git rev-parse --short ${{ inputs.tag }}
+          git --version
+          git rev-parse --short
+          MYSHA=$(git rev-parse ${{ inputs.tag }})
+
       - name: env
         run: env
+      
+
