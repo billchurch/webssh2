@@ -4,7 +4,7 @@ name: 'build images'
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   docker:
