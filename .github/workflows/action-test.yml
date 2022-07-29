@@ -21,7 +21,7 @@ jobs:
       - name: 'get sha'
         run: |
           git rev-parse --short ${{ inputs.tag }}
-          MYSHA=$(git rev-parse ${{ inputs.tag }})
+          export MYSHA=$(git rev-parse ${{ inputs.tag }})
 
       - name: env
         run: env
