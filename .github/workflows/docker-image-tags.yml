@@ -1,7 +1,10 @@
 name: Docker Image Tags
 
-on: workflow_dispatch
-
+on:
+  push:
+    tags:
+      - '**'
+      
 jobs:
   docker:
     runs-on: ubuntu-latest
