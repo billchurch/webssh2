@@ -20,7 +20,7 @@ jobs:
 
       - name: 'get sha'
         run: |
-          mysha=$(git rev-parse ${{ inputs.tag }})
+          mysha=$(git rev-parse --short ${{ inputs.tag }})
           echo "MYSHA=$mysha" >> $GITHUB_ENV
 
       - name: env
