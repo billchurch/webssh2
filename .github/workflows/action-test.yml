@@ -24,7 +24,8 @@ jobs:
           VERSION=latest
           SHORTREF=$(git rev-parse --short=8 ${{ inputs.tag }})
 
-          VERSION=${{ inputs.tag//v }}
+          VERSION=${{ inputs.tag }}
+          VERSION="${VERSION//v}"
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
 
           # If the VERSION looks like a version number, assume that
