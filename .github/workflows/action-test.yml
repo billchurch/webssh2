@@ -22,11 +22,10 @@ jobs:
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
           VERSION=latest
-          SHORTREF=$(git rev-parse --short=8 ${{ inputs.tag }})
 
           VERSION=${{ inputs.tag }}
           VERSION="${VERSION//v}"
-          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${SHORTREF}"
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}"
 
           # If the VERSION looks like a version number, assume that
           # this is the most recent version of the image and also
