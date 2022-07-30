@@ -30,7 +30,7 @@ exports.connect = function connect(req, res) {
   let { host, port } = config.ssh;
   let { text: header, background: headerBackground } = config.header;
   let { term: sshterm, readyTimeout } = config.ssh;
-  let { cursorBlink, scrollback, tabStopWidth, bellStyle } = config.terminal;
+  let { cursorBlink, scrollback, tabStopWidth, bellStyle, fontSize } = config.terminal;
 
   // capture, assign, and validate variables
 
@@ -71,6 +71,8 @@ exports.connect = function connect(req, res) {
       validator.isInt(`${req.body.readyTimeout}`, { min: 1, max: 300000 })
     )
       readyTimeout = req.body.readyTimeout;
+    if (req.body.fontSize && validator.isInt(`${req.body.fontSize}`, { min: 1, max: 300000 }))
+      fontSize = req.body.fontSize;
   }
 
   if (req.method === 'GET') {
@@ -99,6 +101,8 @@ exports.connect = function connect(req, res) {
       validator.isInt(`${req.query.readyTimeout}`, { min: 1, max: 300000 })
     )
       readyTimeout = req.query.readyTimeout;
+    if (req.query?.fontSize && validator.isInt(`${req.query.fontSize}`, { min: 1, max: 300000 }))
+      fontSize = req.query.fontSize;
   }
 
   req.session.ssh = {
@@ -120,6 +124,7 @@ exports.connect = function connect(req, res) {
       scrollback,
       tabStopWidth,
       bellStyle,
+      fontSize,
     },
     allowreplay:
       config.options.challengeButton ||

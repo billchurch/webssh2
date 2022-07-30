@@ -107,6 +107,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
 
+* **fontSize** - _integer_ - Size of terminal font. **Default:** "12".
+
 ## GET request vars
 
 * **port=** - _integer_ - port of SSH server (defaults to 22)
@@ -126,6 +128,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 * **tabStopWidth** - _integer_ - Tab stops at _n_ characters **Default:** 8. **Enforced Values:** Min: 1, Max: 100
 
 * **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
+
+* **fontSize** - _integer_ - Size of terminal font. **Default:** "12".
 
 ## Headers
 
