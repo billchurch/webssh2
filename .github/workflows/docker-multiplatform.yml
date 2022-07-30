@@ -7,13 +7,6 @@ on:
       - main
     tags:
       - '**'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Repo Branch/Tag'
-        default: 'main'
-        type: 'string'
-        required: true
 
 jobs:
   docker:
@@ -21,9 +14,6 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
-        with: 
-          - ref: ${{ inputs.tag }}
-            if: "${{ inputs.tag != '' }}"
       - name: Prepare
         id: prep
         run: |
