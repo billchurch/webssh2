@@ -5,6 +5,15 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Repo Branch/Tag'
+        default: 'main'
+        type: 'string'
+        required: true
 
 jobs:
   docker:
