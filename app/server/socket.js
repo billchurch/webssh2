@@ -105,16 +105,7 @@ module.exports = function appSocket(socket) {
       socket.emit('data', data.replace(/\r?\n/g, '\r\n').toString('utf-8'));
     });
 
-    conn.on('ready', () => {
-      webssh2debug(
-        socket,
-        `CONN READY: LOGIN: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
-      );
-      auditLog(
-        socket,
-        `LOGIN user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-      );
-      login = true;
+    conn.on('handshake', (data => {
       socket.emit('setTerminalOpts', socket.request.session.ssh.terminal);
       socket.emit('menu');
       socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
@@ -127,6 +118,18 @@ module.exports = function appSocket(socket) {
         'footer',
         `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
       );
+    }));
+
+    conn.on('ready', () => {
+      webssh2debug(
+        socket,
+        `CONN READY: LOGIN: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
+      );
+      auditLog(
+        socket,
+        `LOGIN user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
+      );
+      login = true;
       socket.emit('status', 'SSH CONNECTION ESTABLISHED');
       socket.emit('statusBackground', 'green');
       socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
