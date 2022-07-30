@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
-      - name: 'env'
-        run: env
       - name: Prepare
         id: prep
         run: |
@@ -28,7 +26,7 @@ jobs:
           fi
           
           # If this is git branch, use the branch name as a docker tag
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
+          if [[ $GITHUB_REF == refs/heads/* ]]; then
             VERSION=${GITHUB_REF#refs/heads/}
             TAGS="${DOCKER_IMAGE}:${VERSION}"
           fi
