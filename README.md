@@ -174,6 +174,8 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
 
+* **terminal.fontSize** - _integer_ - Size of terminal font. **Default:** 14.
+
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.
 
 * **header.background** - _string_ - Header background, defaults to `green`.

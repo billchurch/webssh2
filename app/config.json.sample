@@ -29,7 +29,8 @@
     "cursorBlink": true,
     "scrollback": 10000,
     "tabStopWidth": 8,
-    "bellStyle": "sound"
+    "bellStyle": "sound",
+    "fontSize": 14
   },
   "header": {
     "text": null,
