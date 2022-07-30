@@ -1,6 +1,6 @@
 # WebSSH2
 
-[![Build Status](https://travis-ci.com/billchurch/webssh2.svg?branch=main)](https://travis-ci.com/billchurch/webssh2) [![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](https://github.com/billchurch/webssh2/releases/latest)
+[![Build Status](https://travis-ci.com/billchurch/webssh2.svg?branch=main)](https://travis-ci.com/billchurch/webssh2) [![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](https://github.com/billchurch/webssh2/releases/latest) [![docker build images](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml/badge.svg)](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml)
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
 
