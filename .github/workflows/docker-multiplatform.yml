@@ -20,21 +20,27 @@ jobs:
         id: prep
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
-          VERSION=main
+
           # If this is git tag, use the tag name as a docker tag
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
+            TAGS="${DOCKER_IMAGE}:${VERSION}"
+          fi
+          
+          # If this is git branch, use the branch name as a docker tag
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/heads/}
+            TAGS="${DOCKER_IMAGE}:${VERSION}"
           fi
 
-          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}"
           # If the VERSION looks like a version number, assume that
           # this is the most recent version of the image and also
-          # tag it 'latest'.
+          # tag it 'latest'. This is done by just specifying the ${DOCKER_IMAGE}
+          # without a tag.
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+            TAGS="$TAGS,${DOCKER_IMAGE}"
           fi
 
-          
           # Set output parameters.
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=docker_image::${DOCKER_IMAGE}
