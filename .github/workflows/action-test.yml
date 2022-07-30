@@ -21,7 +21,6 @@ jobs:
         id: prep
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
-          VERSION=latest
 
           VERSION=${{ inputs.tag }}
           VERSION="${VERSION//v}"
