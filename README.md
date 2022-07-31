@@ -107,7 +107,13 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
 
-* **fontSize** - _integer_ - Size of terminal font. **Default:** "12".
+* **fontSize** - _number_ - Size of terminal font. **Default:** 12
+
+* **fontFamily** - _string_ - Font family
+
+* **letterSpacing** - _number_ - Letter spacing
+
+* **lineHeight** - _number_ - Line height
 
 ## GET request vars
 
@@ -129,7 +135,13 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **bellStyle** - _string_ - Style of terminal bell: ("sound"|"none"). **Default:** "sound". **Enforced Values:** "sound", "none"
 
-* **fontSize** - _integer_ - Size of terminal font. **Default:** "12".
+* **fontSize** - _number_ - Size of terminal font. **Default:** "12"
+
+* **fontFamily** - _string_ - Font family
+
+* **letterSpacing** - _number_ - Letter spacing
+
+* **lineHeight** - _integer_ - Line height
 
 ## Headers
 
@@ -174,7 +186,13 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **terminal.bellStyle** - _string_ - Style of terminal bell: (sound|none). **Default:** "sound".
 
-* **terminal.fontSize** - _integer_ - Size of terminal font. **Default:** 14.
+* **terminal.fontSize** - _number_ - Size of terminal font. **Default:** 14.
+
+* **terminal.fontFamily** - _string_ - Font family
+
+* **terminal.letterSpacing** - _number_ - Letter spacing
+
+* **terminal.lineHeight** - _number_ - Line height
 
 * **header.text** - _string_ - Specify header text, defaults to `My Header` but may also be set to `null`. When set to `null` no header bar will be displayed on the client.
 

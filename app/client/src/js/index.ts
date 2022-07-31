@@ -176,6 +176,9 @@ socket.on(
     tabStopWidth: number;
     bellStyle: 'none' | 'sound';
     fontSize: number;
+    fontFamily: string;
+    letterSpacing: number;
+    lineHeight: number;
   }) => {
     term.options = data;
   }
