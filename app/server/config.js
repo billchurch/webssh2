@@ -122,4 +122,15 @@ try {
 }
 const config = myConfig;
 
+if (process.env.LISTEN) config.listen.ip = process.env.LISTEN;
+
+if (process.env.PORT) config.listen.port = process.env.PORT;
+
+if (process.env.SOCKETIO_ORIGINS) config.socketio.origins = process.env.SOCKETIO_ORIGINS;
+
+if (process.env.SOCKETIO_PATH) config.socketio.path = process.env.SOCKETIO_PATH;
+
+if (process.env.SOCKETIO_SERVECLIENT)
+  config.socketio.serveClient = process.env.SOCKETIO_SERVECLIENT;
+
 module.exports = config;
