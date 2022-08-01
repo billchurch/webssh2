@@ -35,6 +35,7 @@
     "basic-auth": "~2.0.1",
     "cidr-matcher": "^2.1.1",
     "debug": "^4.3.4",
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-session": "^1.17.3",
     "json-merger": "^1.1.9",
