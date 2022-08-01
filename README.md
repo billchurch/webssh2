@@ -46,7 +46,7 @@ Alternatively in main for testing, you can send credentials via POST with the va
 See [BUILDING.md](BUILDING.md) for more details.
 
 # Docker Instructions
-
+Some configuration options are available as [Environment Variables](#environment-variables). If there is a configuration option you require which does not have an environment variable please [open an issue requesting](../../issues/new/choose).
 
 [webssh2 images are available in docker hub](https://hub.docker.com/repository/docker/billchurch/webssh2).
 
@@ -100,9 +100,16 @@ Alternatively if you don't want to build either and mount the config at runtime 
 docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/config.json billchurch/webssh2
 ```
   
-<ignoreend>
-
 # Options
+
+## Environment Variables 
+Environment variables introduced in 0.4.7 will override anything specified in `config.json`. This is useful for settings that may be per-node, or in a container environment. These are optional and will default to whatever their peer config.json settings are
+
+* **LISTEN** - _string_ - IP address node should listen on for client connections, defaults to `127.0.0.1`. Peer is **listen.ip**
+* **PORT** - _integer_ - Port node should listen on for client connections, defaults to `2222`. Peer is **listen.port**
+* **SOCKETIO_ORIGINS** - _array_ - COORS origins to allow connections from to socket.io server, defaults to `localhost:2222`. Changed in 0.3.1, to enable previous, less secure, default behavior of everything use `*:*` (not recommended). Check [#240](../../issues/240). Peer is **socketio.origins**
+* **SOCKETIO_PATH** _string_ - Path to socket.io client files. Default: `/ssh/socket.io`. Peer is **socketio.path**
+* **SOCKETIO_SERVECLIENT** _boolean_ - serve the socket.io client. This is built into the custom javascript, so you shouldn't need this. Kept as an option just in case. Default: `false`. Peer is **socketio.serveClient**
 
 ## POST request vars (in main branch for testing)
 
@@ -177,7 +184,11 @@ docker run --name webssh2 -d -p 2222:2222 -v `pwd`/app/config.json:/usr/src/conf
 
 * **listen.port** - _integer_ - Port node should listen on for client connections, defaults to `2222`
 
-* **http.origins** - _array_ - COORS origins to allow connections from to socket.io server, defaults to `localhost:2222`. Changed in 0.3.1, to enable previous, less secure, default behavior of everything use `*:*` (not recommended). Check [#240](../../issues/240)
+* **socketio.serveClient** - _boolean_ - serve the socket.io client. This is built into the custom javascript, so you shouldn't need this. Kept as an option just in case. Default: `false`
+
+* **socketio.path** - _string_ - Path to socket.io client files. Default: `/ssh/socket.io`
+
+* **socketio.origins** - _array_ - COORS origins to allow connections from to socket.io server, defaults to `localhost:2222`. Changed in 0.3.1, to enable previous, less secure, default behavior of everything use `*:*` (not recommended). Check [#240](../../issues/240)
 
 * **user.name** - _string_ - Specify user name to authenticate with. In normal cases this should be left to the default `null` setting.
 
