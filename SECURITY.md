@@ -13,4 +13,4 @@ The following versions will get security updates.
 
 ## Reporting a Vulnerability
 
-If you find a vulnerability, simply [open an issue](../../issues/new) with the details, use the lable `SECURITY`. 
+If you find a vulnerability, simply [open an issue](../../issues/new) with the details, use the lable `security`. 
