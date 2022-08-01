@@ -47,6 +47,27 @@ See [BUILDING.md](BUILDING.md) for more details.
 
 # Docker Instructions
 
+
+[webssh2 images are available in docker hub](https://hub.docker.com/repository/docker/billchurch/webssh2).
+
+the `latest` tag will pull the most recent stable release, otherwise you can pull individual tags/releases/versions of this repo by using a particular version in the tag.
+
+For instance:
+
+```docker pull billchurch/webssh2:0.4.6```
+
+or 
+
+```docker pull billchurch/webssh2:0.4.7-alpha.2```
+
+or
+
+```docker pull billchurch/webssh2```
+
+for the most recent
+
+If you want to play around localy:
+
 Copy app/config.json.template to app/config.json and modify the latter:
 
 ```js
