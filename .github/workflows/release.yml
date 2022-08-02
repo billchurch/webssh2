@@ -3,8 +3,8 @@ name: 'Create Release'
 
 on:
   push:
-    tags:
-      - '**'
+    branches:
+      - main
 
 jobs:
   release-please:
@@ -14,3 +14,28 @@ jobs:
         with:
           release-type: node
           package-name: release-please-action
+
+      # The logic below handles the npm publication:
+      - name: Checkout Repository
+        if: ${{ steps.release.outputs.releases_created }}
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        if: ${{ steps.release.outputs.releases_created }}
+        with:
+          node-version: 14
+          registry-url: 'https://registry.npmjs.org'
+      - name: Build Packages
+        if: ${{ steps.release.outputs.releases_created }}
+        run: |
+          npm install
+          npx lerna bootstrap
+
+      # Release Please has already incremented versions and published tags, so we just
+      # need to publish all unpublished versions to NPM here
+      # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
+      - name: Publish to NPM
+        if: ${{ steps.release.outputs.releases_created }}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        run: npx lerna publish from-package --no-push --no-private --yes
