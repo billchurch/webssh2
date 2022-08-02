@@ -1,7 +1,8 @@
 {
   "bootstrap-sha": "cf4d8c384740de98f3875b9d5362142b74db0bd3",
-  "release-as": "0.4.7",
+  "release-as": "0.4.7-pre-0",
   "changelogPath": "CHANGELOG.md",
+  "include-v-in-tags": false,
   "prerelease": true,
   "packages": {
     "app": {
