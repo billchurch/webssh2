@@ -55,7 +55,7 @@ body:
     attributes: 
       label: OS and Version of SSH server
       description: OS and Version of SSH server connecting to
-      placeholder: on target server run\: uname -a;sshd -v
+      placeholder: 'on target server run: uname -a;sshd -v'
     validations:
       required: false
   - type: input
