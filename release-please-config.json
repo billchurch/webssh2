@@ -7,8 +7,8 @@
       "prerelease": true,
       "bumpMinorPreMajor": false,
       "bumpPatchForMinorPreMajor": false,
-      "changelogPath": "../CHANGELOG.md",
-      "release-as": "0.4.7-pre-0",
+      "changelogPath": "CHANGELOG.md",
+      "release-as": "0.4.7",
       "versioning": "default"
     }
   }
