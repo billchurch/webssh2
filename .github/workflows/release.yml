@@ -12,8 +12,7 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
-          release-type: node
-          package-name: release-please-action
+          command: manifest
 
       # The logic below handles the npm publication:
       - name: Checkout Repository
