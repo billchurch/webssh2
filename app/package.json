@@ -1,6 +1,6 @@
 {
   "name": "webssh2",
-  "version": "0.4.7-pre-0",
+  "version": "0.4.6",
   "ignore": [
     ".gitignore"
   ],
