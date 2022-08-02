@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - app/**
 
 jobs:
   release-please:
@@ -12,6 +14,7 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
+          token: ${{ secrets.RELEASE_PLEASE_UAT }}
           command: manifest
           package-name: webssh2
           path: app
