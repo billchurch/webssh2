@@ -2,6 +2,7 @@
 name: 'Build Docker Images'
 
 on:
+  push:
     tags:
       - '**'
 
