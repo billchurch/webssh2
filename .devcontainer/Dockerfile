@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/vscode/devcontainers/typescript-node:${VARIANT}
 
 RUN apt-get update && apt-get install gnupg2 -y
 
+RUN npm i --location=global release-please
+
 # [Optional] Uncomment if you want to install an additional version of node using nvm
 # ARG EXTRA_NODE_VERSION=10
 # RUN su node -c "source /usr/local/share/nvm/nvm.sh && nvm install ${EXTRA_NODE_VERSION}"
