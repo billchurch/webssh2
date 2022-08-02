@@ -1,5 +1,7 @@
 {
   "bootstrap-sha": "cf4d8c384740de98f3875b9d5362142b74db0bd3",
+  "release-as": "0.4.7",
+  "changelogPath": "CHANGELOG.md",
   "packages": {
     "app": {
       "releaseType": "node",
@@ -7,8 +9,6 @@
       "prerelease": true,
       "bumpMinorPreMajor": false,
       "bumpPatchForMinorPreMajor": false,
-      "changelogPath": "CHANGELOG.md",
-      "release-as": "0.4.7",
       "versioning": "default"
     }
   }
