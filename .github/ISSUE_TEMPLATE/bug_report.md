@@ -1,38 +1,75 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - billchurch
+body:
+  - type: markdown
+    attributes:
+    value: |
+      Depending on the type of issue, please include the follwing information:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: input
+    id: node_ver
+    attributes: 
+      label: Node Version
+      description: version of Node this problem occurs on
+      placeholder: npm -v
+    validations:
+      required: true
+  - type: input
+    id: npm_ver
+    attributes: 
+      label: NPM Version
+      description: version of NPM this problem occurs on
+      placeholder: npm -v
+    validations:
+      required: true
+  - type: input
+    id: server_ver
+    attributes: 
+      label: Server OS Version
+      description: Server OS Version / Distribution / Processor Architecture
+      placeholder: uname -a;cat /etc/os-release
+    validations:
+      required: true
+  - type: input
+    id: webssh2_ver
+    attributes: 
+      label: WebSSH2 release version
+      description: Version of WebSSH you are using 
+      placeholder: grep version app/package.json
+    validations:
+      required: true
+  - type: input
+    id: sshhost_ver
+    attributes: 
+      label: OS and Version of SSH server
+      description: OS and Version of SSH server connecting to
+      placeholder: on target server run\: uname -a;sshd -v
+    validations:
+      required: false
+  - type: input
+    id: browser_ver
+    attributes: 
+      label: Browser Version
+      description: Information from brwoser's About... or a screenshot of the about screen.
+      placeholder:
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
 
----
-
-**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
