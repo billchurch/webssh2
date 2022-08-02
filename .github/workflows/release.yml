@@ -13,6 +13,8 @@ jobs:
       - uses: google-github-actions/release-please-action@v3
         with:
           command: manifest
+          package-name: webssh2
+          path: app
 
       # The logic below handles the npm publication:
       - name: Checkout Repository
@@ -22,10 +24,11 @@ jobs:
         uses: actions/setup-node@v1
         if: ${{ steps.release.outputs.releases_created }}
         with:
-          node-version: 14
+          node-version: 16
           registry-url: 'https://registry.npmjs.org'
       - name: Build Packages
         if: ${{ steps.release.outputs.releases_created }}
+        working-directory: ./app
         run: |
           npm install
           npx lerna bootstrap
@@ -35,6 +38,7 @@ jobs:
       # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
       - name: Publish to NPM
         if: ${{ steps.release.outputs.releases_created }}
+        working-directory: ./app
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         run: npx lerna publish from-package --no-push --no-private --yes
