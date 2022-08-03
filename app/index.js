@@ -5,6 +5,7 @@
  *
  * WebSSH2 - Web to SSH2 gateway
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
+ * See LICENSE file
  *
  */
 
