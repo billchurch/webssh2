@@ -2,13 +2,6 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [0.4.7-pre-2](https://github.com/billchurch/webssh2/compare/webssh2-v0.4.7-pre-2...webssh2-v0.4.7-pre-2) (2022-08-03)
-
-
-### Miscellaneous Chores
-
-* release 0.4.7-pre-3 ([6c7d242](https://github.com/billchurch/webssh2/commit/6c7d242679d55b2b28a2497d69b43a7e8439c4ca))
-
 ## [0.4.7-pre-2](https://github.com/billchurch/webssh2/compare/webssh2-v0.4.6...webssh2-v0.4.7-pre-2) (2022-08-02)
 
 
