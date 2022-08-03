@@ -8,8 +8,6 @@ All notable changes to this project will be documented in this file. See [standa
 ### Miscellaneous Chores
 
 * release 0.4.7-pre-3 ([0c78c1f](https://github.com/billchurch/webssh2/commit/0c78c1f31cc6380b7f0706822fc418cfede11413))
-* release 0.4.7-pre-3 ([b29242d](https://github.com/billchurch/webssh2/commit/b29242dfd4e1498a6ac862e85eabd349e11dea73))
-* release 0.4.7-pre-3 ([6c7d242](https://github.com/billchurch/webssh2/commit/6c7d242679d55b2b28a2497d69b43a7e8439c4ca))
 
 ## [0.4.7-pre-2](https://github.com/billchurch/webssh2/compare/webssh2-v0.4.6...webssh2-v0.4.7-pre-2) (2022-08-02)
 
