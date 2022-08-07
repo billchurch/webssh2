@@ -12,8 +12,10 @@ on:
       - '**.md'
 
 jobs:
-  release-please:
+  release:
     runs-on: ubuntu-latest
+    outputs:
+      paths_released: ${{ steps.manifest_release.outputs.paths_released }}
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
@@ -21,30 +23,32 @@ jobs:
           command: manifest
           package-name: webssh2
           path: app
-
-      # The logic below handles the npm publication:
-      - name: Checkout Repository
-        if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v2
-      - name: Setup Node
-        uses: actions/setup-node@v1
-        if: ${{ steps.release.outputs.releases_created }}
-        with:
-          node-version: 16
-          registry-url: 'https://registry.npmjs.org'
-      - name: Build Packages
-        if: ${{ steps.release.outputs.releases_created }}
-        working-directory: ./app
-        run: |
-          npm install
-          npx lerna bootstrap
-
-      # Release Please has already incremented versions and published tags, so we just
-      # need to publish all unpublished versions to NPM here
-      # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
-      - name: Publish to NPM
-        if: ${{ steps.release.outputs.releases_created }}
-        working-directory: ./app
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: npx lerna publish from-package --no-push --no-private --yes
+  publish:
+    runs-on: ubuntu-latest
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{fromJson(needs.release.outputs.paths_released)}}
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-node@v1
+          with:
+            node-version: 16
+            registry-url: 'https://registry.npmjs.org'
+        - name: Build Packages
+          run: |
+            cd ${{ matrix.path }}
+            npm install
+            npx lerna bootstrap
+        # Release Please has already incremented versions and published tags, so we just
+        # need to publish all unpublished versions to NPM here
+        # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
+        - name: Publish to NPM
+          if: ${{ steps.release.outputs.releases_created }}
+          working-directory: ./app
+          env:
+            NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          run: |
+            cd ${{ matrix.path }}
+            npx lerna publish from-package --no-push --no-private --yes
