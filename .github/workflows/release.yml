@@ -22,6 +22,7 @@ jobs:
           command: manifest
           package-name: webssh2
           path: app
+          default-branch: main
   publish:
     runs-on: ubuntu-latest
     needs: release
@@ -35,17 +36,11 @@ jobs:
         with:
           node-version: 16
           registry-url: 'https://registry.npmjs.org'
-      - name: Build Packages
-        run: |
-          cd ${{ matrix.path }}
-          npm install
-          npx lerna bootstrap
-      # Release Please has already incremented versions and published tags, so we just
-      # need to publish all unpublished versions to NPM here
-      # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
-      - name: Publish to NPM
+      - name: publish-to-npm
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         run: |
           cd ${{ matrix.path }}
+          npm install
+          npx lerna bootstrap
           npx lerna publish from-package --no-push --no-private --yes
