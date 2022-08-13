@@ -8,6 +8,9 @@
     "path": "/ssh/socket.io",
     "origins": ["localhost:2222"],
   },
+  "http": {
+    "origins": ["localhost:2222"],
+  },
   "user": {
     "name": null,
     "password": null,
