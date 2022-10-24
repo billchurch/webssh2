@@ -102,7 +102,9 @@ const onConnection = (socket) => {
   });
   socket.on('geometry', (cols, rows) => {
     // TODO need to rework how we pass settings to ssh2, this is less than ideal
-    socket.request.session.ssh.terminfo = { cols, rows };
+    const s = socket;
+    s.request.session.ssh.cols = cols;
+    s.request.session.ssh.rows = rows;
     webssh2debug(socket, `SOCKET GEOMETRY: termCols = ${cols}, termRows = ${rows}`);
   });
 };
