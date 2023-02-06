@@ -45,7 +45,19 @@ Alternatively in main for testing, you can send credentials via POST with the va
 
 See [BUILDING.md](BUILDING.md) for more details.
 
-# Docker Instructions
+# Docker
+
+## NOTICE
+Docker versions differ from what is in `main` and are release dependant. 
+
+Meaning billchurch/webssh2:latest is the latest official release. This does NOT sync with what is in `main` on this repo. `main` is development and will change until it gets a release tag. 
+
+On occasion, examples or instructions on `main` will drift from what is released. You should refer to the tag of the version you're using to ensure you are following the proper guidance.
+
+That being said the most current release version is [0.4.6](https://github.com/billchurch/webssh2/tree/0.4.6), see that tag for details.
+
+## Instructions
+
 Some configuration options are available as [Environment Variables](#environment-variables). If there is a configuration option you require which does not have an environment variable please [open an issue requesting](../../issues/new/choose).
 
 [webssh2 images are available in docker hub](https://hub.docker.com/repository/docker/billchurch/webssh2).
