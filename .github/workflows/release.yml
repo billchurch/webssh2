@@ -24,7 +24,7 @@ jobs:
           path: app
           default-branch: main
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: release
     strategy:
       fail-fast: false
