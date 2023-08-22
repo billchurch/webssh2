@@ -2,7 +2,6 @@
    no-console: ["error", { allow: ["warn", "error", "info"] }] */
 const fs = require('fs');
 const path = require('path');
-const merger = require('json-merger');
 const debugWebSSH2 = require('debug')('WebSSH2');
 const crypto = require('crypto');
 const util = require('util');
@@ -110,7 +109,8 @@ try {
   }
   console.info(`WebSSH2 service reading config from: ${configPath}`);
   const configFile = readconfig(configPath, { override: true });
-  myConfig = merger.mergeObjects([configDefault, configFile]);
+  // myConfig = merger.mergeObjects([configDefault, configFile]);
+  myConfig = { ...configDefault, ...configFile };
   debugWebSSH2(`\nCurrent config: ${util.inspect(myConfig)}`);
 } catch (err) {
   myConfig = configDefault;
