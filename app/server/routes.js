@@ -171,6 +171,8 @@ exports.connect = function connect(req, res) {
       letterSpacing,
       lineHeight,
     },
+    cols: null,
+    rows: null,
     allowreplay:
       config.options.challengeButton ||
       (validator.isBoolean(`${req.headers.allowreplay}`)
