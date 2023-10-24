@@ -4,15 +4,9 @@ This repo is used to initiate an ssh session for devops purposes and is restrict
 
 # WebSSH2
 
-[![Build Status](https://travis-ci.com/billchurch/webssh2.svg?branch=main)](https://travis-ci.com/billchurch/webssh2) [![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](https://github.com/billchurch/webssh2/releases/latest) [![docker build images](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml/badge.svg)](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml)
-
-[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
-
 Web SSH Client using ssh2, socket.io, xterm.js, and express
 
 A bare bones example of an HTML5 web-based terminal emulator and SSH client. We use SSH2 as a client on a host to proxy a Websocket / Socket.io connection to a SSH2 server.
-
-<img width="600" height="340" alt="WebSSH2 v0.2.0 demo" src="https://user-images.githubusercontent.com/1668075/182425293-acc8741e-cc92-4105-afdc-9538e1685d4b.gif">
 
 # Requirements
 Node v14.x or above. If using <v14.x you should be able to run by replacing the "read-config" package to @1 like this (after a clone):
