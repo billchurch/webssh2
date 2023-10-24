@@ -1,3 +1,7 @@
+# RUSI gatsby devops 
+
+This repo is used to initiate an ssh session for devops purposes and is restricted to Aer VPN IP address access.
+
 # WebSSH2
 
 [![Build Status](https://travis-ci.com/billchurch/webssh2.svg?branch=main)](https://travis-ci.com/billchurch/webssh2) [![GitHub version](https://img.shields.io/github/v/release/billchurch/webssh2)](https://github.com/billchurch/webssh2/releases/latest) [![docker build images](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml/badge.svg)](https://github.com/billchurch/webssh2/actions/workflows/docker-multiplatform.yml)
