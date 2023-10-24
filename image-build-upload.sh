@@ -54,7 +54,7 @@ aws ecr get-login-password --region eu-west-1 | docker login --username AWS --pa
 
 ECR_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/${REPO_NAME}:${IMAGE_VERSION}"
 
-echo "Pushing drupal container to ECR" 
+echo "Pushing container to ECR" 
 
 docker tag "${REPO_NAME}:${IMAGE_VERSION}" $ECR_IMAGE
 

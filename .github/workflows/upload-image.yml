@@ -29,6 +29,6 @@ jobs:
            mv app/config.json.sample app/config.json
            echo jq --arg pk "$KEY" '.user.privatekey = \$pk' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
            echo jq --arg pwd "$AER_USER_PWD" '.user.password = \$pwd' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
-      - name:  Upload Gatsby publisher image to ECR
+      - name:  Upload image to ECR
         run: |
           ./image-build-upload.sh
