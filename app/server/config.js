@@ -38,7 +38,10 @@ const configDefault = {
       setHeaders(res) {
         res.set('x-timestamp', Date.now());
       },
-    },
+    }
+  },
+  ipfilter: {
+    allowed_ips: [],
   },
   user: {
     name: null,
@@ -132,5 +135,8 @@ if (process.env.SOCKETIO_PATH) config.socketio.path = process.env.SOCKETIO_PATH;
 
 if (process.env.SOCKETIO_SERVECLIENT)
   config.socketio.serveClient = process.env.SOCKETIO_SERVECLIENT;
+
+if (process.env.ALLOWED_IP_ADDRESSES)
+  config.ipfilter.allowed_ips.push(process.env.ALLOWED_IP_ADDRESSES.split(" "))
 
 module.exports = config;

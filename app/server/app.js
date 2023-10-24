@@ -17,11 +17,12 @@ const server = require('http').Server(app);
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, config.socketio);
 const session = require('express-session')(config.express);
+const ipfilter = require('express-ipfilter').IpFilter
 
 const appSocket = require('./socket');
 const { setDefaultCredentials, basicAuth } = require('./util');
 const { webssh2debug } = require('./logging');
-const { reauth, connect, notfound, handleErrors } = require('./routes');
+const { reauth, connect, notfound, handleForbidden, handleErrors } = require('./routes');
 
 setDefaultCredentials(config.user);
 
@@ -38,6 +39,7 @@ function safeShutdownGuard(req, res, next) {
 // express
 app.use(safeShutdownGuard);
 app.use(session);
+if (config.ipfilter.allowed_ips.length > 0) app.use(ipfilter(config.ipfilter.allowed_ips, { mode: 'allow' }))
 if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 app.use(favicon(path.join(publicPath, 'favicon.ico')));

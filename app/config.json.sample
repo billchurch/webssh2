@@ -8,6 +8,9 @@
     "path": "/ssh/socket.io",
     "origins": ["localhost:2222"],
   },
+  "ipfilter": {
+    allowed_ips: []
+  },
   "user": {
     "name": null,
     "password": null,
