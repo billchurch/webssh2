@@ -22,7 +22,7 @@ const ipfilter = require('express-ipfilter').IpFilter
 const appSocket = require('./socket');
 const { setDefaultCredentials, basicAuth } = require('./util');
 const { webssh2debug } = require('./logging');
-const { reauth, connect, notfound, handleForbidden, handleErrors } = require('./routes');
+const { reauth, connect, notfound, handleErrors } = require('./routes');
 
 setDefaultCredentials(config.user);
 
