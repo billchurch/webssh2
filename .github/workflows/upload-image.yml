@@ -1,6 +1,6 @@
 # Sample workflow to access AWS resources when workflow is tied to branch
 # The workflow Creates static website using aws s3
-name: RUSI Gatsby publisher image uploader
+name: RUSI Gatsby Devops image uploader
 on: workflow_dispatch
 
 # permission can be added at job level or workflow level    
