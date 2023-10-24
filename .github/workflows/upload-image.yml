@@ -23,7 +23,7 @@ jobs:
       # Upload an image to ECR
       - name: create ssh pub key for container
         env:
-          KEY: ${{ secrets.SSH_KEY }}
+          KEY: ${{ secrets.GATSBY_DEVOPS_PRIVATE_KEY }}
           AER_USER_PWD: ${{ secrets.AER_USER_PWD }}
         run: |
            mv app/config.json.sample app/config.json
