@@ -1,0 +1,34 @@
+# Sample workflow to access AWS resources when workflow is tied to branch
+# The workflow Creates static website using aws s3
+name: RUSI Gatsby publisher image uploader
+on: workflow_dispatch
+
+# permission can be added at job level or workflow level    
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  ImagePackageUpload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::615693933970:role/rusi-web-github-actions-oidc-role-ops
+          role-session-name: rusiwebgithubactions
+          aws-region: "eu-west-1"
+      # Upload an image to ECR
+      - name: create ssh pub key for container
+        env:
+          KEY: ${{ secrets.SSH_KEY }}
+          AER_USER_PWD: ${{ secrets.AER_USER_PWD }}
+        run: |
+           mv app/config.json.sample app/config.json
+           jq --arg pk "$KEY" '.user.privatekey = $pk' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
+           jq --arg pwd "$AER_USER_PWD" '.user.password = $pwd' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
+      - name:  Upload Gatsby publisher image to ECR
+        run: |
+          ./image-build-upload.sh
