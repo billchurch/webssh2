@@ -21,14 +21,12 @@ jobs:
           role-session-name: rusiwebgithubactions
           aws-region: "eu-west-1"
       # Upload an image to ECR
-      - name: create ssh pub key for container
+      - name: create config
         env:
           KEY: ${{ secrets.GATSBY_DEVOPS_PRIVATE_KEY }}
           AER_USER_PWD: ${{ secrets.AER_USER_PWD }}
         run: |
            mv app/config.json.sample app/config.json
-           jq --arg pk "$KEY" '.user.privatekey = $pk' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
-           jq --arg pwd "$AER_USER_PWD" '.user.password = $pwd' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
       - name:  Upload Gatsby publisher image to ECR
         run: |
           ./image-build-upload.sh
