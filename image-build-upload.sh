@@ -46,7 +46,7 @@ if [ "${REQ_UPLOAD}" == "0" ]; then
 fi
 
 echo "Local ${REPO_NAME}:${IMAGE_VERSION} does not exist, building..."
-docker build -t ${REPO_NAME}:${IMAGE_VERSION} .
+docker build -t ${REPO_NAME}:${IMAGE_VERSION} . --no-cache
 
 #upload the image into ECR
 
