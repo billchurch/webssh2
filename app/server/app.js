@@ -39,8 +39,10 @@ function safeShutdownGuard(req, res, next) {
 // express
 app.use(safeShutdownGuard);
 app.use(session);
+
 //just respond with success for healthchecker no matter what the ip addess is
 app.get('/status', function (req, res) {
+  console.log(req);
   res.status(200).send('success');
 });
 //restrict access to anything else via ip addresses
