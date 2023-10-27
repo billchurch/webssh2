@@ -42,11 +42,17 @@ app.use(session);
 
 //just respond with success for healthchecker no matter what the ip addess is
 app.get('/status', function (req, res) {
+  res.status(200).send('success');
+});
+app.get('/headers', function (req, res) {
+  console.log("request");
   console.log(req);
+  console.log("headers");
+  console.log(req.headers);
   res.status(200).send('success');
 });
 //restrict access to anything else via ip addresses
-if (config.ipfilter.allowed_ips.length > 0) app.use(ipfilter(config.ipfilter.allowed_ips, { mode: 'allow' }))
+//if (config.ipfilter.allowed_ips.length > 0) app.use(ipfilter(config.ipfilter.allowed_ips, { mode: 'allow' }))
 if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
