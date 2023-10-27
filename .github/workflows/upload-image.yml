@@ -26,8 +26,9 @@ jobs:
           KEY: ${{ secrets.GATSBY_DEVOPS_PRIVATE_KEY }}
           AER_USER_PWD: ${{ secrets.AER_USER_PWD }}
         run: |
-           jq --arg pk "$KEY" '.user.privatekey = $pk' app/config.json.sample > app/config.json.tmp && mv app/config.json.tmp app/config.json
-           jq --arg pwd "$AER_USER_PWD" '.user.password = $pwd' app/config.json.sample > app/config.json.tmp && mv app/config.json.tmp app/config.json
+           mv app/config.json.sample app/config.json
+           jq --arg pk "$KEY" '.user.privatekey = $pk' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
+           jq --arg pwd "$AER_USER_PWD" '.user.password = $pwd' app/config.json > app/config.json.tmp && mv app/config.json.tmp app/config.json
       - name:  Upload image to ECR
         run: |
           ./image-build-upload.sh
