@@ -51,8 +51,20 @@ app.get('/headers', function (req, res) {
   console.log(req.headers);
   res.status(200).send('success');
 });
-//restrict access to anything else via ip addresses
-//if (config.ipfilter.allowed_ips.length > 0) app.use(ipfilter(config.ipfilter.allowed_ips, { mode: 'allow' }))
+//restrict access to anything else via ip addresses based on x-forwarded for
+let clientIp = function(req, res) {
+    return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : ""
+};
+  
+if(config.ipfilter.allowed_ips.length > 0){
+  app.use(
+    ipFilter({
+      detectIp: clientIp,
+      forbidden: 'You are not authorized to access this page.',
+      filter: allowlist_ips,
+    })
+  );
+}
 if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
