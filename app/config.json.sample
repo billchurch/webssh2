@@ -12,7 +12,7 @@
     "allowed_ips": ["127.21.0.1"]
   },
   "user": {
-    "name": "aer",
+    "name": null,
     "password": null,
     "privatekey": null,
     "overridebasic": false
