@@ -58,11 +58,12 @@ let clientIp = function(req, res) {
 };
   
 if(config.ipfilter.allowed_ips.length > 0){
+  console.log("using ip filter");
   app.use(
     ipFilter({
       detectIp: clientIp,
       forbidden: 'You are not authorized to access this page.',
-      filter: config.ipfilter.allowlist_ips,
+      filter: config.ipfilter.allowed_ips,
     })
   );
 }
