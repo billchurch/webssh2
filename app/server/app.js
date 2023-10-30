@@ -62,7 +62,7 @@ if(config.ipfilter.allowed_ips.length > 0){
     ipFilter({
       detectIp: clientIp,
       forbidden: 'You are not authorized to access this page.',
-      filter: allowlist_ips,
+      filter: config.ipfilter.allowlist_ips,
     })
   );
 }
