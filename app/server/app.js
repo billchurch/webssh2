@@ -52,13 +52,13 @@ app.get('/headers', function (req, res) {
   res.status(200).send('success');
 });
 //restrict access to anything else via ip addresses based on x-forwarded for
-//@todo create environment var to determin to used this or the general req header
-let clientIp = function(req, res) {
-    return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : ""
-};
-  
+//@todo create environment var to determin to used this or the general req header  
 if(config.ipfilter.allowed_ips.length > 0){
   console.log("using ip filter");
+  let clientIp = function(req, res) {
+    return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : "";
+  };
+    
   app.use(
     ipFilter({
       detectIp: clientIp,
