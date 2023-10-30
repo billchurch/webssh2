@@ -17,7 +17,7 @@ const server = require('http').Server(app);
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, config.socketio);
 const session = require('express-session')(config.express);
-const ipfilter = require('express-ipfilter').IpFilter
+const ipFilter = require('express-ipfilter').IpFilter
 
 const appSocket = require('./socket');
 const { setDefaultCredentials, basicAuth } = require('./util');
