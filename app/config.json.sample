@@ -9,7 +9,7 @@
     "origins": ["localhost:2222"]
   },
   "ipfilter": {
-    "allowed_ips": ["127.21.0.1"]
+    "allowed_ips": ["18.130.190.183"]
   },
   "user": {
     "name": null,
