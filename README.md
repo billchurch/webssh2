@@ -1,3 +1,5 @@
+# THIS REPO IS NOT IN USE - leaving here in case we need it in near future 
+
 # RUSI gatsby devops 
 
 This repo is used to initiate an ssh session for devops purposes and is restricted to Aer VPN IP address access.
