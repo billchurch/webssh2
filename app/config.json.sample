@@ -1,15 +1,18 @@
 {
   "listen": {
     "ip": "0.0.0.0",
-    "port": 2224
+    "port": 2222
   },
   "socketio": {
     "serveClient": false,
     "path": "/ssh/socket.io",
-    "origins": ["localhost:2222"],
+    "origins": ["localhost:2222"]
+  },
+  "ipfilter": {
+    "allowed_ips": ["18.130.190.183"]
   },
   "user": {
-    "name": null,
+    "name": "aer",
     "password": null,
     "privatekey": null,
     "overridebasic": false
@@ -37,8 +40,8 @@
     "background": "green"
   },
   "session": {
-    "name": "WebSSH2",
-    "secret": "mysecret"
+    "name": "rusi-gatsby-devops-container",
+    "secret": "set-by-gha"
   },
   "options": {
     "challengeButton": true,

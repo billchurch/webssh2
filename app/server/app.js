@@ -17,6 +17,7 @@ const server = require('http').Server(app);
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, config.socketio);
 const session = require('express-session')(config.express);
+const ipFilter = require('express-ipfilter').IpFilter
 
 const appSocket = require('./socket');
 const { setDefaultCredentials, basicAuth } = require('./util');
@@ -38,6 +39,34 @@ function safeShutdownGuard(req, res, next) {
 // express
 app.use(safeShutdownGuard);
 app.use(session);
+
+//just respond with success for healthchecker no matter what the ip addess is
+app.get('/status', function (req, res) {
+  res.status(200).send('success');
+});
+app.get('/headers', function (req, res) {
+  console.log("request");
+  console.log(req);
+  console.log("headers");
+  console.log(req.headers);
+  res.status(200).send('success');
+});
+//restrict access to anything else via ip addresses based on x-forwarded for
+//@todo create environment var to determin to used this or the general req header  
+if(config.ipfilter.allowed_ips.length > 0){
+  console.log("using ip filter");
+  let clientIp = function(req, res) {
+    return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : "";
+  };
+    
+  app.use(
+    ipFilter({
+      detectIp: clientIp,
+      forbidden: 'You are not authorized to access this page.',
+      filter: config.ipfilter.allowed_ips,
+    })
+  );
+}
 if (config.accesslog) app.use(logger('common'));
 app.disable('x-powered-by');
 app.use(favicon(path.join(publicPath, 'favicon.ico')));
