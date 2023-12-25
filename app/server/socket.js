@@ -133,8 +133,8 @@ module.exports = function appSocket(socket) {
       socket.emit('status', 'SSH CONNECTION ESTABLISHED');
       socket.emit('statusBackground', 'green');
       socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
-      const { term, cols, rows } = socket.request.session.ssh;
-      conn.shell({ term, cols, rows }, (err, stream) => {
+      const { term, terminfo } = socket.request.session.ssh;
+      conn.shell({ term, cols: terminfo.cols, rows: terminfo.rows }, (err, stream) => {
         if (err) {
           logError(socket, `EXEC ERROR`, err);
           conn.end();
