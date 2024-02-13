@@ -166,6 +166,7 @@ socket.on('data', (data: string | Uint8Array) => {
 socket.on('connect', () => {
   socket.emit('geometry', term.cols, term.rows);
   debug(`geometry: ${term.cols}, ${term.rows}`);
+  setTimeout(resizeScreen, 2000);
 });
 
 socket.on(
