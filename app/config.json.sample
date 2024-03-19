@@ -1,7 +1,7 @@
 {
   "listen": {
     "ip": "0.0.0.0",
-    "port": 2224
+    "port": 2222
   },
   "socketio": {
     "serveClient": false,

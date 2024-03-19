@@ -222,6 +222,7 @@ module.exports = function appSocket(socket) {
       const { ssh } = socket.request.session;
       ssh.username = socket.request.session.username;
       ssh.password = socket.request.session.userpassword;
+      ssh.privateKey = socket.request.session.privatekey;
       ssh.tryKeyboard = true;
       ssh.debug = debug('ssh2');
       conn.connect(ssh);

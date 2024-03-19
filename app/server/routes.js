@@ -53,9 +53,10 @@ exports.connect = function connect(req, res) {
     }
   }
 
-  if (req.method === 'POST' && req.body.username && req.body.userpassword) {
+  if (req.method === 'POST' && req.body.username && (req.body.userpassword || req.body.privatekey)) {
     req.session.username = req.body.username;
     req.session.userpassword = req.body.userpassword;
+    req.session.privatekey = req.body.privatekey;
 
     if (req.body.port && validator.isInt(`${req.body.port}`, { min: 1, max: 65535 }))
       port = req.body.port;
