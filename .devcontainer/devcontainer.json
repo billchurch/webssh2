@@ -1,22 +1,27 @@
 {
 	"name": "Node.js & TypeScript",
-	"build": {
-		"dockerfile": "Dockerfile",
-		// Update 'VARIANT' to pick a Node version: 18, 16, 14.
-		// Append -bullseye or -buster to pin to an OS version.
-		// Use -bullseye variants on local on arm64/Apple Silicon.
-		"args": { 
-			"VARIANT": "16-bullseye"
-		}
-	},
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 
+	"mounts": [
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/personal_id_rsa.pub,target=/home/vscode/.hostssh/id_rsa.pub,readonly,type=bind,consistency=cached"
+	],
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/node-asdf:0": {},
+	},
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
 		"vscode": {
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"dbaeumer.vscode-eslint"
+				"ms-vscode-remote.remote-containers",
+				"dbaeumer.vscode-eslint",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"esbenp.prettier-vscode",
+				"rvest.vs-code-prettier-eslint",
+				"bierner.markdown-mermaid",
+				"stylelint.vscode-stylelint"
 			]
 		}
 	},
@@ -25,7 +30,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "yarn install",
+	"postCreateCommand": "/bin/bash ./.devcontainer/scripts/tools.sh >> ~/post-create-tools.log",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
