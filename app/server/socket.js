@@ -236,10 +236,8 @@ module.exports = function appSocket(socket) {
       ssh.password = socket.request.session.userpassword;
       ssh.tryKeyboard = true;
       ssh.debug = debug('ssh2');
-
-
+       
       if ( config.ssh_proxy.ssh_proxy_enabled ) { 
-
       conn1.on('ready', () => {
         console.log(`vpn.cw :: connection ready over ${config.ssh_proxy.ssh_proxy_host} with user ${config.ssh_proxy.ssh_proxy_user} using ssh key auth`);
         // Alternatively, you could use something like netcat or socat with exec()
@@ -257,22 +255,17 @@ module.exports = function appSocket(socket) {
           conn.connect( 
               ssh
           );
-
         });
       }).connect({
         host: config.ssh_proxy.ssh_proxy_host,
         username: config.ssh_proxy.ssh_proxy_user,
         privateKey: readFileSync(config.ssh_proxy.ssh_proxy_privatekey),
       });
-  
     } else {
-
       conn.connect( 
           ssh
       );
-
     }
-
     } else {
       webssh2debug(
         socket,
