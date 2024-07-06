@@ -12,6 +12,8 @@ const validator = require('validator');
 const dnsPromises = require('dns').promises;
 const util = require('util');
 const { webssh2debug, auditLog, logError } = require('./logging');
+const { readFileSync } = require('fs');
+const config = require('./config');
 
 /**
  * parse conn errors
@@ -99,6 +101,7 @@ module.exports = function appSocket(socket) {
     }
 
     const conn = new SSH();
+    const conn1 = new SSH();
 
     conn.on('banner', (data) => {
       // need to convert to cr/lf for proper formatting
@@ -200,11 +203,19 @@ module.exports = function appSocket(socket) {
     conn.on('end', (err) => {
       if (err) logError(socket, 'CONN END BY HOST', err);
       webssh2debug(socket, 'CONN END BY HOST');
+      if (config.ssh_proxy.ssh_proxy_enabled ) {
+        conn1.end();
+      }
       socket.disconnect(true);
     });
+
     conn.on('close', (err) => {
       if (err) logError(socket, 'CONN CLOSE', err);
       webssh2debug(socket, 'CONN CLOSE');
+      if (config.ssh_proxy.ssh_proxy_enabled ) {
+        conn1.end();
+      }
+
       socket.disconnect(true);
     });
     conn.on('error', (err) => connError(socket, err));
@@ -219,12 +230,49 @@ module.exports = function appSocket(socket) {
       socket.request.session.ssh
     ) {
       // console.log('hostkeys: ' + hostkeys[0].[0])
+
       const { ssh } = socket.request.session;
       ssh.username = socket.request.session.username;
       ssh.password = socket.request.session.userpassword;
       ssh.tryKeyboard = true;
       ssh.debug = debug('ssh2');
-      conn.connect(ssh);
+
+
+      if ( config.ssh_proxy.ssh_proxy_enabled ) { 
+
+      conn1.on('ready', () => {
+        console.log(`vpn.cw :: connection ready over ${config.ssh_proxy.ssh_proxy_host} with user ${config.ssh_proxy.ssh_proxy_user} using ssh key auth`);
+        // Alternatively, you could use something like netcat or socat with exec()
+        // instead of forwardOut(), depending on what the server allows
+        conn1.forwardOut('127.0.0.1', 12345, socket.request.session.ssh.host, 22, (err, stream) => {
+          if (err) {
+            console.log('vpn.cw :: forwardOut error: ' + err);
+            return conn1.end();
+          }
+
+          console.log('Forwarding connection to '+ socket.request.session.ssh.host)
+
+          const { ssh } = socket.request.session;
+          ssh.sock = stream
+          conn.connect( 
+              ssh
+          );
+
+        });
+      }).connect({
+        host: config.ssh_proxy.ssh_proxy_host,
+        username: config.ssh_proxy.ssh_proxy_user,
+        privateKey: readFileSync(config.ssh_proxy.ssh_proxy_privatekey),
+      });
+  
+    } else {
+
+      conn.connect( 
+          ssh
+      );
+
+    }
+
     } else {
       webssh2debug(
         socket,

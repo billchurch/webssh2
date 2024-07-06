@@ -17,6 +17,7 @@ server.listen({ host: config.listen.ip, port: config.listen.port });
 
 // eslint-disable-next-line no-console
 console.log(`WebSSH2 service listening on ${config.listen.ip}:${config.listen.port}`);
+console.log(`SSH proxy support is ${config.ssh_proxy.ssh_proxy_enabled}`);
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
