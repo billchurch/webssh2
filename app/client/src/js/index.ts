@@ -1,7 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { io } from 'socket.io-client';
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons';
 
@@ -9,7 +9,7 @@ library.add(faBars, faClipboard, faDownload, faKey, faCog);
 dom.watch();
 
 const debug = require('debug')('WebSSH2');
-require('xterm/css/xterm.css');
+require('@xterm/xterm/css/xterm.css');
 require('../css/style.css');
 
 /* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */ // eslint-disable-line

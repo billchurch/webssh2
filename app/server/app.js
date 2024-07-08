@@ -13,7 +13,7 @@ const express = require('express');
 const logger = require('morgan');
 
 const app = express();
-const server = require('http').Server(app);
+const server = require('http').createServer(app);
 const favicon = require('serve-favicon');
 const io = require('socket.io')(server, config.socketio);
 const session = require('express-session')(config.express);
