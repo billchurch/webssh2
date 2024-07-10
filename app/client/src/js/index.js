@@ -234,3 +234,13 @@ function downloadLog () { // eslint-disable-line
   }
   term.focus()
 }
+
+// Add an event listener for capturing Ctrl + Shift + 6
+document.addEventListener('keydown', function(event) {
+  if (event.ctrlKey && event.shiftKey && event.code === 'Digit6') {
+    // Prevent the default action
+    event.preventDefault();
+    // Emit the desired key sequence to the server
+    socket.emit('data', '\x1E'); // 0x1E is the RS control character
+  }
+});
