@@ -18,7 +18,9 @@ module.exports = {
   },
   plugins: [
     new BannerPlugin({
-      banner: `Version ${packageJson.version} - ${new Date().toISOString()}`,
+      banner: `Version ${
+        packageJson.version
+      } - ${new Date().toISOString()} - ${commitHash}`,
       include: /\.(js|css|html|htm)$/,
     }),
     new CleanWebpackPlugin(["client/public"], {
@@ -29,10 +31,11 @@ module.exports = {
       template: "./client/src/client.htm", // Path to your source template
       filename: "client.htm", // Optional: output file name, defaults to index.html
       minify: false,
-      scriptLoading: "blocking",
+      scriptLoading: "defer",
       version: `Version ${
         packageJson.version
       } - ${new Date().toISOString()} - ${commitHash}`,
+      publicPath: "/ssh/", // Prepend /ssh/ to the script tags
     }),
     new CopyWebpackPlugin([
       { from: "./client/src/favicon.ico", to: "favicon.ico" },
@@ -42,6 +45,7 @@ module.exports = {
   output: {
     filename: "[name].bundle.js",
     path: path.resolve(__dirname, "../client/public"),
+    publicPath: "/ssh/", // Prepend /ssh/ to the script tags
   },
   module: {
     rules: [
