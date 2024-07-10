@@ -39,7 +39,7 @@
     "express": "~4.16.4",
     "express-session": "~1.15.6",
     "morgan": "~1.9.1",
-    "read-config": "git+https://github.com/billchurch/nodejs-read-config.git",
+    "read-config-ng": "~3.0.7",
     "serve-favicon": "~2.5.0",
     "socket.io": "~2.2.0",
     "ssh2": "~0.8.9",
