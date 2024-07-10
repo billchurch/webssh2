@@ -1,25 +1,34 @@
+<!-- Version Version 0.2.12 - 2024-07-10T13:04:57.896Z - b8782c5 -->
 <!DOCTYPE html>
 <html>
-<head>
-  <title>WebSSH2</title>
-  <style>
-    html, body {background-color: #000;height: 100%;margin: 0;}.dropup-content {display: none;}
-  </style>
-  <link rel="stylesheet" href="/ssh/webssh2.css" />
-</head>
-<body>
-  <div class="box">
-    <div id="header"></div>
-    <div id="terminal-container" class="terminal"></div>
-    <div id="bottomdiv">
-      <div class="dropup" id="menu">
-        <i class="fas fa-bars fa-fw"></i> Menu
-        <div id="dropupContent" class="dropup-content"></div>
+  <head>
+    <title>WebSSH2</title>
+    <style>
+      html,
+      body {
+        background-color: #000;
+        height: 100%;
+        margin: 0;
+      }
+      .dropup-content {
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="/ssh/webssh2.css" />
+  <link href="webssh2.css" rel="stylesheet"></head>
+  <body>
+    <div class="box">
+      <div id="header"></div>
+      <div id="terminal-container" class="terminal"></div>
+      <div id="bottomdiv">
+        <div class="dropup" id="menu">
+          <i class="fas fa-bars fa-fw"></i> Menu
+          <div id="dropupContent" class="dropup-content"></div>
+        </div>
+        <div id="footer"></div>
+        <div id="status"></div>
       </div>
-      <div id="footer"></div>
-      <div id="status"></div>
     </div>
-  </div>
-<script src="/ssh/webssh2.bundle.js" defer></script>
-</body>
+    <script src="/ssh/webssh2.bundle.js" defer></script>
+  <script type="text/javascript" src="webssh2.bundle.js"></script></body>
 </html>
