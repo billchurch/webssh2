@@ -4,7 +4,6 @@
 
 const path = require("path");
 const express = require("express");
-const compression = require("compression");
 const session = require("express-session");
 const logger = require("morgan");
 const socketIo = require("socket.io");
@@ -28,7 +27,6 @@ const sessionMiddleware = session({
 });
 
 // Express middleware
-app.use(compression({ level: 9 }));
 app.use(sessionMiddleware);
 if (config.accesslog) app.use(logger("common"));
 app.disable("x-powered-by");

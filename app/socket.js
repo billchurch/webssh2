@@ -5,11 +5,6 @@ const debug = require("debug");
 const debugWebSSH2 = require("debug")("WebSSH2");
 const SSH = require("ssh2").Client;
 
-const menuData = `
-  <a id="logBtn"><i class="fas fa-clipboard fa-fw"></i> Start Log</a>
-  <a id="downloadLogBtn"><i class="fas fa-download fa-fw"></i> Download Log</a>
-`;
-
 module.exports = function (io) {
   io.on("connection", (socket) => {
     let conn = null;
@@ -72,7 +67,8 @@ module.exports = function (io) {
         );
 
         socket.emit("auth_result", { success: true });
-        socket.emit("menu", menuData);
+        socket.emit("allowreauth", true);
+        socket.emit("allowreplay", true);
         socket.emit("title", `ssh://${credentials.host}`);
         socket.emit("status", "SSH CONNECTION ESTABLISHED");
         socket.emit("statusBackground", "green");
@@ -81,7 +77,7 @@ module.exports = function (io) {
           {
             term: credentials.term,
             cols: credentials.cols,
-            rows: credentials.rows,
+            rows: credentials.rows
           },
           (err, str) => {
             if (err) {
@@ -127,7 +123,7 @@ module.exports = function (io) {
         readyTimeout: credentials.readyTimeout,
         keepaliveInterval: credentials.keepaliveInterval,
         keepaliveCountMax: credentials.keepaliveCountMax,
-        debug: debug("ssh2"),
+        debug: debug("ssh2")
       });
     }
 
