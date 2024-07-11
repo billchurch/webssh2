@@ -35,10 +35,6 @@ let config = {
     text: null,
     background: 'green'
   },
-  session: {
-    name: 'WebSSH2',
-    secret: 'mysecret'
-  },
   options: {
     challengeButton: true,
     allowreauth: true
