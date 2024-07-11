@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.2.13] 2024-07-11
+
+BIG-IP Specific version
+
+### Fixes
+
+- fixed missing reference to `read-config-ng` switchover which could prevent `config.json` from being read
+
 ## [0.2.12] 2024-07-10
 
 BIG-IP Specific version

@@ -68,16 +68,8 @@ let config = {
       'aes256-gcm@openssh.com',
       'aes256-cbc'
     ],
-    hmac: [
-      'hmac-sha2-256',
-      'hmac-sha2-512',
-      'hmac-sha1'
-    ],
-    compress: [
-      'none',
-      'zlib@openssh.com',
-      'zlib'
-    ]
+    hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
+    compress: ['none', 'zlib@openssh.com', 'zlib']
   },
   serverlog: {
     client: false,
@@ -92,13 +84,19 @@ let config = {
 try {
   if (fs.existsSync(configPath)) {
     console.log('ephemeral_auth service reading config from: ' + configPath)
-    config = require('read-config')(configPath)
+    config = require('read-config-ng')(configPath)
   } else {
-    console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
+    console.error(
+      '\n\nERROR: Missing config.json for webssh. Current config: ' +
+        JSON.stringify(config)
+    )
     console.error('\n  See config.json.sample for details\n\n')
   }
 } catch (err) {
-  console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
+  console.error(
+    '\n\nERROR: Missing config.json for webssh. Current config: ' +
+      JSON.stringify(config)
+  )
   console.error('\n  See config.json.sample for details\n\n')
   console.error('ERROR:\n\n  ' + err)
 }
@@ -115,7 +113,11 @@ var compression = require('compression')
 var server = require('http').Server(app)
 var myutil = require('./util')
 var validator = require('validator')
-var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
+var io = require('socket.io')(server, {
+  serveClient: false,
+  path: '/ssh/socket.io',
+  origins: config.http.origins
+})
 var socket = require('./socket')
 var expressOptions = require('./expressOptions')
 var favicon = require('serve-favicon')
@@ -132,11 +134,17 @@ app.use('/ssh', express.static(publicPath, expressOptions))
 // app.use(express.static(publicPath, expressOptions))
 
 // favicon from root if being pre-fetched by browser to prevent a 404
-app.use(favicon(path.join(publicPath,'favicon.ico')))
+app.use(favicon(path.join(publicPath, 'favicon.ico')))
 
 app.get('/ssh/reauth', function (req, res, next) {
   var r = req.headers.referer || '/'
-  res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
+  res
+    .status(401)
+    .send(
+      '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' +
+        r +
+        '"></head><body bgcolor="#000"></body></html>'
+    )
 })
 
 // eslint-disable-next-line complexity
@@ -144,12 +152,16 @@ app.get('/ssh/host/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
   req.session.ssh = {
-    host: (validator.isIP(req.params.host + '') && req.params.host) ||
+    host:
+      (validator.isIP(req.params.host + '') && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
       (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.params.host) &&
-      req.params.host) || config.ssh.host,
-    port: (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
-      req.query.port) || config.ssh.port,
+        req.params.host) ||
+      config.ssh.host,
+    port:
+      (validator.isInt(req.query.port + '', { min: 1, max: 65535 }) &&
+        req.query.port) ||
+      config.ssh.port,
     header: {
       name: req.query.header || config.header.text,
       background: req.query.headerBackground || config.header.background
@@ -157,26 +169,53 @@ app.get('/ssh/host/:host?', function (req, res, next) {
     algorithms: config.algorithms,
     keepaliveInterval: config.ssh.keepaliveInterval,
     keepaliveCountMax: config.ssh.keepaliveCountMax,
-    term: (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) &&
-      req.query.sshterm) || config.ssh.term,
+    term:
+      (/^(([a-z]|[A-Z]|[0-9]|[!^(){}\-_~])+)?\w$/.test(req.query.sshterm) &&
+        req.query.sshterm) ||
+      config.ssh.term,
     terminal: {
-      cursorBlink: (validator.isBoolean(req.query.cursorBlink + '') ? myutil.parseBool(req.query.cursorBlink) : config.terminal.cursorBlink),
-      scrollback: (validator.isInt(req.query.scrollback + '', { min: 1, max: 200000 }) && req.query.scrollback) ? req.query.scrollback : config.terminal.scrollback,
-      tabStopWidth: (validator.isInt(req.query.tabStopWidth + '', { min: 1, max: 100 }) && req.query.tabStopWidth) ? req.query.tabStopWidth : config.terminal.tabStopWidth,
-      bellStyle: ((req.query.bellStyle) && (['sound', 'none'].indexOf(req.query.bellStyle) > -1)) ? req.query.bellStyle : config.terminal.bellStyle
+      cursorBlink: validator.isBoolean(req.query.cursorBlink + '')
+        ? myutil.parseBool(req.query.cursorBlink)
+        : config.terminal.cursorBlink,
+      scrollback:
+        validator.isInt(req.query.scrollback + '', { min: 1, max: 200000 }) &&
+        req.query.scrollback
+          ? req.query.scrollback
+          : config.terminal.scrollback,
+      tabStopWidth:
+        validator.isInt(req.query.tabStopWidth + '', { min: 1, max: 100 }) &&
+        req.query.tabStopWidth
+          ? req.query.tabStopWidth
+          : config.terminal.tabStopWidth,
+      bellStyle:
+        req.query.bellStyle &&
+        ['sound', 'none'].indexOf(req.query.bellStyle) > -1
+          ? req.query.bellStyle
+          : config.terminal.bellStyle
     },
-    allowreplay: config.options.challengeButton || (validator.isBoolean(req.headers.allowreplay + '') ? myutil.parseBool(req.headers.allowreplay) : false),
+    allowreplay:
+      config.options.challengeButton ||
+      (validator.isBoolean(req.headers.allowreplay + '')
+        ? myutil.parseBool(req.headers.allowreplay)
+        : false),
     allowreauth: config.options.allowreauth || false,
-    mrhsession: ((validator.isAlphanumeric(req.headers.mrhsession + '') && req.headers.mrhsession) ? req.headers.mrhsession : 'none'),
+    mrhsession:
+      validator.isAlphanumeric(req.headers.mrhsession + '') &&
+      req.headers.mrhsession
+        ? req.headers.mrhsession
+        : 'none',
     serverlog: {
       client: config.serverlog.client || false,
       server: config.serverlog.server || false
     },
-    readyTimeout: (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
-      req.query.readyTimeout) || config.ssh.readyTimeout
+    readyTimeout:
+      (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
+        req.query.readyTimeout) ||
+      config.ssh.readyTimeout
   }
   if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
-  if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
+  if (req.session.ssh.header.background)
+    validator.escape(req.session.ssh.header.background)
 })
 
 // express error handling
@@ -192,7 +231,8 @@ app.use(function (err, req, res, next) {
 // socket.io
 // expose express session with socket.request.session
 io.use(function (socket, next) {
-  (socket.request.res) ? session(socket.request, socket.request.res, next)
+  socket.request.res
+    ? session(socket.request, socket.request.res, next)
     : next(next)
 })
 
