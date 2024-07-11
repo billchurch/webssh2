@@ -5,7 +5,7 @@
     ".gitignore"
   ],
   "bin": "./index.js",
-  "description": "A Websocket to SSH2 gateway using term.js, socket.io, ssh2, and express",
+  "description": "A Websocket to SSH2 gateway using xterm.js, socket.io, ssh2",
   "homepage": "https://github.com/billchurch/WebSSH2",
   "keywords": [
     "ssh",

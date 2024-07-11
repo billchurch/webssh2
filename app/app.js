@@ -11,7 +11,7 @@ const server = http.createServer()
 const io = socketIo(server, {
   path: '/ssh/socket.io',
   cors: {
-    origin: 'http://localhost:8080',
+    origin: config.origin || ["*.*"],
     methods: ['GET', 'POST'],
     credentials: true
   }
