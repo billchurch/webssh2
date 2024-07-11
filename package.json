@@ -1,6 +1,6 @@
 {
   "name": "webssh2-server",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "ignore": [
     ".gitignore"
   ],
@@ -32,16 +32,10 @@
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
   "dependencies": {
-    "basic-auth": "~2.0.1",
     "debug": "~4.1.0",
-    "express": "~4.16.4",
-    "express-session": "~1.15.6",
-    "morgan": "~1.9.1",
     "read-config-ng": "~3.0.7",
-    "serve-favicon": "~2.5.0",
     "socket.io": "~2.2.0",
-    "ssh2": "~0.8.9",
-    "validator": "~10.9.0"
+    "ssh2": "~0.8.9"
   },
   "scripts": {
     "start": "node index.js",

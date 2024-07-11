@@ -1,4 +1,4 @@
-"use strict";
+'use strict'
 /* jshint esversion: 6, asi: true, node: true */
 /*
  * index.js
@@ -7,24 +7,14 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  *
  */
-const { server, config } = require("./app/app");
+const { server, config } = require('./app/app')
 
 server.listen(config.listen.port, config.listen.ip, () => {
   console.log(
     `WebSSH2 service listening on ${config.listen.ip}:${config.listen.port}`
-  );
-});
+  )
+})
 
-server.on("error", function (err) {
-  if (err.code === "EADDRINUSE") {
-    config.listen.port++;
-    console.warn(
-      "WebSSH2 Address in use, retrying on port " + config.listen.port
-    );
-    setTimeout(function () {
-      server.listen(config.listen.port);
-    }, 250);
-  } else {
-    console.log("WebSSH2 server.listen ERROR: " + err.code);
-  }
-});
+server.on('error', function (err) {
+  console.log('WebSSH2 server.listen ERROR: ' + err.code)
+})
