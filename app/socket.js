@@ -59,11 +59,11 @@ function handleConnection(socket, config) {
   function handleAuthentication(socket, creds, config) {
     console.log(`SOCKET AUTHENTICATE: ${socket.id}`)
     if (isValidCredentials(creds)) {
-      console.log(`SOCKET AUTHENTICATE SUCCESS: ${socket.id}`)
+      console.log(`SOCKET CREDENTIALS VALID: ${socket.id}`)
       initializeConnection(socket, creds, config)
     } else {
-      console.log(`SOCKET AUTHENTICATE FAILED: ${socket.id}`)
-      socket.emit('auth_result', { success: false, message: 'Invalid credentials' })
+      console.log(`SOCKET CREDENTIALS INVALID: ${socket.id}`)
+      socket.emit('auth_result', { success: false, message: 'Invalid credentials format' })
     }
   }
 
@@ -77,9 +77,9 @@ function handleConnection(socket, config) {
     if (conn) {
       conn.end()
     }
-
+  
     conn = new SSH()
-
+  
     conn.on('ready', () => {
       console.log(`SSH CONNECTION READY: ${socket.id}`)
       socket.emit('auth_result', { success: true })
@@ -88,12 +88,16 @@ function handleConnection(socket, config) {
       setupSSHListeners(socket, creds)
       initializeShell(socket, creds)
     })
-
+  
     conn.on('error', err => {
       console.log(`SSH CONNECTION ERROR: ${socket.id}`, err)
-      handleError(socket, 'SSH CONNECTION ERROR', err)
+      if (err.level === 'client-authentication') {
+        socket.emit('auth_result', { success: false, message: 'Authentication failed' })
+      } else {
+        handleError(socket, 'SSH CONNECTION ERROR', err)
+      }
     })
-
+  
     conn.connect(getSSHConfig(creds, config))
   }
 
@@ -293,8 +297,12 @@ function handleConnection(socket, config) {
    * @returns {boolean} Whether the credentials are valid
    */
   function isValidCredentials(credentials) {
-    // Implement your credential validation logic here
-    return credentials && credentials.username && credentials.password
+    // Basic format validation
+    return credentials && 
+           typeof credentials.username === 'string' && 
+           typeof credentials.password === 'string' &&
+           typeof credentials.host === 'string' &&
+           typeof credentials.port === 'number'
   }
 
   /**
