@@ -253,7 +253,6 @@ function validateConfig(config) {
   if (!valid) {
     throw new Error('Config validation error: ' + ajv.errorsText(validate.errors))
   }
-  console.log("config: ", JSON.stringify(config, null, 2))
   return config
 }
 
