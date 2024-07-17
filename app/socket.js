@@ -83,8 +83,8 @@ function handleConnection(socket, config) {
     conn.on('ready', () => {
       console.log(`SSH CONNECTION READY: ${socket.id}`)
       socket.emit('auth_result', { success: true })
-      socket.emit('allowreplay', config.options.allowReplay || false)
-      socket.emit('allowreauth', config.options.allowreauth || false)
+      socket.emit('allowReplay', config.options.allowReplay || false)
+      socket.emit('allowReauth', config.options.allowReauth || false)
       setupSSHListeners(socket, creds)
       initializeShell(socket, creds)
     })
@@ -245,7 +245,7 @@ function handleConnection(socket, config) {
   
     if (controlData === 'replayCredentials' && stream && credentials) {
       replayCredentials(socket, stream, credentials, config);
-    } else if (controlData === 'reauth' && config.options.allowreauth) {
+    } else if (controlData === 'reauth' && config.options.allowReauth) {
       handleReauth(socket);
     }
   }

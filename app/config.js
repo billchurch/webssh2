@@ -32,7 +32,7 @@ const Ajv = require('ajv')
  * @property {string} header.background - Header background color
  * @property {Object} options - Options configuration
  * @property {boolean} options.challengeButton - Challenge button enabled
- * @property {boolean} options.allowreauth - Allow reauthentication
+ * @property {boolean} options.allowReauth - Allow reauthentication
  * @property {Object} algorithms - Encryption algorithms
  * @property {string[]} algorithms.kex - Key exchange algorithms
  * @property {string[]} algorithms.cipher - Cipher algorithms
@@ -81,7 +81,7 @@ const defaultConfig = {
   },
   options: {
     challengeButton: true,
-    allowreauth: false,
+    allowReauth: false,
     allowReplay: false
   },
   algorithms: {
@@ -179,10 +179,10 @@ const configSchema = {
       type: 'object',
       properties: {
         challengeButton: { type: 'boolean' },
-        allowreauth: { type: 'boolean' },
+        allowReauth: { type: 'boolean' },
         allowReplay: { type: 'boolean' }
       },
-      required: ['challengeButton', 'allowreauth', 'allowReplay']
+      required: ['challengeButton', 'allowReauth', 'allowReplay']
     },
     algorithms: {
       type: 'object',
