@@ -1,6 +1,7 @@
 // server
 // app/connectionHandler.js
 var path = require('path');
+var fs = require('fs');
 var extend = require('util')._extend;
 
 function handleConnection(req, res, urlParams) {
@@ -22,10 +23,18 @@ function handleConnection(req, res, urlParams) {
       }
     };
   
-    // You can process connectionParams here or pass them to the client
-  
-    // Serve the client HTML
-    res.sendFile(path.join(clientPath, 'client.htm'));
+    // Read the client.htm file
+    fs.readFile(path.join(clientPath, 'client.htm'), 'utf8', function(err, data) {
+      if (err) {
+        return res.status(500).send('Error loading client file');
+      }
+      
+      // Replace relative paths with the correct path
+      var modifiedHtml = data.replace(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/');
+      
+      // Send the modified HTML
+      res.send(modifiedHtml);
+    });
 }
 
 module.exports = handleConnection;

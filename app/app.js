@@ -16,22 +16,22 @@ const sshRoutes = require('./routes')
  * @returns {express.Application} The Express application instance
  */
 function createApp() {
-  const app = express()
+  var app = express();
 
   // Resolve the correct path to the webssh2_client module
-  const clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public')
+  var clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public');
 
   // Handle POST and GET parameters
-  app.use(bodyParser.urlencoded({ extended: true }))
-  app.use(bodyParser.json())
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json());
 
-  // Serve static files from the webssh2_client module
-  app.use('/ssh', express.static(clientPath))
+  // Serve static files from the webssh2_client module with a custom prefix
+  app.use('/ssh/assets', express.static(clientPath));
 
   // Use the SSH routes
-  app.use('/ssh', sshRoutes)
+  app.use('/ssh', sshRoutes);
 
-  return app
+  return app;
 }
 
 /**
