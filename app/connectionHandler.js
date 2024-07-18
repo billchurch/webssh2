@@ -16,10 +16,14 @@ function handleConnection(req, res, urlParams) {
     extend(connectionParams, req.body || {});
   
     // Inject configuration
-    res.locals.webssh2Config = {
+    var config = {
       socket: {
         url: req.protocol + '://' + req.get('host'),
         path: '/ssh/socket.io'
+      },
+      ssh: {
+        host: connectionParams.host || '',
+        port: connectionParams.port || 22
       }
     };
   
@@ -31,6 +35,9 @@ function handleConnection(req, res, urlParams) {
       
       // Replace relative paths with the correct path
       var modifiedHtml = data.replace(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/');
+      
+      // Inject the configuration into the HTML
+      modifiedHtml = modifiedHtml.replace('window.webssh2Config = null;', 'window.webssh2Config = ' + JSON.stringify(config) + ';');
       
       // Send the modified HTML
       res.send(modifiedHtml);
