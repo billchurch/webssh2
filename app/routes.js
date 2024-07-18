@@ -1,9 +1,9 @@
 // server
 // /app/routes.js
-var express = require('express');
-var router = express.Router();
-var handleConnection = require('./connectionHandler');
-var basicAuth = require('basic-auth');
+const express = require('express');
+const router = express.Router();
+const handleConnection = require('./connectionHandler');
+const basicAuth = require('basic-auth');
 
 function auth(req, res, next) {
   var credentials = basicAuth(req);
@@ -11,7 +11,8 @@ function auth(req, res, next) {
     res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH2"');
     return res.status(401).send('Authentication required.');
   }
-  req.sshCredentials = credentials;
+  // Store credentials in session
+  req.session.sshCredentials = credentials;
   next();
 }
 
@@ -22,11 +23,7 @@ router.get('/', function(req, res) {
 
 // Scenario 2: Auth required
 router.get('/host/:host', auth, function(req, res) {
-  handleConnection(req, res, { 
-    host: req.params.host,
-    username: req.sshCredentials.name,
-    password: req.sshCredentials.pass
-  });
+  handleConnection(req, res, { host: req.params.host });
 });
 
 module.exports = router;

@@ -6,6 +6,7 @@ const path = require('path')
 const fs = require('fs')
 const readConfig = require('read-config-ng')
 const Ajv = require('ajv')
+const crypto = require('crypto')
 
 /**
  * @typedef {Object} Config
@@ -106,6 +107,10 @@ const defaultConfig = {
     ],
     hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
     compress: ['none', 'zlib@openssh.com', 'zlib']
+  },
+  session: {
+    secret: generateSecureSecret(),
+    name: 'webssh2.sid'
   },
   serverlog: {
     client: false,
@@ -208,6 +213,14 @@ const configSchema = {
       },
       required: ['kex', 'cipher', 'hmac', 'compress']
     },
+    session: {
+      type: 'object',
+      properties: {
+        secret: { type: 'string' },
+        name: { type: 'string' }
+      },
+      required: ['secret', 'name']
+    },
     serverlog: {
       type: 'object',
       properties: {
@@ -271,19 +284,25 @@ function logError(message, error) {
 }
 
 /**
- * Loads the configuration
- * @returns {Config} The loaded configuration
+ * Loads and merges the configuration
+ * @returns {Config} The merged configuration
  */
 function loadConfig() {
   const configPath = getConfigPath()
 
   try {
     if (fs.existsSync(configPath)) {
-      const config = readConfigFile(configPath)
-      return validateConfig(config)
+      const providedConfig = readConfigFile(configPath)
+      
+      // Deep merge the provided config with the default config
+      const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
+      
+      const validatedConfig = validateConfig(mergedConfig)
+      console.log('Merged and validated configuration')
+      return validatedConfig
     } else {
       logError(
-        '\n\nERROR: Missing config.json for webssh. Current config: ' +
+        '\n\nERROR: Missing config.json for webssh. Using default config: ' +
           JSON.stringify(defaultConfig) +
           '\n\n  See config.json.sample for details\n\n'
       )
@@ -291,7 +310,7 @@ function loadConfig() {
     }
   } catch (err) {
     logError(
-      '\n\nERROR: Missing config.json for webssh. Current config: ' +
+      '\n\nERROR: Problem loading config.json for webssh. Using default config: ' +
         JSON.stringify(defaultConfig) +
         '\n\n  See config.json.sample for details\n\n',
       err
@@ -300,6 +319,32 @@ function loadConfig() {
   }
 }
 
+/**
+ * Generates a secure random session secret
+ * @returns {string} A random 32-byte hex string
+ */
+function generateSecureSecret() {
+  return crypto.randomBytes(32).toString('hex')
+}
+
+/**
+ * Deep merges two objects
+ * @param {Object} target - The target object to merge into
+ * @param {Object} source - The source object to merge from
+ * @returns {Object} The merged object
+ */
+function deepMerge(target, source) {
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (source[key] instanceof Object && !Array.isArray(source[key])) {
+        target[key] = deepMerge(target[key] || {}, source[key])
+      } else {
+        target[key] = source[key]
+      }
+    }
+  }
+  return target
+}
 /**
  * The loaded configuration
  * @type {Config}

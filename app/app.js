@@ -7,6 +7,8 @@ const express = require('express')
 const socketIo = require('socket.io')
 const path = require('path')
 const bodyParser = require('body-parser')
+const session = require('express-session')
+const sharedsession = require("express-socket.io-session")
 const config = require('./config')
 const socketHandler = require('./socket')
 const sshRoutes = require('./routes')
@@ -16,10 +18,19 @@ const sshRoutes = require('./routes')
  * @returns {express.Application} The Express application instance
  */
 function createApp() {
-  var app = express();
+  const app = express();
 
   // Resolve the correct path to the webssh2_client module
-  var clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public');
+  const clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public');
+
+  // Set up session middleware
+  const sessionMiddleware = session({
+    secret: config.session.secret || 'webssh2_secret',
+    resave: false,
+    saveUninitialized: true,
+    name: config.session.name || 'webssh2.sid'
+  });
+  app.use(sessionMiddleware);
 
   // Handle POST and GET parameters
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -31,7 +42,7 @@ function createApp() {
   // Use the SSH routes
   app.use('/ssh', sshRoutes);
 
-  return app;
+  return { app, sessionMiddleware };
 }
 
 /**
@@ -46,13 +57,21 @@ function createServer(app) {
 /**
  * Configures Socket.IO with the given server
  * @param {http.Server} server - The HTTP server instance
+ * @param {Function} sessionMiddleware - The session middleware
  * @returns {import('socket.io').Server} The Socket.IO server instance
  */
-function configureSocketIO(server) {
-  return socketIo(server, {
+function configureSocketIO(server, sessionMiddleware) {
+  const io = socketIo(server, {
     path: '/ssh/socket.io',
     cors: getCorsConfig()
-  })
+  });
+
+  // Share session with io sockets
+  io.use(sharedsession(sessionMiddleware, {
+    autoSave: true
+  }));
+
+  return io;
 }
 
 /**
@@ -80,9 +99,9 @@ function setupSocketIOListeners(io) {
  * @returns {Object} An object containing the server, io, and app instances
  */
 function startServer() {
-  const app = createApp()
+  const { app, sessionMiddleware } = createApp()
   const server = createServer(app)
-  const io = configureSocketIO(server)
+  const io = configureSocketIO(server, sessionMiddleware)
 
   // Set up Socket.IO listeners
   setupSocketIOListeners(io)

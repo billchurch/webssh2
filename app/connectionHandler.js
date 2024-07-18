@@ -17,18 +17,16 @@ function handleConnection(req, res, urlParams) {
   
     // Inject configuration
     var config = {
-      socket: {
-        url: req.protocol + '://' + req.get('host'),
-        path: '/ssh/socket.io'
-      },
-      ssh: {
-        host: connectionParams.host || '',
-        port: connectionParams.port || 22,
-        username: connectionParams.username || '',
-        password: connectionParams.password || ''
-      },
-      autoConnect: !!(connectionParams.host && connectionParams.username && connectionParams.password)
-    };
+        socket: {
+          url: req.protocol + '://' + req.get('host'),
+          path: '/ssh/socket.io'
+        },
+        ssh: {
+          host: urlParams.host || '',
+          port: urlParams.port || 22
+        },
+        autoConnect: !!req.session.sshCredentials
+      };
   
     // Read the client.htm file
     fs.readFile(path.join(clientPath, 'client.htm'), 'utf8', function(err, data) {

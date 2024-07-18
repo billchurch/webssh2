@@ -59,6 +59,13 @@ function handleConnection(socket, config) {
    */
   function handleAuthentication(socket, creds, config) {
     console.log(`SOCKET AUTHENTICATE: ${socket.id}`)
+    const sessionCreds = socket.handshake.session.sshCredentials;
+    
+    if (sessionCreds) {
+      creds.username = sessionCreds.name;
+      creds.password = sessionCreds.pass;
+    }
+    
     if (isValidCredentials(creds)) {
       console.log(`SOCKET CREDENTIALS VALID: ${socket.id}`)
       initializeConnection(socket, creds, config)
