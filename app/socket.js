@@ -1,3 +1,4 @@
+// server
 // app/socket.js
 'use strict'
 
