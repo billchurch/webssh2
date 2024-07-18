@@ -2,16 +2,56 @@
 'use strict'
 
 const http = require('http')
+const express = require('express')
 const socketIo = require('socket.io')
+const path = require('path')
+const bodyParser = require('body-parser')
 const config = require('./config')
 const socketHandler = require('./socket')
 
 /**
+ * Creates and configures the Express application
+ * @returns {express.Application} The Express application instance
+ */
+function createApp() {
+  const app = express()
+
+  // Resolve the correct path to the webssh2_client module
+  const clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public')
+
+  // Middleware to inject configuration
+  app.use('/ssh', (req, res, next) => {
+    res.locals.webssh2Config = {
+      socket: {
+        url: `${req.protocol}://${req.get('host')}`,
+        path: '/ssh/socket.io'
+      }
+    }
+    next()
+  })
+
+  // Serve static files from the webssh2_client module
+  app.use('/ssh', express.static(clientPath))
+
+  // Handle POST and GET parameters
+  app.use(bodyParser.urlencoded({ extended: true }))
+  app.use(bodyParser.json())
+
+  // Serve client.htm with injected configuration
+  app.get('/ssh', (req, res) => {
+    res.sendFile(path.join(clientPath, 'client.htm'))
+  })
+
+  return app
+}
+
+/**
  * Creates and configures the HTTP server
+ * @param {express.Application} app - The Express application instance
  * @returns {http.Server} The HTTP server instance
  */
-function createServer() {
-  return http.createServer()
+function createServer(app) {
+  return http.createServer(app)
 }
 
 /**
@@ -78,13 +118,35 @@ function setupDisconnectListener(socket) {
   })
 }
 
-// Create and configure the server
-const server = createServer()
-const io = configureSocketIO(server)
+/**
+ * Initializes and starts the server
+ * @returns {Object} An object containing the server, io, and app instances
+ */
+function startServer() {
+  const app = createApp()
+  const server = createServer(app)
+  const io = configureSocketIO(server)
 
-// Set up Socket.IO listeners
-setupSocketIOListeners(io)
+  // Set up Socket.IO listeners
+  setupSocketIOListeners(io)
 
-// Log the config object to verify its contents
+  // Start the server
+  server.listen(config.listen.port, config.listen.ip, () => {
+    console.log(`WebSSH2 service listening on ${config.listen.ip}:${config.listen.port}`)
+  })
 
-module.exports = { server, config, io }
+  server.on('error', handleServerError)
+
+  return { server, io, app }
+}
+
+/**
+ * Handles server errors
+ * @param {Error} err - The error object
+ */
+function handleServerError(err) {
+  console.error('WebSSH2 server.listen ERROR:', err.code)
+}
+
+// Don't start the server immediately, export the function instead
+module.exports = { startServer, config }

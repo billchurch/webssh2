@@ -33,10 +33,13 @@
   },
   "dependencies": {
     "ajv": "^4.11.8",
+    "body-parser": "^1.15.2",
     "debug": "~4.1.0",
+    "express": "^4.14.1",
     "read-config-ng": "~3.0.7",
     "socket.io": "~2.2.0",
-    "ssh2": "~0.8.9"
+    "ssh2": "~0.8.9",
+    "webssh2_client": "git+ssh://git@github.com/billchurch/webssh2_client.git"
   },
   "scripts": {
     "start": "node index.js",
