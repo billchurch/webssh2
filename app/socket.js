@@ -83,7 +83,9 @@ function handleConnection(socket, config) {
     conn.on('ready', () => {
       console.log(`SSH CONNECTION READY: ${socket.id}`)
       socket.emit('auth_result', { success: true })
+      console.log('allowReplay:', config.options.allowReplay)
       socket.emit('allowReplay', config.options.allowReplay || false)
+      console.log('allowReauth:', config.options.allowReauth)
       socket.emit('allowReauth', config.options.allowReauth || false)
       setupSSHListeners(socket, creds)
       initializeShell(socket, creds)
