@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "ajv": "^4.11.8",
+    "basic-auth": "^2.0.1",
     "body-parser": "^1.15.2",
     "debug": "~4.1.0",
     "express": "^4.14.1",

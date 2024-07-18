@@ -23,8 +23,11 @@ function handleConnection(req, res, urlParams) {
       },
       ssh: {
         host: connectionParams.host || '',
-        port: connectionParams.port || 22
-      }
+        port: connectionParams.port || 22,
+        username: connectionParams.username || '',
+        password: connectionParams.password || ''
+      },
+      autoConnect: !!(connectionParams.host && connectionParams.username && connectionParams.password)
     };
   
     // Read the client.htm file
