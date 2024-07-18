@@ -1,3 +1,4 @@
+// server
 // app/app.js
 'use strict'
 
@@ -8,6 +9,7 @@ const path = require('path')
 const bodyParser = require('body-parser')
 const config = require('./config')
 const socketHandler = require('./socket')
+const sshRoutes = require('./routes')
 
 /**
  * Creates and configures the Express application
@@ -19,28 +21,15 @@ function createApp() {
   // Resolve the correct path to the webssh2_client module
   const clientPath = path.resolve(__dirname, '..', 'node_modules', 'webssh2_client', 'client', 'public')
 
-  // Middleware to inject configuration
-  app.use('/ssh', (req, res, next) => {
-    res.locals.webssh2Config = {
-      socket: {
-        url: `${req.protocol}://${req.get('host')}`,
-        path: '/ssh/socket.io'
-      }
-    }
-    next()
-  })
-
-  // Serve static files from the webssh2_client module
-  app.use('/ssh', express.static(clientPath))
-
   // Handle POST and GET parameters
   app.use(bodyParser.urlencoded({ extended: true }))
   app.use(bodyParser.json())
 
-  // Serve client.htm with injected configuration
-  app.get('/ssh', (req, res) => {
-    res.sendFile(path.join(clientPath, 'client.htm'))
-  })
+  // Serve static files from the webssh2_client module
+  app.use('/ssh', express.static(clientPath))
+
+  // Use the SSH routes
+  app.use('/ssh', sshRoutes)
 
   return app
 }
@@ -84,38 +73,6 @@ function getCorsConfig() {
  */
 function setupSocketIOListeners(io) {
   socketHandler(io, config)
-}
-
-/**
- * Handles a new Socket.IO connection
- * @param {import('socket.io').Socket} socket - The Socket.IO socket
- */
-function handleConnection(socket) {
-  logNewConnection(socket)
-  setupDisconnectListener(socket)
-}
-
-/**
- * Logs information about a new connection
- * @param {import('socket.io').Socket} socket - The Socket.IO socket
- */
-function logNewConnection(socket) {
-  console.log(
-    'New connection:',
-    socket.id,
-    'Transport:',
-    socket.conn.transport.name
-  )
-}
-
-/**
- * Sets up the disconnect listener for a socket
- * @param {import('socket.io').Socket} socket - The Socket.IO socket
- */
-function setupDisconnectListener(socket) {
-  socket.on('disconnect', (reason) => {
-    console.log('Client disconnected:', socket.id, reason)
-  })
 }
 
 /**
