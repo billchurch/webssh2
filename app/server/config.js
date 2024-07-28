@@ -22,6 +22,13 @@ const configDefault = {
     path: '/ssh/socket.io',
     origins: ['localhost:2222'],
   },
+  ssh_proxy: {
+     ssh_proxy_enabled: false,
+     ssh_proxy_host: null,
+     ssh_proxy_user: null,
+     ssh_proxy_password: null,
+     ssh_proxy_privatekey: null,
+  },
   express: {
     secret: crypto.randomBytes(20).toString('hex'),
     name: 'WebSSH2',
