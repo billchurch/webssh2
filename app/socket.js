@@ -6,9 +6,6 @@ const debug = require('debug')
 const debugWebSSH2 = require('debug')('WebSSH2')
 const SSH = require('ssh2').Client
 
-let conn = null;
-let stream = null;
-
 /**
  * Handles WebSocket connections for SSH
  * @param {import('socket.io').Server} io - The Socket.IO server instance
@@ -24,12 +21,21 @@ module.exports = function (io, config) {
  * @param {Object} config - The configuration object
  */
 function handleConnection(socket, config) {
+  let conn = null;
+  let stream = null;
+  let authenticated = false;
   let isConnectionClosed = false;
 
-  console.log(`SOCKET CONNECT: ${socket.id}`);
+  console.log(`SOCKET CONNECT: ${socket.id}, URL: ${socket.handshake.url}`);
 
   removeExistingListeners(socket)
   setupInitialSocketListeners(socket, config)
+
+  // Emit an event to the client to request authentication
+  if (!authenticated) {
+    console.log(`Requesting authentication for ${socket.id} and authenticated is ${authenticated}`);
+    socket.emit('request_auth');
+  }
 
   /**
    * Removes existing listeners to prevent duplicates
@@ -47,33 +53,39 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    */
   function setupInitialSocketListeners(socket, config) {
+    socket.on('error', (error) => console.error(`Socket error for ${socket.id}:`, error));
     socket.on('authenticate', creds => handleAuthentication(socket, creds, config))
-    socket.on('disconnect', reason => handleDisconnect(socket, reason))
+    socket.on('disconnect', (reason) => {
+      console.log(`Client ${socket.id} disconnected. Reason: ${reason}`);
+      console.log('Socket state at disconnect:', socket.conn.transport.readyState);
+      if (conn) {
+        conn.end();
+        conn = null;
+      }
+      if (stream) {
+        stream.end();
+        stream = null;
+      }
+    });
   }
 
-  /**
-   * Handles authentication attempts
-   * @param {import('socket.io').Socket} socket - The Socket.IO socket
-   * @param {Credentials} creds - The credentials for authentication
-   * @param {Object} config - The configuration object
-   */
-  function handleAuthentication(socket, creds, config) {
-    console.log(`SOCKET AUTHENTICATE: ${socket.id}`)
-    const sessionCreds = socket.handshake.session.sshCredentials;
-    
-    if (sessionCreds) {
-      creds.username = sessionCreds.name;
-      creds.password = sessionCreds.pass;
-    }
-    
-    if (isValidCredentials(creds)) {
-      console.log(`SOCKET CREDENTIALS VALID: ${socket.id}`)
-      initializeConnection(socket, creds, config)
-    } else {
-      console.log(`SOCKET CREDENTIALS INVALID: ${socket.id}`)
-      socket.emit('auth_result', { success: false, message: 'Invalid credentials format' })
-    }
+/**
+ * Handles authentication attempts
+ * @param {import('socket.io').Socket} socket - The Socket.IO socket
+ * @param {Credentials} creds - The credentials for authentication
+ * @param {Object} config - The configuration object
+ */
+function handleAuthentication(socket, creds, config) {
+  console.log(`SOCKET AUTHENTICATE: ${socket.id}, Host: ${creds.host}`);
+  
+  if (isValidCredentials(creds)) {
+    console.log(`SOCKET CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`);
+    initializeConnection(socket, creds, config);
+  } else {
+    console.log(`SOCKET CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`);
+    socket.emit('auth_result', { success: false, message: 'Invalid credentials format' });
   }
+}
 
   /**
    * Initializes an SSH connection
@@ -82,6 +94,7 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    */
   function initializeConnection(socket, creds, config) {
+    console.log(`INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`);
     if (conn) {
       conn.end()
     }
@@ -89,7 +102,8 @@ function handleConnection(socket, config) {
     conn = new SSH()
   
     conn.on('ready', () => {
-      console.log(`SSH CONNECTION READY: ${socket.id}`)
+      authenticated = true;
+      console.log(`SSH CONNECTION READY: ${socket.id}, Host: ${creds.host}`);
       socket.emit('auth_result', { success: true })
       console.log('allowReplay:', config.options.allowReplay)
       socket.emit('allowReplay', config.options.allowReplay || false)
@@ -100,7 +114,7 @@ function handleConnection(socket, config) {
     })
   
     conn.on('error', err => {
-      console.log(`SSH CONNECTION ERROR: ${socket.id}`, err)
+      console.error(`SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`);
       if (err.level === 'client-authentication') {
         socket.emit('auth_result', { success: false, message: 'Authentication failed' })
       } else {
