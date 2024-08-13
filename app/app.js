@@ -3,6 +3,7 @@
 'use strict'
 
 const createDebug = require('debug')
+const debug = createDebug('webssh2')
 const http = require('http')
 const express = require('express')
 const socketIo = require('socket.io')
