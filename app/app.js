@@ -2,6 +2,7 @@
 // app/app.js
 'use strict'
 
+const createDebug = require('debug')
 const http = require('http')
 const express = require('express')
 const socketIo = require('socket.io')
@@ -60,9 +61,14 @@ function createServer(app) {
  * @param {Function} sessionMiddleware - The session middleware
  * @returns {import('socket.io').Server} The Socket.IO server instance
  */
+// var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
+
 function configureSocketIO(server, sessionMiddleware) {
   const io = socketIo(server, {
+    serveClient: false,
     path: '/ssh/socket.io',
+    pingTimeout: 60000,  // 1 minute
+    pingInterval: 25000, // 25 seconds
     cors: getCorsConfig()
   });
 

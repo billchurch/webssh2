@@ -2,8 +2,9 @@
 // app/socket.js
 'use strict'
 
-const debug = require('debug')
-const debugWebSSH2 = require('debug')('WebSSH2')
+const createDebug = require('debug')
+const { header } = require('./config')
+const debug = createDebug('webssh2:socket')
 const SSH = require('ssh2').Client
 
 /**
@@ -26,15 +27,15 @@ function handleConnection(socket, config) {
   let authenticated = false;
   let isConnectionClosed = false;
 
-  console.log(`SOCKET CONNECT: ${socket.id}, URL: ${socket.handshake.url}`);
+  debug(`CONNECT: ${socket.id}, URL: ${socket.handshake.url}`);
 
   removeExistingListeners(socket)
   setupInitialSocketListeners(socket, config)
 
   // Emit an event to the client to request authentication
   if (!authenticated) {
-    console.log(`Requesting authentication for ${socket.id} and authenticated is ${authenticated}`);
-    socket.emit('request_auth');
+    debug(`Requesting authentication for ${socket.id} and authenticated is ${authenticated}`);
+    socket.emit('authentication', { action: 'request_auth' });
   }
 
   /**
@@ -56,8 +57,8 @@ function handleConnection(socket, config) {
     socket.on('error', (error) => console.error(`Socket error for ${socket.id}:`, error));
     socket.on('authenticate', creds => handleAuthentication(socket, creds, config))
     socket.on('disconnect', (reason) => {
-      console.log(`Client ${socket.id} disconnected. Reason: ${reason}`);
-      console.log('Socket state at disconnect:', socket.conn.transport.readyState);
+      debug(`Client ${socket.id} disconnected. Reason: ${reason}`);
+      debug('Socket state at disconnect:', socket.conn.transport.readyState);
       if (conn) {
         conn.end();
         conn = null;
@@ -72,18 +73,20 @@ function handleConnection(socket, config) {
 /**
  * Handles authentication attempts
  * @param {import('socket.io').Socket} socket - The Socket.IO socket
+ * 
  * @param {Credentials} creds - The credentials for authentication
  * @param {Object} config - The configuration object
  */
 function handleAuthentication(socket, creds, config) {
-  console.log(`SOCKET AUTHENTICATE: ${socket.id}, Host: ${creds.host}`);
+  debug(`AUTHENTICATE: ${socket.id}, Host: ${creds.host}`);
   
   if (isValidCredentials(creds)) {
-    console.log(`SOCKET CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`);
+    debug(`CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`);
     initializeConnection(socket, creds, config);
   } else {
-    console.log(`SOCKET CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`);
-    socket.emit('auth_result', { success: false, message: 'Invalid credentials format' });
+    debug(`CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`);
+    socket.emit('authentication', { success: false, message: 'Invalid credentials format' });
+
   }
 }
 
@@ -94,7 +97,7 @@ function handleAuthentication(socket, creds, config) {
    * @param {Object} config - The configuration object
    */
   function initializeConnection(socket, creds, config) {
-    console.log(`INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`);
+    debug(`INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`);
     if (conn) {
       conn.end()
     }
@@ -103,12 +106,20 @@ function handleAuthentication(socket, creds, config) {
   
     conn.on('ready', () => {
       authenticated = true;
-      console.log(`SSH CONNECTION READY: ${socket.id}, Host: ${creds.host}`);
-      socket.emit('auth_result', { success: true })
-      console.log('allowReplay:', config.options.allowReplay)
-      socket.emit('allowReplay', config.options.allowReplay || false)
-      console.log('allowReauth:', config.options.allowReauth)
-      socket.emit('allowReauth', config.options.allowReauth || false)
+      debug(`SSH CONNECTION READY: ${socket.id}, Host: ${creds.host}`);
+      socket.emit('authentication', { action: 'auth_result', success: true });
+
+      // Emit consolidated permissions
+      socket.emit('permissions', {
+        allowReplay: config.options.allowReplay || false,
+        allowReauth: config.options.allowReauth || false
+      });
+
+      if (config.header && config.header.text !== null) {
+        debug('header:', config.header)
+        socket.emit('updateUI', { header: config.header } || { header: { text: '', background: '' } })
+      }
+    
       setupSSHListeners(socket, creds)
       initializeShell(socket, creds)
     })
@@ -116,7 +127,7 @@ function handleAuthentication(socket, creds, config) {
     conn.on('error', err => {
       console.error(`SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`);
       if (err.level === 'client-authentication') {
-        socket.emit('auth_result', { success: false, message: 'Authentication failed' })
+        socket.emit('authentication', { action: 'auth_result', success: false, message: 'Authentication failed' })
       } else {
         handleError(socket, 'SSH CONNECTION ERROR', err)
       }
@@ -164,7 +175,7 @@ function handleAuthentication(socket, creds, config) {
             message: code || signal ? `CODE: ${code} SIGNAL: ${signal}` : undefined
           })
         })
-        stream.stderr.on('data', data => console.log('STDERR: ' + data))
+        stream.stderr.on('data', data => debug('STDERR: ' + data))
       }
     )
   }
@@ -183,7 +194,7 @@ function handleAuthentication(socket, creds, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHEnd(socket) {
-    console.log(`SSH CONNECTION ENDED: ${socket.id}`)
+    debug(`SSH CONNECTION ENDED: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -192,7 +203,7 @@ function handleAuthentication(socket, creds, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHClose(socket) {
-    console.log(`SSH CONNECTION CLOSED: ${socket.id}`)
+    debug(`SSH CONNECTION CLOSED: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -219,7 +230,7 @@ function handleAuthentication(socket, creds, config) {
    * @param {string} reason - The reason for disconnection
    */
   function handleDisconnect(socket, reason) {
-    console.log(`SOCKET DISCONNECT: ${socket.id}, Reason: ${reason}`)
+    debug(`DISCONNECT: ${socket.id}, Reason: ${reason}`)
     handleConnectionClose(socket)
   }
 
@@ -234,11 +245,11 @@ function handleAuthentication(socket, creds, config) {
       try {
         stream.write(data)
       } catch (error) {
-        console.log('Error writing to stream:', error.message)
+        debug('Error writing to stream:', error.message)
         handleConnectionClose(socket)
       }
     } else if (isConnectionClosed) {
-      console.log('Attempted to write to closed connection')
+      debug('Attempted to write to closed connection')
       socket.emit('connection_closed')
     }
   }
@@ -265,7 +276,7 @@ function handleAuthentication(socket, creds, config) {
    * @param {Object} config - The configuration object
    */
   function handleControl(socket, stream, credentials, controlData, config) {
-    console.log(`Received control data: ${controlData}`);
+    debug(`Received control data: ${controlData}`);
   
     if (controlData === 'replayCredentials' && stream && credentials) {
       replayCredentials(socket, stream, credentials, config);
@@ -285,10 +296,10 @@ function handleAuthentication(socket, creds, config) {
     let allowReplay = config.options.allowReplay || false;
     
     if (allowReplay) {
-      console.log(`Replaying credentials for ${socket.id}`);
+      debug(`Replaying credentials for ${socket.id}`);
       stream.write(credentials.password + '\n');
     } else {
-      console.log(`Credential replay not allowed for ${socket.id}`);
+      debug(`Credential replay not allowed for ${socket.id}`);
     }
   }
 
@@ -297,9 +308,9 @@ function handleAuthentication(socket, creds, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleReauth(socket) {
-    console.log(`Reauthentication requested for ${socket.id}`);
+    debug(`Reauthentication requested for ${socket.id}`);
+    socket.emit('authentication', { action: 'reauth' });
     handleConnectionClose(socket);
-    socket.emit('reauth');
   }
 
   /**
@@ -310,7 +321,7 @@ function handleAuthentication(socket, creds, config) {
    */
   function handleError(socket, context, err) {
     const errorMessage = err ? `: ${err.message}` : ''
-    console.log(`WebSSH2 error: ${context}${errorMessage}`)
+    debug(`WebSSH2 error: ${context}${errorMessage}`)
     socket.emit('ssherror', `SSH ${context}${errorMessage}`)
     handleConnectionClose(socket)
   }
@@ -346,7 +357,7 @@ function handleAuthentication(socket, creds, config) {
       readyTimeout: credentials.readyTimeout,
       keepaliveInterval: credentials.keepaliveInterval,
       keepaliveCountMax: credentials.keepaliveCountMax,
-      debug: debug('ssh2')
+      debug: createDebug('webssh2:ssh')
     }
   }
 }
