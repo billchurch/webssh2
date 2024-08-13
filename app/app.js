@@ -55,22 +55,11 @@ function createApp() {
 }
 
 /**
- * Creates and configures the HTTP server
- * @param {express.Application} app - The Express application instance
- * @returns {http.Server} The HTTP server instance
- */
-function createServer(app) {
-  return http.createServer(app)
-}
-
-/**
  * Configures Socket.IO with the given server
  * @param {http.Server} server - The HTTP server instance
  * @param {Function} sessionMiddleware - The session middleware
  * @returns {import('socket.io').Server} The Socket.IO server instance
  */
-// var io = require('socket.io')(server, { serveClient: false, path: '/ssh/socket.io', origins: config.http.origins })
-
 function configureSocketIO(server, sessionMiddleware) {
   const io = socketIo(server, {
     serveClient: false,
@@ -91,6 +80,15 @@ function configureSocketIO(server, sessionMiddleware) {
 }
 
 /**
+ * Creates and configures the HTTP server
+ * @param {express.Application} app - The Express application instance
+ * @returns {http.Server} The HTTP server instance
+ */
+function createServer(app) {
+  return http.createServer(app)
+}
+
+/**
  * Gets the CORS configuration
  * @returns {Object} The CORS configuration object
  */
@@ -103,11 +101,11 @@ function getCorsConfig() {
 }
 
 /**
- * Sets up Socket.IO event listeners
- * @param {import('socket.io').Server} io - The Socket.IO server instance
+ * Handles server errors
+ * @param {Error} err - The error object
  */
-function setupSocketIOListeners(io) {
-  socketHandler(io, config)
+function handleServerError(err) {
+  console.error("WebSSH2 server.listen ERROR:", err.code)
 }
 
 /**
@@ -135,11 +133,11 @@ function startServer() {
 }
 
 /**
- * Handles server errors
- * @param {Error} err - The error object
+ * Sets up Socket.IO event listeners
+ * @param {import('socket.io').Server} io - The Socket.IO server instance
  */
-function handleServerError(err) {
-  console.error("WebSSH2 server.listen ERROR:", err.code)
+function setupSocketIOListeners(io) {
+  socketHandler(io, config)
 }
 
 // Don't start the server immediately, export the function instead

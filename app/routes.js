@@ -36,12 +36,10 @@ router.get('/host/:host', auth, function (req, res) {
   req.session.sshCredentials.host = host
   req.session.sshCredentials.port = port
 
-  // Sanitize the sshCredentials object before logging
+  // Sanitize and log the sshCredentials object
   const sanitizedCredentials = sanitizeObject(
     JSON.parse(JSON.stringify(req.session.sshCredentials))
   );
-
-  // Log the sanitized credentials
   debug('/ssh//host/ Credentials: ', sanitizedCredentials);
 
   handleConnection(req, res, { host: req.params.host })
