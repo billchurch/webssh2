@@ -86,12 +86,27 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    */
   function handleAuthentication(socket, creds, config) {
-    debug(`AUTHENTICATE: ${socket.id}, Host: ${creds.host}`)
+    // If reauth, creds from this function should take precedence
+    if (creds && isValidCredentials(creds)) {
+      // Store new credentials in session, overriding any existing ones
+      socket.handshake.session.sshCredentials = {
+        username: creds.username,
+        password: creds.password,
+        host: creds.host,
+        port: creds.port
+      }
 
-    if (isValidCredentials(creds)) {
-      debug(`CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`)
+      // Save the session after updating
+      socket.handshake.session.save((err) => {
+        if (err) {
+          console.error(`Failed to save session for ${socket.id}:`, err)
+        }
+      })
+
+      // Proceed with connection initialization using the new credentials
       initializeConnection(socket, creds, config)
     } else {
+      // Handle invalid credentials scenario
       debug(`CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`)
       socket.emit("authentication", {
         success: false,
@@ -331,8 +346,22 @@ function handleConnection(socket, config) {
    */
   function handleReauth(socket) {
     debug(`Reauthentication requested for ${socket.id}`)
-    socket.emit("authentication", { action: "reauth" })
-    handleConnectionClose(socket)
+
+    // Clear existing session credentials
+    socket.handshake.session.sshCredentials = null
+
+    // Save the session after modification
+    socket.handshake.session.save((err) => {
+      if (err) {
+        console.error(`Failed to save session for ${socket.id}:`, err)
+      }
+
+      // Notify client to reauthenticate
+      socket.emit("authentication", { action: "reauth" })
+
+      // Close the current connection to enforce reauthentication
+      handleConnectionClose(socket)
+    })
   }
 
   /**

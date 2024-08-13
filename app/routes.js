@@ -1,34 +1,48 @@
 // server
 // /app/routes.js
-const createDebug = require("debug")
-const debug = createDebug("webssh2:routes")
-const express = require("express")
+const createDebug = require('debug')
+const debug = createDebug('webssh2:routes')
+const express = require('express')
 const router = express.Router()
-const handleConnection = require("./connectionHandler")
-const basicAuth = require("basic-auth")
+const handleConnection = require('./connectionHandler')
+const basicAuth = require('basic-auth')
 
 function auth(req, res, next) {
-  debug("Authenticating user with HTTP Basic Auth")
+  debug('Authenticating user with HTTP Basic Auth')
   var credentials = basicAuth(req)
   if (!credentials) {
-    res.setHeader("WWW-Authenticate", 'Basic realm="WebSSH2"')
-    return res.status(401).send("Authentication required.")
+    res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH2"')
+    return res.status(401).send('Authentication required.')
   }
   // Store credentials in session
-  req.session.sshCredentials = credentials
+  req.session.sshCredentials = {
+    username: credentials.name,
+    password: credentials.pass
+  }
   next()
 }
 
 // Scenario 1: No auth required, uses websocket authentication instead
-router.get("/", function (req, res) {
-  debug("Accessed /ssh route")
+router.get('/', function (req, res) {
+  debug('Accessed / route')
   handleConnection(req, res)
 })
 
 // Scenario 2: Auth required, uses HTTP Basic Auth
-router.get("/host/:host", auth, function (req, res) {
+router.get('/host/:host', auth, function (req, res) {
   debug(`Accessed /ssh/host/${req.params.host} route`)
   handleConnection(req, res, { host: req.params.host })
 })
+
+// Clear credentials route
+router.post('/clear-credentials', function (req, res) {
+  req.session.sshCredentials = null
+  res.status(200).send('Credentials cleared.')
+})
+
+router.post("/force-reconnect", function (req, res) {
+  req.session.sshCredentials = null;
+  res.status(401).send("Authentication required.");
+});
 
 module.exports = router
