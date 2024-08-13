@@ -1,4 +1,4 @@
-'use strict'
+"use strict"
 // server
 // index.js
 /**
@@ -8,7 +8,7 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  */
 
-const { startServer, config } = require('./app/app')
+const { startServer, config } = require("./app/app")
 
 /**
  * Main function to start the application
