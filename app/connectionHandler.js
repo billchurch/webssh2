@@ -1,10 +1,13 @@
 // server
 // app/connectionHandler.js
+const createDebug = require("debug")
 var path = require("path")
 var fs = require("fs")
 var extend = require("util")._extend
+const debug = createDebug("webssh2:connectionHandler")
 
 function handleConnection(req, res, urlParams) {
+  debug("Handling connection")
   urlParams = urlParams || {}
 
   const clientPath = path.resolve(
@@ -31,7 +34,6 @@ function handleConnection(req, res, urlParams) {
       host: urlParams.host || sshCredentials.host || '',
       port: urlParams.port || sshCredentials.port || 22,
       username: sshCredentials.username || '',
-      password: sshCredentials.password || ''
     },
     autoConnect: !!req.session.sshCredentials
   }

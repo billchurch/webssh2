@@ -32,6 +32,16 @@ function handleConnection(socket, config) {
   removeExistingListeners(socket)
   setupInitialSocketListeners(socket, config)
 
+  if (socket.handshake.session.sshCredentials) {
+    const { username, password, host, port } =
+      socket.handshake.session.sshCredentials
+
+    if (username && password && host && port) {
+      handleAuthentication(socket, { username, password, host, port }, config)
+      return
+    }
+  }
+  
   // Emit an event to the client to request authentication
   if (!authenticated) {
     debug(
@@ -86,6 +96,13 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    */
   function handleAuthentication(socket, creds, config) {
+    if (!creds.username && !creds.password) {
+      creds.username = sshCredentials.username
+      creds.password = sshCredentials.password
+      creds.host = sshCredentials.host
+      creds.port = sshCredentials.port
+    }
+
     // If reauth, creds from this function should take precedence
     if (creds && isValidCredentials(creds)) {
       // Store new credentials in session, overriding any existing ones
