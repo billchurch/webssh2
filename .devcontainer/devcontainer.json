@@ -30,7 +30,8 @@
         "rvest.vs-code-prettier-eslint",
         "bierner.markdown-mermaid",
         "stylelint.vscode-stylelint",
-        "vivaxy.vscode-conventional-commits"
+        "vivaxy.vscode-conventional-commits",
+        "oderwat.indent-rainbow"
       ]
     }
   },
