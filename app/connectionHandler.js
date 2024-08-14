@@ -3,6 +3,7 @@
 const createDebug = require("debug")
 var path = require("path")
 var fs = require("fs")
+const config = require("./config")
 var extend = require("util")._extend
 const debug = createDebug("webssh2:connectionHandler")
 
@@ -34,6 +35,7 @@ function handleConnection(req, res, urlParams) {
       host: urlParams.host || sshCredentials.host || '',
       port: urlParams.port || sshCredentials.port || 22,
       username: sshCredentials.username || '',
+      term: urlParams.sshTerm || sshCredentials.term || config.ssh.term
     },
     autoConnect: !!req.session.sshCredentials
   }

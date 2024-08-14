@@ -33,15 +33,16 @@ function handleConnection(socket, config) {
   setupInitialSocketListeners(socket, config)
 
   if (socket.handshake.session.sshCredentials) {
-    const { username, password, host, port } =
-      socket.handshake.session.sshCredentials
+    const creds = socket.handshake.session.sshCredentials
+    const { username, password, host, port } = creds
+    debug(`Credentials from session: ${socket.id}, Host: ${host}`, creds)
 
     if (username && password && host && port) {
-      handleAuthentication(socket, { username, password, host, port }, config)
+      handleAuthentication(socket, creds, config)
       return
     }
   }
-  
+
   // Emit an event to the client to request authentication
   if (!authenticated) {
     debug(
@@ -209,10 +210,10 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {Credentials} creds - The user credentials
    */
-  function initializeShell(socket, creds) {
+  function initializeShell (socket, creds) {
     conn.shell(
       {
-        term: creds.term,
+        term: creds.term || 'vt69', // config.ssh.term,
         cols: creds.cols,
         rows: creds.rows
       },
@@ -329,11 +330,11 @@ function handleConnection(socket, config) {
    * @param {string} controlData - The control command
    * @param {Object} config - The configuration object
    */
-  function handleControl(socket, stream, credentials, controlData, config) {
+  function handleControl(socket, stream, creds, controlData, config) {
     debug(`Received control data: ${controlData}`)
 
-    if (controlData === "replayCredentials" && stream && credentials) {
-      replayCredentials(socket, stream, credentials, config)
+    if (controlData === "replayCredentials" && stream && creds) {
+      replayCredentials(socket, stream, creds, config)
     } else if (controlData === "reauth" && config.options.allowReauth) {
       handleReauth(socket)
     }
@@ -427,7 +428,7 @@ function handleConnection(socket, config) {
       readyTimeout: credentials.readyTimeout,
       keepaliveInterval: credentials.keepaliveInterval,
       keepaliveCountMax: credentials.keepaliveCountMax,
-      debug: createDebug("webssh2:ssh")
+      debug: createDebug("ssh")
     }
   }
 }

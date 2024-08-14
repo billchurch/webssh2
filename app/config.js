@@ -67,7 +67,7 @@ const defaultConfig = {
   ssh: {
     host: null,
     port: 22,
-    term: "xterm-color",
+    term: "vt100",
     readyTimeout: 20000,
     keepaliveInterval: 120000,
     keepaliveCountMax: 10
