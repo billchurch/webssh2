@@ -29,9 +29,13 @@ function handleConnection(socket, config) {
 
   debug(`CONNECT: ${socket.id}, URL: ${socket.handshake.url}`)
 
-  removeExistingListeners(socket)
+  // removeExistingListeners(socket)
   setupInitialSocketListeners(socket, config)
+  debug(
+    `handleConnection: ${socket.id}, credentials: ${JSON.stringify(socket.handshake.session.sshCredentials)}`
+  )
 
+  // HTTP Basic Auth credentials
   if (socket.handshake.session.sshCredentials) {
     const creds = socket.handshake.session.sshCredentials
     const { username, password, host, port } = creds
@@ -97,7 +101,9 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    */
   function handleAuthentication(socket, creds, config) {
+    debug("AUTHENTICATING: ", JSON.stringify(creds))
     if (!creds.username && !creds.password) {
+      debug(`username and password isnt set: ${socket.id}, Host: ${creds.host}`)
       creds.username = sshCredentials.username
       creds.password = sshCredentials.password
       creds.host = sshCredentials.host
@@ -105,7 +111,14 @@ function handleConnection(socket, config) {
     }
 
     // If reauth, creds from this function should take precedence
-    if (creds && isValidCredentials(creds)) {
+    if (
+      !socket.handshake.session.sshCredentials &&
+      creds &&
+      isValidCredentials(creds)
+    ) {
+      debug(
+        `REAUTH CREDENTIALS VALID: ${socket.id}, socket.handshake.session.sshCredentials: ${JSON.stringify(socket.handshake.session.sshCredentials)}`
+      )
       // Store new credentials in session, overriding any existing ones
       socket.handshake.session.sshCredentials = {
         username: creds.username,
@@ -123,14 +136,20 @@ function handleConnection(socket, config) {
 
       // Proceed with connection initialization using the new credentials
       initializeConnection(socket, creds, config)
-    } else {
-      // Handle invalid credentials scenario
-      debug(`CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`)
-      socket.emit("authentication", {
-        success: false,
-        message: "Invalid credentials format"
-      })
+      return
     }
+    if (isValidCredentials(socket.handshake.session.sshCredentials)) {
+      debug(`CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`)
+      initializeConnection(socket, creds, config)
+      return
+    }
+
+    // Handle invalid credentials scenario
+    debug(`CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`)
+    socket.emit("authentication", {
+      success: false,
+      message: "Invalid credentials format"
+    })
   }
 
   /**
@@ -210,10 +229,11 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {Credentials} creds - The user credentials
    */
-  function initializeShell (socket, creds) {
+  function initializeShell(socket, creds) {
+    debug(`INITIALIZING SHELL: ${socket.id}, creds: ${JSON.stringify(creds)}`)
     conn.shell(
       {
-        term: creds.term || 'vt69', // config.ssh.term,
+        term: creds.term, // config.ssh.term,
         cols: creds.cols,
         rows: creds.rows
       },
@@ -317,9 +337,22 @@ function handleConnection(socket, config) {
    * @param {number} data.cols - The number of columns
    */
   function handleResize(stream, data) {
+    debug(`Resizing terminal to ${data.rows}x${data.cols}`)
+
     if (stream) {
       stream.setWindow(data.rows, data.cols)
+      return
     }
+
+    socket.handshake.session.sshCredentials.rows = data.rows
+    socket.handshake.session.sshCredentials.cols = data.cols
+
+    // Save the session after modification
+    socket.handshake.session.save((err) => {
+      if (err) {
+        console.error(`Failed to save session for ${socket.id}:`, err)
+      }
+    })
   }
 
   /**

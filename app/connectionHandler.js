@@ -3,7 +3,6 @@
 const createDebug = require("debug")
 var path = require("path")
 var fs = require("fs")
-const config = require("./config")
 var extend = require("util")._extend
 const debug = createDebug("webssh2:connectionHandler")
 
@@ -19,25 +18,13 @@ function handleConnection(req, res, urlParams) {
     'client',
     'public'
   )
-
-  const connectionParams = extend({}, urlParams)
-  extend(connectionParams, req.query)
-  extend(connectionParams, req.body || {})
-
-  const sshCredentials = req.session.sshCredentials || {}
-
-  const config = {
+  
+  const tempConfig = {
     socket: {
       url: req.protocol + '://' + req.get('host'),
       path: '/ssh/socket.io'
     },
-    ssh: {
-      host: urlParams.host || sshCredentials.host || '',
-      port: urlParams.port || sshCredentials.port || 22,
-      username: sshCredentials.username || '',
-      term: urlParams.sshTerm || sshCredentials.term || config.ssh.term
-    },
-    autoConnect: !!req.session.sshCredentials
+    autoConnect: true
   }
 
   fs.readFile(
@@ -55,7 +42,7 @@ function handleConnection(req, res, urlParams) {
 
       modifiedHtml = modifiedHtml.replace(
         'window.webssh2Config = null;',
-        'window.webssh2Config = ' + JSON.stringify(config) + ';'
+        'window.webssh2Config = ' + JSON.stringify(tempConfig) + ';'
       )
 
       res.send(modifiedHtml)
