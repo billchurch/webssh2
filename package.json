@@ -47,7 +47,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "watch": "node_modules/.bin/nodemon index.js",
+    "watch": "node_modules/.bin/nodemon --inspect index.js",
     "standard": "standard --verbose --fix | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
