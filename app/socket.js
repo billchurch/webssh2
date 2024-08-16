@@ -6,6 +6,8 @@ const createDebug = require("debug")
 const { header } = require("./config")
 const debug = createDebug("webssh2:socket")
 const SSH = require("ssh2").Client
+const { sanitizeObject } = require("./utils")
+const session = require("express-session")
 
 /**
  * Handles WebSocket connections for SSH
@@ -24,30 +26,39 @@ module.exports = function (io, config) {
 function handleConnection(socket, config) {
   let conn = null
   let stream = null
-  let authenticated = false
-  let isConnectionClosed = false
+  let sessionState = {
+    connected: false,
+    authenticated: false,
+    host: null,
+    port: null,
+    username: null,
+    password: null,
+    term: null,
+    cols: null,
+    rows: null,
+    config: config
+  }
 
-  debug(`CONNECT: ${socket.id}, URL: ${socket.handshake.url}`)
+  debug(`handleConnection: ${socket.id}, URL: ${socket.handshake.url}`)
 
   // removeExistingListeners(socket)
-  setupInitialSocketListeners(socket, config)
-  debug(
-    `handleConnection: ${socket.id}, credentials: ${JSON.stringify(socket.handshake.session.sshCredentials)}`
-  )
+  setupInitialSocketListeners(socket, sessionState)
 
-  // HTTP Basic Auth credentials
+  // Check for HTTP Basic Auth credentials
   if (socket.handshake.session.sshCredentials) {
     const creds = socket.handshake.session.sshCredentials
-    const { username, password, host, port } = creds
-    debug(`Credentials from session: ${socket.id}, Host: ${host}`, creds)
 
-    if (username && password && host && port) {
-      handleAuthentication(socket, creds, config)
-      return
-    }
+    debug(
+      `handleConnection: creds from session: ${socket.id}, Host: ${creds.host}:`,
+      sanitizeObject(creds)
+    )
+
+    handleAuthenticate(socket, creds)
+    return
   }
 
   // Emit an event to the client to request authentication
+  const authenticated = sessionState.authenticated
   if (!authenticated) {
     debug(
       `Requesting authentication for ${socket.id} and authenticated is ${authenticated}`
@@ -56,28 +67,17 @@ function handleConnection(socket, config) {
   }
 
   /**
-   * Removes existing listeners to prevent duplicates
-   * @param {import('socket.io').Socket} socket - The Socket.IO socket
-   */
-  function removeExistingListeners(socket) {
-    ;["authenticate", "data", "resize", "disconnect", "control"].forEach(
-      (event) => {
-        socket.removeAllListeners(event)
-      }
-    )
-  }
-
-  /**
    * Sets up initial socket event listeners
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {Object} config - The configuration object
    */
-  function setupInitialSocketListeners(socket, config) {
+  function setupInitialSocketListeners(socket, sessionState) {
+    config = sessionState.config
     socket.on("error", (error) =>
       console.error(`Socket error for ${socket.id}:`, error)
     )
     socket.on("authenticate", (creds) =>
-      handleAuthentication(socket, creds, config)
+      handleAuthenticate(socket, creds, sessionState)
     )
     socket.on("disconnect", (reason) => {
       debug(`Client ${socket.id} disconnected. Reason: ${reason}`)
@@ -100,47 +100,24 @@ function handleConnection(socket, config) {
    * @param {Credentials} creds - The credentials for authentication
    * @param {Object} config - The configuration object
    */
-  function handleAuthentication(socket, creds, config) {
-    debug("AUTHENTICATING: ", JSON.stringify(creds))
-    if (!creds.username && !creds.password) {
-      debug(`username and password isnt set: ${socket.id}, Host: ${creds.host}`)
-      creds.username = sshCredentials.username
-      creds.password = sshCredentials.password
-      creds.host = sshCredentials.host
-      creds.port = sshCredentials.port
-    }
+  function handleAuthenticate(socket, creds) {
+    const config = sessionState.config
+    // {
+    //     "host": "192.168.0.20",
+    //     "port": 22,
+    //     "username": "test123",
+    //     "password": "Seven888!",
+    //     "term": "xterm-color",
+    //     "readyTimeout": 20000,
+    //     "cursorBlink": "true",
+    //     "cols": 151,
+    //     "rows": 53
+    // }
+    debug("handleAuthenticate: ", JSON.stringify(sanitizeObject(creds)))
 
-    // If reauth, creds from this function should take precedence
-    if (
-      !socket.handshake.session.sshCredentials &&
-      creds &&
-      isValidCredentials(creds)
-    ) {
-      debug(
-        `REAUTH CREDENTIALS VALID: ${socket.id}, socket.handshake.session.sshCredentials: ${JSON.stringify(socket.handshake.session.sshCredentials)}`
-      )
-      // Store new credentials in session, overriding any existing ones
-      socket.handshake.session.sshCredentials = {
-        username: creds.username,
-        password: creds.password,
-        host: creds.host,
-        port: creds.port
-      }
-
-      // Save the session after updating
-      socket.handshake.session.save((err) => {
-        if (err) {
-          console.error(`Failed to save session for ${socket.id}:`, err)
-        }
-      })
-
-      // Proceed with connection initialization using the new credentials
-      initializeConnection(socket, creds, config)
-      return
-    }
-    if (isValidCredentials(socket.handshake.session.sshCredentials)) {
-      debug(`CREDENTIALS VALID: ${socket.id}, Host: ${creds.host}`)
-      initializeConnection(socket, creds, config)
+    if (isValidCredentials(socket, creds)) {
+      creds.term !== null && (sessionState.term = creds.term)
+      initializeConnection(socket, creds)
       return
     }
 
@@ -158,17 +135,31 @@ function handleConnection(socket, config) {
    * @param {Credentials} creds - The user credentials
    * @param {Object} config - The configuration object
    */
-  function initializeConnection(socket, creds, config) {
-    debug(`INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`)
+  function initializeConnection(socket, creds) {
+    const config = sessionState.config
+    debug(
+      `initializeConnection: INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`
+    )
     if (conn) {
       conn.end()
     }
 
     conn = new SSH()
+    socket.on("terminal", (data) => handleTerminal(socket, stream, data))
+    socket.emit("getTerminal", true)
+
+    conn.connect(getSSHConfig(creds, config))
 
     conn.on("ready", () => {
-      authenticated = true
-      debug(`SSH CONNECTION READY: ${socket.id}, Host: ${creds.host}`)
+      sessionState.authenticated = true
+      sessionState.connected = true
+      sessionState.username = creds.username
+      sessionState.password = creds.password
+      sessionState.host = creds.host
+      sessionState.port = creds.port
+      debug(
+        `initializeConnection conn.on ready: ${socket.id}, Host: ${creds.host}`
+      )
       socket.emit("authentication", { action: "auth_result", success: true })
 
       // Emit consolidated permissions
@@ -177,21 +168,21 @@ function handleConnection(socket, config) {
         allowReauth: config.options.allowReauth || false
       })
 
-      if (config.header && config.header.text !== null) {
-        debug("header:", config.header)
-        socket.emit(
-          "updateUI",
-          { header: config.header } || { header: { text: "", background: "" } }
-        )
-      }
+      updateElement(socket, "footer", `ssh://${creds.host}:${creds.port}`)
 
-      setupSSHListeners(socket, creds)
-      initializeShell(socket, creds)
+      if (config.header && config.header.text !== null) {
+        debug(`initializeConnection header: ${config.header}`)
+        updateElement(socket, "header", config.header.text)
+      }
+      debug(`initializeConnection: ${socket.id}, sessionState: ${JSON.stringify(sanitizeObject(sessionState))}`)  
+
+      setupSSHListeners(socket)
+      initializeShell(socket)
     })
 
     conn.on("error", (err) => {
       console.error(
-        `SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`
+        `initializeConnection: SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`
       )
       if (err.level === "client-authentication") {
         socket.emit("authentication", {
@@ -203,8 +194,6 @@ function handleConnection(socket, config) {
         handleError(socket, "SSH CONNECTION ERROR", err)
       }
     })
-
-    conn.connect(getSSHConfig(creds, config))
   }
 
   /**
@@ -212,16 +201,14 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {Credentials} creds - The user credentials
    */
-  function setupSSHListeners(socket, creds) {
+  function setupSSHListeners(socket) {
     conn.on("banner", (data) => handleBanner(socket, data))
     conn.on("end", () => handleSSHEnd(socket))
     conn.on("close", () => handleSSHClose(socket))
 
-    socket.on("data", (data) => handleData(socket, stream, data))
+    socket.on("data", (data) => handleSocketData(socket, stream, data))
     socket.on("resize", (data) => handleResize(stream, data))
-    socket.on("control", (controlData) =>
-      handleControl(socket, stream, creds, controlData, config)
-    )
+    socket.on("control", (data) => handleControl(socket, stream, data))
   }
 
   /**
@@ -229,13 +216,16 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {Credentials} creds - The user credentials
    */
-  function initializeShell(socket, creds) {
-    debug(`INITIALIZING SHELL: ${socket.id}, creds: ${JSON.stringify(creds)}`)
+  function initializeShell(socket) {
+    debug(`initializeShell: INITIALIZING SHELL: ${socket.id}`)
+    debug(`initializeShell: sessionState: ${JSON.stringify(sanitizeObject(sessionState))}`) 
+    const { term, cols, rows } = sessionState
+
     conn.shell(
       {
-        term: creds.term, // config.ssh.term,
-        cols: creds.cols,
-        rows: creds.rows
+        term: term,
+        cols: cols,
+        rows: rows
       },
       (err, str) => {
         if (err) {
@@ -243,16 +233,65 @@ function handleConnection(socket, config) {
         }
         stream = str
 
-        stream.on("data", (data) => socket.emit("data", data.toString("utf-8")))
-        stream.on("close", (code, signal) => {
-          handleError(socket, "STREAM CLOSE", {
-            message:
-              code || signal ? `CODE: ${code} SIGNAL: ${signal}` : undefined
-          })
-        })
-        stream.stderr.on("data", (data) => debug("STDERR: " + data))
+        setupStreamListeners(stream, socket)
       }
     )
+  }
+
+  /**
+   * Sets up listeners for a stream.
+   *
+   * @param {Stream} stream - The stream object to listen to.
+   * @param {Socket} socket - The socket object associated with the stream.
+   */
+  function setupStreamListeners(stream, socket) {
+    debug(`setupStreamListeners: ${socket.id}`)
+    stream.on("data", (data) => handleStreamData(socket, stream, data))
+    stream.on("close", (code, signal) =>
+      handleStreamClose(stream, socket, code, signal)
+    )
+    stream.stderr.on("data", (data) => debug("STDERR: " + data))
+  }
+
+  /**
+   * Handles the close event of a stream.
+   *
+   * @param {Stream} stream - The stream object.
+   * @param {Socket} socket - The socket object.
+   * @param {number} code - The code associated with the close event.
+   * @param {string} signal - The signal associated with the close event.
+   */
+  function handleStreamClose(stream, socket, code, signal) {
+    debug(`handleStreamClose: STREAM CLOSE: ${socket.id}`)
+    handleError(socket, "STREAM CLOSE", {
+      message: code || signal ? `CODE: ${code} SIGNAL: ${signal}` : undefined
+    })
+  }
+
+  /**
+   * Handles the stream data received from the socket.
+   *
+   * @param {Socket} socket - The socket object.
+   * @param {Stream} stream - The stream object.
+   * @param {Buffer} data - The data received from the stream.
+   * @returns {void}
+   */
+  function handleStreamData(socket, stream, data) {
+    const connected = sessionState.connected
+    socket.emit("data", data.toString("utf-8"))
+    if (socket && connected) {
+      try {
+        socket.write(data)
+      } catch (error) {
+        console.error(
+          "handleStreamData: Error writing to socket:",
+          error.message
+        )
+        // todo: close stream like in handleSocketData?
+      }
+      return
+    }
+    console.warn("handleStreamData: Attempted to write to closed socket")
   }
 
   /**
@@ -261,6 +300,7 @@ function handleConnection(socket, config) {
    * @param {string} data - The banner data
    */
   function handleBanner(socket, data) {
+    // todo: sanatize the data
     socket.emit("data", data.replace(/\r?\n/g, "\r\n"))
   }
 
@@ -269,7 +309,7 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHEnd(socket) {
-    debug(`SSH CONNECTION ENDED: ${socket.id}`)
+    debug(`handleSSHEnd: SSH CONNECTION ENDED: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -278,7 +318,7 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHClose(socket) {
-    debug(`SSH CONNECTION CLOSED: ${socket.id}`)
+    debug(`handleSSHClose: SSH CONNECTION CLOSED: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -287,7 +327,8 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleConnectionClose(socket) {
-    isConnectionClosed = true
+    debug(`handleConnectionClose: Closing connection for ${socket.id}`)
+    sessionState.connected = false
     if (stream) {
       stream.end()
       stream = null
@@ -315,18 +356,22 @@ function handleConnection(socket, config) {
    * @param {import('ssh2').Channel} stream - The SSH stream
    * @param {string} data - The incoming data
    */
-  function handleData(socket, stream, data) {
-    if (stream && !isConnectionClosed) {
+  function handleSocketData(socket, stream, data) {
+    const connected = sessionState.connected
+    if (stream && connected) {
       try {
         stream.write(data)
       } catch (error) {
-        debug("Error writing to stream:", error.message)
+        console.error(
+          "handleSocketData: Error writing to stream:",
+          error.message
+        )
         handleConnectionClose(socket)
       }
-    } else if (isConnectionClosed) {
-      debug("Attempted to write to closed connection")
-      socket.emit("connection_closed")
+      return
     }
+    console.warn("handleSocketData: Attempted to write to closed stream")
+    socket.emit("connection_closed")
   }
 
   /**
@@ -337,40 +382,40 @@ function handleConnection(socket, config) {
    * @param {number} data.cols - The number of columns
    */
   function handleResize(stream, data) {
-    debug(`Resizing terminal to ${data.rows}x${data.cols}`)
-
+    const { rows, cols } = data
     if (stream) {
-      stream.setWindow(data.rows, data.cols)
+      debug(`Resizing terminal to ${rows}x${cols}`)
+      sessionState.rows = rows
+      sessionState.cols = cols
+      stream.setWindow(rows, cols)
       return
     }
-
-    socket.handshake.session.sshCredentials.rows = data.rows
-    socket.handshake.session.sshCredentials.cols = data.cols
-
-    // Save the session after modification
-    socket.handshake.session.save((err) => {
-      if (err) {
-        console.error(`Failed to save session for ${socket.id}:`, err)
-      }
-    })
+    console.warn("handleResize: Attempted to resize closed connection")
   }
 
   /**
    * Handles control commands from the client
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {import('ssh2').Channel} stream - The SSH stream
-   * @param {Credentials} credentials - The user credentials
-   * @param {string} controlData - The control command
-   * @param {Object} config - The configuration object
+   * @param {string} data - The control command
    */
-  function handleControl(socket, stream, creds, controlData, config) {
-    debug(`Received control data: ${controlData}`)
-
-    if (controlData === "replayCredentials" && stream && creds) {
-      replayCredentials(socket, stream, creds, config)
-    } else if (controlData === "reauth" && config.options.allowReauth) {
+  function handleControl(socket, stream, data) {
+    debug(`handleControl: Received control data: ${data}`)
+    if (data === "replayCredentials" && stream) {
+      replayCredentials(socket, stream)
+    } else if (data === "reauth") {
       handleReauth(socket)
     }
+  }
+
+  function handleTerminal(socket, conn, data) {
+    debug(`handleTerminal: Received terminal data: ${JSON.stringify(data)}`)
+    const { term, rows, cols } = data
+    if (term != null) {
+      sessionState.term = term;
+    }
+    sessionState.rows = rows
+    sessionState.cols = cols
   }
 
   /**
@@ -380,14 +425,18 @@ function handleConnection(socket, config) {
    * @param {Credentials} credentials - The user credentials
    * @param {Object} config - The configuration object
    */
-  function replayCredentials(socket, stream, credentials, config) {
-    let allowReplay = config.options.allowReplay || false
+  function replayCredentials(socket, stream) {
+    const password = sessionState.password
+    const allowReplay = sessionState.config.options.allowReplay || false
 
     if (allowReplay) {
-      debug(`Replaying credentials for ${socket.id}`)
-      stream.write(credentials.password + "\n")
+      debug(`replayCredentials: Replaying credentials for ${socket.id}`)
+      stream.write(password + "\n")
     } else {
-      debug(`Credential replay not allowed for ${socket.id}`)
+      // todo: add a warning message to the client
+      console.warn(
+        `replayCredentials: Credential replay not allowed for ${socket.id}`
+      )
     }
   }
 
@@ -396,23 +445,18 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleReauth(socket) {
-    debug(`Reauthentication requested for ${socket.id}`)
-
-    // Clear existing session credentials
-    socket.handshake.session.sshCredentials = null
-
-    // Save the session after modification
-    socket.handshake.session.save((err) => {
-      if (err) {
-        console.error(`Failed to save session for ${socket.id}:`, err)
-      }
-
-      // Notify client to reauthenticate
+    debug(`handleReauth: Reauthentication requested for ${socket.id}`)
+    if (config.options.allowReauth) {
+      clearSessionCredentials(socket)
+      debug(`handleReauth: Reauthenticating ${socket.id}`)
       socket.emit("authentication", { action: "reauth" })
-
-      // Close the current connection to enforce reauthentication
       handleConnectionClose(socket)
-    })
+    } else {
+      // todo: add a warning message to the client
+      console.warn(
+        `handleReauth: Reauthentication not allowed for ${socket.id}`
+      )
+    }
   }
 
   /**
@@ -429,19 +473,40 @@ function handleConnection(socket, config) {
   }
 
   /**
-   * Validates the provided credentials
-   * @param {Credentials} credentials - The credentials to validate
+   * Updates the specified element with the given value by emitting an "updateUI" event through the socket.
+   *
+   * @param {Socket} socket - The socket object used for communication.
+   * @param {string} element - The element to be updated.
+   * @param {string} value - The value to update the element with.
+   */
+  function updateElement(socket, element, value) {
+    debug(`updateElement: ${socket.id}, Element: ${element}, Value: ${value}`)
+    socket.emit("updateUI", { element, value });
+  }
+
+  /**
+   * Validates the provided credentials and logs the result
+   * @param {Object} socket - The socket object containing the socket ID
+   * @param {Object} creds - The credentials to validate
    * @returns {boolean} Whether the credentials are valid
    */
-  function isValidCredentials(credentials) {
+  function isValidCredentials(socket, creds) {
     // Basic format validation
-    return (
-      credentials &&
-      typeof credentials.username === "string" &&
-      typeof credentials.password === "string" &&
-      typeof credentials.host === "string" &&
-      typeof credentials.port === "number"
+    const isValid =
+      creds &&
+      typeof creds.username === "string" &&
+      typeof creds.password === "string" &&
+      typeof creds.host === "string" &&
+      typeof creds.port === "number"
+
+    // Single line debug log with ternary operator
+    debug(
+      `isValidCredentials: CREDENTIALS ${isValid ? "VALID" : "INVALID"}: ${socket.id}${
+        isValid ? `, Host: ${creds.host}` : ""
+      }`
     )
+
+    return isValid
   }
 
   /**
@@ -450,18 +515,50 @@ function handleConnection(socket, config) {
    * @param {Object} config - The configuration object
    * @returns {import('ssh2').ConnectConfig} The SSH configuration object
    */
-  function getSSHConfig(credentials, config) {
-    return {
-      host: credentials.host,
-      port: credentials.port,
-      username: credentials.username,
-      password: credentials.password,
+  function getSSHConfig(creds, config) {
+    debug(
+      `getSSHConfig: ${socket.id}, Host: ${JSON.stringify(sanitizeObject(creds))}`
+    )
+
+    const sshConfig = {
+      host: creds.host,
+      port: creds.port,
+      username: creds.username,
+      password: creds.password,
       tryKeyboard: true,
-      algorithms: credentials.algorithms,
-      readyTimeout: credentials.readyTimeout,
-      keepaliveInterval: credentials.keepaliveInterval,
-      keepaliveCountMax: credentials.keepaliveCountMax,
+      algorithms: creds.algorithms || config.ssh.algorithms,
+      readyTimeout: creds.readyTimeout || config.ssh.readyTimeout,
+      keepaliveInterval:
+        creds.keepaliveInterval || config.ssh.keepaliveInterval,
+      keepaliveCountMax:
+        creds.keepaliveCountMax || config.ssh.keepaliveCountMax,
       debug: createDebug("ssh")
     }
+    debug(`getSSHConfig: ${JSON.stringify(sanitizeObject(sshConfig))}`)
+    return sshConfig
+  }
+
+  /**
+   * Clears the session credentials for a given socket.
+   *
+   * @param {Socket} socket - The socket object.
+   * @returns {void}
+   */
+  function clearSessionCredentials(socket) {
+    debug(
+      `clearSessionCredentials: Clearing session credentials for ${socket.id}`
+    )
+    if (socket.handshake.session.sshCredentials) {
+      socket.handshake.session.sshCredentials.username = null
+      socket.handshake.session.sshCredentials.password = null
+    }
+    sessionState.authenticated = false
+    sessionState.username = null
+    sessionState.password = null
+    socket.handshake.session.save((err) => {
+      if (err) {
+        console.error(`Failed to save session for ${socket.id}:`, err)
+      }
+    })
   }
 }
