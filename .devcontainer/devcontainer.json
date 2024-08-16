@@ -31,7 +31,8 @@
         "bierner.markdown-mermaid",
         "stylelint.vscode-stylelint",
         "vivaxy.vscode-conventional-commits",
-        "oderwat.indent-rainbow"
+        "oderwat.indent-rainbow",
+        "mohsen1.prettify-json"
       ]
     }
   },
