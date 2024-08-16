@@ -7,7 +7,6 @@ const { header } = require("./config")
 const debug = createDebug("webssh2:socket")
 const SSH = require("ssh2").Client
 const { sanitizeObject } = require("./utils")
-const session = require("express-session")
 
 /**
  * Handles WebSocket connections for SSH
@@ -47,22 +46,18 @@ function handleConnection(socket, config) {
   // Check for HTTP Basic Auth credentials
   if (socket.handshake.session.sshCredentials) {
     const creds = socket.handshake.session.sshCredentials
-
     debug(
-      `handleConnection: creds from session: ${socket.id}, Host: ${creds.host}:`,
+      `handleConnection: ${socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
       sanitizeObject(creds)
     )
-
     handleAuthenticate(socket, creds)
     return
   }
 
-  // Emit an event to the client to request authentication
   const authenticated = sessionState.authenticated
   if (!authenticated) {
-    debug(
-      `Requesting authentication for ${socket.id} and authenticated is ${authenticated}`
-    )
+    // Emit an event to the client to request authentication
+    debug(`handleConnection: ${socket.id}, emitting request_auth`)
     socket.emit("authentication", { action: "request_auth" })
   }
 
@@ -73,23 +68,18 @@ function handleConnection(socket, config) {
    */
   function setupInitialSocketListeners(socket, sessionState) {
     config = sessionState.config
+    debug(`setupInitialSocketListeners: ${socket.id}`)
+
     socket.on("error", (error) =>
       console.error(`Socket error for ${socket.id}:`, error)
     )
+
     socket.on("authenticate", (creds) =>
       handleAuthenticate(socket, creds, sessionState)
     )
-    socket.on("disconnect", (reason) => {
-      debug(`Client ${socket.id} disconnected. Reason: ${reason}`)
-      debug("Socket state at disconnect:", socket.conn.transport.readyState)
-      if (conn) {
-        conn.end()
-        conn = null
-      }
-      if (stream) {
-        stream.end()
-        stream = null
-      }
+
+    socket.on("disconnect", (socket, reason, conn, stream) => {
+      handleDisconnect(socket, reason, conn, stream)
     })
   }
 
@@ -102,18 +92,7 @@ function handleConnection(socket, config) {
    */
   function handleAuthenticate(socket, creds) {
     const config = sessionState.config
-    // {
-    //     "host": "192.168.0.20",
-    //     "port": 22,
-    //     "username": "test123",
-    //     "password": "Seven888!",
-    //     "term": "xterm-color",
-    //     "readyTimeout": 20000,
-    //     "cursorBlink": "true",
-    //     "cols": 151,
-    //     "rows": 53
-    // }
-    debug("handleAuthenticate: ", JSON.stringify(sanitizeObject(creds)))
+    debug(`handleAuthenticate: ${socket.id}, %O`, sanitizeObject(creds))
 
     if (isValidCredentials(socket, creds)) {
       creds.term !== null && (sessionState.term = creds.term)
@@ -122,7 +101,7 @@ function handleConnection(socket, config) {
     }
 
     // Handle invalid credentials scenario
-    debug(`CREDENTIALS INVALID: ${socket.id}, Host: ${creds.host}`)
+    console.warn(`handleAuthenticate: ${socket.id}, CREDENTIALS INVALID`)
     socket.emit("authentication", {
       success: false,
       message: "Invalid credentials format"
@@ -138,7 +117,7 @@ function handleConnection(socket, config) {
   function initializeConnection(socket, creds) {
     const config = sessionState.config
     debug(
-      `initializeConnection: INITIALIZING SSH CONNECTION: ${socket.id}, Host: ${creds.host}`
+      `initializeConnection: ${socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}`
     )
     if (conn) {
       conn.end()
@@ -158,15 +137,28 @@ function handleConnection(socket, config) {
       sessionState.host = creds.host
       sessionState.port = creds.port
       debug(
-        `initializeConnection conn.on ready: ${socket.id}, Host: ${creds.host}`
+        `initializeConnection: ${socket.id} conn.on ready: Host: ${creds.host}`
       )
-      socket.emit("authentication", { action: "auth_result", success: true })
+      console.log(
+        `initializeConnection: ${socket.id} conn.on ready: ${creds.user}@${creds.host}:${creds.port} successfully connected`
+      )
+      const auth_result = { action: "auth_result", success: true }
+      debug(
+        `initializeConnection: ${socket.id} conn.on ready: emitting authentication: ${JSON.stringify(auth_result)}`
+      )
+      socket.emit("authentication", auth_result)
 
       // Emit consolidated permissions
-      socket.emit("permissions", {
+      const permissions = {
+        autoLog: config.options.autoLog || false,
         allowReplay: config.options.allowReplay || false,
+        allowReconnect: config.options.allowReconnect || false,
         allowReauth: config.options.allowReauth || false
-      })
+      }
+      debug(
+        `initializeConnection: ${socket.id} conn.on ready: emitting permissions: ${JSON.stringify(permissions)}`
+      )
+      socket.emit("permissions", permissions)
 
       updateElement(socket, "footer", `ssh://${creds.host}:${creds.port}`)
 
@@ -174,8 +166,6 @@ function handleConnection(socket, config) {
         debug(`initializeConnection header: ${config.header}`)
         updateElement(socket, "header", config.header.text)
       }
-      debug(`initializeConnection: ${socket.id}, sessionState: ${JSON.stringify(sanitizeObject(sessionState))}`)  
-
       setupSSHListeners(socket)
       initializeShell(socket)
     })
@@ -217,8 +207,10 @@ function handleConnection(socket, config) {
    * @param {Credentials} creds - The user credentials
    */
   function initializeShell(socket) {
-    debug(`initializeShell: INITIALIZING SHELL: ${socket.id}`)
-    debug(`initializeShell: sessionState: ${JSON.stringify(sanitizeObject(sessionState))}`) 
+    debug(
+      `initializeShell: ${socket.id}, sessionState: %O`,
+      sanitizeObject(sessionState)
+    )
     const { term, cols, rows } = sessionState
 
     conn.shell(
@@ -262,7 +254,7 @@ function handleConnection(socket, config) {
    * @param {string} signal - The signal associated with the close event.
    */
   function handleStreamClose(stream, socket, code, signal) {
-    debug(`handleStreamClose: STREAM CLOSE: ${socket.id}`)
+    debug(`handleStreamClose: ${socket.id}`)
     handleError(socket, "STREAM CLOSE", {
       message: code || signal ? `CODE: ${code} SIGNAL: ${signal}` : undefined
     })
@@ -300,7 +292,7 @@ function handleConnection(socket, config) {
    * @param {string} data - The banner data
    */
   function handleBanner(socket, data) {
-    // todo: sanatize the data
+    // todo: sanitize the data
     socket.emit("data", data.replace(/\r?\n/g, "\r\n"))
   }
 
@@ -309,7 +301,7 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHEnd(socket) {
-    debug(`handleSSHEnd: SSH CONNECTION ENDED: ${socket.id}`)
+    debug(`handleSSHEnd: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -318,7 +310,7 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleSSHClose(socket) {
-    debug(`handleSSHClose: SSH CONNECTION CLOSED: ${socket.id}`)
+    debug(`handleSSHClose: ${socket.id}`)
     handleConnectionClose(socket)
   }
 
@@ -327,7 +319,7 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    */
   function handleConnectionClose(socket) {
-    debug(`handleConnectionClose: Closing connection for ${socket.id}`)
+    debug(`handleConnectionClose: ${socket.id}`)
     sessionState.connected = false
     if (stream) {
       stream.end()
@@ -337,7 +329,6 @@ function handleConnection(socket, config) {
       conn.end()
       conn = null
     }
-    socket.emit("connection_closed")
   }
 
   /**
@@ -345,8 +336,18 @@ function handleConnection(socket, config) {
    * @param {import('socket.io').Socket} socket - The Socket.IO socket
    * @param {string} reason - The reason for disconnection
    */
-  function handleDisconnect(socket, reason) {
-    debug(`DISCONNECT: ${socket.id}, Reason: ${reason}`)
+  function handleDisconnect(socket, reason, conn, stream) {
+    debug(`handleDisconnect: ${socket.id}, Reason: ${reason}`)
+    debug(`handleDisconnect: Socket state: $(socket.conn.transport.readyState)`)
+    if (conn) {
+      conn.end()
+      conn = null
+    }
+    if (stream) {
+      stream.end()
+      stream = null
+    }
+
     handleConnectionClose(socket)
   }
 
@@ -412,7 +413,7 @@ function handleConnection(socket, config) {
     debug(`handleTerminal: Received terminal data: ${JSON.stringify(data)}`)
     const { term, rows, cols } = data
     if (term != null) {
-      sessionState.term = term;
+      sessionState.term = term
     }
     sessionState.rows = rows
     sessionState.cols = cols
@@ -481,7 +482,7 @@ function handleConnection(socket, config) {
    */
   function updateElement(socket, element, value) {
     debug(`updateElement: ${socket.id}, Element: ${element}, Value: ${value}`)
-    socket.emit("updateUI", { element, value });
+    socket.emit("updateUI", { element, value })
   }
 
   /**
@@ -501,7 +502,7 @@ function handleConnection(socket, config) {
 
     // Single line debug log with ternary operator
     debug(
-      `isValidCredentials: CREDENTIALS ${isValid ? "VALID" : "INVALID"}: ${socket.id}${
+      `isValidCredentials: ${socket.id}, CREDENTIALS ${isValid ? "VALID" : "INVALID"}: ${socket.id}${
         isValid ? `, Host: ${creds.host}` : ""
       }`
     )
@@ -516,9 +517,7 @@ function handleConnection(socket, config) {
    * @returns {import('ssh2').ConnectConfig} The SSH configuration object
    */
   function getSSHConfig(creds, config) {
-    debug(
-      `getSSHConfig: ${socket.id}, Host: ${JSON.stringify(sanitizeObject(creds))}`
-    )
+    debug(`getSSHConfig: ${socket.id}, creds: %O`, sanitizeObject(creds))
 
     const sshConfig = {
       host: creds.host,
@@ -534,7 +533,10 @@ function handleConnection(socket, config) {
         creds.keepaliveCountMax || config.ssh.keepaliveCountMax,
       debug: createDebug("ssh")
     }
-    debug(`getSSHConfig: ${JSON.stringify(sanitizeObject(sshConfig))}`)
+    debug(
+      `getSSHConfig:  ${socket.id}, sshConfig: %O`,
+      sanitizeObject(sshConfig)
+    )
     return sshConfig
   }
 

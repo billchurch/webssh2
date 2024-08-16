@@ -35,7 +35,10 @@ const crypto = require("crypto")
  * @property {string} header.background - Header background color
  * @property {Object} options - Options configuration
  * @property {boolean} options.challengeButton - Challenge button enabled
+ * @property {boolean} options.autoLog - Auto log enabled
  * @property {boolean} options.allowReauth - Allow reauthentication
+ * @property {boolean} options.allowReconnect - Allow reconnection
+ * @property {boolean} options.allowReplay - Allow replay
  * @property {Object} algorithms - Encryption algorithms
  * @property {string[]} algorithms.kex - Key exchange algorithms
  * @property {string[]} algorithms.cipher - Cipher algorithms
@@ -84,7 +87,9 @@ const defaultConfig = {
   },
   options: {
     challengeButton: true,
+    autoLog: false,
     allowReauth: false,
+    allowReconnect: false,
     allowReplay: false
   },
   algorithms: {
@@ -193,7 +198,9 @@ const configSchema = {
       type: "object",
       properties: {
         challengeButton: { type: "boolean" },
+        autoLog: { type: "boolean" },
         allowReauth: { type: "boolean" },
+        allowReconnect: { type: "boolean" },
         allowReplay: { type: "boolean" }
       },
       required: ["challengeButton", "allowReauth", "allowReplay"]
