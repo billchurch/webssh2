@@ -95,7 +95,7 @@ function handleConnection(socket, config) {
     debug(`handleAuthenticate: ${socket.id}, %O`, sanitizeObject(creds))
 
     if (isValidCredentials(socket, creds)) {
-      creds.term !== null && (sessionState.term = creds.term)
+      creds.term !== null && (sessionState.term = creds.term) || (sessionState.term = sessionState.config.ssh.term)
       initializeConnection(socket, creds)
       return
     }
