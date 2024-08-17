@@ -389,13 +389,27 @@ function handleConnection(socket, config) {
   function handleResize(stream, data) {
     const { rows, cols } = data
     if (stream) {
-      debug(`Resizing terminal to ${rows}x${cols}`)
-      sessionState.rows = rows
-      sessionState.cols = cols
-      stream.setWindow(rows, cols)
-      return
+      let resized = false
+
+      if (rows != null && validator.isInt(rows.toString())) {
+        sessionState.rows = parseInt(rows, 10)
+        resized = true
+      }
+
+      if (cols != null && validator.isInt(cols.toString())) {
+        sessionState.cols = parseInt(cols, 10)
+        resized = true
+      }
+
+      if (resized) {
+        debug(`Resizing terminal to ${sessionState.rows}x${sessionState.cols}`)
+        stream.setWindow(sessionState.rows, sessionState.cols)
+      } else {
+        debug("handleResize: No valid resize dimensions provided")
+      }
+    } else {
+      console.warn("handleResize: Attempted to resize closed connection")
     }
-    console.warn("handleResize: Attempted to resize closed connection")
   }
 
   /**
@@ -406,10 +420,14 @@ function handleConnection(socket, config) {
    */
   function handleControl(socket, stream, data) {
     debug(`handleControl: Received control data: ${data}`)
-    if (data === "replayCredentials" && stream) {
-      replayCredentials(socket, stream)
-    } else if (data === "reauth") {
-      handleReauth(socket)
+    if (validator.isIn(data, ["replayCredentials", "reauth"]) && stream) {
+      if (data === "replayCredentials" && stream) {
+        replayCredentials(socket, stream)
+      } else if (data === "reauth") {
+        handleReauth(socket)
+      }
+    } else {
+      console.warn(`handleControl: Invalid control command received: ${data}`)
     }
   }
 
@@ -420,12 +438,12 @@ function handleConnection(socket, config) {
       sessionState.term = term
       debug(`handleTerminal: Set term to ${sessionState.term}`)
     }
-    
+
     if (rows != null && validator.isInt(rows.toString())) {
       sessionState.rows = parseInt(rows, 10)
       debug(`handleTerminal: Set rows to ${sessionState.rows}`)
     }
-    
+
     if (cols != null && validator.isInt(cols.toString())) {
       sessionState.cols = parseInt(cols, 10)
       debug(`handleTerminal: Set cols to ${sessionState.cols}`)
