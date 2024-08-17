@@ -1,6 +1,8 @@
 // server
 // /app/utils.js
-const validator = require("validator");
+const validator = require("validator")
+const createDebug = require("debug")
+const debug = createDebug("webssh2:utils")
 
 /**
  * Sanitizes an object by replacing sensitive properties with asterisks.
@@ -34,7 +36,6 @@ function sanitizeObject(
   return obj
 }
 
-
 /**
  * Validates the SSH terminal name using validator functions.
  * Allows alphanumeric characters, hyphens, and periods.
@@ -42,6 +43,11 @@ function sanitizeObject(
  * @returns {boolean} True if the terminal name is valid, false otherwise
  */
 function validateSshTerm(term) {
+  debug(`validateSshTerm: %O`, term)
+
+  if (term === undefined || term === null) {
+    return false
+  }
   return (
     validator.isLength(term, { min: 1, max: 30 }) &&
     validator.matches(term, /^[a-zA-Z0-9.-]+$/)
@@ -49,4 +55,4 @@ function validateSshTerm(term) {
 }
 
 exports.sanitizeObject = sanitizeObject
-exports.validateSshTerm = validateSshTerm;
+exports.validateSshTerm = validateSshTerm
