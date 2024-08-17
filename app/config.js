@@ -271,13 +271,13 @@ function getConfigPath() {
 }
 
 /**
- * Reads the config file
+ * Reads the config file synchronously
  * @param {string} configPath - The path to the config file
- * @returns {Config} The configuration object
+ * @returns {Object} The configuration object
  */
 function readConfigFile(configPath) {
   console.log("WebSSH2 service reading config from: " + configPath)
-  return readConfig(configPath)
+  return readConfig.sync(configPath)
 }
 
 /**
@@ -312,8 +312,8 @@ function logError(message, error) {
 }
 
 /**
- * Loads and merges the configuration
- * @returns {Config} The merged configuration
+ * Loads and merges the configuration synchronously
+ * @returns {Object} The merged configuration
  */
 function loadConfig() {
   const configPath = getConfigPath()
@@ -376,9 +376,10 @@ function deepMerge(target, source) {
   }
   return target
 }
+
 /**
  * The loaded configuration
- * @type {Config}
+ * @type {Object}
  */
 const config = loadConfig()
 
