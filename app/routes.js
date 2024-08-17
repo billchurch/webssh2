@@ -7,6 +7,7 @@ const router = express.Router()
 const handleConnection = require("./connectionHandler")
 const basicAuth = require("basic-auth")
 const { sanitizeObject } = require("./utils")
+const validator = require("validator")
 
 function auth(req, res, next) {
   debug("Authenticating user with HTTP Basic Auth")
@@ -15,10 +16,10 @@ function auth(req, res, next) {
     res.setHeader("WWW-Authenticate", 'Basic realm="WebSSH2"')
     return res.status(401).send("Authentication required.")
   }
-  // Store credentials in session
+  // Validate and sanitize credentials
   req.session.sshCredentials = {
-    username: credentials.name,
-    password: credentials.pass
+    username: validator.escape(credentials.name),
+    password: credentials.pass // We don't sanitize the password as it might contain special characters
   }
   next()
 }
@@ -32,12 +33,30 @@ router.get("/", function (req, res) {
 // Scenario 2: Auth required, uses HTTP Basic Auth
 router.get("/host/:host", auth, function (req, res) {
   debug(`Accessed /ssh/host/${req.params.host} route`)
-  const { host } = req.params
-  const { port = 22, sshTerm } = req.query
+
+  // Validate and sanitize host parameter
+  const host = validator.isIP(req.params.host)
+    ? req.params.host
+    : validator.escape(req.params.host)
+
+  // Validate and sanitize port parameter if it exists
+  const port = req.query.port
+    ? validator.isPort(req.query.port)
+      ? parseInt(req.query.port, 10)
+      : 22
+    : 22 // Default to 22 if port is not provided
+
+  // Validate and sanitize sshTerm parameter if it exists
+  const sshTerm = req.query.sshTerm
+    ? validateSshTerm(req.query.sshTerm)
+      ? req.query.sshTerm
+      : null
+    : null // Default to 'xterm-color' if sshTerm is not provided
+
   req.session.sshCredentials = req.session.sshCredentials || {}
   req.session.sshCredentials.host = host
-  req.session.sshCredentials.port = parseInt(port, 10)
-  if (sshTerm) {
+  req.session.sshCredentials.port = port
+  if (req.query.sshTerm) {
     req.session.sshCredentials.term = sshTerm
   }
 
@@ -47,7 +66,7 @@ router.get("/host/:host", auth, function (req, res) {
   )
   debug("/ssh/host/ Credentials: ", sanitizedCredentials)
 
-  handleConnection(req, res, { host: req.params.host })
+  handleConnection(req, res, { host: host })
 })
 
 // Clear credentials route
@@ -60,5 +79,18 @@ router.post("/force-reconnect", function (req, res) {
   req.session.sshCredentials = null
   res.status(401).send("Authentication required.")
 })
+
+/**
+ * Validates the SSH terminal name using validator functions.
+ * Allows alphanumeric characters, hyphens, and periods.
+ * @param {string} term - The terminal name to validate
+ * @returns {boolean} True if the terminal name is valid, false otherwise
+ */
+function validateSshTerm(term) {
+  return (
+    validator.isLength(term, { min: 1, max: 30 }) &&
+    validator.matches(term, /^[a-zA-Z0-9.-]+$/)
+  )
+}
 
 module.exports = router
