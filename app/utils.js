@@ -1,5 +1,6 @@
 // server
 // /app/utils.js
+const validator = require("validator");
 
 /**
  * Sanitizes an object by replacing sensitive properties with asterisks.
@@ -33,4 +34,19 @@ function sanitizeObject(
   return obj
 }
 
+
+/**
+ * Validates the SSH terminal name using validator functions.
+ * Allows alphanumeric characters, hyphens, and periods.
+ * @param {string} term - The terminal name to validate
+ * @returns {boolean} True if the terminal name is valid, false otherwise
+ */
+function validateSshTerm(term) {
+  return (
+    validator.isLength(term, { min: 1, max: 30 }) &&
+    validator.matches(term, /^[a-zA-Z0-9.-]+$/)
+  )
+}
+
 exports.sanitizeObject = sanitizeObject
+exports.validateSshTerm = validateSshTerm;

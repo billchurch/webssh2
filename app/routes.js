@@ -6,7 +6,7 @@ const express = require("express")
 const router = express.Router()
 const handleConnection = require("./connectionHandler")
 const basicAuth = require("basic-auth")
-const { sanitizeObject } = require("./utils")
+const { sanitizeObject, validateSshTerm } = require("./utils")
 const validator = require("validator")
 
 function auth(req, res, next) {
@@ -79,18 +79,5 @@ router.post("/force-reconnect", function (req, res) {
   req.session.sshCredentials = null
   res.status(401).send("Authentication required.")
 })
-
-/**
- * Validates the SSH terminal name using validator functions.
- * Allows alphanumeric characters, hyphens, and periods.
- * @param {string} term - The terminal name to validate
- * @returns {boolean} True if the terminal name is valid, false otherwise
- */
-function validateSshTerm(term) {
-  return (
-    validator.isLength(term, { min: 1, max: 30 }) &&
-    validator.matches(term, /^[a-zA-Z0-9.-]+$/)
-  )
-}
 
 module.exports = router
