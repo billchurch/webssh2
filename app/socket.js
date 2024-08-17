@@ -6,7 +6,8 @@ const createDebug = require("debug")
 const { header } = require("./config")
 const debug = createDebug("webssh2:socket")
 const SSH = require("ssh2").Client
-const { sanitizeObject } = require("./utils")
+const { sanitizeObject, validateSshTerm } = require("./utils")
+const validator = require("validator")
 
 /**
  * Handles WebSocket connections for SSH
@@ -95,7 +96,9 @@ function handleConnection(socket, config) {
     debug(`handleAuthenticate: ${socket.id}, %O`, sanitizeObject(creds))
 
     if (isValidCredentials(socket, creds)) {
-      creds.term !== null && (sessionState.term = creds.term) || (sessionState.term = sessionState.config.ssh.term)
+      creds.term = validateSshTerm(creds.term)
+        ? (sessionState.term = creds.term)
+        : (sessionState.term = sessionState.config.ssh.term)
       initializeConnection(socket, creds)
       return
     }
@@ -117,7 +120,8 @@ function handleConnection(socket, config) {
   function initializeConnection(socket, creds) {
     const config = sessionState.config
     debug(
-      `initializeConnection: ${socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}`
+      `initializeConnection: ${socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
+      creds
     )
     if (conn) {
       conn.end()
@@ -412,11 +416,20 @@ function handleConnection(socket, config) {
   function handleTerminal(socket, conn, data) {
     debug(`handleTerminal: Received terminal data: ${JSON.stringify(data)}`)
     const { term, rows, cols } = data
-    if (term != null) {
+    if (term != null && validateSshTerm(term)) {
       sessionState.term = term
+      debug(`handleTerminal: Set term to ${sessionState.term}`)
     }
-    sessionState.rows = rows
-    sessionState.cols = cols
+    
+    if (rows != null && validator.isInt(rows.toString())) {
+      sessionState.rows = parseInt(rows, 10)
+      debug(`handleTerminal: Set rows to ${sessionState.rows}`)
+    }
+    
+    if (cols != null && validator.isInt(cols.toString())) {
+      sessionState.cols = parseInt(cols, 10)
+      debug(`handleTerminal: Set cols to ${sessionState.cols}`)
+    }
   }
 
   /**
