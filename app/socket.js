@@ -288,7 +288,7 @@ module.exports = function (io, config) {
       var allowReplay = config.options.allowReplay || false
 
       if (allowReplay && ssh.stream) {
-        debug("replayCredentials: Replaying credentials for " + socket.id)
+        debug(`replayCredentials: ${socket.id} Replaying credentials for `)
         ssh.stream.write(password + "\n")
       } else {
         console.warn(
