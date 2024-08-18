@@ -44,11 +44,11 @@
     "socket.io": "~2.2.0",
     "ssh2": "~0.8.9",
     "validator": "^13.12.0",
-    "webssh2_client": "^0.2.19"
+    "webssh2_client": "^0.2.20"
   },
   "scripts": {
     "start": "node index.js",
-    "watch": "node_modules/.bin/nodemon --inspect index.js",
+    "watch": "node_modules/.bin/nodemon index.js",
     "standard": "standard --verbose --fix | snazzy",
     "cleanmac": "find . -name '.DS_Store' -type f -delete"
   },
