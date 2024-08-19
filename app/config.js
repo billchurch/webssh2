@@ -25,11 +25,6 @@ const crypto = require("crypto")
  * @property {number} ssh.readyTimeout - Ready timeout
  * @property {number} ssh.keepaliveInterval - Keepalive interval
  * @property {number} ssh.keepaliveCountMax - Max keepalive count
- * @property {Object} terminal - Terminal configuration
- * @property {boolean} terminal.cursorBlink - Whether cursor blinks
- * @property {number} terminal.scrollback - Scrollback limit
- * @property {number} terminal.tabStopWidth - Tab stop width
- * @property {string} terminal.bellStyle - Bell style
  * @property {Object} header - Header configuration
  * @property {string|null} header.text - Header text
  * @property {string} header.background - Header background color
@@ -44,11 +39,6 @@ const crypto = require("crypto")
  * @property {string[]} algorithms.cipher - Cipher algorithms
  * @property {string[]} algorithms.hmac - HMAC algorithms
  * @property {string[]} algorithms.compress - Compression algorithms
- * @property {Object} serverlog - Server log configuration
- * @property {boolean} serverlog.client - Client logging enabled
- * @property {boolean} serverlog.server - Server logging enabled
- * @property {boolean} accesslog - Access logging enabled
- * @property {boolean} verify - Verification enabled
  */
 
 /**
@@ -70,16 +60,10 @@ const defaultConfig = {
   ssh: {
     host: null,
     port: 22,
-    term: "vt100",
+    term: "xterm-color",
     readyTimeout: 20000,
     keepaliveInterval: 120000,
     keepaliveCountMax: 10
-  },
-  terminal: {
-    cursorBlink: true,
-    scrollback: 10000,
-    tabStopWidth: 8,
-    bellStyle: "sound"
   },
   header: {
     text: null,
@@ -116,13 +100,7 @@ const defaultConfig = {
   session: {
     secret: generateSecureSecret(),
     name: "webssh2.sid"
-  },
-  serverlog: {
-    client: false,
-    server: false
-  },
-  accesslog: false,
-  verify: false
+  }
 }
 
 /**
@@ -176,16 +154,6 @@ const configSchema = {
         "keepaliveCountMax"
       ]
     },
-    terminal: {
-      type: "object",
-      properties: {
-        cursorBlink: { type: "boolean" },
-        scrollback: { type: "integer" },
-        tabStopWidth: { type: "integer" },
-        bellStyle: { type: "string" }
-      },
-      required: ["cursorBlink", "scrollback", "tabStopWidth", "bellStyle"]
-    },
     header: {
       type: "object",
       properties: {
@@ -234,30 +202,16 @@ const configSchema = {
         name: { type: "string" }
       },
       required: ["secret", "name"]
-    },
-    serverlog: {
-      type: "object",
-      properties: {
-        client: { type: "boolean" },
-        server: { type: "boolean" }
-      },
-      required: ["client", "server"]
-    },
-    accesslog: { type: "boolean" },
-    verify: { type: "boolean" }
+    }
   },
   required: [
     "listen",
     "http",
     "user",
     "ssh",
-    "terminal",
     "header",
     "options",
-    "algorithms",
-    "serverlog",
-    "accesslog",
-    "verify"
+    "algorithms"
   ]
 }
 
