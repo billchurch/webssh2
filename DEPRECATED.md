@@ -33,7 +33,6 @@ The following GET parameters have been **removed** from the application:
 
 These have been replaced with client-side terminal configuration handling in the browser:
 
-- `headerBackground=`
 - `readyTimeout=`
 - `cursorBlink=`
 - `scrollback=`

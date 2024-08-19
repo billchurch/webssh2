@@ -82,34 +82,35 @@ You'll be prompted for SSH credentials via HTTP Basic Authentication.
 
 ### GET Parameters
 
-- `port=` - _integer_ - SSH server port (default: 22)
+- `port=` - _integer_ - SSH server port (default: `22`)
 - `header=` - _string_ - Optional header text
+- `headerBackground=` - _string_ - Optional background color (default: `"green"`)
 - `sshTerm=` - _string_ - Terminal type for pty (default: xterm-color)
 
 ### Config File Options
 
 Edit `config.json` to customize the following options:
 
-- `listen.ip` - _string_ - IP address to listen on (default: "127.0.0.1")
-- `listen.port` - _integer_ - Port to listen on (default: 2222)
-- `http.origins` - _array_ - CORS origins for socket.io
-- `user.name` - _string_ - Default SSH username (default: null)
-- `user.password` - _string_ - Default SSH password (default: null)
-- `ssh.host` - _string_ - Default SSH host (default: null)
-- `ssh.port` - _integer_ - Default SSH port (default: 22)
-- `ssh.term` - _string_ - Terminal emulation (default: "xterm-color")
-- `ssh.readyTimeout` - _integer_ - SSH handshake timeout in ms (default: 20000)
-- `ssh.keepaliveInterval` - _integer_ - SSH keepalive interval in ms (default: 120000)
-- `ssh.keepaliveCountMax` - _integer_ - Max SSH keepalive packets (default: 10)
-- `header.text` - _string_ - Header text (default: null)
-- `header.background` - _string_ - Header background color (default: "green")
-- `session.name` - _string_ - Session cookie name
-- `session.secret` - _string_ - Session secret key
-- `options.challengeButton` - _boolean_ - Enable challenge button (default: true)
-- `options.autoLog` - _boolean_ - Enable auto-logging (default: false)
-- `options.allowReauth` - _boolean_ - Allow reauthentication (default: true)
-- `options.allowReconnect` - _boolean_ - Allow reconnection (default: true)
-- `options.allowReplay` - _boolean_ - Allow credential replay (default: true)
+- `listen.ip` - _string_ - IP address to listen on (default: `"127.0.0.1"`)
+- `listen.port` - _integer_ - Port to listen on (default: `2222`)
+- `http.origins` - _array_ - CORS origins for socket.io (default: `["*:*"]`)
+- `user.name` - _string_ - Default SSH username (default: `null`)
+- `user.password` - _string_ - Default SSH password (default: `null`)
+- `ssh.host` - _string_ - Default SSH host (default: `null`)
+- `ssh.port` - _integer_ - Default SSH port (default: `22`)
+- `ssh.term` - _string_ - Terminal emulation (default: `"xterm-color"`)
+- `ssh.readyTimeout` - _integer_ - SSH handshake timeout in ms (default: `20000`)
+- `ssh.keepaliveInterval` - _integer_ - SSH keepalive interval in ms (default: `120000`)
+- `ssh.keepaliveCountMax` - _integer_ - Max SSH keepalive packets (default: `10`)
+- `header.text` - _string_ - Header text (default: `null`)
+- `header.background` - _string_ - Header background color (default: `"green"`)
+- `session.name` - _string_ - Session cookie name (default: `"webssh2.sid"`)
+- `session.secret` - _string_ - Session secret key (default: `crypto.randomBytes(32).toString("hex")`)
+- `options.challengeButton` - _boolean_ - Enable challenge button (default: `true`)
+- `options.autoLog` - _boolean_ - Enable auto-logging (default: `false`)
+- `options.allowReauth` - _boolean_ - Allow reauthentication (default: `true`)
+- `options.allowReconnect` - _boolean_ - Allow reconnection (default: `true`)
+- `options.allowReplay` - _boolean_ - Allow credential replay (default: `true`)
 
 For detailed SSH algorithm configurations, refer to the full config file.
 
@@ -122,8 +123,10 @@ WebSSH2 provides two main routes:
 - **URL:** `http(s)://your-webssh2-server/ssh`
 - **Features:** 
   - Interactive login form
+
     <img width="341" alt="image" src="https://github.com/user-attachments/assets/829d1776-3bc5-4315-b0c6-9e96a648ce06">
   - Terminal configuration options
+
     <img width="341" alt="image" src="https://github.com/user-attachments/assets/bf60f5ba-7221-4177-8d64-946907aed5ff">
 
 ### 2. `/ssh/host/:host`
