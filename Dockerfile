@@ -5,13 +5,14 @@ FROM node:6.9.1-slim
 WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json (if available)
-COPY package*.json ./
+COPY package*.json index.js ./
+
+COPY app/ ./app/
+
+COPY config.json.sample config.json
 
 # Install production dependencies
 RUN npm install --production
-
-# Copy the current directory contents into the container
-COPY . .
 
 # Set environment variables
 ENV PORT=2222

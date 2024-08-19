@@ -4,25 +4,23 @@
     "port": 2222
   },
   "http": {
-    "origins": ["*:*"]
+    "origins": ["*.*"]
   },
   "user": {
     "name": null,
-    "password": null
+    "password": null,
+    "privatekey": null
   },
   "ssh": {
     "host": null,
     "port": 22,
+    "localAddress": null,
+    "localPort": null,
     "term": "xterm-color",
     "readyTimeout": 20000,
     "keepaliveInterval": 120000,
-    "keepaliveCountMax": 10
-  },
-  "terminal": {
-    "cursorBlink": true,
-    "scrollback": 10000,
-    "tabStopWidth": 8,
-    "bellStyle": "sound"
+    "keepaliveCountMax": 10,
+    "allowedSubnets": []
   },
   "header": {
     "text": null,
@@ -30,7 +28,10 @@
   },
   "options": {
     "challengeButton": true,
-    "allowReauth": false
+    "autoLog": false,
+    "allowReauth": true,
+    "allowReconnect": true,
+    "allowReplay": true
   },
   "algorithms": {
     "kex": [
@@ -60,11 +61,5 @@
       "zlib@openssh.com",
       "zlib"
     ]
-  },
-  "serverlog": {
-    "client": false,
-    "server": false
-  },
-  "accesslog": false,
-  "verify": false
+  }
 }
