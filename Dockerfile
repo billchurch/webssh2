@@ -1,4 +1,4 @@
-# Use an official Node.js 6.9.1 runtime as a parent image
+# Use debian:bookworm-slim runtime as a parent image
 FROM debian:bookworm-slim
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
@@ -31,12 +31,13 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json (if available)
 COPY package*.json index.js ./
 
+# Install production dependencies
+# RUN npm install --production
+RUN npm i --audit=false --bin-links=false --fund=false --production
+
 COPY app/ ./app/
 
 COPY config.json.sample config.json
-
-# Install production dependencies
-RUN npm install --production
 
 # Set environment variables
 ENV PORT=2222
