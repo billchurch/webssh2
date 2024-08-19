@@ -1,5 +1,29 @@
 # Use an official Node.js 6.9.1 runtime as a parent image
-FROM node:6.9.1-slim
+FROM debian:bookworm-slim
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+RUN apt-get update \
+    && apt-get install -y curl \
+    && apt-get -y autoclean
+
+# nvm environment variables
+ENV NVM_DIR /usr/local/nvm
+ENV NODE_VERSION 6.9.1
+
+RUN mkdir -p $NVM_DIR
+
+# install nvm
+# https://github.com/creationix/nvm#install-script
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+RUN echo "source $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm alias default $NODE_VERSION && \
+    nvm use default" | bash
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
