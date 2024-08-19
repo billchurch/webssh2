@@ -44,20 +44,10 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 
 ## Docker Setup
 
-1. Modify `config.json`:
-   ```json
-   {
-     "listen": {
-       "ip": "0.0.0.0",
-       "port": 2222
-     }
-   }
-   ```
-
-2. Build and run the Docker container:
+1. Build and run the Docker container (with debug messages):
    ```bash
    docker build -t webssh2 .
-   docker run --name webssh2 -d -p 2222:2222 webssh2
+   docker run --name webssh2 --rm -it -p 2222:2222 -e "DEBUG=webssh2*" webssh2
    ```
 
 ## Usage
