@@ -122,7 +122,9 @@ WebSSH2 provides two main routes:
 - **URL:** `http(s)://your-webssh2-server/ssh`
 - **Features:** 
   - Interactive login form
+    <img width="341" alt="image" src="https://github.com/user-attachments/assets/829d1776-3bc5-4315-b0c6-9e96a648ce06">
   - Terminal configuration options
+    <img width="341" alt="image" src="https://github.com/user-attachments/assets/bf60f5ba-7221-4177-8d64-946907aed5ff">
 
 ### 2. `/ssh/host/:host`
 
