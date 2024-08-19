@@ -371,6 +371,7 @@ module.exports = function (io, config) {
         socket.handshake.session.sshCredentials.username = null
         socket.handshake.session.sshCredentials.password = null
       }
+      socket.handshake.session.usedBasicAuth = false
       sessionState.authenticated = false
       sessionState.username = null
       sessionState.password = null
@@ -382,7 +383,8 @@ module.exports = function (io, config) {
     }
 
     // Check for HTTP Basic Auth credentials
-    if (socket.handshake.session.sshCredentials) {
+    if (socket.handshake.session.usedBasicAuth && socket.handshake.session.sshCredentials) {
+    // if (socket.handshake.session.sshCredentials) {
       var creds = socket.handshake.session.sshCredentials
       debug(
         "handleConnection: " +

@@ -282,22 +282,28 @@ function loadConfig() {
         providedConfig
       )
 
+      // Override the port with the PORT environment variable if it's set
+      if (process.env.PORT) {
+        mergedConfig.listen.port = parseInt(process.env.PORT, 10)
+        console.log(`Using PORT from environment: ${mergedConfig.listen.port}`)
+      }
+
       const validatedConfig = validateConfig(mergedConfig)
-      console.log("Merged and validated configuration")
+      console.log('Merged and validated configuration')
       return validatedConfig
     } else {
       logError(
-        "\n\nERROR: Missing config.json for webssh. Using default config: " +
+        '\n\nERROR: Missing config.json for webssh. Using default config: ' +
           JSON.stringify(defaultConfig) +
-          "\n\n  See config.json.sample for details\n\n"
+          '\n\n  See config.json.sample for details\n\n'
       )
       return defaultConfig
     }
   } catch (err) {
     logError(
-      "\n\nERROR: Problem loading config.json for webssh. Using default config: " +
+      '\n\nERROR: Problem loading config.json for webssh. Using default config: ' +
         JSON.stringify(defaultConfig) +
-        "\n\n  See config.json.sample for details\n\n",
+        '\n\n  See config.json.sample for details\n\n',
       err
     )
     return defaultConfig

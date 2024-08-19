@@ -10,7 +10,7 @@ const { sanitizeObject, validateSshTerm } = require("./utils")
 const validator = require("validator")
 
 function auth(req, res, next) {
-  debug("Authenticating user with HTTP Basic Auth")
+  debug("auth: Basic Auth")
   var credentials = basicAuth(req)
   if (!credentials) {
     res.setHeader("WWW-Authenticate", 'Basic realm="WebSSH2"')
@@ -21,6 +21,7 @@ function auth(req, res, next) {
     username: validator.escape(credentials.name),
     password: credentials.pass // We don't sanitize the password as it might contain special characters
   }
+  req.session.usedBasicAuth = true // Set this flag when Basic Auth is used
   next()
 }
 
@@ -59,6 +60,7 @@ router.get("/host/:host", auth, function (req, res) {
   if (req.query.sshTerm) {
     req.session.sshCredentials.term = sshTerm
   }
+  req.session.usedBasicAuth = true 
 
   // Sanitize and log the sshCredentials object
   const sanitizedCredentials = sanitizeObject(
@@ -70,12 +72,12 @@ router.get("/host/:host", auth, function (req, res) {
 })
 
 // Clear credentials route
-router.post("/clear-credentials", function (req, res) {
+router.get("/clear-credentials", function (req, res) {
   req.session.sshCredentials = null
   res.status(200).send("Credentials cleared.")
 })
 
-router.post("/force-reconnect", function (req, res) {
+router.get("/force-reconnect", function (req, res) {
   req.session.sshCredentials = null
   res.status(401).send("Authentication required.")
 })

@@ -45,6 +45,22 @@ function createApp() {
   app.use(bodyParser.urlencoded({ extended: true }))
   app.use(bodyParser.json())
 
+  // Add cookie-setting middleware
+  app.use((req, res, next) => {
+    if (req.session.sshCredentials) {
+      const cookieData = {
+        host: req.session.sshCredentials.host,
+        port: req.session.sshCredentials.port
+      }
+      res.cookie("basicauth", JSON.stringify(cookieData), {
+        httpOnly: false,
+        path: '/ssh/host/',
+        sameSite: 'Strict'
+      }) // ensure httOnly is false for the client to read the cookie
+    }
+    next()
+  })
+
   // Serve static files from the webssh2_client module with a custom prefix
   app.use("/ssh/assets", express.static(clientPath))
 

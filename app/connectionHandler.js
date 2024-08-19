@@ -28,7 +28,8 @@ function handleConnection(req, res, urlParams) {
   }
 
   // Check if the current route is /host/:host
-  if (req.path.startsWith('/ssh/host/')) {
+  debug('handleConnection req.path:', req.path)
+  if (req.path.startsWith('/host/')) {
     tempConfig.autoConnect = true
   }
 
