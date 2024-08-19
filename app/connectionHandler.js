@@ -1,13 +1,13 @@
 // server
 // app/connectionHandler.js
-const createDebug = require("debug")
-var path = require("path")
-var fs = require("fs")
-var extend = require("util")._extend
-const debug = createDebug("webssh2:connectionHandler")
+const createDebug = require('debug')
+const path = require('path')
+const fs = require('fs')
+const extend = require('util')._extend
+const debug = createDebug('webssh2:connectionHandler')
 
 function handleConnection(req, res, urlParams) {
-  debug("Handling connection")
+  debug('Handling connection')
   urlParams = urlParams || {}
 
   const clientPath = path.resolve(
@@ -18,13 +18,18 @@ function handleConnection(req, res, urlParams) {
     'client',
     'public'
   )
-  
+
   const tempConfig = {
     socket: {
       url: req.protocol + '://' + req.get('host'),
       path: '/ssh/socket.io'
     },
-    autoConnect: true
+    autoConnect: false // Default to false
+  }
+
+  // Check if the current route is /host/:host
+  if (req.path.startsWith('/ssh/host/')) {
+    tempConfig.autoConnect = true
   }
 
   fs.readFile(
