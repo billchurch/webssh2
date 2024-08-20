@@ -1,6 +1,6 @@
 # WebSSH2 - Web SSH Client
 
-[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
+![Orthrus Mascot](images/orthrus.png)
 
 WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as a client on a host to proxy a Websocket / Socket.io connection to an SSH2 server.
 
@@ -16,6 +16,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Routes](#routes)
 - [Deprecation Notice](#deprecation-notice)
 - [Tips](#tips)
+- [Support](#support)
 
 ## Requirements
 
@@ -138,3 +139,8 @@ Several configuration options and GET parameters have been deprecated. For a lis
 - Terminal settings for `/ssh/host/:host` can be customized after login via `Menu | Settings` and persist across sessions.
 
 For more detailed information on configuration and usage, please refer to the full documentation or open an issue on GitHub.
+
+## Support
+If you like what I do, and want to support me you can [buy me a coffee](https://www.buymeacoffee.com/billchurch)!
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/billchurch)
