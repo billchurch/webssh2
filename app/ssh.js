@@ -5,7 +5,7 @@
 const createDebug = require("debug")
 const debug = createDebug("webssh2:ssh")
 const SSH = require("ssh2").Client
-const { sanitizeObject } = require("./utils")
+const maskObject = require('jsmasker');
 
 function SSHConnection(config) {
   this.config = config
@@ -16,7 +16,7 @@ function SSHConnection(config) {
 SSHConnection.prototype.connect = function(creds) {
   var self = this
   return new Promise(function(resolve, reject) {
-    debug("connect: %O", sanitizeObject(creds))
+    debug("connect: %O", maskObject(creds))
 
     if (self.conn) {
       self.conn.end()

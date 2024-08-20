@@ -2,11 +2,12 @@
 // app/socket.js
 "use strict"
 
-var createDebug = require("debug")
-var debug = createDebug("webssh2:socket")
-var SSHConnection = require("./ssh")
-var { sanitizeObject, validateSshTerm } = require("./utils")
-var validator = require("validator")
+const createDebug = require("debug")
+const debug = createDebug("webssh2:socket")
+const SSHConnection = require("./ssh")
+const { validateSshTerm } = require("./utils")
+const maskObject = require('jsmasker');
+const validator = require("validator")
 
 module.exports = function (io, config) {
   io.on("connection", function (socket) {
@@ -30,7 +31,7 @@ module.exports = function (io, config) {
      * @param {Object} config - The configuration object.
      */
     function handleAuthenticate(creds) {
-      debug("handleAuthenticate: " + socket.id + ", %O", sanitizeObject(creds))
+      debug("handleAuthenticate: " + socket.id + ", %O", maskObject(creds))
 
       if (isValidCredentials(creds)) {
         sessionState.term = validateSshTerm(creds.term)
@@ -65,7 +66,7 @@ module.exports = function (io, config) {
           ", INITIALIZING SSH CONNECTION: Host: " +
           creds.host +
           ", creds: %O",
-        sanitizeObject(creds)
+        maskObject(creds)
       )
 
       ssh
@@ -392,7 +393,7 @@ module.exports = function (io, config) {
           ", Host: " +
           creds.host +
           ": HTTP Basic Credentials Exist, creds: %O",
-        sanitizeObject(creds)
+        maskObject(creds)
       )
       handleAuthenticate(creds)
     } else if (!sessionState.authenticated) {
