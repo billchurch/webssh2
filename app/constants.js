@@ -1,7 +1,6 @@
 // server
 // app/constants.js
 
-const crypto = require("crypto")
 const path = require("path")
 
 /**
@@ -14,7 +13,9 @@ const MESSAGES = {
   CONFIG_ERROR: "CONFIG_ERROR",
   UNEXPECTED_ERROR: "An unexpected error occurred",
   EXPRESS_APP_CONFIG_ERROR: "Failed to configure Express app",
-  CLIENT_FILE_ERROR: "Error loading client file"
+  CLIENT_FILE_ERROR: "Error loading client file",
+  FAILED_SESSION_SAVE: "Failed to save session",
+  CONFIG_VALIDATION_ERROR: "Config validation error"
 }
 
 /**
@@ -39,20 +40,6 @@ const DEFAULTS = {
 }
 
 /**
- * Socket events
- */
-const SOCKET_EVENTS = {
-  CONNECTION: "connection",
-  DISCONNECT: "disconnect",
-  AUTHENTICATE: "authenticate",
-  AUTHENTICATION: "authentication",
-  TERMINAL: "terminal",
-  DATA: "data",
-  RESIZE: "resize",
-  CONTROL: "control"
-}
-
-/**
  * HTTP Related
  */
 const HTTP = {
@@ -66,12 +53,11 @@ const HTTP = {
   PATH: "/ssh/host/",
   SAMESITE: "Strict",
   SESSION_SID: "webssh2_sid",
-  CREDS_CLEARED: "Credentials cleared."
+  CREDS_CLEARED: "Credentials cleared.",
 }
 
 module.exports = {
   MESSAGES,
   DEFAULTS,
-  SOCKET_EVENTS,
   HTTP
 }

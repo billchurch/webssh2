@@ -3,11 +3,11 @@
 
 const express = require("express")
 const basicAuth = require("basic-auth")
-const maskObject = require("jsmasker")
 const validator = require("validator")
 const {
   getValidatedHost,
   getValidatedPort,
+  maskSensitiveData,
   validateSshTerm
 } = require("./utils")
 const handleConnection = require("./connectionHandler")
@@ -61,7 +61,7 @@ router.get("/host/:host", auth, function(req, res) {
     req.session.usedBasicAuth = true
 
     // Sanitize and log the sshCredentials object
-    const sanitizedCredentials = maskObject(
+    const sanitizedCredentials = maskSensitiveData(
       JSON.parse(JSON.stringify(req.session.sshCredentials))
     )
     debug("/ssh/host/ Credentials: ", sanitizedCredentials)

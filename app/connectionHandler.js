@@ -5,25 +5,9 @@ const fs = require("fs")
 const path = require("path")
 const { createNamespacedDebug } = require("./logger")
 const { HTTP, MESSAGES, DEFAULTS } = require("./constants")
+const { modifyHtml } = require("./utils")
 
 const debug = createNamespacedDebug("connectionHandler")
-/**
- * Modify the HTML content by replacing certain placeholders with dynamic values.
- * @param {string} html - The original HTML content.
- * @param {Object} config - The configuration object to inject into the HTML.
- * @returns {string} - The modified HTML content.
- */
-function modifyHtml(html, config) {
-  const modifiedHtml = html.replace(
-    /(src|href)="(?!http|\/\/)/g,
-    '$1="/ssh/assets/'
-  )
-
-  return modifiedHtml.replace(
-    "window.webssh2Config = null;",
-    `window.webssh2Config = ${JSON.stringify(config)};`
-  )
-}
 
 /**
  * Handle reading the file and processing the response.

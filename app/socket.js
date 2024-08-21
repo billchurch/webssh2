@@ -1,14 +1,18 @@
 // server
 // app/socket.js
 
-const maskObject = require("jsmasker")
 const validator = require("validator")
 const SSHConnection = require("./ssh")
 const { createNamespacedDebug } = require("./logger")
 const { SSHConnectionError, handleError } = require("./errors")
 
 const debug = createNamespacedDebug("socket")
-const { validateSshTerm, isValidCredentials } = require("./utils")
+const {
+  isValidCredentials,
+  maskSensitiveData,
+  validateSshTerm
+} = require("./utils")
+const { MESSAGES } = require("./constants")
 
 class WebSSH2Socket {
   constructor(socket, config) {
@@ -38,7 +42,7 @@ class WebSSH2Socket {
       const creds = this.socket.handshake.session.sshCredentials
       debug(
         `handleConnection: ${this.socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
-        maskObject(creds)
+        maskSensitiveData(creds)
       )
       this.handleAuthenticate(creds)
     } else if (!this.sessionState.authenticated) {
@@ -67,7 +71,7 @@ class WebSSH2Socket {
   }
 
   handleAuthenticate(creds) {
-    debug(`handleAuthenticate: ${this.socket.id}, %O`, maskObject(creds))
+    debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
 
     if (isValidCredentials(creds)) {
       this.sessionState.term = validateSshTerm(creds.term)
@@ -86,7 +90,7 @@ class WebSSH2Socket {
   initializeConnection(creds) {
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
-      maskObject(creds)
+      maskSensitiveData(creds)
     )
 
     this.ssh
@@ -278,7 +282,10 @@ class WebSSH2Socket {
 
     this.socket.handshake.session.save(err => {
       if (err)
-        console.error(`Failed to save session for ${this.socket.id}:`, err)
+        console.error(
+          `clearSessionCredentials: ${MESSAGES.FAILED_SESSION_SAVE} ${this.socket.id}:`,
+          err
+        )
     })
   }
 }

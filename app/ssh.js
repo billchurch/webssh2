@@ -2,9 +2,9 @@
 // app/ssh.js
 
 const SSH = require("ssh2").Client
-const maskObject = require("jsmasker")
 const { createNamespacedDebug } = require("./logger")
 const { SSHConnectionError, handleError } = require("./errors")
+const { maskSensitiveData } = require("./utils")
 
 const debug = createNamespacedDebug("ssh")
 
@@ -17,7 +17,7 @@ function SSHConnection(config) {
 SSHConnection.prototype.connect = function(creds) {
   const self = this
   return new Promise(function(resolve, reject) {
-    debug("connect: %O", maskObject(creds))
+    debug("connect: %O", maskSensitiveData(creds))
 
     if (self.conn) {
       self.conn.end()
@@ -51,12 +51,10 @@ SSHConnection.prototype.getSSHConfig = function(creds) {
     username: creds.username,
     password: creds.password,
     tryKeyboard: true,
-    algorithms: creds.algorithms || this.config.ssh.algorithms,
-    readyTimeout: creds.readyTimeout || this.config.ssh.readyTimeout,
-    keepaliveInterval:
-      creds.keepaliveInterval || this.config.ssh.keepaliveInterval,
-    keepaliveCountMax:
-      creds.keepaliveCountMax || this.config.ssh.keepaliveCountMax,
+    algorithms: this.config.ssh.algorithms,
+    readyTimeout: this.config.ssh.readyTimeout,
+    keepaliveInterval: this.config.ssh.keepaliveInterval,
+    keepaliveCountMax: this.config.ssh.keepaliveCountMax,
     debug: createNamespacedDebug("ssh2")
   }
 }

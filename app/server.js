@@ -16,7 +16,7 @@ function createServer(app) {
  * @param {Error} err - The error object
  */
 function handleServerError(err) {
-  console.error("WebSSH2 server.listen ERROR:", err.code)
+  console.error("HTTP Server ERROR: %O", err)
 }
 
 /**

@@ -2,8 +2,11 @@
 // /app/utils.js
 const validator = require("validator")
 const crypto = require("crypto")
+const Ajv = require("ajv")
+const maskObject = require("jsmasker")
 const { createNamespacedDebug } = require("./logger")
-const { DEFAULTS } = require("./constants")
+const { DEFAULTS, MESSAGES } = require("./constants")
+const { configSchema } = require("./config")
 
 const debug = createNamespacedDebug("utils")
 
@@ -127,11 +130,71 @@ function validateSshTerm(term) {
   return validatedSshTerm ? term : null
 }
 
+/**
+ * Validates the given configuration object.
+ *
+ * @param {Object} config - The configuration object to validate.
+ * @throws {Error} If the configuration object fails validation.
+ * @returns {Object} The validated configuration object.
+ */
+function validateConfig(config) {
+  const ajv = new Ajv()
+  const validate = ajv.compile(configSchema)
+  const valid = validate(config)
+  if (!valid) {
+    throw new Error(
+      `${MESSAGES.CONFIG_VALIDATION_ERROR}: ${ajv.errorsText(validate.errors)}`
+    )
+  }
+  return config
+}
+
+/**
+ * Modify the HTML content by replacing certain placeholders with dynamic values.
+ * @param {string} html - The original HTML content.
+ * @param {Object} config - The configuration object to inject into the HTML.
+ * @returns {string} - The modified HTML content.
+ */
+function modifyHtml(html, config) {
+  debug("modifyHtml")
+  const modifiedHtml = html.replace(
+    /(src|href)="(?!http|\/\/)/g,
+    '$1="/ssh/assets/'
+  )
+
+  return modifiedHtml.replace(
+    "window.webssh2Config = null;",
+    `window.webssh2Config = ${JSON.stringify(config)};`
+  )
+}
+
+/**
+ * Masks sensitive information in an object
+ * @param {Object} obj - The object to mask
+ * @param {Object} [options] - Optional configuration for masking
+ * @returns {Object} The masked object
+ */
+function maskSensitiveData(obj, options) {
+  const defaultOptions = {
+    // Add any default masking options here
+    // For example:
+    // password: true,
+    // token: true
+  }
+
+  const maskingOptions = Object.assign({}, defaultOptions, options || {})
+
+  return maskObject(obj, maskingOptions)
+}
+
 module.exports = {
   deepMerge,
   generateSecureSecret,
   getValidatedHost,
   getValidatedPort,
   isValidCredentials,
+  maskSensitiveData,
+  modifyHtml,
+  validateConfig,
   validateSshTerm
 }
