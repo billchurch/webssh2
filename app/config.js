@@ -62,7 +62,7 @@ const defaultConfig = {
     compress: ["none", "zlib@openssh.com", "zlib"]
   },
   session: {
-    secret: generateSecureSecret(),
+    secret: process.env.WEBSSH_SESSION_SECRET || generateSecureSecret(),
     name: "webssh2.sid"
   }
 }
