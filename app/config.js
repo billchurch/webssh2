@@ -1,12 +1,11 @@
 // server
 // app/config.js
-"use strict"
 
 const path = require("path")
 const fs = require("fs")
 const readConfig = require("read-config-ng")
 const Ajv = require("ajv")
-const crypto = require("crypto")
+const { deepMerge, generateSecureSecret } = require("./utils")
 
 /**
  * @typedef {Object} Config
@@ -204,15 +203,7 @@ const configSchema = {
       required: ["secret", "name"]
     }
   },
-  required: [
-    "listen",
-    "http",
-    "user",
-    "ssh",
-    "header",
-    "options",
-    "algorithms"
-  ]
+  required: ["listen", "http", "user", "ssh", "header", "options", "algorithms"]
 }
 
 /**
@@ -230,7 +221,7 @@ function getConfigPath() {
  * @returns {Object} The configuration object
  */
 function readConfigFile(configPath) {
-  console.log("WebSSH2 service reading config from: " + configPath)
+  console.log(`WebSSH2 service reading config from: ${configPath}`)
   return readConfig.sync(configPath)
 }
 
@@ -247,7 +238,7 @@ function validateConfig(config) {
   console.log("WebSSH2 service validating config")
   if (!valid) {
     throw new Error(
-      "Config validation error: " + ajv.errorsText(validate.errors)
+      `Config validation error: ${ajv.errorsText(validate.errors)}`
     )
   }
   return config
@@ -261,7 +252,7 @@ function validateConfig(config) {
 function logError(message, error) {
   console.error(message)
   if (error) {
-    console.error("ERROR:\n\n  " + error)
+    console.error(`ERROR:\n\n  ${error}`)
   }
 }
 
@@ -289,52 +280,24 @@ function loadConfig() {
       }
 
       const validatedConfig = validateConfig(mergedConfig)
-      console.log('Merged and validated configuration')
+      console.log("Merged and validated configuration")
       return validatedConfig
-    } else {
-      logError(
-        '\n\nERROR: Missing config.json for webssh. Using default config: ' +
-          JSON.stringify(defaultConfig) +
-          '\n\n  See config.json.sample for details\n\n'
-      )
-      return defaultConfig
     }
+    logError(
+      `\n\nERROR: Missing config.json for webssh. Using default config: ${JSON.stringify(
+        defaultConfig
+      )}\n\n  See config.json.sample for details\n\n`
+    )
+    return defaultConfig
   } catch (err) {
     logError(
-      '\n\nERROR: Problem loading config.json for webssh. Using default config: ' +
-        JSON.stringify(defaultConfig) +
-        '\n\n  See config.json.sample for details\n\n',
+      `\n\nERROR: Problem loading config.json for webssh. Using default config: ${JSON.stringify(
+        defaultConfig
+      )}\n\n  See config.json.sample for details\n\n`,
       err
     )
     return defaultConfig
   }
-}
-
-/**
- * Generates a secure random session secret
- * @returns {string} A random 32-byte hex string
- */
-function generateSecureSecret() {
-  return crypto.randomBytes(32).toString("hex")
-}
-
-/**
- * Deep merges two objects
- * @param {Object} target - The target object to merge into
- * @param {Object} source - The source object to merge from
- * @returns {Object} The merged object
- */
-function deepMerge(target, source) {
-  for (const key in source) {
-    if (source.hasOwnProperty(key)) {
-      if (source[key] instanceof Object && !Array.isArray(source[key])) {
-        target[key] = deepMerge(target[key] || {}, source[key])
-      } else {
-        target[key] = source[key]
-      }
-    }
-  }
-  return target
 }
 
 /**
@@ -344,3 +307,14 @@ function deepMerge(target, source) {
 const config = loadConfig()
 
 module.exports = config
+/**
+ * Gets the CORS configuration
+ * @returns {Object} The CORS configuration object
+ */
+module.exports.getCorsConfig = function getCorsConfig() {
+  return {
+    origin: config.origin || ["*.*"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+}

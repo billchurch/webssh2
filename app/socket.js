@@ -1,19 +1,19 @@
 // server
 // app/socket.js
-"use strict"
 
 const createDebug = require("debug")
+
 const debug = createDebug("webssh2:socket")
+const maskObject = require("jsmasker")
+const validator = require("validator")
 const SSHConnection = require("./ssh")
 const { validateSshTerm } = require("./utils")
-const maskObject = require('jsmasker');
-const validator = require("validator")
 
-module.exports = function (io, config) {
-  io.on("connection", function (socket) {
-    debug("io.on connection: " + socket.id)
-    var ssh = new SSHConnection(config)
-    var sessionState = {
+module.exports = function(io, config) {
+  io.on("connection", function(socket) {
+    debug(`io.on connection: ${socket.id}`)
+    const ssh = new SSHConnection(config)
+    const sessionState = {
       authenticated: false,
       username: null,
       password: null,
@@ -31,7 +31,7 @@ module.exports = function (io, config) {
      * @param {Object} config - The configuration object.
      */
     function handleAuthenticate(creds) {
-      debug("handleAuthenticate: " + socket.id + ", %O", maskObject(creds))
+      debug(`handleAuthenticate: ${socket.id}, %O`, maskObject(creds))
 
       if (isValidCredentials(creds)) {
         sessionState.term = validateSshTerm(creds.term)
@@ -39,9 +39,7 @@ module.exports = function (io, config) {
           : config.ssh.term
         initializeConnection(creds)
       } else {
-        console.warn(
-          "handleAuthenticate: " + socket.id + ", CREDENTIALS INVALID"
-        )
+        console.warn(`handleAuthenticate: ${socket.id}, CREDENTIALS INVALID`)
         socket.emit("authentication", {
           success: false,
           message: "Invalid credentials format"
@@ -61,17 +59,13 @@ module.exports = function (io, config) {
      */
     function initializeConnection(creds) {
       debug(
-        "initializeConnection: " +
-          socket.id +
-          ", INITIALIZING SSH CONNECTION: Host: " +
-          creds.host +
-          ", creds: %O",
+        `initializeConnection: ${socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
         maskObject(creds)
       )
 
       ssh
         .connect(creds)
-        .then(function () {
+        .then(function() {
           sessionState.authenticated = true
           sessionState.username = creds.username
           sessionState.password = creds.password
@@ -79,65 +73,51 @@ module.exports = function (io, config) {
           sessionState.port = creds.port
 
           debug(
-            "initializeConnection: " +
-              socket.id +
-              " conn.on ready: Host: " +
-              creds.host
+            `initializeConnection: ${socket.id} conn.on ready: Host: ${creds.host}`
           )
           console.log(
-            "initializeConnection: " +
-              socket.id +
-              " conn.on ready: " +
-              creds.username +
-              "@" +
-              creds.host +
-              ":" +
-              creds.port +
-              " successfully connected"
+            `initializeConnection: ${socket.id} conn.on ready: ${creds.username}@${creds.host}:${creds.port} successfully connected`
           )
 
-          var auth_result = { action: "auth_result", success: true }
+          const auth_result = { action: "auth_result", success: true }
           debug(
-            "initializeConnection: " +
-              socket.id +
-              " conn.on ready: emitting authentication: " +
-              JSON.stringify(auth_result)
+            `initializeConnection: ${
+              socket.id
+            } conn.on ready: emitting authentication: ${JSON.stringify(
+              auth_result
+            )}`
           )
           socket.emit("authentication", auth_result)
 
           // Emit consolidated permissions
-          var permissions = {
+          const permissions = {
             autoLog: config.options.autoLog || false,
             allowReplay: config.options.allowReplay || false,
             allowReconnect: config.options.allowReconnect || false,
             allowReauth: config.options.allowReauth || false
           }
           debug(
-            "initializeConnection: " +
-              socket.id +
-              " conn.on ready: emitting permissions: " +
-              JSON.stringify(permissions)
+            `initializeConnection: ${
+              socket.id
+            } conn.on ready: emitting permissions: ${JSON.stringify(
+              permissions
+            )}`
           )
           socket.emit("permissions", permissions)
 
-          updateElement("footer", "ssh://" + creds.host + ":" + creds.port)
+          updateElement("footer", `ssh://${creds.host}:${creds.port}`)
 
           if (config.header && config.header.text !== null) {
-            debug("initializeConnection header: " + config.header)
+            debug(`initializeConnection header: ${config.header}`)
             updateElement("header", config.header.text)
           }
 
           // Request terminal information from client
           socket.emit("getTerminal", true)
         })
-        .catch(function (err) {
+        .catch(function(err) {
           console.error(
-            "initializeConnection: SSH CONNECTION ERROR: " +
-              socket.id +
-              ", Host: " +
-              creds.host +
-              ", Error: " +
-              err.message
+            `initializeConnection: SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`
           )
           if (err.level === "client-authentication") {
             socket.emit("authentication", {
@@ -161,24 +141,24 @@ module.exports = function (io, config) {
      * @returns {void}
      */
     function handleTerminal(data) {
-      debug("handleTerminal: Received terminal data: " + JSON.stringify(data))
-      var term = data.term
-      var rows = data.rows
-      var cols = data.cols
+      debug(`handleTerminal: Received terminal data: ${JSON.stringify(data)}`)
+      const { term } = data
+      const { rows } = data
+      const { cols } = data
 
       if (term && validateSshTerm(term)) {
         sessionState.term = term
-        debug("handleTerminal: Set term to " + sessionState.term)
+        debug(`handleTerminal: Set term to ${sessionState.term}`)
       }
 
       if (rows && validator.isInt(rows.toString())) {
         sessionState.rows = parseInt(rows, 10)
-        debug("handleTerminal: Set rows to " + sessionState.rows)
+        debug(`handleTerminal: Set rows to ${sessionState.rows}`)
       }
 
       if (cols && validator.isInt(cols.toString())) {
         sessionState.cols = parseInt(cols, 10)
-        debug("handleTerminal: Set cols to " + sessionState.cols)
+        debug(`handleTerminal: Set cols to ${sessionState.cols}`)
       }
 
       // Now that we have terminal information, we can create the shell
@@ -199,35 +179,35 @@ module.exports = function (io, config) {
           cols: sessionState.cols,
           rows: sessionState.rows
         })
-        .then(function (stream) {
-          stream.on("data", function (data) {
+        .then(function(stream) {
+          stream.on("data", function(data) {
             socket.emit("data", data.toString("utf-8"))
           })
 
-          stream.stderr.on("data", function (data) {
-            debug("STDERR: " + data)
+          stream.stderr.on("data", function(data) {
+            debug(`STDERR: ${data}`)
           })
 
-          stream.on("close", function (code, signal) {
-            debug("handleStreamClose: " + socket.id)
+          stream.on("close", function(code, signal) {
+            debug(`handleStreamClose: ${socket.id}`)
             handleConnectionClose()
           })
 
-          socket.on("data", function (data) {
+          socket.on("data", function(data) {
             if (stream) {
               stream.write(data)
             }
           })
 
-          socket.on("control", function (controlData) {
+          socket.on("control", function(controlData) {
             handleControl(controlData)
           })
 
-          socket.on("resize", function (data) {
+          socket.on("resize", function(data) {
             handleResize(data)
           })
         })
-        .catch(function (err) {
+        .catch(function(err) {
           handleError("SHELL ERROR", err)
         })
     }
@@ -238,8 +218,8 @@ module.exports = function (io, config) {
      * @param {Object} data - The resize data containing the number of rows and columns.
      */
     function handleResize(data) {
-      var rows = data.rows
-      var cols = data.cols
+      const { rows } = data
+      const { cols } = data
 
       if (ssh.stream) {
         if (rows && validator.isInt(rows.toString())) {
@@ -248,9 +228,7 @@ module.exports = function (io, config) {
         if (cols && validator.isInt(cols.toString())) {
           sessionState.cols = parseInt(cols, 10)
         }
-        debug(
-          "Resizing terminal to " + sessionState.rows + "x" + sessionState.cols
-        )
+        debug(`Resizing terminal to ${sessionState.rows}x${sessionState.cols}`)
         ssh.resizeTerminal(sessionState.rows, sessionState.cols)
       }
     }
@@ -262,7 +240,7 @@ module.exports = function (io, config) {
      * @returns {void}
      */
     function handleControl(controlData) {
-      debug("handleControl: Received control data: " + controlData)
+      debug(`handleControl: Received control data: ${controlData}`)
       if (
         validator.isIn(controlData, ["replayCredentials", "reauth"]) &&
         ssh.stream
@@ -274,7 +252,7 @@ module.exports = function (io, config) {
         }
       } else {
         console.warn(
-          "handleControl: Invalid control command received: " + controlData
+          `handleControl: Invalid control command received: ${controlData}`
         )
       }
     }
@@ -285,15 +263,15 @@ module.exports = function (io, config) {
      * @returns {void}
      */
     function replayCredentials() {
-      var password = sessionState.password
-      var allowReplay = config.options.allowReplay || false
+      const { password } = sessionState
+      const allowReplay = config.options.allowReplay || false
 
       if (allowReplay && ssh.stream) {
         debug(`replayCredentials: ${socket.id} Replaying credentials for `)
-        ssh.stream.write(password + "\n")
+        ssh.stream.write(`${password}\n`)
       } else {
         console.warn(
-          "replayCredentials: Credential replay not allowed for " + socket.id
+          `replayCredentials: Credential replay not allowed for ${socket.id}`
         )
       }
     }
@@ -302,7 +280,7 @@ module.exports = function (io, config) {
      * Handles reauthentication for the socket.
      */
     function handleReauth() {
-      debug("handleReauth: Reauthentication requested for " + socket.id)
+      debug(`handleReauth: Reauthentication requested for ${socket.id}`)
       if (config.options.allowReauth) {
         clearSessionCredentials()
         debug(`handleReauth: Reauthenticating ${socket.id}`)
@@ -322,9 +300,9 @@ module.exports = function (io, config) {
      * @param {Error} err - The error object.
      */
     function handleError(context, err) {
-      var errorMessage = err ? ": " + err.message : ""
-      debug("WebSSH2 error: " + context + errorMessage)
-      socket.emit("ssherror", "SSH " + context + errorMessage)
+      const errorMessage = err ? `: ${err.message}` : ""
+      debug(`WebSSH2 error: ${context}${errorMessage}`)
+      socket.emit("ssherror", `SSH ${context}${errorMessage}`)
       handleConnectionClose()
     }
 
@@ -336,14 +314,7 @@ module.exports = function (io, config) {
      * @returns {void}
      */
     function updateElement(element, value) {
-      debug(
-        "updateElement: " +
-          socket.id +
-          ", Element: " +
-          element +
-          ", Value: " +
-          value
-      )
+      debug(`updateElement: ${socket.id}, Element: ${element}, Value: ${value}`)
       socket.emit("updateUI", { element: element, value: value })
     }
 
@@ -353,8 +324,8 @@ module.exports = function (io, config) {
      * @param {string} reason - The reason for the closure.
      */
     function handleConnectionClose(reason) {
-      debug("handleDisconnect: " + socket.id + ", Reason: " + reason)
-      debug("handleConnectionClose: " + socket.id)
+      debug(`handleDisconnect: ${socket.id}, Reason: ${reason}`)
+      debug(`handleConnectionClose: ${socket.id}`)
       if (ssh) {
         ssh.end()
       }
@@ -366,7 +337,7 @@ module.exports = function (io, config) {
      */
     function clearSessionCredentials() {
       debug(
-        "clearSessionCredentials: Clearing session credentials for " + socket.id
+        `clearSessionCredentials: Clearing session credentials for ${socket.id}`
       )
       if (socket.handshake.session.sshCredentials) {
         socket.handshake.session.sshCredentials.username = null
@@ -376,28 +347,27 @@ module.exports = function (io, config) {
       sessionState.authenticated = false
       sessionState.username = null
       sessionState.password = null
-      socket.handshake.session.save(function (err) {
+      socket.handshake.session.save(function(err) {
         if (err) {
-          console.error("Failed to save session for " + socket.id + ":", err)
+          console.error(`Failed to save session for ${socket.id}:`, err)
         }
       })
     }
 
     // Check for HTTP Basic Auth credentials
-    if (socket.handshake.session.usedBasicAuth && socket.handshake.session.sshCredentials) {
-    // if (socket.handshake.session.sshCredentials) {
-      var creds = socket.handshake.session.sshCredentials
+    if (
+      socket.handshake.session.usedBasicAuth &&
+      socket.handshake.session.sshCredentials
+    ) {
+      // if (socket.handshake.session.sshCredentials) {
+      const creds = socket.handshake.session.sshCredentials
       debug(
-        "handleConnection: " +
-          socket.id +
-          ", Host: " +
-          creds.host +
-          ": HTTP Basic Credentials Exist, creds: %O",
+        `handleConnection: ${socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
         maskObject(creds)
       )
       handleAuthenticate(creds)
     } else if (!sessionState.authenticated) {
-      debug("handleConnection: " + socket.id + ", emitting request_auth")
+      debug(`handleConnection: ${socket.id}, emitting request_auth`)
       socket.emit("authentication", { action: "request_auth" })
     }
 

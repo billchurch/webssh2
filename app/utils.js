@@ -2,6 +2,8 @@
 // /app/utils.js
 const validator = require("validator")
 const createDebug = require("debug")
+const crypto = require("crypto")
+
 const debug = createDebug("webssh2:utils")
 
 /**
@@ -23,3 +25,35 @@ function validateSshTerm(term) {
 }
 
 exports.validateSshTerm = validateSshTerm
+/**
+ * Deep merges two objects
+ * @param {Object} target - The target object to merge into
+ * @param {Object} source - The source object to merge from
+ * @returns {Object} The merged object
+ */
+function deepMerge(target, source) {
+  const output = Object.assign({}, target) // Avoid mutating target directly
+  Object.keys(source).forEach(key => {
+    if (Object.hasOwnProperty.call(source, key)) {
+      if (
+        source[key] instanceof Object &&
+        !Array.isArray(source[key]) &&
+        source[key] !== null
+      ) {
+        output[key] = deepMerge(output[key] || {}, source[key])
+      } else {
+        output[key] = source[key]
+      }
+    }
+  })
+  return output
+}
+exports.deepMerge = deepMerge
+/**
+ * Generates a secure random session secret
+ * @returns {string} A random 32-byte hex string
+ */
+function generateSecureSecret() {
+  return crypto.randomBytes(32).toString("hex")
+}
+exports.generateSecureSecret = generateSecureSecret

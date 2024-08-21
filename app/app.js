@@ -1,9 +1,7 @@
 // server
 // app/app.js
-"use strict"
 
-const createDebug = require("debug")
-const debug = createDebug("webssh2")
+// const createDebug = require("debug")
 const http = require("http")
 const express = require("express")
 const socketIo = require("socket.io")
@@ -14,6 +12,9 @@ const sharedsession = require("express-socket.io-session")
 const config = require("./config")
 const socketHandler = require("./socket")
 const sshRoutes = require("./routes")
+const { getCorsConfig } = require("./config")
+
+// const debug = createDebug("webssh2")
 
 /**
  * Creates and configures the Express application
@@ -54,8 +55,8 @@ function createApp() {
       }
       res.cookie("basicauth", JSON.stringify(cookieData), {
         httpOnly: false,
-        path: '/ssh/host/',
-        sameSite: 'Strict'
+        path: "/ssh/host/",
+        sameSite: "Strict"
       }) // ensure httOnly is false for the client to read the cookie
     }
     next()
@@ -105,23 +106,19 @@ function createServer(app) {
 }
 
 /**
- * Gets the CORS configuration
- * @returns {Object} The CORS configuration object
- */
-function getCorsConfig() {
-  return {
-    origin: config.origin || ["*.*"],
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-}
-
-/**
  * Handles server errors
  * @param {Error} err - The error object
  */
 function handleServerError(err) {
   console.error("WebSSH2 server.listen ERROR:", err.code)
+}
+
+/**
+ * Sets up Socket.IO event listeners
+ * @param {import('socket.io').Server} io - The Socket.IO server instance
+ */
+function setupSocketIOListeners(io) {
+  socketHandler(io, config)
 }
 
 /**
@@ -146,14 +143,6 @@ function startServer() {
   server.on("error", handleServerError)
 
   return { server, io, app }
-}
-
-/**
- * Sets up Socket.IO event listeners
- * @param {import('socket.io').Server} io - The Socket.IO server instance
- */
-function setupSocketIOListeners(io) {
-  socketHandler(io, config)
 }
 
 // Don't start the server immediately, export the function instead

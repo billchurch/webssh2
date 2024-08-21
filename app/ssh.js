@@ -1,11 +1,11 @@
 // server
 // app/ssh.js
-"use strict"
 
 const createDebug = require("debug")
-const debug = createDebug("webssh2:ssh")
 const SSH = require("ssh2").Client
-const maskObject = require('jsmasker');
+const maskObject = require("jsmasker")
+
+const debug = createDebug("webssh2:ssh")
 
 function SSHConnection(config) {
   this.config = config
@@ -14,7 +14,7 @@ function SSHConnection(config) {
 }
 
 SSHConnection.prototype.connect = function(creds) {
-  var self = this
+  const self = this
   return new Promise(function(resolve, reject) {
     debug("connect: %O", maskObject(creds))
 
@@ -23,16 +23,16 @@ SSHConnection.prototype.connect = function(creds) {
     }
 
     self.conn = new SSH()
-    
-    var sshConfig = self.getSSHConfig(creds)
-    
+
+    const sshConfig = self.getSSHConfig(creds)
+
     self.conn.on("ready", function() {
-      debug("connect: ready: " + creds.host)
+      debug(`connect: ready: ${creds.host}`)
       resolve()
     })
 
     self.conn.on("error", function(err) {
-      console.error("connect: error:" + err.message)
+      console.error(`connect: error:${err.message}`)
       reject(err)
     })
 
@@ -49,14 +49,16 @@ SSHConnection.prototype.getSSHConfig = function(creds) {
     tryKeyboard: true,
     algorithms: creds.algorithms || this.config.ssh.algorithms,
     readyTimeout: creds.readyTimeout || this.config.ssh.readyTimeout,
-    keepaliveInterval: creds.keepaliveInterval || this.config.ssh.keepaliveInterval,
-    keepaliveCountMax: creds.keepaliveCountMax || this.config.ssh.keepaliveCountMax,
+    keepaliveInterval:
+      creds.keepaliveInterval || this.config.ssh.keepaliveInterval,
+    keepaliveCountMax:
+      creds.keepaliveCountMax || this.config.ssh.keepaliveCountMax,
     debug: createDebug("ssh")
   }
 }
 
 SSHConnection.prototype.shell = function(options) {
-  var self = this
+  const self = this
   return new Promise(function(resolve, reject) {
     self.conn.shell(options, function(err, stream) {
       if (err) {
