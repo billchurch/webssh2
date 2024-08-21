@@ -3,6 +3,7 @@
 const validator = require("validator")
 const crypto = require("crypto")
 const { createNamespacedDebug } = require("./logger")
+const { DEFAULTS } = require("./constants")
 
 const debug = createNamespacedDebug("utils")
 
@@ -67,7 +68,7 @@ function getValidatedHost(host) {
  * @returns {number} - The validated port number.
  */
 function getValidatedPort(portInput) {
-  const defaultPort = 22
+  const defaultPort = DEFAULTS.SSH_PORT
   const port = defaultPort
   debug("getValidatedPort: input: %O", portInput)
 
