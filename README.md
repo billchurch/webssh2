@@ -48,7 +48,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 1. Build and run the Docker container (with debug messages):
    ```bash
    docker build -t webssh2 .
-   docker run --name webssh2 --rm -it -p 2222:2222 -e "DEBUG=webssh2*" webssh2
+   docker run --name webssh2 --rm -it -p 2222:2222 -e "DEBUG=webssh*,-webssh2:ssh2" webssh2
    ```
 
 ## Usage
@@ -137,6 +137,7 @@ Several configuration options and GET parameters have been deprecated. For a lis
 - To add custom JavaScript, modify `./src/client.htm`, `./src/index.js`, or add your file to `webpack.*.js`.
 - For security, use HTTPS when transmitting credentials via HTTP Basic Auth.
 - Terminal settings for `/ssh/host/:host` can be customized after login via `Menu | Settings` and persist across sessions.
+- You can enable debug from the console by passing the `DEBUG` environment variable to your start script: `DEBUG=webssh*,-webssh2:ssh2 npm run start`. The `webssh2:ssh2` namespace is very chatty and shows all of the SSH protocol information, the `-webssh2:ssh2` excludes that namespace from the line above, otherwise `DEBUG=webssh*` will capture all of the WebSSH2 specific bits. You may also debug Socket.IO and Express related events with `engine`, `socket` and `express` namespaces, or go for broke and debug everything with `DEBUG=*`.
 
 For more detailed information on configuration and usage, please refer to the full documentation or open an issue on GitHub.
 
