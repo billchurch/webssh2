@@ -7,7 +7,7 @@ const debug = createDebug("webssh2:socket")
 const maskObject = require("jsmasker")
 const validator = require("validator")
 const SSHConnection = require("./ssh")
-const { validateSshTerm } = require("./utils")
+const { validateSshTerm, isValidCredentials } = require("./utils")
 
 module.exports = function(io, config) {
   io.on("connection", function(socket) {
@@ -79,15 +79,15 @@ module.exports = function(io, config) {
             `initializeConnection: ${socket.id} conn.on ready: ${creds.username}@${creds.host}:${creds.port} successfully connected`
           )
 
-          const auth_result = { action: "auth_result", success: true }
+          const authResult = { action: "auth_result", success: true }
           debug(
             `initializeConnection: ${
               socket.id
             } conn.on ready: emitting authentication: ${JSON.stringify(
-              auth_result
+              authResult
             )}`
           )
-          socket.emit("authentication", auth_result)
+          socket.emit("authentication", authResult)
 
           // Emit consolidated permissions
           const permissions = {
@@ -189,7 +189,7 @@ module.exports = function(io, config) {
           })
 
           stream.on("close", function(code, signal) {
-            debug(`handleStreamClose: ${socket.id}`)
+            debug(`handleStreamClose: ${socket.id}: ${code}, ${signal}`)
             handleConnectionClose()
           })
 
@@ -339,15 +339,20 @@ module.exports = function(io, config) {
       debug(
         `clearSessionCredentials: Clearing session credentials for ${socket.id}`
       )
-      if (socket.handshake.session.sshCredentials) {
-        socket.handshake.session.sshCredentials.username = null
-        socket.handshake.session.sshCredentials.password = null
+
+      const { session } = socket.handshake
+
+      if (session.sshCredentials) {
+        session.sshCredentials.username = null
+        session.sshCredentials.password = null
       }
-      socket.handshake.session.usedBasicAuth = false
+
+      session.usedBasicAuth = false
       sessionState.authenticated = false
       sessionState.username = null
       sessionState.password = null
-      socket.handshake.session.save(function(err) {
+
+      session.save(function(err) {
         if (err) {
           console.error(`Failed to save session for ${socket.id}:`, err)
         }
@@ -375,24 +380,4 @@ module.exports = function(io, config) {
     socket.on("terminal", handleTerminal)
     socket.on("disconnect", handleConnectionClose)
   })
-}
-
-/**
- * Checks if the provided credentials object is valid.
- *
- * @param {Object} creds - The credentials object.
- * @param {string} creds.username - The username.
- * @param {string} creds.password - The password.
- * @param {string} creds.host - The host.
- * @param {number} creds.port - The port.
- * @returns {boolean} - Returns true if the credentials are valid, otherwise false.
- */
-function isValidCredentials(creds) {
-  return (
-    creds &&
-    typeof creds.username === "string" &&
-    typeof creds.password === "string" &&
-    typeof creds.host === "string" &&
-    typeof creds.port === "number"
-  )
 }

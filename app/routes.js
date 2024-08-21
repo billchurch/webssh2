@@ -9,9 +9,14 @@ const router = express.Router()
 const basicAuth = require("basic-auth")
 const maskObject = require("jsmasker")
 const validator = require("validator")
-const { validateSshTerm } = require("./utils")
+const {
+  getValidatedHost,
+  getValidatedPort,
+  validateSshTerm
+} = require("./utils")
 const handleConnection = require("./connectionHandler")
 
+// eslint-disable-next-line consistent-return
 function auth(req, res, next) {
   debug("auth: Basic Auth")
   const credentials = basicAuth(req)
@@ -30,38 +35,26 @@ function auth(req, res, next) {
 
 // Scenario 1: No auth required, uses websocket authentication instead
 router.get("/", function(req, res) {
-  debug("Accessed / route")
+  debug("router.get./: Accessed / route")
   handleConnection(req, res)
 })
 
 // Scenario 2: Auth required, uses HTTP Basic Auth
+// Scenario 2: Auth required, uses HTTP Basic Auth
 router.get("/host/:host", auth, function(req, res) {
-  debug(`Accessed /ssh/host/${req.params.host} route`)
+  debug(`router.get.host: /ssh/host/${req.params.host} route`)
 
-  // Validate and sanitize host parameter
-  const host = validator.isIP(req.params.host)
-    ? req.params.host
-    : validator.escape(req.params.host)
+  const host = getValidatedHost(req.params.host)
+  const port = getValidatedPort(req.query.port)
 
-  // Validate and sanitize port parameter if it exists
-  const port = req.query.port
-    ? validator.isPort(req.query.port)
-      ? parseInt(req.query.port, 10)
-      : 22
-    : 22 // Default to 22 if port is not provided
-
-  // Validate and sanitize sshTerm parameter if it exists
-  const sshTerm = req.query.sshTerm
-    ? validateSshTerm(req.query.sshTerm)
-      ? req.query.sshTerm
-      : null
-    : null // Default to 'xterm-color' if sshTerm is not provided
+  // Validate and sanitize sshterm parameter if it exists
+  const sshterm = validateSshTerm(req.query.sshterm)
 
   req.session.sshCredentials = req.session.sshCredentials || {}
   req.session.sshCredentials.host = host
   req.session.sshCredentials.port = port
-  if (req.query.sshTerm) {
-    req.session.sshCredentials.term = sshTerm
+  if (req.query.sshterm) {
+    req.session.sshCredentials.term = sshterm
   }
   req.session.usedBasicAuth = true
 
