@@ -4,6 +4,7 @@
 const fs = require("fs")
 const path = require("path")
 const { createNamespacedDebug } = require("./logger")
+const { HTTP, MESSAGES, DEFAULTS } = require("./constants")
 
 const debug = createNamespacedDebug("connectionHandler")
 /**
@@ -34,7 +35,9 @@ function handleFileRead(filePath, config, res) {
   // eslint-disable-next-line consistent-return
   fs.readFile(filePath, "utf8", function(err, data) {
     if (err) {
-      return res.status(500).send("Error loading client file")
+      return res
+        .status(HTTP.INTERNAL_SERVER_ERROR)
+        .send(MESSAGES.CLIENT_FILE_ERROR)
     }
 
     const modifiedHtml = modifyHtml(data, config)
@@ -67,7 +70,7 @@ function handleConnection(req, res) {
     autoConnect: req.path.startsWith("/host/") // Automatically connect if path starts with /host/
   }
 
-  const filePath = path.join(clientPath, "client.htm")
+  const filePath = path.join(clientPath, DEFAULTS.CLIENT_FILE)
   handleFileRead(filePath, tempConfig, res)
 }
 

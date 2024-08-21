@@ -3,6 +3,7 @@
 
 const util = require("util")
 const { logError, createNamespacedDebug } = require("./logger")
+const { HTTP, MESSAGES } = require("./constants")
 
 const debug = createNamespacedDebug("errors")
 
@@ -25,7 +26,7 @@ util.inherits(WebSSH2Error, Error)
  * @param {string} message - The error message
  */
 function ConfigError(message) {
-  WebSSH2Error.call(this, message, "CONFIG_ERROR")
+  WebSSH2Error.call(this, message, MESSAGES.CONFIG_ERROR)
 }
 
 util.inherits(ConfigError, WebSSH2Error)
@@ -35,7 +36,7 @@ util.inherits(ConfigError, WebSSH2Error)
  * @param {string} message - The error message
  */
 function SSHConnectionError(message) {
-  WebSSH2Error.call(this, message, "SSH_CONNECTION_ERROR")
+  WebSSH2Error.call(this, message, MESSAGES.SSH_CONNECTION_ERROR)
 }
 
 util.inherits(SSHConnectionError, WebSSH2Error)
@@ -50,13 +51,17 @@ function handleError(err, res) {
     logError(err.message, err)
     debug(err.message)
     if (res) {
-      res.status(500).json({ error: err.message, code: err.code })
+      res
+        .status(HTTP.INTERNAL_SERVER_ERROR)
+        .json({ error: err.message, code: err.code })
     }
   } else {
-    logError("An unexpected error occurred", err)
-    debug("Unexpected error: %O", err)
+    logError(MESSAGES.UNEXPECTED_ERROR, err)
+    debug(`handleError: ${MESSAGES.UNEXPECTED_ERROR}: %O`, err)
     if (res) {
-      res.status(500).json({ error: "An unexpected error occurred" })
+      res
+        .status(HTTP.INTERNAL_SERVER_ERROR)
+        .json({ error: MESSAGES.UNEXPECTED_ERROR })
     }
   }
 }

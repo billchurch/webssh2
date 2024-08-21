@@ -20,7 +20,7 @@ function createNamespacedDebug(namespace) {
 function logError(message, error) {
   console.error(message)
   if (error) {
-    console.error(`ERROR:\n\n  ${error}`)
+    console.error(`ERROR: ${error}`)
   }
 }
 

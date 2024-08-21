@@ -2,7 +2,6 @@
 // app/app.js
 
 const express = require("express")
-const path = require("path")
 const config = require("./config")
 const socketHandler = require("./socket")
 const sshRoutes = require("./routes")
@@ -11,6 +10,7 @@ const { createServer, startServer } = require("./server")
 const { configureSocketIO } = require("./io")
 const { handleError, ConfigError } = require("./errors")
 const { createNamespacedDebug } = require("./logger")
+const { DEFAULTS, MESSAGES } = require("./constants")
 
 const debug = createNamespacedDebug("app")
 
@@ -23,14 +23,7 @@ function createApp() {
 
   try {
     // Resolve the correct path to the webssh2_client module
-    const clientPath = path.resolve(
-      __dirname,
-      "..",
-      "node_modules",
-      "webssh2_client",
-      "client",
-      "public"
-    )
+    const clientPath = DEFAULTS.WEBSSH2_CLIENT_PATH
 
     // Apply middleware
     const { sessionMiddleware } = applyMiddleware(app, config)
@@ -43,7 +36,9 @@ function createApp() {
 
     return { app: app, sessionMiddleware: sessionMiddleware }
   } catch (err) {
-    throw new ConfigError(`Failed to configure Express app: ${err.message}`)
+    throw new ConfigError(
+      `${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${err.message}`
+    )
   }
 }
 

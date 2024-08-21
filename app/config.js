@@ -5,13 +5,14 @@ const Ajv = require("ajv")
 const { deepMerge, generateSecureSecret } = require("./utils")
 const { createNamespacedDebug } = require("./logger")
 const { ConfigError, handleError } = require("./errors")
+const { DEFAULTS } = require("./constants")
 
 const debug = createNamespacedDebug("config")
 
 const defaultConfig = {
   listen: {
     ip: "0.0.0.0",
-    port: 2222
+    port: DEFAULTS.LISTEN_PORT
   },
   http: {
     origins: ["*:*"]
@@ -22,8 +23,8 @@ const defaultConfig = {
   },
   ssh: {
     host: null,
-    port: 22,
-    term: "xterm-color",
+    port: DEFAULTS.SSH_PORT,
+    term: DEFAULTS.SSH_TERM,
     readyTimeout: 20000,
     keepaliveInterval: 120000,
     keepaliveCountMax: 10
@@ -61,7 +62,7 @@ const defaultConfig = {
     compress: ["none", "zlib@openssh.com", "zlib"]
   },
   session: {
-    secret: generateSecureSecret(),
+    secret: process.env.WEBSSH_SESSION_SECRET || generateSecureSecret(),
     name: "webssh2.sid"
   }
 }

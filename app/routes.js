@@ -1,5 +1,5 @@
 // server
-// /app/routes.js
+// app/routes.js
 
 const express = require("express")
 const basicAuth = require("basic-auth")
@@ -13,6 +13,7 @@ const {
 const handleConnection = require("./connectionHandler")
 const { createNamespacedDebug } = require("./logger")
 const { ConfigError, handleError } = require("./errors")
+const { HTTP } = require("./constants")
 
 const debug = createNamespacedDebug("routes")
 const router = express.Router()
@@ -22,8 +23,8 @@ function auth(req, res, next) {
   debug("auth: Basic Auth")
   const credentials = basicAuth(req)
   if (!credentials) {
-    res.setHeader("WWW-Authenticate", 'Basic realm="WebSSH2"')
-    return res.status(401).send("Authentication required.")
+    res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
+    return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
   }
   // Validate and sanitize credentials
   req.session.sshCredentials = {
@@ -75,12 +76,12 @@ router.get("/host/:host", auth, function(req, res) {
 // Clear credentials route
 router.get("/clear-credentials", function(req, res) {
   req.session.sshCredentials = null
-  res.status(200).send("Credentials cleared.")
+  res.status(HTTP.OK).send(HTTP.CREDENTIALS_CLEARED)
 })
 
 router.get("/force-reconnect", function(req, res) {
   req.session.sshCredentials = null
-  res.status(401).send("Authentication required.")
+  res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
 })
 
 module.exports = router

@@ -6,6 +6,7 @@ const session = require("express-session")
 const bodyParser = require("body-parser")
 
 const debug = createDebug("webssh2:middleware")
+const { HTTP } = require("./constants")
 
 /**
  * Creates and configures session middleware
@@ -14,10 +15,10 @@ const debug = createDebug("webssh2:middleware")
  */
 function createSessionMiddleware(config) {
   return session({
-    secret: config.session.secret || "webssh2_secret",
+    secret: config.session.secret,
     resave: false,
     saveUninitialized: true,
-    name: config.session.name || "webssh2.sid"
+    name: config.session.name
   })
 }
 
@@ -40,10 +41,10 @@ function createCookieMiddleware() {
         host: req.session.sshCredentials.host,
         port: req.session.sshCredentials.port
       }
-      res.cookie("basicauth", JSON.stringify(cookieData), {
+      res.cookie(HTTP.COOKIE, JSON.stringify(cookieData), {
         httpOnly: false,
-        path: "/ssh/host/",
-        sameSite: "Strict"
+        path: HTTP.PATH,
+        sameSite: HTTP.SAMESITE
       })
     }
     next()
@@ -63,7 +64,7 @@ function applyMiddleware(app, config) {
   app.use(createBodyParserMiddleware())
   app.use(createCookieMiddleware())
 
-  debug("Middleware applied")
+  debug("applyMiddleware")
 
   return { sessionMiddleware }
 }

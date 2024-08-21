@@ -1,6 +1,7 @@
 const socketIo = require("socket.io")
 const sharedsession = require("express-socket.io-session")
 const { createNamespacedDebug } = require("./logger")
+const { DEFAULTS } = require("./constants")
 
 const debug = createNamespacedDebug("app")
 
@@ -14,9 +15,9 @@ const debug = createNamespacedDebug("app")
 function configureSocketIO(server, sessionMiddleware, config) {
   const io = socketIo(server, {
     serveClient: false,
-    path: "/ssh/socket.io",
-    pingTimeout: 60000, // 1 minute
-    pingInterval: 25000, // 25 seconds
+    path: DEFAULTS.IO_PATH,
+    pingTimeout: DEFAULTS.IO_PING_TIMEOUT,
+    pingInterval: DEFAULTS.IO_PING_INTERVAL,
     cors: config.getCorsConfig()
   })
 
@@ -27,7 +28,7 @@ function configureSocketIO(server, sessionMiddleware, config) {
     })
   )
 
-  debug("Socket.IO configured")
+  debug("IO configured")
 
   return io
 }
