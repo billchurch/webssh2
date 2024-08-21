@@ -1,4 +1,5 @@
-"use strict"
+#!/usr/bin/env node
+
 // server
 // index.js
 /**
@@ -8,13 +9,13 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  */
 
-const { startServer, config } = require("./app/app")
+const { initializeServer } = require("./app/app")
 
 /**
  * Main function to start the application
  */
 function main() {
-  startServer()
+  initializeServer()
 }
 
 // Run the application
@@ -22,5 +23,5 @@ main()
 
 // For testing purposes, export the functions
 module.exports = {
-  startServer
+  initializeServer
 }

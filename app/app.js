@@ -1,149 +1,75 @@
 // server
 // app/app.js
 
-// const createDebug = require("debug")
-const http = require("http")
 const express = require("express")
-const socketIo = require("socket.io")
 const path = require("path")
-const bodyParser = require("body-parser")
-const session = require("express-session")
-const sharedsession = require("express-socket.io-session")
 const config = require("./config")
 const socketHandler = require("./socket")
 const sshRoutes = require("./routes")
-const { getCorsConfig } = require("./config")
+const { applyMiddleware } = require("./middleware")
+const { createServer, startServer } = require("./server")
+const { configureSocketIO } = require("./io")
+const { handleError, ConfigError } = require("./errors")
+const { createNamespacedDebug } = require("./logger")
 
-// const debug = createDebug("webssh2")
+const debug = createNamespacedDebug("app")
 
 /**
  * Creates and configures the Express application
- * @returns {express.Application} The Express application instance
+ * @returns {Object} An object containing the app and sessionMiddleware
  */
 function createApp() {
   const app = express()
 
-  // Resolve the correct path to the webssh2_client module
-  const clientPath = path.resolve(
-    __dirname,
-    "..",
-    "node_modules",
-    "webssh2_client",
-    "client",
-    "public"
-  )
+  try {
+    // Resolve the correct path to the webssh2_client module
+    const clientPath = path.resolve(
+      __dirname,
+      "..",
+      "node_modules",
+      "webssh2_client",
+      "client",
+      "public"
+    )
 
-  // Set up session middleware
-  const sessionMiddleware = session({
-    secret: config.session.secret || "webssh2_secret",
-    resave: false,
-    saveUninitialized: true,
-    name: config.session.name || "webssh2.sid"
-  })
-  app.use(sessionMiddleware)
+    // Apply middleware
+    const { sessionMiddleware } = applyMiddleware(app, config)
 
-  // Handle POST and GET parameters
-  app.use(bodyParser.urlencoded({ extended: true }))
-  app.use(bodyParser.json())
+    // Serve static files from the webssh2_client module with a custom prefix
+    app.use("/ssh/assets", express.static(clientPath))
 
-  // Add cookie-setting middleware
-  app.use((req, res, next) => {
-    if (req.session.sshCredentials) {
-      const cookieData = {
-        host: req.session.sshCredentials.host,
-        port: req.session.sshCredentials.port
-      }
-      res.cookie("basicauth", JSON.stringify(cookieData), {
-        httpOnly: false,
-        path: "/ssh/host/",
-        sameSite: "Strict"
-      }) // ensure httOnly is false for the client to read the cookie
-    }
-    next()
-  })
+    // Use the SSH routes
+    app.use("/ssh", sshRoutes)
 
-  // Serve static files from the webssh2_client module with a custom prefix
-  app.use("/ssh/assets", express.static(clientPath))
-
-  // Use the SSH routes
-  app.use("/ssh", sshRoutes)
-
-  return { app, sessionMiddleware }
-}
-
-/**
- * Configures Socket.IO with the given server
- * @param {http.Server} server - The HTTP server instance
- * @param {Function} sessionMiddleware - The session middleware
- * @returns {import('socket.io').Server} The Socket.IO server instance
- */
-function configureSocketIO(server, sessionMiddleware) {
-  const io = socketIo(server, {
-    serveClient: false,
-    path: "/ssh/socket.io",
-    pingTimeout: 60000, // 1 minute
-    pingInterval: 25000, // 25 seconds
-    cors: getCorsConfig()
-  })
-
-  // Share session with io sockets
-  io.use(
-    sharedsession(sessionMiddleware, {
-      autoSave: true
-    })
-  )
-
-  return io
-}
-
-/**
- * Creates and configures the HTTP server
- * @param {express.Application} app - The Express application instance
- * @returns {http.Server} The HTTP server instance
- */
-function createServer(app) {
-  return http.createServer(app)
-}
-
-/**
- * Handles server errors
- * @param {Error} err - The error object
- */
-function handleServerError(err) {
-  console.error("WebSSH2 server.listen ERROR:", err.code)
-}
-
-/**
- * Sets up Socket.IO event listeners
- * @param {import('socket.io').Server} io - The Socket.IO server instance
- */
-function setupSocketIOListeners(io) {
-  socketHandler(io, config)
+    return { app: app, sessionMiddleware: sessionMiddleware }
+  } catch (err) {
+    throw new ConfigError(`Failed to configure Express app: ${err.message}`)
+  }
 }
 
 /**
  * Initializes and starts the server
  * @returns {Object} An object containing the server, io, and app instances
  */
-function startServer() {
-  const { app, sessionMiddleware } = createApp()
-  const server = createServer(app)
-  const io = configureSocketIO(server, sessionMiddleware)
+function initializeServer() {
+  try {
+    const { app, sessionMiddleware } = createApp()
+    const server = createServer(app)
+    const io = configureSocketIO(server, sessionMiddleware, config)
 
-  // Set up Socket.IO listeners
-  setupSocketIOListeners(io)
+    // Set up Socket.IO listeners
+    socketHandler(io, config)
 
-  // Start the server
-  server.listen(config.listen.port, config.listen.ip, () => {
-    console.log(
-      `WebSSH2 service listening on ${config.listen.ip}:${config.listen.port}`
-    )
-  })
+    // Start the server
+    startServer(server, config)
 
-  server.on("error", handleServerError)
+    debug("Server initialized")
 
-  return { server, io, app }
+    return { server: server, io: io, app: app }
+  } catch (err) {
+    handleError(err)
+    process.exit(1)
+  }
 }
 
-// Don't start the server immediately, export the function instead
-module.exports = { startServer, config }
+module.exports = { initializeServer: initializeServer, config: config }

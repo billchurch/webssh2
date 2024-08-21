@@ -1,12 +1,11 @@
 // server
 // app/connectionHandler.js
 
-const createDebug = require("debug")
 const fs = require("fs")
 const path = require("path")
+const { createNamespacedDebug } = require("./logger")
 
-const debug = createDebug("webssh2:connectionHandler")
-
+const debug = createNamespacedDebug("connectionHandler")
 /**
  * Modify the HTML content by replacing certain placeholders with dynamic values.
  * @param {string} html - The original HTML content.

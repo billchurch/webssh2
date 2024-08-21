@@ -1,49 +1,13 @@
-// server
-// app/config.js
-
 const path = require("path")
 const fs = require("fs")
 const readConfig = require("read-config-ng")
 const Ajv = require("ajv")
 const { deepMerge, generateSecureSecret } = require("./utils")
+const { createNamespacedDebug } = require("./logger")
+const { ConfigError, handleError } = require("./errors")
 
-/**
- * @typedef {Object} Config
- * @property {Object} listen - Listening configuration
- * @property {string} listen.ip - IP address to listen on
- * @property {number} listen.port - Port to listen on
- * @property {Object} http - HTTP configuration
- * @property {string[]} http.origins - Allowed origins
- * @property {Object} user - User configuration
- * @property {string|null} user.name - Username
- * @property {string|null} user.password - Password
- * @property {Object} ssh - SSH configuration
- * @property {string|null} ssh.host - SSH host
- * @property {number} ssh.port - SSH port
- * @property {string} ssh.term - Terminal type
- * @property {number} ssh.readyTimeout - Ready timeout
- * @property {number} ssh.keepaliveInterval - Keepalive interval
- * @property {number} ssh.keepaliveCountMax - Max keepalive count
- * @property {Object} header - Header configuration
- * @property {string|null} header.text - Header text
- * @property {string} header.background - Header background color
- * @property {Object} options - Options configuration
- * @property {boolean} options.challengeButton - Challenge button enabled
- * @property {boolean} options.autoLog - Auto log enabled
- * @property {boolean} options.allowReauth - Allow reauthentication
- * @property {boolean} options.allowReconnect - Allow reconnection
- * @property {boolean} options.allowReplay - Allow replay
- * @property {Object} algorithms - Encryption algorithms
- * @property {string[]} algorithms.kex - Key exchange algorithms
- * @property {string[]} algorithms.cipher - Cipher algorithms
- * @property {string[]} algorithms.hmac - HMAC algorithms
- * @property {string[]} algorithms.compress - Compression algorithms
- */
+const debug = createNamespacedDebug("config")
 
-/**
- * Default configuration
- * @type {Config}
- */
 const defaultConfig = {
   listen: {
     ip: "0.0.0.0",
@@ -71,9 +35,9 @@ const defaultConfig = {
   options: {
     challengeButton: true,
     autoLog: false,
-    allowReauth: false,
-    allowReconnect: false,
-    allowReplay: false
+    allowReauth: true,
+    allowReconnect: true,
+    allowReplay: true
   },
   algorithms: {
     kex: [
@@ -206,36 +170,15 @@ const configSchema = {
   required: ["listen", "http", "user", "ssh", "header", "options", "algorithms"]
 }
 
-/**
- * Gets the path to the config file
- * @returns {string} The path to the config file
- */
 function getConfigPath() {
   const nodeRoot = path.dirname(require.main.filename)
   return path.join(nodeRoot, "config.json")
 }
 
-/**
- * Reads the config file synchronously
- * @param {string} configPath - The path to the config file
- * @returns {Object} The configuration object
- */
-function readConfigFile(configPath) {
-  console.log(`WebSSH2 service reading config from: ${configPath}`)
-  return readConfig.sync(configPath)
-}
-
-/**
- * Validates the configuration against the schema
- * @param {Object} config - The configuration object to validate
- * @returns {Object} The validated configuration object
- * @throws {Error} If the configuration is invalid
- */
 function validateConfig(config) {
   const ajv = new Ajv()
   const validate = ajv.compile(configSchema)
   const valid = validate(config)
-  console.log("WebSSH2 service validating config")
   if (!valid) {
     throw new Error(
       `Config validation error: ${ajv.errorsText(validate.errors)}`
@@ -244,77 +187,85 @@ function validateConfig(config) {
   return config
 }
 
-/**
- * Logs an error message
- * @param {string} message - The error message
- * @param {Error} [error] - The error object
- */
-function logError(message, error) {
-  console.error(message)
-  if (error) {
-    console.error(`ERROR:\n\n  ${error}`)
-  }
-}
-
-/**
- * Loads and merges the configuration synchronously
- * @returns {Object} The merged configuration
- */
 function loadConfig() {
   const configPath = getConfigPath()
 
   try {
     if (fs.existsSync(configPath)) {
-      const providedConfig = readConfigFile(configPath)
-
-      // Deep merge the provided config with the default config
+      const providedConfig = readConfig.sync(configPath)
       const mergedConfig = deepMerge(
         JSON.parse(JSON.stringify(defaultConfig)),
         providedConfig
       )
 
-      // Override the port with the PORT environment variable if it's set
       if (process.env.PORT) {
         mergedConfig.listen.port = parseInt(process.env.PORT, 10)
-        console.log(`Using PORT from environment: ${mergedConfig.listen.port}`)
+        debug("Using PORT from environment: %s", mergedConfig.listen.port)
       }
 
       const validatedConfig = validateConfig(mergedConfig)
-      console.log("Merged and validated configuration")
+      debug("Merged and validated configuration")
       return validatedConfig
     }
-    logError(
-      `\n\nERROR: Missing config.json for webssh. Using default config: ${JSON.stringify(
-        defaultConfig
-      )}\n\n  See config.json.sample for details\n\n`
-    )
+    debug("Missing config.json for webssh. Using default config")
     return defaultConfig
   } catch (err) {
-    logError(
-      `\n\nERROR: Problem loading config.json for webssh. Using default config: ${JSON.stringify(
-        defaultConfig
-      )}\n\n  See config.json.sample for details\n\n`,
-      err
+    const error = new ConfigError(
+      `Problem loading config.json for webssh: ${err.message}`
     )
+    handleError(error)
     return defaultConfig
   }
 }
 
 /**
- * The loaded configuration
- * @type {Object}
+ * Configuration for the application.
+ *
+ * @returns {Object} config
+ * @property {Object} listen - Configuration for listening IP and port.
+ * @property {string} listen.ip - The IP address to listen on.
+ * @property {number} listen.port - The port number to listen on.
+ * @property {Object} http - Configuration for HTTP settings.
+ * @property {string[]} http.origins - The allowed origins for HTTP requests.
+ * @property {Object} user - Configuration for user settings.
+ * @property {string|null} user.name - The name of the user.
+ * @property {string|null} user.password - The password of the user.
+ * @property {Object} ssh - Configuration for SSH settings.
+ * @property {string|null} ssh.host - The SSH host.
+ * @property {number} ssh.port - The SSH port.
+ * @property {string} ssh.term - The SSH terminal type.
+ * @property {number} ssh.readyTimeout - The SSH ready timeout.
+ * @property {number} ssh.keepaliveInterval - The SSH keepalive interval.
+ * @property {number} ssh.keepaliveCountMax - The SSH keepalive count maximum.
+ * @property {Object} header - Configuration for header settings.
+ * @property {string|null} header.text - The header text.
+ * @property {string} header.background - The header background color.
+ * @property {Object} options - Configuration for options settings.
+ * @property {boolean} options.challengeButton - Whether to show the challenge button.
+ * @property {boolean} options.autoLog - Whether to automatically log.
+ * @property {boolean} options.allowReauth - Whether to allow reauthentication.
+ * @property {boolean} options.allowReconnect - Whether to allow reconnection.
+ * @property {boolean} options.allowReplay - Whether to allow replay.
+ * @property {Object} algorithms - Configuration for algorithms settings.
+ * @property {string[]} algorithms.kex - The key exchange algorithms.
+ * @property {string[]} algorithms.cipher - The cipher algorithms.
+ * @property {string[]} algorithms.hmac - The HMAC algorithms.
+ * @property {string[]} algorithms.compress - The compression algorithms.
+ * @property {Object} session - Configuration for session settings.
+ * @property {string} session.secret - The session secret.
+ * @property {string} session.name - The session name.
  */
 const config = loadConfig()
 
-module.exports = config
-/**
- * Gets the CORS configuration
- * @returns {Object} The CORS configuration object
- */
-module.exports.getCorsConfig = function getCorsConfig() {
+function getCorsConfig() {
   return {
-    origin: config.origin || ["*.*"],
+    origin: config.http.origins,
     methods: ["GET", "POST"],
     credentials: true
   }
 }
+
+// Extend the config object with the getCorsConfig function
+config.getCorsConfig = getCorsConfig
+
+module.exports = config

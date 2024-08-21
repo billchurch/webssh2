@@ -1,11 +1,7 @@
 // server
 // /app/routes.js
-const createDebug = require("debug")
 
-const debug = createDebug("webssh2:routes")
 const express = require("express")
-
-const router = express.Router()
 const basicAuth = require("basic-auth")
 const maskObject = require("jsmasker")
 const validator = require("validator")
@@ -15,6 +11,11 @@ const {
   validateSshTerm
 } = require("./utils")
 const handleConnection = require("./connectionHandler")
+const { createNamespacedDebug } = require("./logger")
+const { ConfigError, handleError } = require("./errors")
+
+const debug = createNamespacedDebug("routes")
+const router = express.Router()
 
 // eslint-disable-next-line consistent-return
 function auth(req, res, next) {
@@ -40,31 +41,35 @@ router.get("/", function(req, res) {
 })
 
 // Scenario 2: Auth required, uses HTTP Basic Auth
-// Scenario 2: Auth required, uses HTTP Basic Auth
 router.get("/host/:host", auth, function(req, res) {
   debug(`router.get.host: /ssh/host/${req.params.host} route`)
 
-  const host = getValidatedHost(req.params.host)
-  const port = getValidatedPort(req.query.port)
+  try {
+    const host = getValidatedHost(req.params.host)
+    const port = getValidatedPort(req.query.port)
 
-  // Validate and sanitize sshterm parameter if it exists
-  const sshterm = validateSshTerm(req.query.sshterm)
+    // Validate and sanitize sshterm parameter if it exists
+    const sshterm = validateSshTerm(req.query.sshterm)
 
-  req.session.sshCredentials = req.session.sshCredentials || {}
-  req.session.sshCredentials.host = host
-  req.session.sshCredentials.port = port
-  if (req.query.sshterm) {
-    req.session.sshCredentials.term = sshterm
+    req.session.sshCredentials = req.session.sshCredentials || {}
+    req.session.sshCredentials.host = host
+    req.session.sshCredentials.port = port
+    if (req.query.sshterm) {
+      req.session.sshCredentials.term = sshterm
+    }
+    req.session.usedBasicAuth = true
+
+    // Sanitize and log the sshCredentials object
+    const sanitizedCredentials = maskObject(
+      JSON.parse(JSON.stringify(req.session.sshCredentials))
+    )
+    debug("/ssh/host/ Credentials: ", sanitizedCredentials)
+
+    handleConnection(req, res, { host: host })
+  } catch (err) {
+    const error = new ConfigError(`Invalid configuration: ${err.message}`)
+    handleError(error, res)
   }
-  req.session.usedBasicAuth = true
-
-  // Sanitize and log the sshCredentials object
-  const sanitizedCredentials = maskObject(
-    JSON.parse(JSON.stringify(req.session.sshCredentials))
-  )
-  debug("/ssh/host/ Credentials: ", sanitizedCredentials)
-
-  handleConnection(req, res, { host: host })
 })
 
 // Clear credentials route

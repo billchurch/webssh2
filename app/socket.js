@@ -1,20 +1,16 @@
 // server
 // app/socket.js
 
-const createDebug = require("debug")
 const maskObject = require("jsmasker")
 const validator = require("validator")
 const SSHConnection = require("./ssh")
+const { createNamespacedDebug } = require("./logger")
+const { SSHConnectionError, handleError } = require("./errors")
 
-const debug = createDebug("webssh2:socket")
+const debug = createNamespacedDebug("socket")
 const { validateSshTerm, isValidCredentials } = require("./utils")
 
 class WebSSH2Socket {
-  /**
-   * Creates an instance of WebSSH2Socket.
-   * @param {SocketIO.Socket} socket - The socket instance.
-   * @param {Object} config - The configuration object.
-   */
   constructor(socket, config) {
     this.socket = socket
     this.config = config
@@ -32,9 +28,6 @@ class WebSSH2Socket {
     this.initializeSocketEvents()
   }
 
-  /**
-   * Initializes the socket event listeners.
-   */
   initializeSocketEvents() {
     debug(`io.on connection: ${this.socket.id}`)
 
@@ -53,15 +46,26 @@ class WebSSH2Socket {
       this.socket.emit("authentication", { action: "request_auth" })
     }
 
-    this.socket.on("authenticate", creds => this.handleAuthenticate(creds))
-    this.socket.on("terminal", data => this.handleTerminal(data))
-    this.socket.on("disconnect", reason => this.handleConnectionClose(reason))
+    this.socket.on(
+      "authenticate",
+      function(creds) {
+        this.handleAuthenticate(creds)
+      }.bind(this)
+    )
+    this.socket.on(
+      "terminal",
+      function(data) {
+        this.handleTerminal(data)
+      }.bind(this)
+    )
+    this.socket.on(
+      "disconnect",
+      function(reason) {
+        this.handleConnectionClose(reason)
+      }.bind(this)
+    )
   }
 
-  /**
-   * Handles the authentication process.
-   * @param {Object} creds - The credentials for authentication.
-   */
   handleAuthenticate(creds) {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskObject(creds))
 
@@ -71,7 +75,7 @@ class WebSSH2Socket {
         : this.config.ssh.term
       this.initializeConnection(creds)
     } else {
-      console.warn(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
+      debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
       this.socket.emit("authentication", {
         success: false,
         message: "Invalid credentials format"
@@ -79,10 +83,6 @@ class WebSSH2Socket {
     }
   }
 
-  /**
-   * Initializes the SSH connection.
-   * @param {Object} creds - The credentials for the SSH connection.
-   */
   initializeConnection(creds) {
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
@@ -91,40 +91,47 @@ class WebSSH2Socket {
 
     this.ssh
       .connect(creds)
-      .then(() => {
-        this.sessionState = Object.assign({}, this.sessionState, {
-          authenticated: true,
-          username: creds.username,
-          password: creds.password,
-          host: creds.host,
-          port: creds.port
-        })
+      .then(
+        function() {
+          this.sessionState = Object.assign({}, this.sessionState, {
+            authenticated: true,
+            username: creds.username,
+            password: creds.password,
+            host: creds.host,
+            port: creds.port
+          })
 
-        const authResult = { action: "auth_result", success: true }
-        this.socket.emit("authentication", authResult)
+          const authResult = { action: "auth_result", success: true }
+          this.socket.emit("authentication", authResult)
 
-        const permissions = {
-          autoLog: this.config.options.autoLog || false,
-          allowReplay: this.config.options.allowReplay || false,
-          allowReconnect: this.config.options.allowReconnect || false,
-          allowReauth: this.config.options.allowReauth || false
-        }
-        this.socket.emit("permissions", permissions)
+          const permissions = {
+            autoLog: this.config.options.autoLog || false,
+            allowReplay: this.config.options.allowReplay || false,
+            allowReconnect: this.config.options.allowReconnect || false,
+            allowReauth: this.config.options.allowReauth || false
+          }
+          this.socket.emit("permissions", permissions)
 
-        this.updateElement("footer", `ssh://${creds.host}:${creds.port}`)
+          this.updateElement("footer", `ssh://${creds.host}:${creds.port}`)
 
-        if (this.config.header && this.config.header.text !== null) {
-          this.updateElement("header", this.config.header.text)
-        }
+          if (this.config.header && this.config.header.text !== null) {
+            this.updateElement("header", this.config.header.text)
+          }
 
-        this.socket.emit("getTerminal", true)
-      })
-      .catch(err => {
-        console.error(
-          `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
-        )
-        this.handleError("SSH CONNECTION ERROR", err)
-      })
+          this.socket.emit("getTerminal", true)
+        }.bind(this)
+      )
+      .catch(
+        function(err) {
+          debug(
+            `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
+          )
+          handleError(
+            new SSHConnectionError(`SSH CONNECTION ERROR: ${err.message}`)
+          )
+          this.socket.emit("ssherror", `SSH CONNECTION ERROR: ${err.message}`)
+        }.bind(this)
+      )
   }
 
   /**
@@ -232,6 +239,7 @@ class WebSSH2Socket {
    */
   handleError(context, err) {
     const errorMessage = err ? `: ${err.message}` : ""
+    handleError(new SSHConnectionError(`SSH ${context}${errorMessage}`))
     this.socket.emit("ssherror", `SSH ${context}${errorMessage}`)
     this.handleConnectionClose()
   }

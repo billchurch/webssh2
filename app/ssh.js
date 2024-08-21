@@ -1,11 +1,12 @@
 // server
 // app/ssh.js
 
-const createDebug = require("debug")
 const SSH = require("ssh2").Client
 const maskObject = require("jsmasker")
+const { createNamespacedDebug } = require("./logger")
+const { SSHConnectionError, handleError } = require("./errors")
 
-const debug = createDebug("webssh2:ssh")
+const debug = createNamespacedDebug("ssh")
 
 function SSHConnection(config) {
   this.config = config
@@ -32,8 +33,11 @@ SSHConnection.prototype.connect = function(creds) {
     })
 
     self.conn.on("error", function(err) {
-      console.error(`connect: error:${err.message}`)
-      reject(err)
+      const error = new SSHConnectionError(
+        `SSH Connection error: ${err.message}`
+      )
+      handleError(error)
+      reject(error)
     })
 
     self.conn.connect(sshConfig)
@@ -53,7 +57,7 @@ SSHConnection.prototype.getSSHConfig = function(creds) {
       creds.keepaliveInterval || this.config.ssh.keepaliveInterval,
     keepaliveCountMax:
       creds.keepaliveCountMax || this.config.ssh.keepaliveCountMax,
-    debug: createDebug("ssh")
+    debug: createNamespacedDebug("ssh2")
   }
 }
 

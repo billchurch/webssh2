@@ -1,10 +1,10 @@
 // server
 // /app/utils.js
 const validator = require("validator")
-const createDebug = require("debug")
 const crypto = require("crypto")
+const { createNamespacedDebug } = require("./logger")
 
-const debug = createDebug("webssh2:utils")
+const debug = createNamespacedDebug("utils")
 
 /**
  * Deep merges two objects
