@@ -95,47 +95,43 @@ class WebSSH2Socket {
 
     this.ssh
       .connect(creds)
-      .then(
-        function() {
-          this.sessionState = Object.assign({}, this.sessionState, {
-            authenticated: true,
-            username: creds.username,
-            password: creds.password,
-            host: creds.host,
-            port: creds.port
-          })
+      .then(() => {
+        this.sessionState = Object.assign({}, this.sessionState, {
+          authenticated: true,
+          username: creds.username,
+          password: creds.password,
+          host: creds.host,
+          port: creds.port
+        })
 
-          const authResult = { action: "auth_result", success: true }
-          this.socket.emit("authentication", authResult)
+        const authResult = { action: "auth_result", success: true }
+        this.socket.emit("authentication", authResult)
 
-          const permissions = {
-            autoLog: this.config.options.autoLog || false,
-            allowReplay: this.config.options.allowReplay || false,
-            allowReconnect: this.config.options.allowReconnect || false,
-            allowReauth: this.config.options.allowReauth || false
-          }
-          this.socket.emit("permissions", permissions)
+        const permissions = {
+          autoLog: this.config.options.autoLog || false,
+          allowReplay: this.config.options.allowReplay || false,
+          allowReconnect: this.config.options.allowReconnect || false,
+          allowReauth: this.config.options.allowReauth || false
+        }
+        this.socket.emit("permissions", permissions)
 
-          this.updateElement("footer", `ssh://${creds.host}:${creds.port}`)
+        this.updateElement("footer", `ssh://${creds.host}:${creds.port}`)
 
-          if (this.config.header && this.config.header.text !== null) {
-            this.updateElement("header", this.config.header.text)
-          }
+        if (this.config.header && this.config.header.text !== null) {
+          this.updateElement("header", this.config.header.text)
+        }
 
-          this.socket.emit("getTerminal", true)
-        }.bind(this)
-      )
-      .catch(
-        function(err) {
-          debug(
-            `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
-          )
-          handleError(
-            new SSHConnectionError(`SSH CONNECTION ERROR: ${err.message}`)
-          )
-          this.socket.emit("ssherror", `SSH CONNECTION ERROR: ${err.message}`)
-        }.bind(this)
-      )
+        this.socket.emit("getTerminal", true)
+      })
+      .catch(err => {
+        debug(
+          `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
+        )
+        handleError(
+          new SSHConnectionError(`SSH CONNECTION ERROR: ${err.message}`)
+        )
+        this.socket.emit("ssherror", `SSH CONNECTION ERROR: ${err.message}`)
+      })
   }
 
   /**
@@ -164,36 +160,34 @@ class WebSSH2Socket {
         rows: this.sessionState.rows
       })
       .then(stream => {
-        stream.on("data", data =>
+        stream.on("data", data => {
           this.socket.emit("data", data.toString("utf-8"))
-        )
+        })
         stream.stderr.on("data", data => debug(`STDERR: ${data}`))
-        stream.on("close", (code, signal) =>
+        stream.on("close", (code, signal) => {
           this.handleConnectionClose(code, signal)
-        )
+        })
 
-        this.socket.on("data", data => stream.write(data))
-        this.socket.on("control", controlData =>
+        this.socket.on("data", data => {
+          stream.write(data)
+        })
+        this.socket.on("control", controlData => {
           this.handleControl(controlData)
-        )
-        this.socket.on("resize", data => this.handleResize(data))
+        })
+        this.socket.on("resize", data => {
+          this.handleResize(data)
+        })
       })
       .catch(err => this.handleError("SHELL ERROR", err))
   }
 
-  /**
-   * Handles the resize event for the terminal.
-   * @param {Object} data - The resize data.
-   */
   handleResize(data) {
     const { rows, cols } = data
-    if (this.ssh.stream) {
-      if (rows && validator.isInt(rows.toString()))
-        this.sessionState.rows = parseInt(rows, 10)
-      if (cols && validator.isInt(cols.toString()))
-        this.sessionState.cols = parseInt(cols, 10)
-      this.ssh.resizeTerminal(this.sessionState.rows, this.sessionState.cols)
-    }
+    if (rows && validator.isInt(rows.toString()))
+      this.sessionState.rows = parseInt(rows, 10)
+    if (cols && validator.isInt(cols.toString()))
+      this.sessionState.cols = parseInt(cols, 10)
+    this.ssh.resizeTerminal(this.sessionState.rows, this.sessionState.cols)
   }
 
   /**
@@ -261,9 +255,11 @@ class WebSSH2Socket {
    * Handles the closure of the connection.
    * @param {string} reason - The reason for the closure.
    */
-  handleConnectionClose(reason) {
-    if (this.ssh) this.ssh.end()
-    debug(`handleConnectionClose: ${this.socket.id}, Reason: ${reason}`)
+  handleConnectionClose(code, signal) {
+    this.ssh.end()
+    debug(
+      `handleConnectionClose: ${this.socket.id}, Code: ${code}, Signal: ${signal}`
+    )
     this.socket.disconnect(true)
   }
 

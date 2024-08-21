@@ -15,24 +15,22 @@ function SSHConnection(config) {
 }
 
 SSHConnection.prototype.connect = function(creds) {
-  const self = this
-  return new Promise(function(resolve, reject) {
-    debug("connect: %O", maskSensitiveData(creds))
-
-    if (self.conn) {
-      self.conn.end()
+  debug("connect: %O", maskSensitiveData(creds))
+  return new Promise((resolve, reject) => {
+    if (this.conn) {
+      this.conn.end()
     }
 
-    self.conn = new SSH()
+    this.conn = new SSH()
 
-    const sshConfig = self.getSSHConfig(creds)
+    const sshConfig = this.getSSHConfig(creds)
 
-    self.conn.on("ready", function() {
+    this.conn.on("ready", () => {
       debug(`connect: ready: ${creds.host}`)
-      resolve()
+      resolve(this.conn)
     })
 
-    self.conn.on("error", function(err) {
+    this.conn.on("error", err => {
       const error = new SSHConnectionError(
         `SSH Connection error: ${err.message}`
       )
@@ -40,7 +38,7 @@ SSHConnection.prototype.connect = function(creds) {
       reject(error)
     })
 
-    self.conn.connect(sshConfig)
+    this.conn.connect(sshConfig)
   })
 }
 
@@ -65,13 +63,12 @@ SSHConnection.prototype.getSSHConfig = function(creds) {
 }
 
 SSHConnection.prototype.shell = function(options) {
-  const self = this
-  return new Promise(function(resolve, reject) {
-    self.conn.shell(options, function(err, stream) {
+  return new Promise((resolve, reject) => {
+    this.conn.shell(options, (err, stream) => {
       if (err) {
         reject(err)
       } else {
-        self.stream = stream
+        this.stream = stream
         resolve(stream)
       }
     })
