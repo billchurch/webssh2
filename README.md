@@ -76,7 +76,7 @@ You'll be prompted for SSH credentials via HTTP Basic Authentication.
 - `port=` - _integer_ - SSH server port (default: `22`)
 - `header=` - _string_ - Optional header text
 - `headerBackground=` - _string_ - Optional background color (default: `"green"`)
-- `sshTerm=` - _string_ - Terminal type for pty (default: xterm-color)
+- `sshterm=` - _string_ - Terminal type for pty (default: xterm-color)
 
 ### Config File Options
 
