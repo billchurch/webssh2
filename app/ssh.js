@@ -44,6 +44,11 @@ SSHConnection.prototype.connect = function(creds) {
   })
 }
 
+/**
+ * Gets the SSH configuration
+ * @param {Object} creds - The credentials object
+ * @returns {Object} The SSH configuration object
+ */
 SSHConnection.prototype.getSSHConfig = function(creds) {
   return {
     host: creds.host,
@@ -73,6 +78,11 @@ SSHConnection.prototype.shell = function(options) {
   })
 }
 
+/**
+ * Resizes the terminal
+ * @param {number} rows - The number of rows
+ * @param {number} cols - The number of columns
+ */
 SSHConnection.prototype.resizeTerminal = function(rows, cols) {
   if (this.stream) {
     this.stream.setWindow(rows, cols)
