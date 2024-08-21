@@ -53,7 +53,7 @@ const HTTP = {
   PATH: "/ssh/host/",
   SAMESITE: "Strict",
   SESSION_SID: "webssh2_sid",
-  CREDS_CLEARED: "Credentials cleared.",
+  CREDS_CLEARED: "Credentials cleared."
 }
 
 module.exports = {
