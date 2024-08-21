@@ -2,18 +2,24 @@
 // app/socket.js
 
 const createDebug = require("debug")
-
-const debug = createDebug("webssh2:socket")
 const maskObject = require("jsmasker")
 const validator = require("validator")
 const SSHConnection = require("./ssh")
+
+const debug = createDebug("webssh2:socket")
 const { validateSshTerm, isValidCredentials } = require("./utils")
 
-module.exports = function(io, config) {
-  io.on("connection", function(socket) {
-    debug(`io.on connection: ${socket.id}`)
-    const ssh = new SSHConnection(config)
-    const sessionState = {
+class WebSSH2Socket {
+  /**
+   * Creates an instance of WebSSH2Socket.
+   * @param {SocketIO.Socket} socket - The socket instance.
+   * @param {Object} config - The configuration object.
+   */
+  constructor(socket, config) {
+    this.socket = socket
+    this.config = config
+    this.ssh = new SSHConnection(config)
+    this.sessionState = {
       authenticated: false,
       username: null,
       password: null,
@@ -23,361 +29,252 @@ module.exports = function(io, config) {
       cols: null,
       rows: null
     }
+    this.initializeSocketEvents()
+  }
 
-    /**
-     * Handles socket connections and SSH authentication for the webssh2 application.
-     *
-     * @param {SocketIO.Server} io - The Socket.IO server instance.
-     * @param {Object} config - The configuration object.
-     */
-    function handleAuthenticate(creds) {
-      debug(`handleAuthenticate: ${socket.id}, %O`, maskObject(creds))
+  /**
+   * Initializes the socket event listeners.
+   */
+  initializeSocketEvents() {
+    debug(`io.on connection: ${this.socket.id}`)
 
-      if (isValidCredentials(creds)) {
-        sessionState.term = validateSshTerm(creds.term)
-          ? creds.term
-          : config.ssh.term
-        initializeConnection(creds)
-      } else {
-        console.warn(`handleAuthenticate: ${socket.id}, CREDENTIALS INVALID`)
-        socket.emit("authentication", {
-          success: false,
-          message: "Invalid credentials format"
-        })
-      }
-    }
-
-    /**
-     * Initializes an SSH connection using the provided credentials.
-     *
-     * @param {Object} creds - The credentials required to establish the SSH connection.
-     * @param {string} creds.host - The hostname or IP address of the SSH server.
-     * @param {string} creds.username - The username for SSH authentication.
-     * @param {string} creds.password - The password for SSH authentication.
-     * @param {string} [creds.privateKey] - The private key for SSH authentication (optional).
-     * @param {string} [creds.passphrase] - The passphrase for the private key (optional).
-     */
-    function initializeConnection(creds) {
+    if (
+      this.socket.handshake.session.usedBasicAuth &&
+      this.socket.handshake.session.sshCredentials
+    ) {
+      const creds = this.socket.handshake.session.sshCredentials
       debug(
-        `initializeConnection: ${socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
+        `handleConnection: ${this.socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
         maskObject(creds)
       )
-
-      ssh
-        .connect(creds)
-        .then(function() {
-          sessionState.authenticated = true
-          sessionState.username = creds.username
-          sessionState.password = creds.password
-          sessionState.host = creds.host
-          sessionState.port = creds.port
-
-          debug(
-            `initializeConnection: ${socket.id} conn.on ready: Host: ${creds.host}`
-          )
-          console.log(
-            `initializeConnection: ${socket.id} conn.on ready: ${creds.username}@${creds.host}:${creds.port} successfully connected`
-          )
-
-          const authResult = { action: "auth_result", success: true }
-          debug(
-            `initializeConnection: ${
-              socket.id
-            } conn.on ready: emitting authentication: ${JSON.stringify(
-              authResult
-            )}`
-          )
-          socket.emit("authentication", authResult)
-
-          // Emit consolidated permissions
-          const permissions = {
-            autoLog: config.options.autoLog || false,
-            allowReplay: config.options.allowReplay || false,
-            allowReconnect: config.options.allowReconnect || false,
-            allowReauth: config.options.allowReauth || false
-          }
-          debug(
-            `initializeConnection: ${
-              socket.id
-            } conn.on ready: emitting permissions: ${JSON.stringify(
-              permissions
-            )}`
-          )
-          socket.emit("permissions", permissions)
-
-          updateElement("footer", `ssh://${creds.host}:${creds.port}`)
-
-          if (config.header && config.header.text !== null) {
-            debug(`initializeConnection header: ${config.header}`)
-            updateElement("header", config.header.text)
-          }
-
-          // Request terminal information from client
-          socket.emit("getTerminal", true)
-        })
-        .catch(function(err) {
-          console.error(
-            `initializeConnection: SSH CONNECTION ERROR: ${socket.id}, Host: ${creds.host}, Error: ${err.message}`
-          )
-          if (err.level === "client-authentication") {
-            socket.emit("authentication", {
-              action: "auth_result",
-              success: false,
-              message: "Authentication failed"
-            })
-          } else {
-            handleError("SSH CONNECTION ERROR", err)
-          }
-        })
+      this.handleAuthenticate(creds)
+    } else if (!this.sessionState.authenticated) {
+      debug(`handleConnection: ${this.socket.id}, emitting request_auth`)
+      this.socket.emit("authentication", { action: "request_auth" })
     }
 
-    /**
-     * Handles the terminal data.
-     *
-     * @param {Object} data - The terminal data.
-     * @param {string} data.term - The terminal term.
-     * @param {number} data.rows - The number of rows.
-     * @param {number} data.cols - The number of columns.
-     * @returns {void}
-     */
-    function handleTerminal(data) {
-      debug(`handleTerminal: Received terminal data: ${JSON.stringify(data)}`)
-      const { term } = data
-      const { rows } = data
-      const { cols } = data
+    this.socket.on("authenticate", creds => this.handleAuthenticate(creds))
+    this.socket.on("terminal", data => this.handleTerminal(data))
+    this.socket.on("disconnect", reason => this.handleConnectionClose(reason))
+  }
 
-      if (term && validateSshTerm(term)) {
-        sessionState.term = term
-        debug(`handleTerminal: Set term to ${sessionState.term}`)
-      }
+  /**
+   * Handles the authentication process.
+   * @param {Object} creds - The credentials for authentication.
+   */
+  handleAuthenticate(creds) {
+    debug(`handleAuthenticate: ${this.socket.id}, %O`, maskObject(creds))
 
-      if (rows && validator.isInt(rows.toString())) {
-        sessionState.rows = parseInt(rows, 10)
-        debug(`handleTerminal: Set rows to ${sessionState.rows}`)
-      }
-
-      if (cols && validator.isInt(cols.toString())) {
-        sessionState.cols = parseInt(cols, 10)
-        debug(`handleTerminal: Set cols to ${sessionState.cols}`)
-      }
-
-      // Now that we have terminal information, we can create the shell
-      createShell()
-    }
-
-    /**
-     * Creates a shell using SSH and establishes a bidirectional communication between the shell and the socket.
-     *
-     * @function createShell
-     * @memberof module:socket
-     * @returns {void}
-     */
-    function createShell() {
-      ssh
-        .shell({
-          term: sessionState.term,
-          cols: sessionState.cols,
-          rows: sessionState.rows
-        })
-        .then(function(stream) {
-          stream.on("data", function(data) {
-            socket.emit("data", data.toString("utf-8"))
-          })
-
-          stream.stderr.on("data", function(data) {
-            debug(`STDERR: ${data}`)
-          })
-
-          stream.on("close", function(code, signal) {
-            debug(`handleStreamClose: ${socket.id}: ${code}, ${signal}`)
-            handleConnectionClose()
-          })
-
-          socket.on("data", function(data) {
-            if (stream) {
-              stream.write(data)
-            }
-          })
-
-          socket.on("control", function(controlData) {
-            handleControl(controlData)
-          })
-
-          socket.on("resize", function(data) {
-            handleResize(data)
-          })
-        })
-        .catch(function(err) {
-          handleError("SHELL ERROR", err)
-        })
-    }
-
-    /**
-     * Handles the resize event of the terminal.
-     *
-     * @param {Object} data - The resize data containing the number of rows and columns.
-     */
-    function handleResize(data) {
-      const { rows } = data
-      const { cols } = data
-
-      if (ssh.stream) {
-        if (rows && validator.isInt(rows.toString())) {
-          sessionState.rows = parseInt(rows, 10)
-        }
-        if (cols && validator.isInt(cols.toString())) {
-          sessionState.cols = parseInt(cols, 10)
-        }
-        debug(`Resizing terminal to ${sessionState.rows}x${sessionState.cols}`)
-        ssh.resizeTerminal(sessionState.rows, sessionState.cols)
-      }
-    }
-
-    /**
-     * Handles control data received from the client.
-     *
-     * @param {string} controlData - The control data received.
-     * @returns {void}
-     */
-    function handleControl(controlData) {
-      debug(`handleControl: Received control data: ${controlData}`)
-      if (
-        validator.isIn(controlData, ["replayCredentials", "reauth"]) &&
-        ssh.stream
-      ) {
-        if (controlData === "replayCredentials") {
-          replayCredentials()
-        } else if (controlData === "reauth") {
-          handleReauth()
-        }
-      } else {
-        console.warn(
-          `handleControl: Invalid control command received: ${controlData}`
-        )
-      }
-    }
-
-    /**
-     * Replays the stored credentials for the current session.
-     *
-     * @returns {void}
-     */
-    function replayCredentials() {
-      const { password } = sessionState
-      const allowReplay = config.options.allowReplay || false
-
-      if (allowReplay && ssh.stream) {
-        debug(`replayCredentials: ${socket.id} Replaying credentials for `)
-        ssh.stream.write(`${password}\n`)
-      } else {
-        console.warn(
-          `replayCredentials: Credential replay not allowed for ${socket.id}`
-        )
-      }
-    }
-
-    /**
-     * Handles reauthentication for the socket.
-     */
-    function handleReauth() {
-      debug(`handleReauth: Reauthentication requested for ${socket.id}`)
-      if (config.options.allowReauth) {
-        clearSessionCredentials()
-        debug(`handleReauth: Reauthenticating ${socket.id}`)
-        socket.emit("authentication", { action: "reauth" })
-        // handleConnectionClose()
-      } else {
-        console.warn(
-          `handleReauth: Reauthentication not allowed for ${socket.id}`
-        )
-      }
-    }
-
-    /**
-     * Handles errors in the WebSSH2 application.
-     *
-     * @param {string} context - The context in which the error occurred.
-     * @param {Error} err - The error object.
-     */
-    function handleError(context, err) {
-      const errorMessage = err ? `: ${err.message}` : ""
-      debug(`WebSSH2 error: ${context}${errorMessage}`)
-      socket.emit("ssherror", `SSH ${context}${errorMessage}`)
-      handleConnectionClose()
-    }
-
-    /**
-     * Updates the specified element with the given value.
-     *
-     * @param {string} element - The element to update.
-     * @param {any} value - The value to set for the element.
-     * @returns {void}
-     */
-    function updateElement(element, value) {
-      debug(`updateElement: ${socket.id}, Element: ${element}, Value: ${value}`)
-      socket.emit("updateUI", { element: element, value: value })
-    }
-
-    /**
-     * Handles the closure of a connection.
-     *
-     * @param {string} reason - The reason for the closure.
-     */
-    function handleConnectionClose(reason) {
-      debug(`handleDisconnect: ${socket.id}, Reason: ${reason}`)
-      debug(`handleConnectionClose: ${socket.id}`)
-      if (ssh) {
-        ssh.end()
-      }
-      socket.disconnect(true)
-    }
-
-    /**
-     * Clears the session credentials for the current socket.
-     */
-    function clearSessionCredentials() {
-      debug(
-        `clearSessionCredentials: Clearing session credentials for ${socket.id}`
-      )
-
-      const { session } = socket.handshake
-
-      if (session.sshCredentials) {
-        session.sshCredentials.username = null
-        session.sshCredentials.password = null
-      }
-
-      session.usedBasicAuth = false
-      sessionState.authenticated = false
-      sessionState.username = null
-      sessionState.password = null
-
-      session.save(function(err) {
-        if (err) {
-          console.error(`Failed to save session for ${socket.id}:`, err)
-        }
+    if (isValidCredentials(creds)) {
+      this.sessionState.term = validateSshTerm(creds.term)
+        ? creds.term
+        : this.config.ssh.term
+      this.initializeConnection(creds)
+    } else {
+      console.warn(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
+      this.socket.emit("authentication", {
+        success: false,
+        message: "Invalid credentials format"
       })
     }
+  }
 
-    // Check for HTTP Basic Auth credentials
-    if (
-      socket.handshake.session.usedBasicAuth &&
-      socket.handshake.session.sshCredentials
-    ) {
-      // if (socket.handshake.session.sshCredentials) {
-      const creds = socket.handshake.session.sshCredentials
-      debug(
-        `handleConnection: ${socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
-        maskObject(creds)
-      )
-      handleAuthenticate(creds)
-    } else if (!sessionState.authenticated) {
-      debug(`handleConnection: ${socket.id}, emitting request_auth`)
-      socket.emit("authentication", { action: "request_auth" })
+  /**
+   * Initializes the SSH connection.
+   * @param {Object} creds - The credentials for the SSH connection.
+   */
+  initializeConnection(creds) {
+    debug(
+      `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
+      maskObject(creds)
+    )
+
+    this.ssh
+      .connect(creds)
+      .then(() => {
+        this.sessionState = Object.assign({}, this.sessionState, {
+          authenticated: true,
+          username: creds.username,
+          password: creds.password,
+          host: creds.host,
+          port: creds.port
+        })
+
+        const authResult = { action: "auth_result", success: true }
+        this.socket.emit("authentication", authResult)
+
+        const permissions = {
+          autoLog: this.config.options.autoLog || false,
+          allowReplay: this.config.options.allowReplay || false,
+          allowReconnect: this.config.options.allowReconnect || false,
+          allowReauth: this.config.options.allowReauth || false
+        }
+        this.socket.emit("permissions", permissions)
+
+        this.updateElement("footer", `ssh://${creds.host}:${creds.port}`)
+
+        if (this.config.header && this.config.header.text !== null) {
+          this.updateElement("header", this.config.header.text)
+        }
+
+        this.socket.emit("getTerminal", true)
+      })
+      .catch(err => {
+        console.error(
+          `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
+        )
+        this.handleError("SSH CONNECTION ERROR", err)
+      })
+  }
+
+  /**
+   * Handles terminal data.
+   * @param {Object} data - The terminal data.
+   */
+  handleTerminal(data) {
+    const { term, rows, cols } = data
+    if (term && validateSshTerm(term)) this.sessionState.term = term
+    if (rows && validator.isInt(rows.toString()))
+      this.sessionState.rows = parseInt(rows, 10)
+    if (cols && validator.isInt(cols.toString()))
+      this.sessionState.cols = parseInt(cols, 10)
+
+    this.createShell()
+  }
+
+  /**
+   * Creates a new SSH shell session.
+   */
+  createShell() {
+    this.ssh
+      .shell({
+        term: this.sessionState.term,
+        cols: this.sessionState.cols,
+        rows: this.sessionState.rows
+      })
+      .then(stream => {
+        stream.on("data", data =>
+          this.socket.emit("data", data.toString("utf-8"))
+        )
+        stream.stderr.on("data", data => debug(`STDERR: ${data}`))
+        stream.on("close", (code, signal) =>
+          this.handleConnectionClose(code, signal)
+        )
+
+        this.socket.on("data", data => stream.write(data))
+        this.socket.on("control", controlData =>
+          this.handleControl(controlData)
+        )
+        this.socket.on("resize", data => this.handleResize(data))
+      })
+      .catch(err => this.handleError("SHELL ERROR", err))
+  }
+
+  /**
+   * Handles the resize event for the terminal.
+   * @param {Object} data - The resize data.
+   */
+  handleResize(data) {
+    const { rows, cols } = data
+    if (this.ssh.stream) {
+      if (rows && validator.isInt(rows.toString()))
+        this.sessionState.rows = parseInt(rows, 10)
+      if (cols && validator.isInt(cols.toString()))
+        this.sessionState.cols = parseInt(cols, 10)
+      this.ssh.resizeTerminal(this.sessionState.rows, this.sessionState.cols)
     }
+  }
 
-    socket.on("authenticate", handleAuthenticate)
-    socket.on("terminal", handleTerminal)
-    socket.on("disconnect", handleConnectionClose)
-  })
+  /**
+   * Handles control commands.
+   * @param {string} controlData - The control command received.
+   */
+  handleControl(controlData) {
+    if (
+      validator.isIn(controlData, ["replayCredentials", "reauth"]) &&
+      this.ssh.stream
+    ) {
+      if (controlData === "replayCredentials") {
+        this.replayCredentials()
+      } else if (controlData === "reauth") {
+        this.handleReauth()
+      }
+    } else {
+      console.warn(
+        `handleControl: Invalid control command received: ${controlData}`
+      )
+    }
+  }
+
+  /**
+   * Replays stored credentials.
+   */
+  replayCredentials() {
+    if (this.config.options.allowReplay && this.ssh.stream) {
+      this.ssh.stream.write(`${this.sessionState.password}\n`)
+    }
+  }
+
+  /**
+   * Handles reauthentication.
+   */
+  handleReauth() {
+    if (this.config.options.allowReauth) {
+      this.clearSessionCredentials()
+      this.socket.emit("authentication", { action: "reauth" })
+    }
+  }
+
+  /**
+   * Handles errors.
+   * @param {string} context - The error context.
+   * @param {Error} err - The error object.
+   */
+  handleError(context, err) {
+    const errorMessage = err ? `: ${err.message}` : ""
+    this.socket.emit("ssherror", `SSH ${context}${errorMessage}`)
+    this.handleConnectionClose()
+  }
+
+  /**
+   * Updates a UI element on the client side.
+   * @param {string} element - The element to update.
+   * @param {any} value - The new value for the element.
+   */
+  updateElement(element, value) {
+    this.socket.emit("updateUI", { element, value })
+  }
+
+  /**
+   * Handles the closure of the connection.
+   * @param {string} reason - The reason for the closure.
+   */
+  handleConnectionClose(reason) {
+    if (this.ssh) this.ssh.end()
+    debug(`handleConnectionClose: ${this.socket.id}, Reason: ${reason}`)
+    this.socket.disconnect(true)
+  }
+
+  /**
+   * Clears session credentials.
+   */
+  clearSessionCredentials() {
+    if (this.socket.handshake.session.sshCredentials) {
+      this.socket.handshake.session.sshCredentials.username = null
+      this.socket.handshake.session.sshCredentials.password = null
+    }
+    this.socket.handshake.session.usedBasicAuth = false
+    this.sessionState.authenticated = false
+    this.sessionState.username = null
+    this.sessionState.password = null
+
+    this.socket.handshake.session.save(err => {
+      if (err)
+        console.error(`Failed to save session for ${this.socket.id}:`, err)
+    })
+  }
+}
+
+module.exports = function(io, config) {
+  io.on("connection", socket => new WebSSH2Socket(socket, config))
 }
