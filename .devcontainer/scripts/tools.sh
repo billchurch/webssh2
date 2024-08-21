@@ -9,11 +9,9 @@ Host github.com
   IdentityFile ~/.hostssh/id_rsa.pub
 EOF
 
-sudo chown -R vscode:vscode ~/.ssh
-
-# Install Node.js 6.9.1
-asdf install nodejs 6.9.1
-asdf global nodejs 6.9.1
+sudo chown -R vscode:vscode ~/.ssh && \
+  sudo chmod 600 ~/.ssh/config && \
+  sudo chmod 600 ~/.ssh/known_hosts
 
 git config --global --add safe.directory ${PWD}
 
@@ -41,3 +39,5 @@ echo "$user_email $signing_key" > ~/.ssh/allowed_signers
 chmod 644 ~/.ssh/allowed_signers
 
 echo "allowed_signers file created successfully."
+
+npm install
