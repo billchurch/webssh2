@@ -42,6 +42,7 @@ COPY config.json.sample config.json
 # Set environment variables
 ENV PORT=2222
 ENV DEBUG=
+ENV WEBSSH_SESSION_SECRET=
 
 # Make port 2222 available to the world outside this container
 EXPOSE 2222
