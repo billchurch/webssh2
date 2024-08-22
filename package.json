@@ -4,7 +4,9 @@
   "ignore": [
     ".gitignore"
   ],
-  "bin": "./index.js",
+  "bin": {
+    "webssh2-server": "./index.js"
+  },
   "description": "A Websocket to SSH2 gateway using xterm.js, socket.io, ssh2",
   "homepage": "https://github.com/billchurch/WebSSH2",
   "keywords": [
@@ -20,10 +22,7 @@
     "url": "git+https://github.com/billchurch/WebSSH2.git"
   },
   "contributors": [
-    {
-      "name": "Bill Church",
-      "email": "wmchurch@gmail.com"
-    }
+    "Bill Church <wmchurch@gmail.com>"
   ],
   "engines": {
     "node": ">= 6"
@@ -49,12 +48,14 @@
   "scripts": {
     "start": "node index.js",
     "lint": "eslint src test",
-    "watch": "node_modules/.bin/nodemon index.js",
+    "watch": "nodemon index.js -w app/ -w index.js -w config.json -w package.json",
     "test": "jest"
   },
   "jest": {
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.js"]
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   },
   "standard": {
     "ignore": [
@@ -75,5 +76,10 @@
     "prettier": "^1.19.1",
     "prettier-eslint": "^8.8.2",
     "standard-version": "^4.4.0"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "author": ""
 }
