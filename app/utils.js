@@ -163,19 +163,24 @@ function modifyHtml(html, config) {
  * Masks sensitive information in an object
  * @param {Object} obj - The object to mask
  * @param {Object} [options] - Optional configuration for masking
+ * @param {string[]} [options.properties=['password', 'key', 'secret', 'token']] - The properties to be masked
+ * @param {number} [options.maskLength=8] - The length of the generated mask
+ * @param {number} [options.minLength=5] - The minimum length of the generated mask
+ * @param {number} [options.maxLength=15] - The maximum length of the generated mask
+ * @param {string} [options.maskChar='*'] - The character used for masking
+ * @param {boolean} [options.fullMask=false] - Whether to use a full mask for all properties
  * @returns {Object} The masked object
  */
 function maskSensitiveData(obj, options) {
-  const defaultOptions = {
-    // Add any default masking options here
-    // For example:
-    // password: true,
-    // token: true
-  }
+  const defaultOptions = {}
+  debug("maskSensitiveData: %O", obj)
+  debug("maskSensitiveData: options: %O", options)
 
   const maskingOptions = Object.assign({}, defaultOptions, options || {})
+  const maskedObject = maskObject(obj, maskingOptions)
+  debug("maskSensitiveData: maskedObject: %O", maskedObject)
 
-  return maskObject(obj, maskingOptions)
+  return maskedObject
 }
 
 module.exports = {

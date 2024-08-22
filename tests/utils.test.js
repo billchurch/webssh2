@@ -67,16 +67,65 @@ describe("utils", () => {
   })
 
   describe("maskSensitiveData", () => {
-    it("should mask sensitive data", () => {
-      const data = {
+    it("should mask simple password property", () => {
+      const testObj = { username: "user", password: "secret123" }
+      const maskedObj = maskSensitiveData(testObj)
+      console.log("maskedObj.password.length: ", maskedObj.password.length)
+
+      expect(maskedObj.username).toBe("user")
+      expect(maskedObj.password).not.toBe("secret123")
+      expect(maskedObj.password.length).toBeGreaterThanOrEqual(3)
+      expect(maskedObj.password.length).toBeLessThanOrEqual(9)
+    })
+
+    it("should mask array elements when property is specified", () => {
+      const testObj = {
+        action: "keyboard-interactive",
+        responses: ["sensitive_password", "another_sensitive_value"]
+      }
+      const maskedObj = maskSensitiveData(testObj, {
+        properties: ["responses"]
+      })
+
+      expect(maskedObj.action).toBe("keyboard-interactive")
+      expect(Array.isArray(maskedObj.responses)).toBe(true)
+      expect(maskedObj.responses).toHaveLength(2)
+      expect(maskedObj.responses[0]).not.toBe("sensitive_password")
+      expect(maskedObj.responses[1]).not.toBe("another_sensitive_value")
+      expect(maskedObj.responses[0]).toHaveLength(8)
+      expect(maskedObj.responses[1]).toHaveLength(8)
+    })
+
+    it("should not mask non-specified properties", () => {
+      const testObj = {
         username: "user",
         password: "secret",
-        token: "12345"
+        data: ["public_info", "not_sensitive"]
       }
-      const masked = maskSensitiveData(data)
-      expect(masked.username).toBe("user")
-      expect(masked.password).not.toBe("secret")
-      expect(masked.token).not.toBe("12345")
+      const maskedObj = maskSensitiveData(testObj, {
+        properties: ["password"]
+      })
+
+      expect(maskedObj.username).toBe("user")
+      expect(maskedObj.password).not.toBe("secret")
+      expect(maskedObj.data).toEqual(["public_info", "not_sensitive"])
+    })
+
+    it("should handle nested objects", () => {
+      const testObj = {
+        user: {
+          name: "John",
+          credentials: {
+            password: "topsecret",
+            token: "abcdef123456"
+          }
+        }
+      }
+      const maskedObj = maskSensitiveData(testObj)
+
+      expect(maskedObj.user.name).toBe("John")
+      expect(maskedObj.user.credentials.password).not.toBe("topsecret")
+      expect(maskedObj.user.credentials.token).not.toBe("abcdef123456")
     })
   })
 
