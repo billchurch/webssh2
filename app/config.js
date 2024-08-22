@@ -31,7 +31,7 @@ const defaultConfig = {
     readyTimeout: 20000,
     keepaliveInterval: 120000,
     keepaliveCountMax: 10,
-    alwaysSendKeyboardInteractivePrompts: false,
+    alwaysSendKeyboardInteractivePrompts: false
   },
   header: {
     text: null,
