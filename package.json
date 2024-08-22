@@ -51,7 +51,7 @@
     "lint:fix": "eslint src --fix",
     "watch": "NODE_ENV=development nodemon index.js -w app/ -w index.js -w config.json -w package.json",
     "test": "jest",
-    "release": "standard-version -a -s",
+    "release": "standard-version -a -s --release-as patch",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish",
