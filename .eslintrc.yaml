@@ -2,9 +2,14 @@ extends:
   - airbnb-base
   - prettier
   - plugin:node/recommended
+  - plugin:jest/recommended
 
 plugins:
   - prettier
+  - jest
+
+env:
+  jest/globals: true
 
 rules:
   prettier/prettier: error
@@ -15,3 +20,9 @@ rules:
   object-shorthand: off
   class-methods-use-this: off
   semi: [2, never]
+
+overrides:
+  - files:
+      - "**/*.test.js"
+    env:
+      jest: true

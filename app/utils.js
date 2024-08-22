@@ -1,12 +1,11 @@
 // server
 // /app/utils.js
 const validator = require("validator")
-const crypto = require("crypto")
 const Ajv = require("ajv")
 const maskObject = require("jsmasker")
 const { createNamespacedDebug } = require("./logger")
 const { DEFAULTS, MESSAGES } = require("./constants")
-const { configSchema } = require("./config")
+const configSchema = require("./configSchema")
 
 const debug = createNamespacedDebug("utils")
 
@@ -32,14 +31,6 @@ function deepMerge(target, source) {
     }
   })
   return output
-}
-
-/**
- * Generates a secure random session secret
- * @returns {string} A random 32-byte hex string
- */
-function generateSecureSecret() {
-  return crypto.randomBytes(32).toString("hex")
 }
 
 /**
@@ -99,7 +90,7 @@ function getValidatedPort(portInput) {
  * @returns {boolean} - Returns true if the credentials are valid, otherwise false.
  */
 function isValidCredentials(creds) {
-  return (
+  return !!(
     creds &&
     typeof creds.username === "string" &&
     typeof creds.password === "string" &&
@@ -189,7 +180,6 @@ function maskSensitiveData(obj, options) {
 
 module.exports = {
   deepMerge,
-  generateSecureSecret,
   getValidatedHost,
   getValidatedPort,
   isValidCredentials,
