@@ -36,13 +36,13 @@ function auth(req, res, next) {
 }
 
 // Scenario 1: No auth required, uses websocket authentication instead
-router.get("/", function(req, res) {
+router.get("/", (req, res) => {
   debug("router.get./: Accessed / route")
   handleConnection(req, res)
 })
 
 // Scenario 2: Auth required, uses HTTP Basic Auth
-router.get("/host/:host", auth, function(req, res) {
+router.get("/host/:host", auth, (req, res) => {
   debug(`router.get.host: /ssh/host/${req.params.host} route`)
 
   try {
@@ -74,12 +74,12 @@ router.get("/host/:host", auth, function(req, res) {
 })
 
 // Clear credentials route
-router.get("/clear-credentials", function(req, res) {
+router.get("/clear-credentials", (req, res) => {
   req.session.sshCredentials = null
   res.status(HTTP.OK).send(HTTP.CREDENTIALS_CLEARED)
 })
 
-router.get("/force-reconnect", function(req, res) {
+router.get("/force-reconnect", (req, res) => {
   req.session.sshCredentials = null
   res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
 })

@@ -30,7 +30,8 @@ const defaultConfig = {
     term: DEFAULTS.SSH_TERM,
     readyTimeout: 20000,
     keepaliveInterval: 120000,
-    keepaliveCountMax: 10
+    keepaliveCountMax: 10,
+    alwaysSendKeyboardInteractivePrompts: false,
   },
   header: {
     text: null,

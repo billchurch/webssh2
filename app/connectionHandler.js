@@ -17,7 +17,7 @@ const debug = createNamespacedDebug("connectionHandler")
  */
 function handleFileRead(filePath, config, res) {
   // eslint-disable-next-line consistent-return
-  fs.readFile(filePath, "utf8", function(err, data) {
+  fs.readFile(filePath, "utf8", (err, data) => {
     if (err) {
       return res
         .status(HTTP.INTERNAL_SERVER_ERROR)
