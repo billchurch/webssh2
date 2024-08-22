@@ -4,7 +4,6 @@
 const path = require("path")
 const fs = require("fs")
 const readConfig = require("read-config-ng")
-const Ajv = require("ajv")
 const { deepMerge, validateConfig } = require("./utils")
 const { generateSecureSecret } = require("./crypto-utils")
 const { createNamespacedDebug } = require("./logger")

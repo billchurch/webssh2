@@ -47,9 +47,19 @@
   },
   "scripts": {
     "start": "node index.js",
-    "lint": "eslint src test",
-    "watch": "nodemon index.js -w app/ -w index.js -w config.json -w package.json",
-    "test": "jest"
+    "lint": "eslint app",
+    "lint:fix": "eslint src --fix",
+    "watch": "NODE_ENV=development nodemon index.js -w app/ -w index.js -w config.json -w package.json",
+    "test": "jest",
+    "release": "standard-version -a -s",
+    "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
+    "publish:dry-run": "npm publish --dry-run",
+    "publish:npm": "npm publish",
+    "pretest": "npm run lint",
+    "ci": "npm run test",
+    "release:major": "npm run release -- --release-as major",
+    "release:minor": "npm run release -- --release-as minor",
+    "release:patch": "npm run release -- --release-as patch"
   },
   "jest": {
     "testEnvironment": "node",
