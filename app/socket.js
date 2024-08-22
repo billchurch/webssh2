@@ -2,6 +2,7 @@
 // app/socket.js
 
 const validator = require("validator")
+const EventEmitter = require("events")
 const SSHConnection = require("./ssh")
 const { createNamespacedDebug } = require("./logger")
 const { SSHConnectionError, handleError } = require("./errors")
@@ -14,8 +15,9 @@ const {
 } = require("./utils")
 const { MESSAGES } = require("./constants")
 
-class WebSSH2Socket {
+class WebSSH2Socket extends EventEmitter {
   constructor(socket, config) {
+    super()
     this.socket = socket
     this.config = config
     this.ssh = new SSHConnection(config)
@@ -29,6 +31,7 @@ class WebSSH2Socket {
       cols: null,
       rows: null
     }
+
     this.initializeSocketEvents()
   }
 
@@ -50,24 +53,50 @@ class WebSSH2Socket {
       this.socket.emit("authentication", { action: "request_auth" })
     }
 
-    this.socket.on(
-      "authenticate",
-      function(creds) {
-        this.handleAuthenticate(creds)
-      }.bind(this)
+    this.ssh.on("keyboard-interactive", data => {
+      this.handleKeyboardInteractive(data)
+    })
+
+    this.socket.on("authenticate", creds => {
+      this.handleAuthenticate(creds)
+    })
+    this.socket.on("terminal", data => {
+      this.handleTerminal(data)
+    })
+    this.socket.on("disconnect", reason => {
+      this.handleConnectionClose(reason)
+    })
+  }
+
+  handleKeyboardInteractive(data) {
+    const self = this
+    debug(`handleKeyboardInteractive: ${this.socket.id}, %O`, data)
+
+    // Send the keyboard-interactive request to the client
+    this.socket.emit(
+      "authentication",
+      Object.assign(
+        {
+          action: "keyboard-interactive"
+        },
+        data
+      )
     )
-    this.socket.on(
-      "terminal",
-      function(data) {
-        this.handleTerminal(data)
-      }.bind(this)
-    )
-    this.socket.on(
-      "disconnect",
-      function(reason) {
-        this.handleConnectionClose(reason)
-      }.bind(this)
-    )
+
+    // Set up a one-time listener for the client's response
+    this.socket.once("authentication", clientResponse => {
+      const maskedclientResponse = maskSensitiveData(clientResponse, {
+        properties: ["responses"]
+      })
+      debug(
+        "handleKeyboardInteractive: Client response masked %O",
+        maskedclientResponse
+      )
+      if (clientResponse.action === "keyboard-interactive") {
+        // Forward the client's response to the SSH connection
+        self.ssh.emit("keyboard-interactive-response", clientResponse.responses)
+      }
+    })
   }
 
   handleAuthenticate(creds) {
@@ -88,6 +117,7 @@ class WebSSH2Socket {
   }
 
   initializeConnection(creds) {
+    const self = this
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
       maskSensitiveData(creds)

@@ -173,12 +173,10 @@ function modifyHtml(html, config) {
  */
 function maskSensitiveData(obj, options) {
   const defaultOptions = {}
-  debug("maskSensitiveData: %O", obj)
-  debug("maskSensitiveData: options: %O", options)
+  debug("maskSensitiveData")
 
   const maskingOptions = Object.assign({}, defaultOptions, options || {})
   const maskedObject = maskObject(obj, maskingOptions)
-  debug("maskSensitiveData: maskedObject: %O", maskedObject)
 
   return maskedObject
 }

@@ -13,6 +13,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Docker Setup](#docker-setup)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Features](#features)
 - [Routes](#routes)
 - [Deprecation Notice](#deprecation-notice)
 - [Tips](#tips)
@@ -68,7 +69,7 @@ http://localhost:2222/ssh/host/127.0.0.1
 ```
 
 You'll be prompted for SSH credentials via HTTP Basic Authentication.
-
+P
 ## Configuration
 
 ### GET Parameters
@@ -104,6 +105,61 @@ Edit `config.json` to customize the following options:
 - `options.allowReplay` - _boolean_ - Allow credential replay (default: `true`)
 
 For detailed SSH algorithm configurations, refer to the full config file.
+
+## Features
+
+### Keyboard Interactive Authentication
+
+Keyboard Interactive authentication provides a flexible way to handle various authentication scenarios, including multi-factor authentication.
+
+#### How it works
+
+1. When the SSH server requests Keyboard Interactive authentication, WebSSH2 can handle it in two ways:
+   a) Automatically (default behavior)
+   b) By prompting the user through the web interface
+
+2. In automatic mode:
+   - If all prompts contain the word "password" (case-insensitive), WebSSH2 will automatically respond using the password provided during the initial connection attempt.
+   - If any prompt doesn't contain "password", all prompts will be forwarded to the web client for user input.
+
+3. When prompts are sent to the web client:
+   - A dialog box appears in the user's browser, displaying all prompts from the SSH server.
+   - The user can input responses for each prompt.
+   - Responses are sent back to the SSH server to complete the authentication process.
+
+#### Configuration Options
+
+You can customize the Keyboard Interactive authentication behavior using the following option in your `config.json`:
+
+```json
+{
+  "ssh": {
+    "alwaysSendKeyboardInteractivePrompts": false
+  }
+}
+```
+
+- `alwaysSendKeyboardInteractivePrompts` (boolean, default: false):
+  - When set to `true`, all Keyboard Interactive prompts will always be sent to the web client, regardless of their content.
+  - When set to `false` (default), WebSSH2 will attempt to automatically handle password prompts and only send non-password prompts to the web client.
+
+#### Use Cases
+
+1. **Simple Password Authentication**: 
+   With default settings, if the SSH server uses Keyboard Interactive for password authentication, WebSSH2 will automatically handle it without additional user interaction.
+
+2. **Multi-Factor Authentication**: 
+   For SSH servers requiring additional factors (e.g., OTP), WebSSH2 will present prompts to the user through the web interface.
+
+3. **Always Prompt User**: 
+   By setting `alwaysSendKeyboardInteractivePrompts` to `true`, you can ensure that users always see and respond to all authentication prompts, which can be useful for security-sensitive environments or for debugging purposes.
+
+#### Security Considerations
+
+- The automatic password handling feature is designed for convenience but may not be suitable for high-security environments. Consider setting `alwaysSendKeyboardInteractivePrompts` to `true` if you want users to explicitly enter their credentials for each session.
+- Ensure that your WebSSH2 installation uses HTTPS to protect the communication between the web browser and the WebSSH2 server.
+
+For more information on SSH keyboard-interactive authentication, refer to [RFC 4256](https://tools.ietf.org/html/rfc4256).
 
 ## Routes
 
