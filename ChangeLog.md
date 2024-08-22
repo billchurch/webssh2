@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.18"></a>
+## [0.2.18](https://github.com/billchurch/WebSSH2/compare/v0.2.17...v0.2.18) (2024-08-22)
+
+
+### Features
+
+* express.js session secret configurable in docker with WEBSSH_SESSION_SECRET env variable ([12e5431](https://github.com/billchurch/WebSSH2/commit/12e5431))
+* ssh keyboard-interactive authentication support ([0f3c7ab](https://github.com/billchurch/WebSSH2/commit/0f3c7ab))
+
+
+
 <a name="0.2.17"></a>
 ## 0.2.17 (2024-08-22)
 
