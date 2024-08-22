@@ -1,5 +1,158 @@
 # Change Log
 
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+<a name="0.2.17"></a>
+## 0.2.17 (2024-08-22)
+
+
+### Bug Fixes
+
+* correct handling of sshTerm query parameters ([b9ca79e](https://github.com/billchurch/WebSSH2/commit/b9ca79e))
+* enable `autoConnect` only on `/ssh/host/` ([c9591d6](https://github.com/billchurch/WebSSH2/commit/c9591d6))
+* handle http basic auth in `/ssh/host/` route ([1fc35f7](https://github.com/billchurch/WebSSH2/commit/1fc35f7))
+* honor `ssh.term` settings as default when url param `sshTerm` is undefined ([303f53d](https://github.com/billchurch/WebSSH2/commit/303f53d))
+* sanitize object no longer mutates original object ([ea01701](https://github.com/billchurch/WebSSH2/commit/ea01701))
+* Serve the static files from the webssh2_client module with a custom prefix '/ssh/assets' instead of just '/ssh'. ([8fcf4b7](https://github.com/billchurch/WebSSH2/commit/8fcf4b7))
+* vareiable scoping for conn and stream would prevent multiple user sessions ([650f4eb](https://github.com/billchurch/WebSSH2/commit/650f4eb))
+* version comment in client.html ([ea12cc8](https://github.com/billchurch/WebSSH2/commit/ea12cc8))
+
+
+### Features
+
+* `Switch User` or `reauth` feature for Basic Auth sessions ([3e45c98](https://github.com/billchurch/WebSSH2/commit/3e45c98))
+* `Switch User` or `reauth` feature for Basic Auth sessions ([a530f59](https://github.com/billchurch/WebSSH2/commit/a530f59))
+* add allowReconnect, allowReauth, and autoLog features, normalize debug logs ([e2ea068](https://github.com/billchurch/WebSSH2/commit/e2ea068))
+* Add session-based authentication for SSH connections using HTTP Basic auth and express.js ([afe462b](https://github.com/billchurch/WebSSH2/commit/afe462b))
+* Add SSH routes and connection handler ([2d19f49](https://github.com/billchurch/WebSSH2/commit/2d19f49))
+* get HTTP session secret from `WEBSSH_SESSION_SECRET` env if available. ([17bc82d](https://github.com/billchurch/WebSSH2/commit/17bc82d))
+* HTTP Basic Authentication and auto-connection with /ssh/host/<hostIP> ([a0affca](https://github.com/billchurch/WebSSH2/commit/a0affca))
+* Inject SSH host and port into webssh2 configuration ([e39fb88](https://github.com/billchurch/WebSSH2/commit/e39fb88))
+* routes.js validate input from url parameters ([72d7477](https://github.com/billchurch/WebSSH2/commit/72d7477))
+* Update connectionHandler.js and routes.js to propmpt for basic credentials when accessing `/ssh/host/<address>` and pre-populate credentials and host info AND auto-connect to server. ([fe7248e](https://github.com/billchurch/WebSSH2/commit/fe7248e))
+* update webssh2_client 0.2.20 ([9b94627](https://github.com/billchurch/WebSSH2/commit/9b94627))
+* update webssh2_client 0.2.21 ([9cfccb1](https://github.com/billchurch/WebSSH2/commit/9cfccb1))
+* update webssh2_client to 0.2.19 ([418af1b](https://github.com/billchurch/WebSSH2/commit/418af1b))
+* update webssh2_client@0.2.23 ([e06fabc](https://github.com/billchurch/WebSSH2/commit/e06fabc))
+* validate handleResize ([b4cbfb4](https://github.com/billchurch/WebSSH2/commit/b4cbfb4))
+* validate handleTerminal ([aab1a35](https://github.com/billchurch/WebSSH2/commit/aab1a35))
+* validateSshTerm checks if term is undefined or null before validation ([28f329e](https://github.com/billchurch/WebSSH2/commit/28f329e))
+
+
+
+<a name="0.2.12"></a>
+## 0.2.12 (2024-07-10)
+
+
+
+<a name="0.2.11"></a>
+## 0.2.11 (2021-05-12)
+
+
+
+<a name="0.2.9"></a>
+## 0.2.9 (2019-06-13)
+
+
+
+<a name="0.2.8"></a>
+## 0.2.8 (2019-05-26)
+
+
+
+<a name="0.2.7"></a>
+## 0.2.7 (2018-11-11)
+
+
+
+<a name="0.2.6"></a>
+## 0.2.6 (2018-11-07)
+
+
+
+<a name="0.2.5"></a>
+## 0.2.5 (2018-09-11)
+
+
+
+<a name="0.2.4"></a>
+## 0.2.4 (2018-07-18)
+
+
+### Bug Fixes
+
+* **package:** update ssh2 to version 0.6.1 ([bf15b3e](https://github.com/billchurch/WebSSH2/commit/bf15b3e)), closes [#55](https://github.com/billchurch/WebSSH2/issues/55)
+* **package:** update validator to version 10.1.0 ([1a15fa5](https://github.com/billchurch/WebSSH2/commit/1a15fa5)), closes [#62](https://github.com/billchurch/WebSSH2/issues/62)
+
+
+
+<a name="0.2.0"></a>
+# 0.2.0 (2018-02-10)
+
+
+
+<a name="0.1.4"></a>
+## 0.1.4 (2018-01-30)
+
+
+### Bug Fixes
+
+* package.json to reduce vulnerabilities ([196d769](https://github.com/billchurch/WebSSH2/commit/196d769))
+
+
+
+<a name="0.1.3"></a>
+## 0.1.3 (2017-09-28)
+
+
+
+<a name="0.1.2"></a>
+## 0.1.2 (2017-08-21)
+
+
+### Bug Fixes
+
+* package.json to reduce vulnerabilities ([e65a964](https://github.com/billchurch/WebSSH2/commit/e65a964))
+
+
+
+<a name="0.1.1"></a>
+## 0.1.1 (2017-06-03)
+
+
+
+<a name="0.1.0"></a>
+# 0.1.0 (2017-05-27)
+
+
+
+<a name="0.0.5"></a>
+## 0.0.5 (2017-03-23)
+
+
+
+<a name="0.0.4"></a>
+## 0.0.4 (2017-03-23)
+
+
+
+<a name="0.0.3"></a>
+## 0.0.3 (2017-02-16)
+
+
+
+<a name="0.0.2"></a>
+## 0.0.2 (2017-02-01)
+
+
+
+<a name="0.0.1"></a>
+## 0.0.1 (2016-07-28)
+
+
+
+# Change Log
+
 ## [0.2.13] 2024-07-11
 
 BIG-IP Specific version
