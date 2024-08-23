@@ -49,9 +49,7 @@ class SSHConnection extends EventEmitter {
       })
 
       this.conn.on("error", err => {
-        const error = new SSHConnectionError(
-          `SSH Connection error: ${err.message}`
-        )
+        const error = new SSHConnectionError(`${err.message}`)
         handleError(error)
         reject(error)
       })

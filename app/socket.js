@@ -157,10 +157,8 @@ class WebSSH2Socket extends EventEmitter {
         debug(
           `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
         )
-        handleError(
-          new SSHConnectionError(`SSH CONNECTION ERROR: ${err.message}`)
-        )
-        this.socket.emit("ssherror", `SSH CONNECTION ERROR: ${err.message}`)
+        handleError(new SSHConnectionError(`${err.message}`))
+        this.socket.emit("ssherror", `${err.message}`)
       })
   }
 
