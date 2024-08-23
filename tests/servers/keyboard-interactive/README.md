@@ -11,7 +11,7 @@ FROM debian:bullseye-slim
 
 # Install the necessary packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install htop -y --no-install-recommends \
     openssh-server && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -32,7 +32,7 @@ RUN useradd -m testuser && \
 EXPOSE 4444
 
 # Start the SSH server
-CMD ["/usr/sbin/sshd", "-D", "-e", "-d -d -d"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]
 ```
 
 ### Instructions:
