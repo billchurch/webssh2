@@ -5,7 +5,7 @@ on:
     inputs:
       tag:
         description: 'Repo Branch/Tag'
-        default: 'main'
+        default: '0.4.6'
         type: 'string'
         required: true
 
