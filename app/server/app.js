@@ -35,20 +35,10 @@ const expressConfig = {
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server, { transports: ['websocket'], ...config.socketio });
-const session = require('express-session')(expressConfig);
 
 const appSocket = require('./socket');
-// const { setDefaultCredentials } = require('./util');
-const { webssh2debug } = require('./logging');
 const { connect } = require('./routes');
 
-// setDefaultCredentials(config.user);
-
-// safe shutdown
-
-let shutdownMode = false;
-let shutdownInterval;
-let connectionCount = 0;
 // eslint-disable-next-line consistent-return
 function safeShutdownGuard(req, res, next) {
   if (!shutdownMode) return next();
@@ -56,8 +46,7 @@ function safeShutdownGuard(req, res, next) {
 }
 // express
 app.use(safeShutdownGuard);
-// app.use(session);
-if (config.accesslog) app.use(logger('common'));
+
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: true }));
 app.post('/ssh/host/:host?', connect);
@@ -83,21 +72,21 @@ io.on('connection', appSocket);
 
 module.exports = { server, config };
 
-const onConnection = (socket) => {
-  console.log('connected');
-  connectionCount += 1;
-  socket.on('disconnect', () => {
-    connectionCount -= 1;
-    if (connectionCount <= 0 && shutdownMode) {
-      stopApp('All clients disconnected');
-    }
-  });
-  socket.on('geometry', (cols, rows) => {
-    // TODO need to rework how we pass settings to ssh2, this is less than ideal
-    //socket.request.session.ssh.cols = cols; //TODO make this part of the terminal config on connect
-    //socket.request.session.ssh.rows = rows;
-    //webssh2debug(socket, `SOCKET GEOMETRY: termCols = ${cols}, termRows = ${rows}`);
-  });
-};
+// const onConnection = (socket) => {
+//   console.log('connected');
+//   connectionCount += 1;
+//   socket.on('disconnect', () => {
+//     connectionCount -= 1;
+//     if (connectionCount <= 0 && shutdownMode) {
+//       stopApp('All clients disconnected');
+//     }
+//   });
+//   socket.on('geometry', (cols, rows) => {
+//     // TODO need to rework how we pass settings to ssh2, this is less than ideal
+//     //socket.request.session.ssh.cols = cols; //TODO make this part of the terminal config on connect
+//     //socket.request.session.ssh.rows = rows; WHAT IS THis it seems to work without it
+//     //webssh2debug(socket, `SOCKET GEOMETRY: termCols = ${cols}, termRows = ${rows}`);
+//   });
+// };
 
-io.on('connection', onConnection);
+// io.on('connection', onConnection);
