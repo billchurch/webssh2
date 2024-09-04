@@ -15,8 +15,6 @@ require('../css/style.css');
 /* global Blob, logBtn, credentialsBtn, reauthBtn, downloadLogBtn */ // eslint-disable-line
 let sessionLogEnable = false;
 let loggedData = false;
-let allowreplay = false;
-let allowreauth = false;
 let sessionLog: string;
 let sessionFooter: any;
 let logDate: {
@@ -33,13 +31,8 @@ let errorExists: boolean;
 const term = new Terminal();
 // DOM properties
 const logBtn = document.getElementById('logBtn');
-const credentialsBtn = document.getElementById('credentialsBtn');
-const reauthBtn = document.getElementById('reauthBtn');
 const downloadLogBtn = document.getElementById('downloadLogBtn');
 const status = document.getElementById('status');
-const header = document.getElementById('header');
-const footer = document.getElementById('footer');
-const countdown = document.getElementById('countdown');
 const fitAddon = new FitAddon();
 const terminalContainer = document.getElementById('terminal-container');
 term.loadAddon(fitAddon);
@@ -49,10 +42,12 @@ fitAddon.fit();
 
 const socket = io({
   path: '/ssh/socket.io',
+  transports: ['websocket'],
 });
 
 // reauthenticate
-function reauthSession () { // eslint-disable-line
+function reauthSession() {
+  // eslint-disable-line
   debug('re-authenticating');
   socket.emit('control', 'reauth');
   window.location.href = '/ssh/reauth';
@@ -61,7 +56,8 @@ function reauthSession () { // eslint-disable-line
 
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
-function downloadLog () { // eslint-disable-line
+function downloadLog() {
+  // eslint-disable-line
   if (loggedData === true) {
     myFile = `WebSSH2-${logDate.getFullYear()}${
       logDate.getMonth() + 1
@@ -72,13 +68,13 @@ function downloadLog () { // eslint-disable-line
         sessionLog.replace(
           // eslint-disable-next-line no-control-regex
           /[\u001b\u009b][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[0-9A-ORZcf-nqry=><;]/g,
-          ''
+          '',
         ),
       ],
       {
         // eslint-disable-line no-control-regex
         type: 'text/plain',
-      }
+      },
     );
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
@@ -91,7 +87,8 @@ function downloadLog () { // eslint-disable-line
 }
 // Set variable to toggle log data from client/server to a varialble
 // for later download
-function toggleLog () { // eslint-disable-line
+function toggleLog() {
+  // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false;
     loggedData = true;
@@ -119,29 +116,12 @@ function toggleLog () { // eslint-disable-line
 }
 
 // replay password to server, requires
-function replayCredentials () { // eslint-disable-line
+function replayCredentials() {
+  // eslint-disable-line
   socket.emit('control', 'replayCredentials');
   debug(`control: replayCredentials`);
   term.focus();
   return false;
-}
-
-// draw/re-draw menu and reattach listeners
-// when dom is changed, listeners are abandonded
-function drawMenu() {
-  logBtn.addEventListener('click', toggleLog);
-  if (allowreauth) {
-    reauthBtn.addEventListener('click', reauthSession);
-    reauthBtn.style.display = 'block';
-  }
-  if (allowreplay) {
-    credentialsBtn.addEventListener('click', replayCredentials);
-    credentialsBtn.style.display = 'block';
-  }
-  if (loggedData) {
-    downloadLogBtn.addEventListener('click', downloadLog);
-    downloadLogBtn.style.display = 'block';
-  }
 }
 
 function resizeScreen() {
@@ -181,71 +161,59 @@ socket.on(
     lineHeight: number;
   }) => {
     term.options = data;
-  }
+  },
 );
 
-socket.on('title', (data: string) => {
-  document.title = data;
-});
+// socket.on('ssherror', (data: string) => {
+//   status.innerHTML = data;
+//   status.style.backgroundColor = 'red';
+//   errorExists = true;
+// });
 
-socket.on('menu', () => {
-  drawMenu();
-});
+// socket.on('headerBackground', (data: string) => {
+//   header.style.backgroundColor = data;
+// });
 
-socket.on('status', (data: string) => {
-  status.innerHTML = data;
-});
+// socket.on('header', (data: string) => {
+//   if (data) {
+//     header.innerHTML = data;
+//     header.style.display = 'block';
+//     // header is 19px and footer is 19px, recaculate new terminal-container and resize
+//     terminalContainer.style.height = 'calc(100% - 38px)';
+//     resizeScreen();
+//   }
+// });
 
-socket.on('ssherror', (data: string) => {
-  status.innerHTML = data;
-  status.style.backgroundColor = 'red';
-  errorExists = true;
-});
+// socket.on('footer', (data: string) => {
+//   sessionFooter = data;
+//   footer.innerHTML = data;
+// });
 
-socket.on('headerBackground', (data: string) => {
-  header.style.backgroundColor = data;
-});
+// socket.on('statusBackground', (data: string) => {
+//   status.style.backgroundColor = data;
+// });
 
-socket.on('header', (data: string) => {
-  if (data) {
-    header.innerHTML = data;
-    header.style.display = 'block';
-    // header is 19px and footer is 19px, recaculate new terminal-container and resize
-    terminalContainer.style.height = 'calc(100% - 38px)';
-    resizeScreen();
-  }
-});
+// socket.on('allowreplay', (data: boolean) => {
+//   if (data === true) {
+//     debug(`allowreplay: ${data}`);
+//     allowreplay = true;
+//     drawMenu();
+//   } else {
+//     allowreplay = false;
+//     debug(`allowreplay: ${data}`);
+//   }
+// });
 
-socket.on('footer', (data: string) => {
-  sessionFooter = data;
-  footer.innerHTML = data;
-});
-
-socket.on('statusBackground', (data: string) => {
-  status.style.backgroundColor = data;
-});
-
-socket.on('allowreplay', (data: boolean) => {
-  if (data === true) {
-    debug(`allowreplay: ${data}`);
-    allowreplay = true;
-    drawMenu();
-  } else {
-    allowreplay = false;
-    debug(`allowreplay: ${data}`);
-  }
-});
-
-socket.on('allowreauth', (data: boolean) => {
-  if (data === true) {
-    debug(`allowreauth: ${data}`);
-    allowreauth = true;
-    drawMenu();
-  } else {
-    allowreauth = false;
-    debug(`allowreauth: ${data}`);
-  }
-});
+// socket.on('allowreauth', (data: boolean) => {
+//   if (data === true) {
+//     debug(`allowreauth: ${data}`);
+//     allowreauth = true;
+//     drawMenu();
+//   } else {
+//     allowreauth = false;
+//     debug(`allowreauth: ${data}`);
+//   }
+// });
 
 socket.on('disconnect', (err: any) => {
   if (!errorExists) {
@@ -253,33 +221,31 @@ socket.on('disconnect', (err: any) => {
     status.innerHTML = `WEBSOCKET SERVER DISCONNECTED: ${err}`;
   }
   socket.io.reconnection(false);
-  countdown.classList.remove('active');
 });
 
-socket.on('error', (err: any) => {
-  if (!errorExists) {
-    status.style.backgroundColor = 'red';
-    status.innerHTML = `ERROR: ${err}`;
-  }
-});
+// socket.on('error', (err: any) => {
+//   if (!errorExists) {
+//     status.style.backgroundColor = 'red';
+//     status.innerHTML = `ERROR: ${err}`;
+//   }
+// });
 
-socket.on('reauth', () => {
-  if (allowreauth) {
-    reauthSession();
-  }
-});
+// socket.on('reauth', () => {
+//   if (allowreauth) {
+//     reauthSession();
+//   }
+// });
 
 // safe shutdown
-let hasCountdownStarted = false;
 
-socket.on('shutdownCountdownUpdate', (remainingSeconds: any) => {
-  if (!hasCountdownStarted) {
-    countdown.classList.add('active');
-    hasCountdownStarted = true;
-  }
-  countdown.innerText = `Shutting down in ${remainingSeconds}s`;
-});
+// socket.on('shutdownCountdownUpdate', (remainingSeconds: any) => {
+//   if (!hasCountdownStarted) {
+//     countdown.classList.add('active');
+//     hasCountdownStarted = true;
+//   }
+//   countdown.innerText = `Shutting down in ${remainingSeconds}s`;
+// });
 
-term.onTitleChange((title) => {
-  document.title = title;
-});
+// term.onTitleChange((title) => {
+//   document.title = title;
+// });

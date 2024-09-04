@@ -20,7 +20,7 @@ const configDefault = {
   socketio: {
     serveClient: false,
     path: '/ssh/socket.io',
-    origins: ['localhost:2222'],
+    origins: ['localhost:*'],
   },
   express: {
     secret: crypto.randomBytes(20).toString('hex'),
@@ -103,7 +103,7 @@ const configDefault = {
 try {
   if (!fs.existsSync(configPath)) {
     console.error(
-      `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`
+      `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`,
     );
     console.error('\n  See config.json.sample for details\n\n');
   }
@@ -115,7 +115,7 @@ try {
 } catch (err) {
   myConfig = configDefault;
   console.error(
-    `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`
+    `\n\nERROR: Missing config.json for WebSSH2. Current config: ${util.inspect(myConfig)}`,
   );
   console.error('\n  See config.json.sample for details\n\n');
   console.error(`ERROR:\n\n  ${err}`);

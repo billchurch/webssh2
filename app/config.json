@@ -6,7 +6,7 @@
   "socketio": {
     "serveClient": false,
     "path": "/ssh/socket.io",
-    "origins": ["localhost:2222"]
+    "origins": ["localhost:2224"]
   },
   "user": {
     "name": null,
@@ -62,16 +62,8 @@
       "aes256-gcm@openssh.com",
       "aes256-cbc"
     ],
-    "hmac": [
-      "hmac-sha2-256",
-      "hmac-sha2-512",
-      "hmac-sha1"
-    ],
-    "compress": [
-      "none",
-      "zlib@openssh.com",
-      "zlib"
-    ]
+    "hmac": ["hmac-sha2-256", "hmac-sha2-512", "hmac-sha1"],
+    "compress": ["none", "zlib@openssh.com", "zlib"]
   },
   "serverlog": {
     "client": false,
