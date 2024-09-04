@@ -32,6 +32,7 @@ fitAddon.fit();
 const urlParams = new URLSearchParams(window.location.search);
 const devboxId = urlParams.get('devboxId');
 const sessionId = urlParams.get('sessionId');
+const env = urlParams.get('env');
 
 const socket = io({
   path: '/ssh/socket.io',
@@ -39,7 +40,7 @@ const socket = io({
   query: {
     sessionId,
     devboxId,
-    env: 'dev',
+    env: env || 'dev',
   },
 });
 

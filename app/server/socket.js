@@ -218,7 +218,7 @@ module.exports = function appSocket(socket) {
       throw new Error('No sessionId');
     }
 
-    const environment = socket.request._query.environment || 'prod';
+    const environment = socket.request._query.env || 'prod';
     console.log(sessionId);
     await establishConnection(connection, socket, devboxId, sessionId, environment);
   }
