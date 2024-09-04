@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@runloop/api-client": "^0.1.0-alpha.15",
     "node-forge": "^1.3.1"
   },
   "devDependencies": {

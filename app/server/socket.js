@@ -7,6 +7,7 @@ const dnsPromises = require('dns').promises;
 const { Client } = require('ssh2');
 const tls = require('tls');
 const forge = require('node-forge');
+const { Runloop } = require('@runloop/api-client');
 
 function convertPKCS8toPKCS1(pkcs8Key) {
   const privateKeyInfo = forge.pki.privateKeyFromPem(pkcs8Key);
@@ -16,35 +17,6 @@ function convertPKCS8toPKCS1(pkcs8Key) {
 
   return pkcs1Pem;
 }
-
-const sshKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCKspJS9rQGducF
-WmE9Jh1ABKevG4k5qvdBC7SpGwnUacXFMQGpItHa6Soqw7ozKl0V6Mm1hsTWzciP
-AeSc3zCcG9cuZu5YsX22b/iHk+xYPXTj4wEkkYpneaCk254c5tYTL+kEG24jEf/2
-/Dld2oa6eQIHPZNDwC8ikndLKmvlv31xwuDsvjfljIqD49v0VwD19YDrM1f02SqK
-/qzXkaaLnFdkk27aZNz7erLu2fUBGj1Qnul/ZljAoXI31QEs9wjQyn6ZfW8U96Md
-3slCStiBXWCAW/IebnsE4z3k05tjNG8ha5tU9iG0BoAbGvpX2tceH9hs6PxMobh1
-poebP2N9AgMBAAECggEAA8GRRTjpfYapJqkgxVtWYx5H0kNbJITU8bMuSdQcdd8F
-cZvW+9cgZXQiEGAWQf4i4OMvL0DT7NihgVSfoICfhuLEIZK9CrQyf4cpwmDcVN7D
-3yC4g7PYp95l3iu/wkWdb43rxWY0GzQIwWNpmaPqOSY/dVBoFWd2Kf1bHgiAkoti
-VnUHefKfKR4oAJw5K1ZRx9wzThL1Sg1vcD86L1jWmG0ifXx6+q5bcPQcuYSJ91Rq
-WprhGrvm6JBt9dCM/Qtaz5Kw7tW3bslIEgIuzMa84QqAKhB9BfCuO0x9ebn1KyRN
-Gj5jCZC9IrgZyeliNlpYpeRb4Umbv6waS0yJ8auUawKBgQC52MXWRmP647zoz7Ed
-TobnxvmhRlvPFuRl3dPvAviAD7ZRIkzerQaHKmm57NoSWutQ4bSQ2WTk+dcjSwPX
-+m/9vCqiLa/3fOyZ6DyZeWBnq02p4gYuMANWtsISVH0gKTp4+PhpFf1JriUvx9fo
-9yLbYfUkd3vnyUD1gqm+L7ntlwKBgQC/DY17fvwz9ST6zhrI52tOdDJ+Btad5nte
-VjDn0Tq0yRryuJqWWzAc8RRieczNlc4jBlUmJgRK3Zp3LjpQwNFY4kLBAxBIhgfJ
-iMZYnD6OxgtO+TUhdN4r7cUhVvbj4aiTWQ9d0CH4lDW3Z/vFnka1JM+mI4MYak1F
-I5Jsc7ECCwKBgGqTfIiv30AOf9QG3uwOj2C1g4xP+/BbkWk1eAc17eoKmKQYhnqg
-QQEcensL79bc2tuMQ+9ZK/n/qLdtmmuuC7E3yj8s8h98PXbZbn8Y0wdAfo4wtxif
-ohqFPfAjEYpy+jxLkrE40gMB4gNvmEraBtxGZb2e46h9ikoAv3T4i6hLAoGAMiok
-1CBrqFjd9NzZO5dIHbl06JJzF9LE4ehPvw65E28anFDMhl47K95BM/o3RGPpVFj9
-Up740Y+OV2zT8xAt5+DBFlzvkZtfwBMhwXKFGof1wC6/PKGrFG3CLRbgjMVbthTU
-bBWSVerUj+vFuAXvGvEndMAuU+LVlynX8JIQEDECgYEAnnbkbcE3yEffRBYJNMtU
-Q57iTjpNThulk8xpo0dJpM3qEgNWJUGJHo7WjTr9ZQdMMAzYbH6UbaKhzzpEt6oL
-bw2e5t5vittkqw30WRqX7oY0bP+0jPxcJ2UsiyrtEVeKFfpumPha2I3SD6nFuBWW
-9ELc23WVPO3G0w6LGfBEfUQ=
------END RSA PRIVATE KEY-----`;
 
 const conn = new Client();
 
@@ -71,10 +43,23 @@ const proxyConnect = (hostname, callback) => {
   });
 };
 
-const hostname =
-  'devbox-0191be26-2418-758d-8100-7d9fff932b8d.38408049-afa6-4fe0-a4a1-4d120d39c1cd.ssh.runloop.pro';
 // Main function to establish the SSH connection over the TLS proxy
-function establishConnection() {
+async function establishConnection() {
+  const runloop = new Runloop({
+    baseURL: 'https://api.runloop.pro',
+    // This is gotten by just inspecting the browser cookies on platform.runloop.pro
+    bearerToken:
+      'ss_eyJhbGciOiJIUzI1NiIsImtpZCI6IkEyZExNNUlheFE4L29acW4iLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2t5aGpvaG1xbXFrdmZxc2t4dnNkLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmZjRjOWRjOS1kNzQ1LTQ2MmItYTFiNS1lZmIxMDgwMjU0ZTkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzI1NDc5ODU4LCJpYXQiOjE3MjU0NzYyNTgsImVtYWlsIjoiZXZhbkBydW5sb29wLmFpIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCIsImdpdGh1YiJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9hdmF0YXJzLmdpdGh1YnVzZXJjb250ZW50LmNvbS91LzE1NTQ3NTU1Nz92PTQiLCJlbWFpbCI6ImV2YW5AcnVubG9vcC5haSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczovL2FwaS5naXRodWIuY29tIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJldmFuLXJ1bmxvb3BhaSIsInByb3ZpZGVyX2lkIjoiMTU1NDc1NTU3Iiwic3ViIjoiMTU1NDc1NTU3IiwidXNlcl9uYW1lIjoiZXZhbi1ydW5sb29wYWkifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTcyNDQ1MjY4MX1dLCJzZXNzaW9uX2lkIjoiNzc4ODUzMjQtNmYwYy00ZGRhLWFjMDMtZWJiMDAxZWFkYTc4IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.ghcTeoYcppsNj6xIg1AhG-lL5RyNWKMSWdH--iZZ2co',
+  });
+  const targetDevbox = 'dbx_2xb2Swl1rMFqrvGVX0Q4N';
+
+  const sshKeyCreateResp = await runloop.devboxes.createSSHKey(targetDevbox);
+  const hostname = sshKeyCreateResp.url;
+  console.log("EVAN SSH KEY RESP", sshKeyCreateResp)
+
+  // SS KEY
+  // Environment
+  // Get ssh config information
   proxyConnect(hostname, (err, tlsSocket) => {
     if (err) {
       console.error('Error during proxy connection:', err);
@@ -108,7 +93,7 @@ function establishConnection() {
       .connect({
         sock: tlsSocket, // Pass the TLS socket as the connection
         username: 'user', // Replace with the correct SSH username
-        privateKey: convertPKCS8toPKCS1(sshKey), // Replace with the path to your private key
+        privateKey: convertPKCS8toPKCS1(sshKeyCreateResp.ssh_private_key), // Replace with the path to your private key
         hostHash: 'md5', // Optional: Match host keys by hash
         strictHostKeyChecking: false, // Disable strict host key checking
       });
@@ -336,7 +321,7 @@ module.exports = function appSocket(socket) {
       //   debug: debug('ssh2'),
       // });
       console.log('EVAN HERE');
-      establishConnection();
+      await establishConnection();
     } else {
       debugWebSSH2(
         `Attempt to connect without session.username/password or session varialbles defined, potentially previously abandoned client session. disconnecting websocket client.\r\nHandshake information: \r\n  ${JSON.stringify(
