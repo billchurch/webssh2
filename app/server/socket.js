@@ -109,6 +109,7 @@ module.exports = function appSocket(socket) {
         (err, stream) => {
           if (err) {
             // SSHerror(`EXEC ERROR${err}`);
+            socket.close();
             conn.end();
             return;
           }
@@ -137,11 +138,13 @@ module.exports = function appSocket(socket) {
             debugWebSSH2(`SOCKET DISCONNECT: ${reason}`);
             //const errMsg = { message: reason };
             // SSHerror('CLIENT SOCKET DISCONNECT', errMsg);
+            socket.close();
             conn.end();
             // socket.request.session.destroy()
           });
           socket.on('error', (errMsg) => {
             // SSHerror('SOCKET ERROR', errMsg);
+            socket.close();
             conn.end();
           });
 
@@ -158,6 +161,7 @@ module.exports = function appSocket(socket) {
                   : undefined,
             };
             //SSHerror('STREAM CLOSE', errMsg);
+            socket.close();
             conn.end();
           });
           stream.stderr.on('data', (data) => {
