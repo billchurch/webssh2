@@ -1,14 +1,5 @@
 /* eslint no-console: ["error", { allow: ["warn", "error"] }] */
 /* jshint esversion: 6, asi: true, node: true */
-/*
- * index.js
- *
- * WebSSH2 - Web to SSH2 gateway
- * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
- * See LICENSE file
- *
- * test change
- */
 
 const { config } = require('./server/app');
 const { server } = require('./server/app');

@@ -36,7 +36,6 @@ async function establishConnection(conn, targetDevbox, bearerToken) {
 
   const sshKeyCreateResp = await runloop.devboxes.createSSHKey(targetDevbox);
   const hostname = sshKeyCreateResp.url;
-  console.log('EVAN SSH KEY RESP', sshKeyCreateResp);
 
   // SS KEY
   // Environment
@@ -197,6 +196,7 @@ module.exports = function appSocket(socket) {
     //   keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
     //   debug: debug('ssh2'),
     // });
+
     await establishConnection(
       conn,
       'dbx_2xb6oS1G1e6TAihVMtjn6',
