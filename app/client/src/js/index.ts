@@ -36,13 +36,10 @@ const sessionId = urlParams.get('sessionId');
 const socket = io({
   path: '/ssh/socket.io',
   transports: ['websocket'],
-  extraHeaders: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
-    DevboxId: devboxId,
-  },
   query: {
     sessionId,
     devboxId,
+    env: 'dev',
   },
 });
 

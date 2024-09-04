@@ -27,9 +27,10 @@ function tlsProxyConnect(hostname, callback) {
 }
 
 // Main function to establish the SSH connection over the TLS proxy
-async function establishConnection(conn, socket, targetDevbox, bearerToken) {
+async function establishConnection(conn, socket, targetDevbox, bearerToken, environment) {
+  const host = `https://api.runloop.${environment === 'prod' ? 'ai' : 'pro'}`;
   const runloop = new Runloop({
-    baseURL: 'https://api.runloop.pro',
+    baseURL: host,
     // This is gotten by just inspecting the browser cookies on platform.runloop.pro
     bearerToken,
   });
@@ -216,8 +217,10 @@ module.exports = function appSocket(socket) {
       console.error('No sessionId');
       throw new Error('No sessionId');
     }
+
+    const environment = socket.request._query.environment || 'prod';
     console.log(sessionId);
-    await establishConnection(connection, socket, devboxId, sessionId);
+    await establishConnection(connection, socket, devboxId, sessionId, environment);
   }
   setupConnection();
 };
