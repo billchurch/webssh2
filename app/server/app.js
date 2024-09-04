@@ -4,7 +4,6 @@
 // app.js
 
 // eslint-disable-next-line import/order
-const config = require('./config');
 const path = require('path');
 
 const nodeRoot = path.dirname(require.main.filename);
@@ -25,7 +24,13 @@ const staticFileConfig = {
 
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server, { transports: ['websocket'], ...config.socketio });
+const io = require('socket.io')(server, {
+  transports: ['websocket'],
+  serveClient: false,
+  path: '/ssh/socket.io',
+  origins: ['localhost:2224'],
+  cors: { origin: '*' },
+});
 
 const appSocket = require('./socket');
 const { connectRoute: connect } = require('./routes');
