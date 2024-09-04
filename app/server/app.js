@@ -40,13 +40,13 @@ function startServer() {
 
   app.disable('x-powered-by');
   app.use(express.urlencoded({ extended: true }));
-  app.post('/ssh/host/:host?', connectTerminalWS);
+  app.post('/ssh/devbox/', connectTerminalWS);
   // ======== To remove ========
   // Static files..
   app.post('/ssh', express.static(publicPath, staticFileConfig));
   app.use('/ssh', express.static(publicPath, staticFileConfig));
   // ===========================
-  app.get('/ssh/host/:host?', connectTerminalWS);
+  app.get('/ssh/devbox/', connectTerminalWS);
 
   io.on('connection', appSocket);
 
