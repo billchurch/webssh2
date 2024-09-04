@@ -6,7 +6,7 @@ const nodeRoot = path.dirname(require.main.filename);
 
 const publicPath = path.join(nodeRoot, 'client', 'public');
 
-exports.connect = function connect(req, res) {
+exports.connectRoute = function connectRoute(req, res) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
 
   // let { host, port } = config.ssh;

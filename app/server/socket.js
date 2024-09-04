@@ -2,9 +2,8 @@ const debugWebSSH2 = require('debug')('WebSSH2');
 const debug = require('debug');
 const { Client } = require('ssh2');
 const tls = require('tls');
-const forge = require('node-forge');
-
 const { Runloop } = require('@runloop/api-client');
+const { convertPKCS8toPKCS1 } = require('./util');
 
 // Function to create a TLS connection (simulating ProxyCommand with openssl s_client)
 function tlsProxyConnect(hostname, callback) {
@@ -206,11 +205,3 @@ module.exports = function appSocket(socket) {
   }
   setupConnection();
 };
-
-function convertPKCS8toPKCS1(pkcs8Key) {
-  const privateKeyInfo = forge.pki.privateKeyFromPem(pkcs8Key);
-
-  // Convert the private key to PKCS#1 format
-  const pkcs1Pem = forge.pki.privateKeyToPem(privateKeyInfo);
-  return pkcs1Pem;
-}

@@ -10,25 +10,16 @@ const path = require('path');
 const nodeRoot = path.dirname(require.main.filename);
 const publicPath = path.join(nodeRoot, 'client', 'public');
 const express = require('express');
-const logger = require('morgan');
-const crypto = require('crypto');
 
-const expressConfig = {
-  secret: crypto.randomBytes(20).toString('hex'),
-  name: 'WebSSH2',
-  resave: true,
-  saveUninitialized: false,
-  unset: 'destroy',
-  ssh: {
-    dotfiles: 'ignore',
-    etag: false,
-    extensions: ['htm', 'html'],
-    index: false,
-    maxAge: '1s',
-    redirect: false,
-    setHeaders(res) {
-      res.set('x-timestamp', Date.now());
-    },
+const staticFileConfig = {
+  dotfiles: 'ignore',
+  etag: false,
+  extensions: ['htm', 'html'],
+  index: false,
+  maxAge: '1s',
+  redirect: false,
+  setHeaders(res) {
+    res.set('x-timestamp', Date.now());
   },
 };
 
@@ -37,15 +28,15 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server, { transports: ['websocket'], ...config.socketio });
 
 const appSocket = require('./socket');
-const { connect } = require('./routes');
+const { connectRoute: connect } = require('./routes');
 
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: true }));
 app.post('/ssh/host/:host?', connect);
 // To remove
 // Static files..
-app.post('/ssh', express.static(publicPath, expressConfig.ssh));
-app.use('/ssh', express.static(publicPath, expressConfig.ssh));
+app.post('/ssh', express.static(publicPath, staticFileConfig));
+app.use('/ssh', express.static(publicPath, staticFileConfig));
 ///
 app.get('/ssh/host/:host?', connect);
 
