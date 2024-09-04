@@ -27,47 +27,53 @@ function tlsProxyConnect(hostname, callback) {
 }
 
 // Main function to establish the SSH connection over the TLS proxy
-async function establishConnection(conn, targetDevbox, bearerToken) {
+async function establishConnection(conn, socket, targetDevbox, bearerToken) {
   const runloop = new Runloop({
     baseURL: 'https://api.runloop.pro',
     // This is gotten by just inspecting the browser cookies on platform.runloop.pro
     bearerToken,
   });
+  try {
+    console.log(`Creating SSH key for devbox ${targetDevbox}`);
+    const sshKeyCreateResp = await runloop.devboxes.createSSHKey(targetDevbox);
 
-  const sshKeyCreateResp = await runloop.devboxes.createSSHKey(targetDevbox);
-  const hostname = sshKeyCreateResp.url;
+    const hostname = sshKeyCreateResp.url;
 
-  // SS KEY
-  // Environment
-  // Get ssh config information
-  tlsProxyConnect(hostname, (err, tlsSocket) => {
-    if (err) {
-      console.error('Error during proxy connection:', err);
-      return;
-    }
+    // SS KEY
+    // Environment
+    // Get ssh config information
+    tlsProxyConnect(hostname, (err, tlsSocket) => {
+      if (err) {
+        console.error('Error during proxy connection:', err);
+        return;
+      }
 
-    // Now use ssh2 to connect over the TLS socket
-    conn
-      .on('ready', () => {
-        console.log('SSH Client ready');
-      })
-      .on('error', (error) => {
-        console.error('SSH Connection error:', error);
-      })
-      .connect({
-        sock: tlsSocket, // Pass the TLS socket as the connection
-        username: 'user', // Replace with the correct SSH username
-        privateKey: convertPKCS8toPKCS1(sshKeyCreateResp.ssh_private_key), // Replace with the path to your private key
-        hostHash: 'md5', // Optional: Match host keys by hash
-        strictHostKeyChecking: false, // Disable strict host key checking
+      // Now use ssh2 to connect over the TLS socket
+      conn
+        .on('ready', () => {
+          console.log('SSH Client ready');
+        })
+        .on('error', (error) => {
+          console.error('SSH Connection error:', error);
+        })
+        .connect({
+          sock: tlsSocket, // Pass the TLS socket as the connection
+          username: 'user', // Replace with the correct SSH username
+          privateKey: convertPKCS8toPKCS1(sshKeyCreateResp.ssh_private_key), // Replace with the path to your private key
+          hostHash: 'md5', // Optional: Match host keys by hash
+          strictHostKeyChecking: false, // Disable strict host key checking
 
-        //   algorithms: socket.request.session.ssh.algorithms,
-        readyTimeout: 10000,
-        keepaliveInterval: 120000,
-        keepaliveCountMax: 10,
-        debug: debug('ssh2'),
-      });
-  });
+          //   algorithms: socket.request.session.ssh.algorithms,
+          readyTimeout: 10000,
+          keepaliveInterval: 120000,
+          keepaliveCountMax: 10,
+          debug: debug('ssh2'),
+        });
+    });
+  } catch (e) {
+    console.error(e);
+    socket.disconnect(true);
+  }
 }
 
 //TODO deal with
@@ -76,7 +82,7 @@ let termRows;
 
 // public
 module.exports = function appSocket(socket) {
-  const conn = new Client();
+  const connection = new Client();
   async function setupConnection() {
     // TODO AUTH?
     // if websocket connection arrives without an express session, kill it
@@ -91,16 +97,16 @@ module.exports = function appSocket(socket) {
       termCols = cols;
       termRows = rows;
     });
-    conn.on('banner', (data) => {
+    connection.on('banner', (data) => {
       // need to convert to cr/lf for proper formatting
       socket.emit('data', data.replace(/\r?\n/g, '\r\n').toString('utf-8'));
     });
 
-    conn.on('ready', () => {
+    connection.on('ready', () => {
       // debugWebSSH2(
       //   `WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`,
       // );
-      conn.shell(
+      connection.shell(
         {
           term: 'xterm-color',
           cols: termCols,
@@ -109,8 +115,8 @@ module.exports = function appSocket(socket) {
         (err, stream) => {
           if (err) {
             // SSHerror(`EXEC ERROR${err}`);
-            socket.close();
-            conn.end();
+            socket.disconnect(true);
+            connection.end();
             return;
           }
           socket.on('data', (data) => {
@@ -136,16 +142,16 @@ module.exports = function appSocket(socket) {
           });
           socket.on('disconnect', (reason) => {
             debugWebSSH2(`SOCKET DISCONNECT: ${reason}`);
-            //const errMsg = { message: reason };
+            // const errMsg = { message: reason };
             // SSHerror('CLIENT SOCKET DISCONNECT', errMsg);
-            socket.close();
-            conn.end();
+            socket.disconnect(true);
+            connection.end();
             // socket.request.session.destroy()
           });
           socket.on('error', (errMsg) => {
             // SSHerror('SOCKET ERROR', errMsg);
-            socket.close();
-            conn.end();
+            socket.disconnect(true);
+            connection.end();
           });
 
           stream.on('data', (data) => {
@@ -160,9 +166,9 @@ module.exports = function appSocket(socket) {
                     (signal ? `SIGNAL: ${signal}` : '')
                   : undefined,
             };
-            //SSHerror('STREAM CLOSE', errMsg);
-            socket.close();
-            conn.end();
+            // SSHerror('STREAM CLOSE', errMsg);
+            socket.disconnect(true);
+            connection.end();
           });
           stream.stderr.on('data', (data) => {
             console.error(`STDERR: ${data}`);
@@ -171,13 +177,13 @@ module.exports = function appSocket(socket) {
       );
     });
 
-    conn.on('end', (err) => {
+    connection.on('end', (err) => {
       //SSHerror('CONN END BY HOST', err);
     });
-    conn.on('close', (err) => {
+    connection.on('close', (err) => {
       //SSHerror('CONN CLOSE', err);
     });
-    conn.on('error', (err) => {
+    connection.on('error', (err) => {
       //SSHerror('CONN ERROR', err);
     });
     // conn.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
@@ -200,12 +206,18 @@ module.exports = function appSocket(socket) {
     //   keepaliveCountMax: socket.request.session.ssh.keepaliveCountMax,
     //   debug: debug('ssh2'),
     // });
-
-    await establishConnection(
-      conn,
-      'dbx_2xb6oS1G1e6TAihVMtjn6',
-      'ss_eyJhbGciOiJIUzI1NiIsImtpZCI6IkEyZExNNUlheFE4L29acW4iLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2t5aGpvaG1xbXFrdmZxc2t4dnNkLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI5NmRlMTVjZC1lZWJmLTRjNzctODQwNy1jZTkwNzNlZTZkMjIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzI1NDg1NTQwLCJpYXQiOjE3MjU0ODE5NDAsImVtYWlsIjoiYWxleEBydW5sb29wLmFpIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCIsImdpdGh1YiJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9hdmF0YXJzLmdpdGh1YnVzZXJjb250ZW50LmNvbS91LzE2MDA3NzkyND92PTQiLCJlbWFpbCI6ImFsZXhAcnVubG9vcC5haSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJBbGV4YW5kZXIgRGluZXMiLCJpc3MiOiJodHRwczovL2FwaS5naXRodWIuY29tIiwibmFtZSI6IkFsZXhhbmRlciBEaW5lcyIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoiZGluZXMtcmwiLCJwcm92aWRlcl9pZCI6IjE2MDA3NzkyNCIsInN1YiI6IjE2MDA3NzkyNCIsInVzZXJfbmFtZSI6ImRpbmVzLXJsIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoib2F1dGgiLCJ0aW1lc3RhbXAiOjE3MjM1OTAxODB9XSwic2Vzc2lvbl9pZCI6IjU5MjhkZTIxLTI3M2ItNDkzNC1iMGFmLThlYWE3MDUxOGE3MiIsImlzX2Fub255bW91cyI6ZmFsc2V9.Qby46q2eDZUWjpPPSvmyzQ5bGKGEkpg2r9zBAUTpc3Q',
-    );
+    const devboxId = socket.request._query.devboxId;
+    if (!devboxId) {
+      console.error('No devboxId');
+      throw new Error('No devboxId');
+    }
+    const sessionId = socket.request._query.sessionId;
+    if (!sessionId) {
+      console.error('No sessionId');
+      throw new Error('No sessionId');
+    }
+    console.log(sessionId);
+    await establishConnection(connection, socket, devboxId, sessionId);
   }
   setupConnection();
 };

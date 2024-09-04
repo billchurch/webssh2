@@ -44,10 +44,22 @@ term.loadAddon(fitAddon);
 term.open(terminalContainer);
 term.focus();
 fitAddon.fit();
+//get uri param for devbox
+const urlParams = new URLSearchParams(window.location.search);
+const devboxId = urlParams.get('devboxId');
+const sessionId = urlParams.get('sessionId');
 
 const socket = io({
   path: '/ssh/socket.io',
   transports: ['websocket'],
+  extraHeaders: {
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+    DevboxId: devboxId,
+  },
+  query: {
+    sessionId,
+    devboxId,
+  },
 });
 
 // cross browser method to "download" an element to the local system
