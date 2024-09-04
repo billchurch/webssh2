@@ -5,7 +5,6 @@ ssl/*
 
 bigip/*
 
-config.json
 
 # Logs
 logs
