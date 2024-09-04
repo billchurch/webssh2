@@ -1,27 +1,13 @@
-// private
 const debugWebSSH2 = require('debug')('WebSSH2');
-const SSH = require('ssh2').Client;
-const CIDRMatcher = require('cidr-matcher');
-const validator = require('validator');
-const dnsPromises = require('dns').promises;
 const debug = require('debug');
 const { Client } = require('ssh2');
 const tls = require('tls');
 const forge = require('node-forge');
+
 const { Runloop } = require('@runloop/api-client');
 
-function convertPKCS8toPKCS1(pkcs8Key) {
-  const privateKeyInfo = forge.pki.privateKeyFromPem(pkcs8Key);
-
-  // Convert the private key to PKCS#1 format
-  const pkcs1Pem = forge.pki.privateKeyToPem(privateKeyInfo);
-  return pkcs1Pem;
-}
-
-const conn = new Client();
-
 // Function to create a TLS connection (simulating ProxyCommand with openssl s_client)
-const proxyConnect = (hostname, callback) => {
+function tlsProxyConnect(hostname, callback) {
   const tlsSocket = tls.connect(
     {
       host: 'ssh.runloop.pro', // Proxy server address
@@ -39,10 +25,10 @@ const proxyConnect = (hostname, callback) => {
     console.error('TLS connection error:', err);
     callback(err);
   });
-};
+}
 
 // Main function to establish the SSH connection over the TLS proxy
-async function establishConnection(targetDevbox, bearerToken) {
+async function establishConnection(conn, targetDevbox, bearerToken) {
   const runloop = new Runloop({
     baseURL: 'https://api.runloop.pro',
     // This is gotten by just inspecting the browser cookies on platform.runloop.pro
@@ -56,7 +42,7 @@ async function establishConnection(targetDevbox, bearerToken) {
   // SS KEY
   // Environment
   // Get ssh config information
-  proxyConnect(hostname, (err, tlsSocket) => {
+  tlsProxyConnect(hostname, (err, tlsSocket) => {
     if (err) {
       console.error('Error during proxy connection:', err);
       return;
@@ -66,22 +52,6 @@ async function establishConnection(targetDevbox, bearerToken) {
     conn
       .on('ready', () => {
         console.log('SSH Client ready');
-        // conn.exec("uptime", (err, stream) => {
-        //   if (err) throw err;
-        //   stream
-        //     .on("close", (code, signal) => {
-        //       console.log(
-        //         "Stream :: close :: code: " + code + ", signal: " + signal
-        //       );
-        //       conn.end();
-        //     })
-        //     .on("data", (data) => {
-        //       console.log("STDOUT: " + data);
-        //     })
-        //     .stderr.on("data", (data) => {
-        //       console.log("STDERR: " + data);
-        //     });
-        // });
       })
       .on('error', (error) => {
         console.error('SSH Connection error:', error);
@@ -101,11 +71,14 @@ async function establishConnection(targetDevbox, bearerToken) {
       });
   });
 }
+
+//TODO deal with
 let termCols;
 let termRows;
 
 // public
 module.exports = function appSocket(socket) {
+  const conn = new Client();
   async function setupConnection() {
     // TODO AUTH?
     // if websocket connection arrives without an express session, kill it
@@ -116,7 +89,6 @@ module.exports = function appSocket(socket) {
     //   return;
     // }
 
-    // const conn = new SSH();
     socket.on('geometry', (cols, rows) => {
       termCols = cols;
       termRows = rows;
@@ -130,12 +102,6 @@ module.exports = function appSocket(socket) {
       // debugWebSSH2(
       //   `WebSSH2 Login: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} sessionID=${socket.request.sessionID}/${socket.id} mrhsession=${socket.request.session.ssh.mrhsession} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`,
       // );
-      socket.emit('setTerminalOpts', {
-        cursorBlink: true,
-        scrollback: 10000,
-        tabStopWidth: 8,
-        bellStyle: 'sound',
-      });
       conn.shell(
         {
           term: 'xterm-color',
@@ -233,9 +199,18 @@ module.exports = function appSocket(socket) {
     //   debug: debug('ssh2'),
     // });
     await establishConnection(
+      conn,
       'dbx_2xb6oS1G1e6TAihVMtjn6',
       'ss_eyJhbGciOiJIUzI1NiIsImtpZCI6IkEyZExNNUlheFE4L29acW4iLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2t5aGpvaG1xbXFrdmZxc2t4dnNkLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI5NmRlMTVjZC1lZWJmLTRjNzctODQwNy1jZTkwNzNlZTZkMjIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzI1NDg1NTQwLCJpYXQiOjE3MjU0ODE5NDAsImVtYWlsIjoiYWxleEBydW5sb29wLmFpIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCIsImdpdGh1YiJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9hdmF0YXJzLmdpdGh1YnVzZXJjb250ZW50LmNvbS91LzE2MDA3NzkyND92PTQiLCJlbWFpbCI6ImFsZXhAcnVubG9vcC5haSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJBbGV4YW5kZXIgRGluZXMiLCJpc3MiOiJodHRwczovL2FwaS5naXRodWIuY29tIiwibmFtZSI6IkFsZXhhbmRlciBEaW5lcyIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoiZGluZXMtcmwiLCJwcm92aWRlcl9pZCI6IjE2MDA3NzkyNCIsInN1YiI6IjE2MDA3NzkyNCIsInVzZXJfbmFtZSI6ImRpbmVzLXJsIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoib2F1dGgiLCJ0aW1lc3RhbXAiOjE3MjM1OTAxODB9XSwic2Vzc2lvbl9pZCI6IjU5MjhkZTIxLTI3M2ItNDkzNC1iMGFmLThlYWE3MDUxOGE3MiIsImlzX2Fub255bW91cyI6ZmFsc2V9.Qby46q2eDZUWjpPPSvmyzQ5bGKGEkpg2r9zBAUTpc3Q',
     );
   }
   setupConnection();
 };
+
+function convertPKCS8toPKCS1(pkcs8Key) {
+  const privateKeyInfo = forge.pki.privateKeyFromPem(pkcs8Key);
+
+  // Convert the private key to PKCS#1 format
+  const pkcs1Pem = forge.pki.privateKeyToPem(privateKeyInfo);
+  return pkcs1Pem;
+}

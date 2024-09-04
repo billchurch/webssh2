@@ -39,37 +39,26 @@ const io = require('socket.io')(server, { transports: ['websocket'], ...config.s
 const appSocket = require('./socket');
 const { connect } = require('./routes');
 
-// eslint-disable-next-line consistent-return
-function safeShutdownGuard(req, res, next) {
-  if (!shutdownMode) return next();
-  res.status(503).end('Service unavailable: Server shutting down');
-}
-// express
-app.use(safeShutdownGuard);
-
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: true }));
 app.post('/ssh/host/:host?', connect);
+// To remove
+// Static files..
 app.post('/ssh', express.static(publicPath, expressConfig.ssh));
 app.use('/ssh', express.static(publicPath, expressConfig.ssh));
-//app.use(basicAuth);
-//app.get('/ssh/reauth', reauth);
+///
 app.get('/ssh/host/:host?', connect);
-// app.use(notfound);
-// app.use(handleErrors);
 
-// clean stop
-function stopApp(reason) {
-  shutdownMode = false;
-  if (reason) console.info(`Stopping: ${reason}`);
-  clearInterval(shutdownInterval);
-  io.close();
-  server.close();
-}
-
-// bring up socket
 io.on('connection', appSocket);
 
+// // clean stop
+// function stopApp(reason) {
+//   shutdownMode = false;
+//   if (reason) console.info(`Stopping: ${reason}`);
+//   clearInterval(shutdownInterval);
+//   io.close();
+//   server.close();
+// }
 module.exports = { server, config };
 
 // const onConnection = (socket) => {

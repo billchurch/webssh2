@@ -35,6 +35,11 @@ const downloadLogBtn = document.getElementById('downloadLogBtn');
 const status = document.getElementById('status');
 const fitAddon = new FitAddon();
 const terminalContainer = document.getElementById('terminal-container');
+term.options = {
+  cursorBlink: true,
+  scrollback: 10000,
+  tabStopWidth: 8,
+};
 term.loadAddon(fitAddon);
 term.open(terminalContainer);
 term.focus();
@@ -44,15 +49,6 @@ const socket = io({
   path: '/ssh/socket.io',
   transports: ['websocket'],
 });
-
-// reauthenticate
-function reauthSession() {
-  // eslint-disable-line
-  debug('re-authenticating');
-  socket.emit('control', 'reauth');
-  window.location.href = '/ssh/reauth';
-  return false;
-}
 
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
@@ -115,15 +111,6 @@ function toggleLog() {
   return false;
 }
 
-// replay password to server, requires
-function replayCredentials() {
-  // eslint-disable-line
-  socket.emit('control', 'replayCredentials');
-  debug(`control: replayCredentials`);
-  term.focus();
-  return false;
-}
-
 function resizeScreen() {
   fitAddon.fit();
   socket.emit('resize', { cols: term.cols, rows: term.rows });
@@ -148,22 +135,6 @@ socket.on('connect', () => {
   debug(`geometry: ${term.cols}, ${term.rows}`);
 });
 
-socket.on(
-  'setTerminalOpts',
-  (data: {
-    cursorBlink: boolean;
-    scrollback: number;
-    tabStopWidth: number;
-    bellStyle: 'none' | 'sound';
-    fontSize: number;
-    fontFamily: string;
-    letterSpacing: number;
-    lineHeight: number;
-  }) => {
-    term.options = data;
-  },
-);
-
 // socket.on('ssherror', (data: string) => {
 //   status.innerHTML = data;
 //   status.style.backgroundColor = 'red';
@@ -172,47 +143,6 @@ socket.on(
 
 // socket.on('headerBackground', (data: string) => {
 //   header.style.backgroundColor = data;
-// });
-
-// socket.on('header', (data: string) => {
-//   if (data) {
-//     header.innerHTML = data;
-//     header.style.display = 'block';
-//     // header is 19px and footer is 19px, recaculate new terminal-container and resize
-//     terminalContainer.style.height = 'calc(100% - 38px)';
-//     resizeScreen();
-//   }
-// });
-
-// socket.on('footer', (data: string) => {
-//   sessionFooter = data;
-//   footer.innerHTML = data;
-// });
-
-// socket.on('statusBackground', (data: string) => {
-//   status.style.backgroundColor = data;
-// });
-
-// socket.on('allowreplay', (data: boolean) => {
-//   if (data === true) {
-//     debug(`allowreplay: ${data}`);
-//     allowreplay = true;
-//     drawMenu();
-//   } else {
-//     allowreplay = false;
-//     debug(`allowreplay: ${data}`);
-//   }
-// });
-
-// socket.on('allowreauth', (data: boolean) => {
-//   if (data === true) {
-//     debug(`allowreauth: ${data}`);
-//     allowreauth = true;
-//     drawMenu();
-//   } else {
-//     allowreauth = false;
-//     debug(`allowreauth: ${data}`);
-//   }
 // });
 
 socket.on('disconnect', (err: any) => {

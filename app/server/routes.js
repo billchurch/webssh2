@@ -1,28 +1,10 @@
 /* eslint-disable no-console */
 // ssh.js
-const validator = require('validator');
 const path = require('path');
 
 const nodeRoot = path.dirname(require.main.filename);
 
 const publicPath = path.join(nodeRoot, 'client', 'public');
-const { parseBool } = require('./util');
-const config = require('./config');
-
-// exports.reauth = function reauth(req, res) {
-//   let { referer } = req.headers;
-//   if (!validator.isURL(referer, { host_whitelist: ['localhost'] })) {
-//     console.error(
-//       `WebSSH2 (${req.sessionID}) ERROR: Referrer '${referer}' for '/reauth' invalid. Setting to '/' which will probably fail.`,
-//     );
-//     referer = '/';
-//   }
-//   res
-//     .status(401)
-//     .send(
-//       `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${referer}"></head><body bgcolor="#000"></body></html>`,
-//     );
-// };
 
 exports.connect = function connect(req, res) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')));
