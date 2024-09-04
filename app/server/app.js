@@ -6,6 +6,10 @@
 // eslint-disable-next-line import/order
 const config = require('./config');
 const path = require('path');
+const http = require('http');
+const socketIO = require('socket.io');
+const appSocket = require('./socket');
+const { connectTerminalWS } = require('./routes');
 
 const nodeRoot = path.dirname(require.main.filename);
 const publicPath = path.join(nodeRoot, 'client', 'public');
@@ -25,8 +29,8 @@ const staticFileConfig = {
 
 function startServer() {
   const app = express();
-  const server = require('http').createServer(app);
-  const io = require('socket.io')(server, {
+  const server = http.createServer(app);
+  const io = socketIO(server, {
     transports: ['websocket'],
     serveClient: false,
     path: '/ssh/socket.io',
@@ -34,23 +38,22 @@ function startServer() {
     cors: { origin: '*' },
   });
 
-  const appSocket = require('./socket');
-  const { connectRoute: connect } = require('./routes');
-
   app.disable('x-powered-by');
   app.use(express.urlencoded({ extended: true }));
-  app.post('/ssh/host/:host?', connect);
+  app.post('/ssh/host/:host?', connectTerminalWS);
   // ======== To remove ========
   // Static files..
   app.post('/ssh', express.static(publicPath, staticFileConfig));
   app.use('/ssh', express.static(publicPath, staticFileConfig));
   // ===========================
-  app.get('/ssh/host/:host?', connect);
+  app.get('/ssh/host/:host?', connectTerminalWS);
 
   io.on('connection', appSocket);
+
+  return server;
 }
 
-startServer();
+const server = startServer();
 
 module.exports = { server, config };
 
