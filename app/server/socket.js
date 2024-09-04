@@ -17,6 +17,35 @@ function convertPKCS8toPKCS1(pkcs8Key) {
   return pkcs1Pem;
 }
 
+const sshKey = `-----BEGIN RSA PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCKspJS9rQGducF
+WmE9Jh1ABKevG4k5qvdBC7SpGwnUacXFMQGpItHa6Soqw7ozKl0V6Mm1hsTWzciP
+AeSc3zCcG9cuZu5YsX22b/iHk+xYPXTj4wEkkYpneaCk254c5tYTL+kEG24jEf/2
+/Dld2oa6eQIHPZNDwC8ikndLKmvlv31xwuDsvjfljIqD49v0VwD19YDrM1f02SqK
+/qzXkaaLnFdkk27aZNz7erLu2fUBGj1Qnul/ZljAoXI31QEs9wjQyn6ZfW8U96Md
+3slCStiBXWCAW/IebnsE4z3k05tjNG8ha5tU9iG0BoAbGvpX2tceH9hs6PxMobh1
+poebP2N9AgMBAAECggEAA8GRRTjpfYapJqkgxVtWYx5H0kNbJITU8bMuSdQcdd8F
+cZvW+9cgZXQiEGAWQf4i4OMvL0DT7NihgVSfoICfhuLEIZK9CrQyf4cpwmDcVN7D
+3yC4g7PYp95l3iu/wkWdb43rxWY0GzQIwWNpmaPqOSY/dVBoFWd2Kf1bHgiAkoti
+VnUHefKfKR4oAJw5K1ZRx9wzThL1Sg1vcD86L1jWmG0ifXx6+q5bcPQcuYSJ91Rq
+WprhGrvm6JBt9dCM/Qtaz5Kw7tW3bslIEgIuzMa84QqAKhB9BfCuO0x9ebn1KyRN
+Gj5jCZC9IrgZyeliNlpYpeRb4Umbv6waS0yJ8auUawKBgQC52MXWRmP647zoz7Ed
+TobnxvmhRlvPFuRl3dPvAviAD7ZRIkzerQaHKmm57NoSWutQ4bSQ2WTk+dcjSwPX
++m/9vCqiLa/3fOyZ6DyZeWBnq02p4gYuMANWtsISVH0gKTp4+PhpFf1JriUvx9fo
+9yLbYfUkd3vnyUD1gqm+L7ntlwKBgQC/DY17fvwz9ST6zhrI52tOdDJ+Btad5nte
+VjDn0Tq0yRryuJqWWzAc8RRieczNlc4jBlUmJgRK3Zp3LjpQwNFY4kLBAxBIhgfJ
+iMZYnD6OxgtO+TUhdN4r7cUhVvbj4aiTWQ9d0CH4lDW3Z/vFnka1JM+mI4MYak1F
+I5Jsc7ECCwKBgGqTfIiv30AOf9QG3uwOj2C1g4xP+/BbkWk1eAc17eoKmKQYhnqg
+QQEcensL79bc2tuMQ+9ZK/n/qLdtmmuuC7E3yj8s8h98PXbZbn8Y0wdAfo4wtxif
+ohqFPfAjEYpy+jxLkrE40gMB4gNvmEraBtxGZb2e46h9ikoAv3T4i6hLAoGAMiok
+1CBrqFjd9NzZO5dIHbl06JJzF9LE4ehPvw65E28anFDMhl47K95BM/o3RGPpVFj9
+Up740Y+OV2zT8xAt5+DBFlzvkZtfwBMhwXKFGof1wC6/PKGrFG3CLRbgjMVbthTU
+bBWSVerUj+vFuAXvGvEndMAuU+LVlynX8JIQEDECgYEAnnbkbcE3yEffRBYJNMtU
+Q57iTjpNThulk8xpo0dJpM3qEgNWJUGJHo7WjTr9ZQdMMAzYbH6UbaKhzzpEt6oL
+bw2e5t5vittkqw30WRqX7oY0bP+0jPxcJ2UsiyrtEVeKFfpumPha2I3SD6nFuBWW
+9ELc23WVPO3G0w6LGfBEfUQ=
+-----END RSA PRIVATE KEY-----`;
+
 const conn = new Client();
 
 // Function to create a TLS connection (simulating ProxyCommand with openssl s_client)
@@ -42,53 +71,49 @@ const proxyConnect = (hostname, callback) => {
   });
 };
 
+const hostname =
+  'devbox-0191be26-2418-758d-8100-7d9fff932b8d.38408049-afa6-4fe0-a4a1-4d120d39c1cd.ssh.runloop.pro';
 // Main function to establish the SSH connection over the TLS proxy
 function establishConnection() {
-  proxyConnect(
-    'devbox-0191bab8-397a-742e-8100-138b1ee3a99e.e81c0643-9165-4d39-b4e8-ccd8d22214dd.ssh.runloop.pro',
-    (err, tlsSocket) => {
-      if (err) {
-        console.error('Error during proxy connection:', err);
-        return;
-      }
+  proxyConnect(hostname, (err, tlsSocket) => {
+    if (err) {
+      console.error('Error during proxy connection:', err);
+      return;
+    }
 
-      // Now use ssh2 to connect over the TLS socket
-      conn
-        .on('ready', () => {
-          console.log('SSH Client ready');
-          // conn.exec("uptime", (err, stream) => {
-          //   if (err) throw err;
-          //   stream
-          //     .on("close", (code, signal) => {
-          //       console.log(
-          //         "Stream :: close :: code: " + code + ", signal: " + signal
-          //       );
-          //       conn.end();
-          //     })
-          //     .on("data", (data) => {
-          //       console.log("STDOUT: " + data);
-          //     })
-          //     .stderr.on("data", (data) => {
-          //       console.log("STDERR: " + data);
-          //     });
-          // });
-        })
-        .on('error', (err) => {
-          console.error('SSH Connection error:', err);
-        })
-        .connect({
-          sock: tlsSocket, // Pass the TLS socket as the connection
-          username: 'user', // Replace with the correct SSH username
-          privateKey: convertPKCS8toPKCS1(
-            '-----BEGIN RSA PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC8lJC0JKQJZ+Md\n2tqnpkO5Vlptmxuh3RE+ilBNKNKkDYqAPfRGgoYs9QI73QXWH4hsGd9+9wYGWvFe\n0tkDSv4fs0Ps1daIQ4h+JPvNes2ieBoCVw68D4f+LrTorY6H5PuJQM5Kdau0buzL\nO/4wIsb9QDEeDmF/ZWcFgE2YkP7B/AGvjU17EDU7299awlEo40KsIRlJ/5KcH9B2\nTvwe2YSVXGS84gb2tmwG4zUh8CjvT3GIP6fMeCdCs40+vn1maryQzFZmm2A4WIt2\nunwObvTcBJbgn77dwbPxQm5BlZRuIevgeE5Cb0qEVoriRAdDQTnug0LrTRLKRAIS\nqlLg6uGxAgMBAAECggEABUdZV5mQ9+xvCJZoOXoneignJttJJjpEcc44WjiS0OHK\nJzXUwSaFL/v5wIg60hgW3wPIZErw4buo9wEK7xMp0uRXOelwdGcDiphpbgKKgApB\nnCAouu3qXhyblsnI7BfmTJzCSYZKtKXIPhYjUuCeVld2KIO5ifHiNN63DVa9sttZ\nM4ZRUUT1ujN+TXRGEM0EFOeJwtD+e/AJD97QIj4IkQ4cMpL/7n83uw1N/WyXTcXf\nscVPEsGLIj7MmGzvjJAhHoLckshQC1+Kfo2KTuoACYQxgPoPCAtLMivhd3ea9Q3g\n0BeU5bfhepOgBOyiRXG14ks0j/t25cfTslusmgrMAwKBgQDOX/ecMub3t/qm/cX7\nJzQNXs/Ru9alfoBIhURWQ271LN9drmG6GfAE5/qdlPAKxantuj2an4eMdROwOHzK\nw+YzIMChyaxtX5Z3EWOyKTqTOD/+nmDvlMZdnWFXbUTDc4FqCGEkTk7+oYX/D6aB\nit2hdnyTAYs/9HPhiF5nllinUwKBgQDp7TN5GhJa3hEDwthCmVx5ED+sZhL5rz0C\nr9IPjoCQypDO3O8rgtDWTXFXvuCeN2/dBnRc2SAQ9a8YplA22zgKFLbrJ/BMaQnT\nWoTtshZQ0moYaNJPcfag/Y7yOCbkkCzXQFjkasXFt4pXIvktg+v1ILoGnaFTZOM/\nkFCrWSsGawKBgQChEtgAyt3odGknEyUGLIf884ZCjVgv3PclIxa+OW2N4JMJ3EQc\na4ghXCoH+ioMTlCd4mGYoHC8WNigDsafv5yZRTP0UqLIzvVyQ1lLwdAc/ac9BMJl\n2/mjMWW7ReaIoktcxeOD4bbYGJusArwTmZ34GrGKT4cuyI31dmkwcnEJTwKBgHAH\nUzFaFRRDaW6dr6glfi3UZEoSEGBXVialQTqGCnhNKpCHKltyKMWZDQDyvuvGrOHz\nJ2MX8M1ue86YR64dyna5eOihleliHHyFy0dylFFck8bg3GeDspNjG0RRM/8eNPtZ\nK7kokVKhFbWpYCA2H5ijdbOZZhtkI5jbambFK1/FAoGBAJ7bpFWdiUaobInBSD5n\neCGGRJKKgA305gBcDr0G0Quo2AcZFzRUF+k27DXpK2zBq9H2vR8nLjNLvvaWFcJE\n4gzHEGriaXrZq4sxvihYgKXU12Buoz3UDtS51eArefr+QCr+ikPb8LdViwI29/W0\n+R1hc2PNxjd1mX+oxNamYV/l\n-----END RSA PRIVATE KEY-----\n',
-          ), // Replace with the path to your private key
-          hostHash: 'md5', // Optional: Match host keys by hash
-          strictHostKeyChecking: false, // Disable strict host key checking
-        });
-    },
-  );
+    // Now use ssh2 to connect over the TLS socket
+    conn
+      .on('ready', () => {
+        console.log('SSH Client ready');
+        // conn.exec("uptime", (err, stream) => {
+        //   if (err) throw err;
+        //   stream
+        //     .on("close", (code, signal) => {
+        //       console.log(
+        //         "Stream :: close :: code: " + code + ", signal: " + signal
+        //       );
+        //       conn.end();
+        //     })
+        //     .on("data", (data) => {
+        //       console.log("STDOUT: " + data);
+        //     })
+        //     .stderr.on("data", (data) => {
+        //       console.log("STDERR: " + data);
+        //     });
+        // });
+      })
+      .on('error', (err) => {
+        console.error('SSH Connection error:', err);
+      })
+      .connect({
+        sock: tlsSocket, // Pass the TLS socket as the connection
+        username: 'user', // Replace with the correct SSH username
+        privateKey: convertPKCS8toPKCS1(sshKey), // Replace with the path to your private key
+        hostHash: 'md5', // Optional: Match host keys by hash
+        strictHostKeyChecking: false, // Disable strict host key checking
+      });
+  });
 }
-
 // var fs = require('fs')
 // var hostkeys = JSON.parse(fs.readFileSync('./hostkeyhashes.json', 'utf8'))
 let termCols;
