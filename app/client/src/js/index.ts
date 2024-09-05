@@ -28,7 +28,7 @@ term.loadAddon(fitAddon);
 term.open(terminalContainer);
 term.focus();
 fitAddon.fit();
-//get uri param for devbox
+// get uri param for devbox
 const urlParams = new URLSearchParams(window.location.search);
 const devboxId = urlParams.get('devboxId');
 const sessionId = urlParams.get('sessionId');
