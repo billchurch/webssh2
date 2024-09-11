@@ -77,13 +77,11 @@ async function establishConnection(conn, socket, targetDevbox, bearerToken, envi
   }
 }
 
-//TODO deal with
-let termCols;
-let termRows;
-
 // public
 module.exports = function appSocket(socket) {
   const connection = new Client();
+  let termCols;
+  let termRows;
   async function setupConnection() {
     // TODO AUTH?
     // if websocket connection arrives without an express session, kill it
@@ -156,6 +154,7 @@ module.exports = function appSocket(socket) {
           });
 
           stream.on('data', (data) => {
+            console.log(`Data${typeof JSON.stringify(data)}: `, data.toString('utf-8'));
             socket.emit('data', data.toString('utf-8'));
           });
           stream.on('close', (code, signal) => {
