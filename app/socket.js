@@ -191,9 +191,18 @@ class WebSSH2Socket extends EventEmitter {
         stream.on("data", data => {
           this.socket.emit("data", data.toString("utf-8"))
         })
-        stream.stderr.on("data", data => debug(`STDERR: ${data}`))
+        // stream.stderr.on("data", data => debug(`STDERR: ${data}`)) // needed for shell.exec
         stream.on("close", (code, signal) => {
+          debug("close: SSH Stream closed")
           this.handleConnectionClose(code, signal)
+        })
+
+        stream.on("end", () => {
+          debug("end: SSH Stream ended")
+        })
+
+        stream.on("error", (err) => {
+          debug("error: SSH Stream error %O", err)
         })
 
         this.socket.on("data", data => {
@@ -206,7 +215,7 @@ class WebSSH2Socket extends EventEmitter {
           this.handleResize(data)
         })
       })
-      .catch(err => this.handleError("SHELL ERROR", err))
+      .catch(err => this.handleError("createShell: ERROR", err))
   }
 
   handleResize(data) {

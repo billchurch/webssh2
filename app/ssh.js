@@ -48,6 +48,14 @@ class SSHConnection extends EventEmitter {
         resolve(this.conn)
       })
 
+      this.conn.on("end", () => {
+        debug(`connect: end: `)
+      })
+
+      this.conn.on("close", () => {
+        debug(`connect: close: `)
+      })
+
       this.conn.on("error", err => {
         const error = new SSHConnectionError(`${err.message}`)
         handleError(error)
