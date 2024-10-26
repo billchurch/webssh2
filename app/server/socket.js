@@ -269,10 +269,11 @@ module.exports = function appSocket(socket) {
     checkSubnet(socket);
   }
 
-  var connMap = sshMap.get(socket.request.session.username);
+  const mapKey = [socket.request.sessionID, socket.request.session.username, socket.request.session.ssh.host].join('/')
+  var connMap = sshMap.get(mapKey);
   if (!connMap) {
     connMap = setupNewConnection(socket);
-    sshMap.set(socket.request.session.username, connMap);
+    sshMap.set(mapKey, connMap);
   } else {
     connMap.changeSocket(socket);
   }
