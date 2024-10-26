@@ -63,6 +63,7 @@ function reauthSession() { // eslint-disable-line
 function restartSession() { // eslint-disable-line
   debug('restarting');
   socket.emit('control', 'reauth');
+  window.location.reload();
   return false;
 }
 

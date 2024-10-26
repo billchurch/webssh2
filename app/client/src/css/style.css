@@ -108,7 +108,7 @@ body, html  {
 #menu:hover .dropup-content {
     display: block;
 }
-#logBtn, #credentialsBtn, #reauthBtn {
+#logBtn, #credentialsBtn, #reauthBtn, #restartBtn {
     color: #000;
 }
 
