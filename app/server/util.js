@@ -5,15 +5,15 @@
 const debug = require('debug')('WebSSH2');
 const Auth = require('basic-auth');
 
-let defaultCredentials = { username: null, password: null, privatekey: null };
+let defaultCredentials = { username: null, password: null, privateKey: null };
 
 exports.setDefaultCredentials = function setDefaultCredentials({
   name: username,
   password,
-  privatekey,
+  privateKey,
   overridebasic,
 }) {
-  defaultCredentials = { username, password, privatekey, overridebasic };
+  defaultCredentials = { username, password, privateKey, overridebasic };
 };
 
 exports.basicAuth = function basicAuth(req, res, next) {
@@ -21,7 +21,7 @@ exports.basicAuth = function basicAuth(req, res, next) {
   // If Authorize: Basic header exists and the password isn't blank
   // AND config.user.overridebasic is false, extract basic credentials
   // from client]
-  const { username, password, privatekey, overridebasic } = defaultCredentials;
+  const { username, password, privateKey, overridebasic } = defaultCredentials;
   if (myAuth && myAuth.pass !== '' && !overridebasic) {
     req.session.username = myAuth.name;
     req.session.userpassword = myAuth.pass;
@@ -29,9 +29,9 @@ exports.basicAuth = function basicAuth(req, res, next) {
   } else {
     req.session.username = username;
     req.session.userpassword = password;
-    req.session.privatekey = privatekey;
+    req.session.privateKey = privateKey;
   }
-  if (!req.session.userpassword && !req.session.privatekey) {
+  if (!req.session.userpassword && !req.session.privateKey) {
     res.statusCode = 401;
     debug('basicAuth credential request (401)');
     res.setHeader('WWW-Authenticate', 'Basic realm="WebSSH"');

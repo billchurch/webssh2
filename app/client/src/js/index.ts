@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
-import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faClipboard, faDownload, faRotateRight, faKey, faCog } from '@fortawesome/free-solid-svg-icons';
 
-library.add(faBars, faClipboard, faDownload, faKey, faCog);
+library.add(faBars, faClipboard, faDownload, faRotateRight, faKey, faCog);
 dom.watch();
 
 const debug = require('debug')('WebSSH2');
@@ -35,6 +35,7 @@ const term = new Terminal();
 const logBtn = document.getElementById('logBtn');
 const credentialsBtn = document.getElementById('credentialsBtn');
 const reauthBtn = document.getElementById('reauthBtn');
+const restartBtn = document.getElementById('restartBtn');
 const downloadLogBtn = document.getElementById('downloadLogBtn');
 const status = document.getElementById('status');
 const header = document.getElementById('header');
@@ -52,20 +53,25 @@ const socket = io({
 });
 
 // reauthenticate
-function reauthSession () { // eslint-disable-line
+function reauthSession() { // eslint-disable-line
   debug('re-authenticating');
   socket.emit('control', 'reauth');
   window.location.href = '/ssh/reauth';
   return false;
 }
 
+function restartSession() { // eslint-disable-line
+  debug('restarting');
+  socket.emit('control', 'reauth');
+  return false;
+}
+
 // cross browser method to "download" an element to the local system
 // used for our client-side logging feature
-function downloadLog () { // eslint-disable-line
+function downloadLog() { // eslint-disable-line
   if (loggedData === true) {
-    myFile = `WebSSH2-${logDate.getFullYear()}${
-      logDate.getMonth() + 1
-    }${logDate.getDate()}_${logDate.getHours()}${logDate.getMinutes()}${logDate.getSeconds()}.log`;
+    myFile = `WebSSH2-${logDate.getFullYear()}${logDate.getMonth() + 1
+      }${logDate.getDate()}_${logDate.getHours()}${logDate.getMinutes()}${logDate.getSeconds()}.log`;
     // regex should eliminate escape sequences from being logged.
     const blob = new Blob(
       [
@@ -91,15 +97,14 @@ function downloadLog () { // eslint-disable-line
 }
 // Set variable to toggle log data from client/server to a varialble
 // for later download
-function toggleLog () { // eslint-disable-line
+function toggleLog() { // eslint-disable-line
   if (sessionLogEnable === true) {
     sessionLogEnable = false;
     loggedData = true;
     logBtn.innerHTML = '<i class="fas fa-clipboard fa-fw"></i> Start Log';
     currentDate = new Date();
-    sessionLog = `${sessionLog}\r\n\r\nLog End for ${sessionFooter}: ${currentDate.getFullYear()}/${
-      currentDate.getMonth() + 1
-    }/${currentDate.getDate()} @ ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}\r\n`;
+    sessionLog = `${sessionLog}\r\n\r\nLog End for ${sessionFooter}: ${currentDate.getFullYear()}/${currentDate.getMonth() + 1
+      }/${currentDate.getDate()} @ ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}\r\n`;
     logDate = currentDate;
     term.focus();
     return false;
@@ -110,16 +115,15 @@ function toggleLog () { // eslint-disable-line
   downloadLogBtn.style.color = '#000';
   downloadLogBtn.addEventListener('click', downloadLog);
   currentDate = new Date();
-  sessionLog = `Log Start for ${sessionFooter}: ${currentDate.getFullYear()}/${
-    currentDate.getMonth() + 1
-  }/${currentDate.getDate()} @ ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}\r\n\r\n`;
+  sessionLog = `Log Start for ${sessionFooter}: ${currentDate.getFullYear()}/${currentDate.getMonth() + 1
+    }/${currentDate.getDate()} @ ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}\r\n\r\n`;
   logDate = currentDate;
   term.focus();
   return false;
 }
 
 // replay password to server, requires
-function replayCredentials () { // eslint-disable-line
+function replayCredentials() { // eslint-disable-line
   socket.emit('control', 'replayCredentials');
   debug(`control: replayCredentials`);
   term.focus();
@@ -130,6 +134,7 @@ function replayCredentials () { // eslint-disable-line
 // when dom is changed, listeners are abandonded
 function drawMenu() {
   logBtn.addEventListener('click', toggleLog);
+  restartBtn.addEventListener('click', restartSession)
   if (allowreauth) {
     reauthBtn.addEventListener('click', reauthSession);
     reauthBtn.style.display = 'block';
@@ -144,19 +149,27 @@ function drawMenu() {
   }
 }
 
-function resizeScreen() {
+function resizeScreen(warmup = false) {
   fitAddon.fit();
+  if (warmup) {
+    socket.emit('resize', { cols: term.cols - 1, rows: term.rows });
+  }
   socket.emit('resize', { cols: term.cols, rows: term.rows });
   debug(`resize: ${JSON.stringify({ cols: term.cols, rows: term.rows })}`);
 }
 
-window.addEventListener('resize', resizeScreen, false);
+window.addEventListener('resize', () => resizeScreen(), false);
 
+var hasResize = false;
 term.onData((data) => {
   socket.emit('data', data);
 });
 
 socket.on('data', (data: string | Uint8Array) => {
+  if (!hasResize) {
+    hasResize = true;
+    setTimeout(() => resizeScreen(true), 1000);
+  }
   term.write(data);
   if (sessionLogEnable) {
     sessionLog += data;
@@ -252,7 +265,13 @@ socket.on('disconnect', (err: any) => {
     status.style.backgroundColor = 'red';
     status.innerHTML = `WEBSOCKET SERVER DISCONNECTED: ${err}`;
   }
-  socket.io.reconnection(false);
+  var i = setInterval(() => {
+    if (!socket.connected) {
+      socket.connect()
+    } else {
+      clearInterval(i);
+    }
+  }, 3000);
   countdown.classList.remove('active');
 });
 

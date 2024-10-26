@@ -43,7 +43,7 @@ const configDefault = {
   user: {
     name: null,
     password: null,
-    privatekey: null,
+    privateKey: null,
     overridebasic: false,
   },
   ssh: {
