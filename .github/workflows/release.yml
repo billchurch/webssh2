@@ -23,6 +23,7 @@ jobs:
           package-name: webssh2
           path: app
           default-branch: main
+          release-type: node
   publish:
     runs-on: ubuntu-20.04
     needs: release

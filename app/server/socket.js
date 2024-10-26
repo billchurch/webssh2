@@ -105,7 +105,7 @@ module.exports = function appSocket(socket) {
       socket.emit('data', data.replace(/\r?\n/g, '\r\n').toString('utf-8'));
     });
 
-    conn.on('handshake', (data => {
+    conn.on('handshake', () => {
       socket.emit('setTerminalOpts', socket.request.session.ssh.terminal);
       socket.emit('menu');
       socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
@@ -118,7 +118,7 @@ module.exports = function appSocket(socket) {
         'footer',
         `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
       );
-    }));
+    });
 
     conn.on('ready', () => {
       webssh2debug(
