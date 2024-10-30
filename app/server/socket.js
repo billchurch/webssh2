@@ -107,6 +107,10 @@ function setupNewConnection(socket) {
       `ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
     );
 
+    socket.emit('status', 'SSH CONNECTION ESTABLISHED');
+    socket.emit('statusBackground', 'green');
+    socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
+
     socket.on('control', (controlData) => {
       if (!stream) return;
       if (controlData === 'replayCredentials' && socket.request.session.ssh.allowreplay) {
@@ -145,9 +149,6 @@ function setupNewConnection(socket) {
       `LOGIN user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
     );
     login = true;
-    socket.emit('status', 'SSH CONNECTION ESTABLISHED');
-    socket.emit('statusBackground', 'green');
-    socket.emit('allowreplay', socket.request.session.ssh.allowreplay);
     const { term, cols, rows } = socket.request.session.ssh;
     conn.shell({ term, cols, rows }, (err, s) => {
       if (err) {

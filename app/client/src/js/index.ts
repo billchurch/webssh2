@@ -267,10 +267,13 @@ socket.on('disconnect', (err: any) => {
     status.innerHTML = `WEBSOCKET SERVER DISCONNECTED: ${err}`;
   }
   var i = setInterval(() => {
-    if (!socket.connected) {
-      socket.connect()
+    if (!socket.connected && document.hasFocus()) {
+      socket.connect();
     } else {
       clearInterval(i);
+      if (!socket.connected) {
+        status.innerHTML + " (click to reconnect)";
+      }
     }
   }, 3000);
   countdown.classList.remove('active');
@@ -288,6 +291,12 @@ socket.on('reauth', () => {
     reauthSession();
   }
 });
+
+status.addEventListener('click', (ev) => {
+  if (socket.disconnected) {
+    socket.connect();
+  }
+})
 
 // safe shutdown
 let hasCountdownStarted = false;
