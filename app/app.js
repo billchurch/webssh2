@@ -4,7 +4,7 @@
 const express = require("express")
 const config = require("./config")
 const socketHandler = require("./socket")
-const sshRoutes = require("./routes")
+const sshRoutes = require("./routes")(config)
 const { applyMiddleware } = require("./middleware")
 const { createServer, startServer } = require("./server")
 const { configureSocketIO } = require("./io")
