@@ -117,7 +117,7 @@ class WebSSH2Socket extends EventEmitter {
   }
 
   initializeConnection(creds) {
-    const self = this
+    // const self = this
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
       maskSensitiveData(creds)
@@ -201,7 +201,7 @@ class WebSSH2Socket extends EventEmitter {
           debug("end: SSH Stream ended")
         })
 
-        stream.on("error", (err) => {
+        stream.on("error", err => {
           debug("error: SSH Stream error %O", err)
         })
 
