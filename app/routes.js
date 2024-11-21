@@ -70,7 +70,20 @@ module.exports = function(config) {
     handleConnection(req, res)
   })
 
-  // Add this route before the existing /host/:host route
+  /**
+   * Handles the "/host/" route, which requires authentication and uses the
+   * `auth` middleware function to handle HTTP Basic Authentication.
+   *
+   * This route validates the host and port parameters, sets the `sshCredentials`
+   * object in the session, and calls the `handleConnection` function to handle
+   * the connection.
+   *
+   * If the `config.ssh.host` is not set, it throws a `ConfigError` with the
+   * appropriate error message.
+   *
+   * @param {Object} req - The Express request object
+   * @param {Object} res - The Express response object
+   */
   router.get("/host/", auth, (req, res) => {
     debug(`router.get.host: /ssh/host/ route`)
 
