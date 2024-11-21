@@ -74,7 +74,7 @@ describe("SSHConnection", () => {
 
       return sshConnection.connect(mockCreds).catch(error => {
         expect(error).toBeInstanceOf(SSHConnectionError)
-        expect(error.message).toBe("SSH Connection error: Connection failed")
+        expect(error.message).toBe("Connection failed")
       })
     })
   })
