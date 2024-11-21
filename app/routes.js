@@ -70,6 +70,41 @@ module.exports = function(config) {
     handleConnection(req, res)
   })
 
+  // Add this route before the existing /host/:host route
+  router.get("/host/", auth, (req, res) => {
+    debug(`router.get.host: /ssh/host/ route`)
+
+    try {
+      if (!config.ssh.host) {
+        throw new ConfigError(
+          "Host parameter required when default host not configured"
+        )
+      }
+
+      const { host } = config.ssh
+      const port = getValidatedPort(req.query.port)
+      const sshterm = validateSshTerm(req.query.sshterm)
+
+      req.session.sshCredentials = req.session.sshCredentials || {}
+      req.session.sshCredentials.host = host
+      req.session.sshCredentials.port = port
+      if (req.query.sshterm) {
+        req.session.sshCredentials.term = sshterm
+      }
+      req.session.usedBasicAuth = true
+
+      const sanitizedCredentials = maskSensitiveData(
+        JSON.parse(JSON.stringify(req.session.sshCredentials))
+      )
+      debug("/ssh/host/ Credentials: ", sanitizedCredentials)
+
+      handleConnection(req, res, { host: host })
+    } catch (err) {
+      const error = new ConfigError(`Invalid configuration: ${err.message}`)
+      handleError(error, res)
+    }
+  })
+
   // Scenario 2: Auth required, uses HTTP Basic Auth
   router.get("/host/:host", auth, (req, res) => {
     debug(`router.get.host: /ssh/host/${req.params.host} route`)
