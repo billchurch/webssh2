@@ -38,7 +38,33 @@ const configSchema = {
         term: { type: "string" },
         readyTimeout: { type: "integer" },
         keepaliveInterval: { type: "integer" },
-        keepaliveCountMax: { type: "integer" }
+        keepaliveCountMax: { type: "integer" },
+        algorithms: {
+          type: "object",
+          properties: {
+            kex: {
+              type: "array",
+              items: { type: "string" }
+            },
+            cipher: {
+              type: "array",
+              items: { type: "string" }
+            },
+            hmac: {
+              type: "array",
+              items: { type: "string" }
+            },
+            serverHostKey: {
+              type: "array",
+              items: { type: "string" }
+            },
+            compress: {
+              type: "array",
+              items: { type: "string" }
+            }
+          },
+          required: ["kex", "cipher", "hmac", "serverHostKey", "compress"]
+        }
       },
       required: [
         "host",
@@ -68,28 +94,6 @@ const configSchema = {
       },
       required: ["challengeButton", "allowReauth", "allowReplay"]
     },
-    algorithms: {
-      type: "object",
-      properties: {
-        kex: {
-          type: "array",
-          items: { type: "string" }
-        },
-        cipher: {
-          type: "array",
-          items: { type: "string" }
-        },
-        hmac: {
-          type: "array",
-          items: { type: "string" }
-        },
-        compress: {
-          type: "array",
-          items: { type: "string" }
-        }
-      },
-      required: ["kex", "cipher", "hmac", "compress"]
-    },
     session: {
       type: "object",
       properties: {
@@ -99,6 +103,6 @@ const configSchema = {
       required: ["secret", "name"]
     }
   },
-  required: ["listen", "http", "user", "ssh", "header", "options", "algorithms"]
+  required: ["listen", "http", "user", "ssh", "header", "options"]
 }
 module.exports = configSchema
