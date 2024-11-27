@@ -118,7 +118,6 @@ function loadConfig() {
  * Merges the default configuration with user-provided config.json if it exists.
  * Falls back to default configuration if config.json is missing or invalid.
  * Overrides listen.port with PORT environment variable if provided.
- * 
  * @returns {Object} Configuration object with the following structure:
  * @returns {Object} .listen - Server listening settings
  * @returns {string} .listen.ip - IP address to listen on (default: "0.0.0.0")
