@@ -33,13 +33,6 @@ const defaultConfig = {
     keepaliveCountMax: 10,
     alwaysSendKeyboardInteractivePrompts: false,
     algorithms: {
-      kex: [
-        "ecdh-sha2-nistp256",
-        "ecdh-sha2-nistp384",
-        "ecdh-sha2-nistp521",
-        "diffie-hellman-group-exchange-sha256",
-        "diffie-hellman-group14-sha1"
-      ],
       cipher: [
         "aes128-ctr",
         "aes192-ctr",
@@ -50,19 +43,21 @@ const defaultConfig = {
         "aes256-gcm@openssh.com",
         "aes256-cbc"
       ],
+      compress: ["none", "zlib@openssh.com", "zlib"],
       hmac: ["hmac-sha2-256", "hmac-sha2-512", "hmac-sha1"],
+      kex: [
+        "ecdh-sha2-nistp256",
+        "ecdh-sha2-nistp384",
+        "ecdh-sha2-nistp521",
+        "diffie-hellman-group-exchange-sha256",
+        "diffie-hellman-group14-sha1"
+      ],
       serverHostKey: [
-        "ssh-ed25519",
-        "rsa-sha2-512",
-        "rsa-sha2-256",
         "ecdsa-sha2-nistp256",
         "ecdsa-sha2-nistp384",
         "ecdsa-sha2-nistp521",
-        "rsa-sha2-512",
-        "rsa-sha2-256",
         "ssh-rsa"
-      ],
-      compress: ["none", "zlib@openssh.com", "zlib"]
+      ]
     }
   },
   header: {
@@ -119,41 +114,46 @@ function loadConfig() {
 }
 
 /**
- * Configuration for the application.
- *
- * @returns {Object} config
- * @property {Object} listen - Configuration for listening IP and port.
- * @property {string} listen.ip - The IP address to listen on.
- * @property {number} listen.port - The port number to listen on.
- * @property {Object} http - Configuration for HTTP settings.
- * @property {string[]} http.origins - The allowed origins for HTTP requests.
- * @property {Object} user - Configuration for user settings.
- * @property {string|null} user.name - The name of the user.
- * @property {string|null} user.password - The password of the user.
- * @property {Object} ssh - Configuration for SSH settings.
- * @property {string|null} ssh.host - The SSH host.
- * @property {number} ssh.port - The SSH port.
- * @property {string} ssh.term - The SSH terminal type.
- * @property {number} ssh.readyTimeout - The SSH ready timeout.
- * @property {number} ssh.keepaliveInterval - The SSH keepalive interval.
- * @property {number} ssh.keepaliveCountMax - The SSH keepalive count maximum.
- * @property {Object} header - Configuration for header settings.
- * @property {string|null} header.text - The header text.
- * @property {string} header.background - The header background color.
- * @property {Object} options - Configuration for options settings.
- * @property {boolean} options.challengeButton - Whether to show the challenge button.
- * @property {boolean} options.autoLog - Whether to automatically log.
- * @property {boolean} options.allowReauth - Whether to allow reauthentication.
- * @property {boolean} options.allowReconnect - Whether to allow reconnection.
- * @property {boolean} options.allowReplay - Whether to allow replay.
- * @property {Object} algorithms - Configuration for algorithms settings.
- * @property {string[]} algorithms.kex - The key exchange algorithms.
- * @property {string[]} algorithms.cipher - The cipher algorithms.
- * @property {string[]} algorithms.hmac - The HMAC algorithms.
- * @property {string[]} algorithms.compress - The compression algorithms.
- * @property {Object} session - Configuration for session settings.
- * @property {string} session.secret - The session secret.
- * @property {string} session.name - The session name.
+ * Loads and validates the WebSSH2 configuration.
+ * Merges the default configuration with user-provided config.json if it exists.
+ * Falls back to default configuration if config.json is missing or invalid.
+ * Overrides listen.port with PORT environment variable if provided.
+ * 
+ * @returns {Object} Configuration object with the following structure:
+ * @returns {Object} .listen - Server listening settings
+ * @returns {string} .listen.ip - IP address to listen on (default: "0.0.0.0")
+ * @returns {number} .listen.port - Port number to listen on
+ * @returns {Object} .http - HTTP server settings
+ * @returns {string[]} .http.origins - Allowed CORS origins (default: ["*:*"])
+ * @returns {Object} .user - Default user credentials
+ * @returns {string|null} .user.name - Default username
+ * @returns {string|null} .user.password - Default password
+ * @returns {Object} .ssh - SSH connection settings
+ * @returns {string|null} .ssh.host - SSH server hostname
+ * @returns {number} .ssh.port - SSH server port
+ * @returns {string} .ssh.term - Terminal type
+ * @returns {number} .ssh.readyTimeout - Connection timeout in ms
+ * @returns {number} .ssh.keepaliveInterval - Keepalive interval in ms
+ * @returns {number} .ssh.keepaliveCountMax - Max keepalive count
+ * @returns {boolean} .ssh.alwaysSendKeyboardInteractivePrompts - Force keyboard-interactive
+ * @returns {Object} .ssh.algorithms - Supported SSH algorithms
+ * @returns {string[]} .ssh.algorithms.cipher - Supported ciphers
+ * @returns {string[]} .ssh.algorithms.compress - Supported compression
+ * @returns {string[]} .ssh.algorithms.hmac - Supported HMAC algorithms
+ * @returns {string[]} .ssh.algorithms.kex - Supported key exchange
+ * @returns {string[]} .ssh.algorithms.serverHostKey - Supported host key types
+ * @returns {Object} .header - UI header settings
+ * @returns {string|null} .header.text - Header text
+ * @returns {string} .header.background - Header background color
+ * @returns {Object} .options - Feature flags and options
+ * @returns {boolean} .options.challengeButton - Show challenge button
+ * @returns {boolean} .options.autoLog - Enable automatic logging
+ * @returns {boolean} .options.allowReauth - Allow reauthentication
+ * @returns {boolean} .options.allowReconnect - Allow reconnection
+ * @returns {boolean} .options.allowReplay - Allow session replay
+ * @returns {Object} .session - Session configuration
+ * @returns {string} .session.secret - Session secret key
+ * @returns {string} .session.name - Session cookie name
  */
 const config = loadConfig()
 

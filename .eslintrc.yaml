@@ -20,6 +20,7 @@ rules:
   object-shorthand: off
   class-methods-use-this: off
   semi: [2, never]
+  strict: off
 
 overrides:
   - files:
