@@ -6,6 +6,7 @@ const EventEmitter = require("events")
 const { createNamespacedDebug } = require("./logger")
 const { SSHConnectionError, handleError } = require("./errors")
 const { maskSensitiveData } = require("./utils")
+const { DEFAULTS } = require("./constants")
 
 const debug = createNamespacedDebug("ssh")
 
@@ -21,7 +22,6 @@ class SSHConnection extends EventEmitter {
     this.stream = null
     this.creds = null
     this.authAttempts = 0
-    this.maxAuthAttempts = 2
   }
 
   /**
@@ -92,7 +92,7 @@ class SSHConnection extends EventEmitter {
       debug(`connect: error: ${err.message}`)
 
       // Check if this is an authentication error and we haven't exceeded max attempts
-      if (this.authAttempts < this.maxAuthAttempts) {
+      if (this.authAttempts < DEFAULTS.MAX_AUTH_ATTEMPTS) {
         this.authAttempts++
         debug(
           `Authentication attempt ${this.authAttempts} failed, trying password authentication`

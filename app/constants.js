@@ -36,7 +36,8 @@ const DEFAULTS = {
     "client",
     "public"
   ),
-  CLIENT_FILE: "client.htm"
+  CLIENT_FILE: "client.htm",
+  MAX_AUTH_ATTEMPTS: 2
 }
 
 /**
