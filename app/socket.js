@@ -117,11 +117,16 @@ class WebSSH2Socket extends EventEmitter {
   }
 
   initializeConnection(creds) {
-    // const self = this
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
       maskSensitiveData(creds)
     )
+
+    // Add private key from config if available
+    if (this.config.user.privatekey && !creds.privatekey) {
+      // eslint-disable-next-line no-param-reassign
+      creds.privatekey = this.config.user.privatekey
+    }
 
     this.ssh
       .connect(creds)
@@ -130,6 +135,7 @@ class WebSSH2Socket extends EventEmitter {
           authenticated: true,
           username: creds.username,
           password: creds.password,
+          privatekey: creds.privatekey,
           host: creds.host,
           port: creds.port
         })

@@ -93,7 +93,7 @@ class SSHConnection extends EventEmitter {
 
       // Check if this is an authentication error and we haven't exceeded max attempts
       if (this.authAttempts < DEFAULTS.MAX_AUTH_ATTEMPTS) {
-        this.authAttempts++
+        this.authAttempts += 1
         debug(
           `Authentication attempt ${this.authAttempts} failed, trying password authentication`
         )
@@ -172,13 +172,14 @@ class SSHConnection extends EventEmitter {
       debug: createNamespacedDebug("ssh2")
     }
 
-    // If useKey is true and we have a private key, use it
-    if (useKey && this.config.user.privatekey) {
+    // Try private key first if available and useKey is true
+    if (useKey && (creds.privatekey || this.config.user.privatekey)) {
       debug("Using private key authentication")
-      if (!this.validatePrivateKey(this.config.user.privatekey)) {
+      const privateKey = creds.privatekey || this.config.user.privatekey
+      if (!this.validatePrivateKey(privateKey)) {
         throw new SSHConnectionError("Invalid private key format")
       }
-      config.privateKey = this.config.user.privatekey
+      config.privateKey = privateKey
     } else if (creds.password) {
       debug("Using password authentication")
       config.password = creds.password

@@ -49,7 +49,7 @@
     "start": "node index.js",
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
-    "watch": "NODE_ENV=development DEBUG=webssh* nodemon index.js -w app/ -w index.js -w config.json -w package.json",
+    "watch": "NODE_ENV=development DEBUG=webssh*,-webssh2:ssh2 nodemon index.js -w app/ -w index.js -w config.json -w package.json",
     "test": "jest",
     "release": "standard-version -a -s --release-as patch --commit-all",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",

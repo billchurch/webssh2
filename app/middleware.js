@@ -28,25 +28,36 @@ const { HTTP } = require("./constants")
  * If the authentication fails, the function will send a 401 Unauthorized response
  * with the appropriate WWW-Authenticate header.
  */
-// eslint-disable-next-line consistent-return
 function createAuthMiddleware(config) {
   // eslint-disable-next-line consistent-return
   return (req, res, next) => {
-    if (config.user.name && config.user.password) {
+    // Check if username and either password or private key is configured
+    if (config.user.name && (config.user.password || config.user.privatekey)) {
       req.session.sshCredentials = {
-        username: config.user.name,
-        password: config.user.password
+        username: config.user.name
       }
+
+      // Add credentials based on what's available
+      if (config.user.privatekey) {
+        req.session.sshCredentials.privatekey = config.user.privatekey
+      }
+      if (config.user.password) {
+        req.session.sshCredentials.password = config.user.password
+      }
+
       req.session.usedBasicAuth = true
       return next()
     }
     // Scenario 2: Basic Auth
+
+    // If no configured credentials, fall back to Basic Auth
     debug("auth: Basic Auth")
     const credentials = basicAuth(req)
     if (!credentials) {
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
       return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
     }
+
     // Validate and sanitize credentials
     req.session.sshCredentials = {
       username: validator.escape(credentials.name),
