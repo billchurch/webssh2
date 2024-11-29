@@ -2,8 +2,7 @@
 // app/routes.js
 
 const express = require("express")
-const basicAuth = require("basic-auth")
-const validator = require("validator")
+
 const {
   getValidatedHost,
   getValidatedPort,
@@ -12,57 +11,15 @@ const {
 } = require("./utils")
 const handleConnection = require("./connectionHandler")
 const { createNamespacedDebug } = require("./logger")
+const { createAuthMiddleware } = require("./middleware")
 const { ConfigError, handleError } = require("./errors")
 const { HTTP } = require("./constants")
 
 const debug = createNamespacedDebug("routes")
 
-module.exports = function(config) {
+module.exports = function (config) {
   const router = express.Router()
-
-  /**
-   * Middleware function that handles HTTP Basic Authentication for the application.
-   *
-   * If the `config.user.name` and `config.user.password` are set, it will use those
-   * credentials to authenticate the request and set the `req.session.sshCredentials`
-   * object with the username and password.
-   *
-   * If the `config.user.name` and `config.user.password` are not set, it will attempt
-   * to use HTTP Basic Authentication to authenticate the request. It will validate and
-   * sanitize the credentials, and set the `req.session.sshCredentials` object with the
-   * username and password.
-   *
-   * The function will also set the `req.session.usedBasicAuth` flag to indicate that
-   * Basic Authentication was used.
-   *
-   * If the authentication fails, the function will send a 401 Unauthorized response
-   * with the appropriate WWW-Authenticate header.
-   */
-  // eslint-disable-next-line consistent-return
-  function auth(req, res, next) {
-    if (config.user.name && config.user.password) {
-      req.session.sshCredentials = {
-        username: config.user.name,
-        password: config.user.password
-      }
-      req.session.usedBasicAuth = true
-      return next()
-    }
-    // Scenario 2: Basic Auth
-    debug("auth: Basic Auth")
-    const credentials = basicAuth(req)
-    if (!credentials) {
-      res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-      return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
-    }
-    // Validate and sanitize credentials
-    req.session.sshCredentials = {
-      username: validator.escape(credentials.name),
-      password: credentials.pass // We don't sanitize the password as it might contain special characters
-    }
-    req.session.usedBasicAuth = true // Set this flag when Basic Auth is used
-    next()
-  }
+  const auth = createAuthMiddleware(config)
 
   // Scenario 1: No auth required, uses websocket authentication instead
   router.get("/", (req, res) => {
