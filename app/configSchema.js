@@ -39,6 +39,7 @@ const configSchema = {
         readyTimeout: { type: "integer" },
         keepaliveInterval: { type: "integer" },
         keepaliveCountMax: { type: "integer" },
+        disableInteractiveAuth: { type: "boolean" },
         algorithms: {
           type: "object",
           properties: {

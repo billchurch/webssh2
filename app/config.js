@@ -32,6 +32,7 @@ const defaultConfig = {
     keepaliveInterval: 120000,
     keepaliveCountMax: 10,
     alwaysSendKeyboardInteractivePrompts: false,
+    disableInteractiveAuth: false,
     algorithms: {
       cipher: [
         "aes128-ctr",

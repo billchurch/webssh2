@@ -49,6 +49,13 @@ class WebSSH2Socket extends EventEmitter {
       )
       this.handleAuthenticate(creds)
     } else if (!this.sessionState.authenticated) {
+      // Check if interactive auth is disabled
+      if (this.config.ssh.disableInteractiveAuth) {
+        debug(`handleConnection: ${this.socket.id}, interactive auth disabled`)
+        this.handleError("Interactive Auth Disabled")
+        return
+      }
+
       debug(`handleConnection: ${this.socket.id}, emitting request_auth`)
       this.socket.emit("authentication", { action: "request_auth" })
     }

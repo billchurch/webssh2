@@ -26,6 +26,7 @@
     "keepaliveCountMax": 10,
     "allowedSubnets": [],
     "alwaysSendKeyboardInteractivePrompts": false,
+    "disableInteractiveAuth": true,
     "algorithms": {
       "cipher": [
         "aes128-ctr",
