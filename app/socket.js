@@ -153,13 +153,25 @@ class WebSSH2Socket extends EventEmitter {
 
         this.socket.emit("getTerminal", true)
       })
-      .catch(err => {
+      .catch((err) => {
         debug(
           `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
         )
         handleError(new SSHConnectionError(`${err.message}`))
         this.socket.emit("ssherror", `${err.message}`)
       })
+
+    // Set up password prompt handler
+    this.ssh.on("password-prompt", (data) => {
+      this.socket.emit("authentication", {
+        action: "password_prompt",
+        message: `Key authentication failed. Please enter password for ${data.username}@${data.host}`
+      })
+    })
+
+    this.socket.on("password_response", (password) => {
+      this.ssh.emit("password-response", password)
+    })
   }
 
   /**

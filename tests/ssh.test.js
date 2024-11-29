@@ -39,6 +39,11 @@ describe("SSHConnection", () => {
         readyTimeout: 20000,
         keepaliveInterval: 60000,
         keepaliveCountMax: 10
+      },
+      user: {
+        name: null,
+        password: null,
+        privatekey: null
       }
     }
     sshConnection = new SSHConnection(mockConfig)
@@ -56,8 +61,6 @@ describe("SSHConnection", () => {
   })
 
   describe("connect", () => {
-    // ... previous tests ...
-
     it("should handle connection errors", () => {
       const mockCreds = {
         host: "example.com",
@@ -75,6 +78,79 @@ describe("SSHConnection", () => {
       return sshConnection.connect(mockCreds).catch(error => {
         expect(error).toBeInstanceOf(SSHConnectionError)
         expect(error.message).toBe("Connection failed")
+      })
+    })
+
+    it("should connect successfully with password", () => {
+      const mockCreds = {
+        host: "example.com",
+        port: 22,
+        username: "user",
+        password: "pass"
+      }
+
+      mockSSH2Client.on.mockImplementation((event, callback) => {
+        if (event === "ready") {
+          callback()
+        }
+      })
+
+      return sshConnection.connect(mockCreds).then(() => {
+        expect(mockSSH2Client.connect).toHaveBeenCalledWith(
+          expect.objectContaining({
+            host: "example.com",
+            port: 22,
+            username: "user",
+            password: "pass",
+            tryKeyboard: true
+          })
+        )
+      })
+    })
+  })
+
+  describe("key authentication", () => {
+    it("should use privateKey when provided in config", () => {
+      mockConfig.user.privatekey = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpA...etc\n-----END RSA PRIVATE KEY-----"
+      sshConnection = new SSHConnection(mockConfig)
+
+      const mockCreds = {
+        host: "example.com",
+        port: 22,
+        username: "user"
+      }
+
+      mockSSH2Client.on.mockImplementation((event, callback) => {
+        if (event === "ready") {
+          callback()
+        }
+      })
+
+      return sshConnection.connect(mockCreds).then(() => {
+        expect(mockSSH2Client.connect).toHaveBeenCalledWith(
+          expect.objectContaining({
+            privateKey: mockConfig.user.privatekey,
+            host: mockCreds.host,
+            port: mockCreds.port,
+            username: mockCreds.username
+          })
+        )
+      })
+    })
+
+    it("should handle invalid private key format", () => {
+      mockConfig.user.privatekey = "invalid-key-format"
+      sshConnection = new SSHConnection(mockConfig)
+
+      const mockCreds = {
+        host: "example.com",
+        port: 22,
+        username: "user"
+      }
+
+      return sshConnection.connect(mockCreds).catch(error => {
+        expect(error).toBeInstanceOf(SSHConnectionError)
+        expect(error.message).toBe("Invalid private key format")
       })
     })
   })
@@ -127,7 +203,6 @@ describe("SSHConnection", () => {
       sshConnection.stream = null
 
       sshConnection.resizeTerminal(80, 24)
-
       // No error should be thrown
     })
   })
@@ -153,7 +228,6 @@ describe("SSHConnection", () => {
       sshConnection.conn = null
 
       sshConnection.end()
-
       // No error should be thrown
     })
   })

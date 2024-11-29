@@ -14,21 +14,35 @@ const debug = createNamespacedDebug("ssh")
  * @extends EventEmitter
  */
 class SSHConnection extends EventEmitter {
-  /**
-   * Create an SSHConnection.
-   * @param {Object} config - Configuration object for the SSH connection.
-   */
   constructor(config) {
     super()
     this.config = config
     this.conn = null
     this.stream = null
     this.creds = null
+    this.authAttempts = 0
+    this.maxAuthAttempts = 2
+  }
+
+  /**
+   * Validates the format of an RSA private key
+   * @param {string} key - The private key string to validate
+   * @returns {boolean} - Whether the key appears to be valid
+   */
+  validatePrivateKey(key) {
+    const keyStart = "-----BEGIN RSA PRIVATE KEY-----"
+    const keyEnd = "-----END RSA PRIVATE KEY-----"
+    return (
+      typeof key === "string" &&
+      key.includes(keyStart) &&
+      key.includes(keyEnd) &&
+      key.trim().length > keyStart.length + keyEnd.length
+    )
   }
 
   /**
    * Connects to the SSH server using the provided credentials.
-   * @param {Object} creds - The credentials object containing host, port, username, and password.
+   * @param {Object} creds - The credentials object containing host, port, username, and optional password.
    * @returns {Promise<SSH>} - A promise that resolves with the SSH connection instance.
    */
   connect(creds) {
@@ -40,115 +54,116 @@ class SSHConnection extends EventEmitter {
       }
 
       this.conn = new SSH()
+      this.authAttempts = 0
 
-      const sshConfig = this.getSSHConfig(creds)
+      // First try with key authentication if available
+      const sshConfig = this.getSSHConfig(creds, true)
 
-      this.conn.on("ready", () => {
-        debug(`connect: ready: ${creds.host}`)
-        resolve(this.conn)
-      })
+      this.setupConnectionHandlers(resolve, reject)
 
-      this.conn.on("end", () => {
-        debug(`connect: end: `)
-      })
+      try {
+        this.conn.connect(sshConfig)
+      } catch (err) {
+        reject(new SSHConnectionError(`Connection failed: ${err.message}`))
+      }
+    })
+  }
 
-      this.conn.on("close", () => {
-        debug(`connect: close: `)
-      })
+  /**
+   * Sets up SSH connection event handlers
+   * @param {Function} resolve - Promise resolve function
+   * @param {Function} reject - Promise reject function
+   */
+  setupConnectionHandlers(resolve, reject) {
+    this.conn.on("ready", () => {
+      debug(`connect: ready: ${this.creds.host}`)
+      resolve(this.conn)
+    })
 
-      this.conn.on("error", err => {
-        const error = new SSHConnectionError(`${err.message}`)
+    this.conn.on("end", () => {
+      debug("connect: end")
+    })
+
+    this.conn.on("close", () => {
+      debug("connect: close")
+    })
+
+    this.conn.on("error", (err) => {
+      debug(`connect: error: ${err.message}`)
+
+      // Check if this is an authentication error and we haven't exceeded max attempts
+      if (this.authAttempts < this.maxAuthAttempts) {
+        this.authAttempts++
+        debug(
+          `Authentication attempt ${this.authAttempts} failed, trying password authentication`
+        )
+
+        // Only try password auth if we have a password
+        if (this.creds.password) {
+          debug("Retrying with password authentication")
+
+          // Disconnect current connection
+          if (this.conn) {
+            this.conn.end()
+          }
+
+          // Create new connection with password authentication
+          this.conn = new SSH()
+          const passwordConfig = this.getSSHConfig(this.creds, false)
+
+          this.setupConnectionHandlers(resolve, reject)
+          this.conn.connect(passwordConfig)
+        } else {
+          // No password available, emit event to request password
+          debug("No password available, requesting password from client")
+          this.emit("password-prompt", {
+            host: this.creds.host,
+            username: this.creds.username
+          })
+
+          // Listen for password response one time
+          this.once("password-response", (password) => {
+            this.creds.password = password
+            const newConfig = this.getSSHConfig(this.creds, false)
+            this.setupConnectionHandlers(resolve, reject)
+            this.conn.connect(newConfig)
+          })
+        }
+      } else {
+        // We've exhausted all authentication attempts
+        const error = new SSHConnectionError(
+          "All authentication methods failed"
+        )
         handleError(error)
         reject(error)
-      })
-
-      this.conn.on(
-        "keyboard-interactive",
-        (name, instructions, lang, prompts, finish) => {
-          this.handleKeyboardInteractive(
-            name,
-            instructions,
-            lang,
-            prompts,
-            finish
-          )
-        }
-      )
-
-      this.conn.connect(sshConfig)
-    })
-  }
-
-  /**
-   * Handles keyboard-interactive authentication prompts.
-   * @param {string} name - The name of the authentication request.
-   * @param {string} instructions - The instructions for the keyboard-interactive prompt.
-   * @param {string} lang - The language of the prompt.
-   * @param {Array<Object>} prompts - The list of prompts provided by the server.
-   * @param {Function} finish - The callback to complete the keyboard-interactive authentication.
-   */
-  handleKeyboardInteractive(name, instructions, lang, prompts, finish) {
-    debug("handleKeyboardInteractive: Keyboard-interactive auth %O", prompts)
-
-    // Check if we should always send prompts to the client
-    if (this.config.ssh.alwaysSendKeyboardInteractivePrompts) {
-      this.sendPromptsToClient(name, instructions, prompts, finish)
-      return
-    }
-
-    const responses = []
-    let shouldSendToClient = false
-
-    for (let i = 0; i < prompts.length; i += 1) {
-      if (
-        prompts[i].prompt.toLowerCase().includes("password") &&
-        this.creds.password
-      ) {
-        responses.push(this.creds.password)
-      } else {
-        shouldSendToClient = true
-        break
       }
-    }
-
-    if (shouldSendToClient) {
-      this.sendPromptsToClient(name, instructions, prompts, finish)
-    } else {
-      finish(responses)
-    }
-  }
-
-  /**
-   * Sends prompts to the client for keyboard-interactive authentication.
-   *
-   * @param {string} name - The name of the authentication method.
-   * @param {string} instructions - The instructions for the authentication.
-   * @param {Array<{ prompt: string, echo: boolean }>} prompts - The prompts to be sent to the client.
-   * @param {Function} finish - The callback function to be called when the client responds.
-   */
-  sendPromptsToClient(name, instructions, prompts, finish) {
-    this.emit("keyboard-interactive", {
-      name: name,
-      instructions: instructions,
-      prompts: prompts.map(p => ({ prompt: p.prompt, echo: p.echo }))
     })
 
-    this.once("keyboard-interactive-response", responses => {
-      finish(responses)
-    })
+    this.conn.on(
+      "keyboard-interactive",
+      (name, instructions, lang, prompts, finish) => {
+        this.handleKeyboardInteractive(
+          name,
+          instructions,
+          lang,
+          prompts,
+          finish
+        )
+      }
+    )
   }
 
   /**
    * Generates the SSH configuration object based on credentials.
-   * @param {Object} creds - The credentials object containing host, port, username, and password.
+   * @param {Object} creds - The credentials object containing host, port, username, and optional password.
+   * @param {boolean} useKey - Whether to attempt key authentication
    * @returns {Object} - The SSH configuration object.
    */
-  getSSHConfig(creds) {
-    return {
+  getSSHConfig(creds, useKey) {
+    const config = {
       host: creds.host,
       port: creds.port,
       username: creds.username,
-      password: creds.password,
       tryKeyboard: true,
       algorithms: this.config.ssh.algorithms,
       readyTimeout: this.config.ssh.readyTimeout,
@@ -156,6 +171,20 @@ class SSHConnection extends EventEmitter {
       keepaliveCountMax: this.config.ssh.keepaliveCountMax,
       debug: createNamespacedDebug("ssh2")
     }
+
+    // If useKey is true and we have a private key, use it
+    if (useKey && this.config.user.privatekey) {
+      debug("Using private key authentication")
+      if (!this.validatePrivateKey(this.config.user.privatekey)) {
+        throw new SSHConnectionError("Invalid private key format")
+      }
+      config.privateKey = this.config.user.privatekey
+    } else if (creds.password) {
+      debug("Using password authentication")
+      config.password = creds.password
+    }
+
+    return config
   }
 
   /**
