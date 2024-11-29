@@ -30,6 +30,7 @@ const { HTTP } = require("./constants")
  */
 // eslint-disable-next-line consistent-return
 function createAuthMiddleware(config) {
+  // eslint-disable-next-line consistent-return
   return (req, res, next) => {
     if (config.user.name && config.user.password) {
       req.session.sshCredentials = {
