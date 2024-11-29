@@ -21,7 +21,7 @@ describe("socketHandler", () => {
     socket.emit = jest.fn()
 
     io = {
-      on: jest.fn(function(event, callback) {
+      on: jest.fn((event, callback) => {
         if (event === "connection") {
           callback(socket)
         }

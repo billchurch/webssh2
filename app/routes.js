@@ -17,7 +17,7 @@ const { HTTP } = require("./constants")
 
 const debug = createNamespacedDebug("routes")
 
-module.exports = function (config) {
+module.exports = function(config) {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
 
