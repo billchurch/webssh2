@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.22"></a>
+## [0.2.22](https://github.com/billchurch/WebSSH2/compare/v0.2.21...v0.2.22) (2024-11-30)
+
+
+### Bug Fixes
+
+*  fixes document: config file moved from /usr/src to /usr/src/app [#372](https://github.com/billchurch/WebSSH2/issues/372) ([bc2d018](https://github.com/billchurch/WebSSH2/commit/bc2d018))
+
+
+### Features
+
+* Allow setting environment variables from the URL [#371](https://github.com/billchurch/WebSSH2/issues/371) ([6ec0490](https://github.com/billchurch/WebSSH2/commit/6ec0490))
+* update webssh_client to 0.2.26 ([a1b2e56](https://github.com/billchurch/WebSSH2/commit/a1b2e56))
+
+
+
 <a name="0.2.21"></a>
 ## [0.2.21](https://github.com/billchurch/WebSSH2/compare/v0.2.20...v0.2.21) (2024-11-30)
 
