@@ -51,8 +51,27 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 1. Build and run the Docker container (with debug messages):
    ```bash
    docker build -t webssh2 .
-   docker run --name webssh2 --rm -it -p 2222:2222 -e "DEBUG=webssh*,-webssh2:ssh2" webssh2
+   docker run --name webssh2 --rm -it -p 2222:2222 -e "DEBUG=webssh2*,-webssh2:ssh2" webssh2
    ```
+
+### Important Note About Configuration Files
+
+As of recent versions, the configuration file location has moved from `/usr/src` to `/usr/src/app` in the Docker container. This change improves organization but requires attention when mounting custom configuration files.
+
+To use a custom configuration file with the Docker container, mount your `config.json` to the new location using:
+
+```bash
+docker run -it --rm --name webssh2 \
+  -p 2222:2222 \
+  -e DEBUG="webssh2*" \
+  -v "$(pwd)/config.json:/usr/src/app/config.json" \
+  billchurch/webssh2:bigip-server
+```
+
+Note: 
+- If you previously mounted your configuration file to `/usr/src/config.json`, it will not be detected. The container will silently fall back to default configuration.
+- The new location at `/usr/src/app/config.json` is the only valid path for custom configuration files.
+- The default configuration provides basic functionality, so missing custom configurations may not be immediately apparent.
 
 ## Usage
 
