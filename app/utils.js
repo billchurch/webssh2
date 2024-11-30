@@ -198,13 +198,64 @@ function maskSensitiveData(obj, options) {
   return maskedObject
 }
 
+/**
+ * Validates and sanitizes environment variable key names
+ * @param {string} key - The environment variable key to validate
+ * @returns {boolean} - Whether the key is valid
+ */
+function isValidEnvKey(key) {
+  // Only allow uppercase letters, numbers, and underscore
+  return /^[A-Z][A-Z0-9_]*$/.test(key)
+}
+
+/**
+ * Validates and sanitizes environment variable values
+ * @param {string} value - The environment variable value to validate
+ * @returns {boolean} - Whether the value is valid
+ */
+function isValidEnvValue(value) {
+  // Disallow special characters that could be used for command injection
+  return !/[;&|`$]/.test(value)
+}
+
+/**
+ * Parses and validates environment variables from URL query string
+ * @param {string} envString - The environment string from URL query
+ * @returns {Object|null} - Object containing validated env vars or null if invalid
+ */
+function parseEnvVars(envString) {
+  if (!envString) return null
+
+  const envVars = {}
+  const pairs = envString.split(",")
+
+  for (let i = 0; i < pairs.length; i += 1) {
+    const pair = pairs[i].split(":")
+    if (pair.length !== 2) continue
+
+    const key = pair[0].trim()
+    const value = pair[1].trim()
+
+    if (isValidEnvKey(key) && isValidEnvValue(value)) {
+      envVars[key] = value
+    } else {
+      debug(`parseEnvVars: Invalid env var pair: ${key}:${value}`)
+    }
+  }
+
+  return Object.keys(envVars).length > 0 ? envVars : null
+}
+
 module.exports = {
   deepMerge,
   getValidatedHost,
   getValidatedPort,
   isValidCredentials,
+  isValidEnvKey,
+  isValidEnvValue,
   maskSensitiveData,
   modifyHtml,
+  parseEnvVars,
   validateConfig,
   validateSshTerm
 }

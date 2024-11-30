@@ -295,6 +295,79 @@ If key authentication fails, check:
 
 For additional support or troubleshooting, please open an issue on the GitHub repository.
 
+### Environment Variables via URL
+
+WebSSH2 supports passing environment variables through URL parameters, allowing you to customize the SSH session environment. This feature enables scenarios like automatically opening specific files or setting custom environment variables.
+
+#### Server Configuration
+
+Before using this feature, you must configure your SSH server to accept the environment variables you want to pass. Edit your `/etc/ssh/sshd_config` file to include the desired variables in the `AcceptEnv` directive:
+
+```bash
+# Allow client to pass locale environment variables and custom vars
+AcceptEnv LANG LC_* VIM_FILE CUSTOM_ENV
+```
+
+Remember to restart your SSH server after making changes:
+```bash
+sudo systemctl restart sshd  # For systemd-based systems
+# or
+sudo service sshd restart   # For init.d-based systems
+```
+
+#### Usage
+
+Pass environment variables using the `env` query parameter:
+
+```bash
+# Single environment variable
+http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt
+
+# Multiple environment variables
+http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt,CUSTOM_ENV:test
+```
+
+#### Security Considerations
+
+To maintain security, environment variables must meet these criteria:
+
+- Variable names must:
+  - Start with a capital letter
+  - Contain only uppercase letters, numbers, and underscores
+  - Be listed in the SSH server's `AcceptEnv` directive
+- Variable values cannot contain shell special characters (;, &, |, `, $)
+
+Invalid environment variables will be silently ignored.
+
+#### Example Usage
+
+1. Configure your SSH server as shown above.
+
+2. Create a URL with environment variables:
+   ```
+   http://localhost:2222/ssh/host/example.com?env=VIM_FILE:settings.conf,CUSTOM_ENV:production
+   ```
+
+3. In your remote server's `.bashrc` or shell initialization file:
+   ```bash
+   if [ ! -z "$VIM_FILE" ]; then
+     vim "$VIM_FILE"
+   fi
+
+   if [ ! -z "$CUSTOM_ENV" ]; then
+     echo "Running in $CUSTOM_ENV environment"
+   fi
+   ```
+
+#### Troubleshooting
+
+If environment variables aren't being set:
+
+1. Verify the variables are permitted in `/etc/ssh/sshd_config`
+2. Check SSH server logs for any related errors
+3. Ensure variable names and values meet the security requirements
+4. Test with a simple variable first to isolate any issues
+
 ## Routes
 
 WebSSH2 provides two main routes:

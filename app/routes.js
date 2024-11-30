@@ -14,6 +14,7 @@ const { createNamespacedDebug } = require("./logger")
 const { createAuthMiddleware } = require("./middleware")
 const { ConfigError, handleError } = require("./errors")
 const { HTTP } = require("./constants")
+const { parseEnvVars } = require("./utils")
 
 const debug = createNamespacedDebug("routes")
 
@@ -43,6 +44,11 @@ module.exports = function(config) {
    */
   router.get("/host/", auth, (req, res) => {
     debug(`router.get.host: /ssh/host/ route`)
+    const envVars = parseEnvVars(req.query.env)
+    if (envVars) {
+      req.session.envVars = envVars
+      debug("routes: Parsed environment variables: %O", envVars)
+    }
 
     try {
       if (!config.ssh.host) {
@@ -76,8 +82,13 @@ module.exports = function(config) {
   })
 
   // Scenario 2: Auth required, uses HTTP Basic Auth
-  router.get("/host/:host", auth, (req, res) => {
+  router.get("/host/:host?", auth, (req, res) => {
     debug(`router.get.host: /ssh/host/${req.params.host} route`)
+    const envVars = parseEnvVars(req.query.env)
+    if (envVars) {
+      req.session.envVars = envVars
+      debug("routes: Parsed environment variables: %O", envVars)
+    }
 
     try {
       const host = getValidatedHost(req.params.host)

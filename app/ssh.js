@@ -190,12 +190,17 @@ class SSHConnection extends EventEmitter {
 
   /**
    * Opens an interactive shell session over the SSH connection.
-   * @param {Object} [options] - Optional parameters for the shell.
-   * @returns {Promise<Object>} - A promise that resolves with the SSH shell stream.
+   * @param {Object} options - Options for the shell
+   * @param {Object} [envVars] - Environment variables to set
+   * @returns {Promise<Object>} - A promise that resolves with the SSH shell stream
    */
-  shell(options) {
+  shell(options, envVars) {
+    const shellOptions = Object.assign({}, options, {
+      env: this.getEnvironment(envVars)
+    })
+
     return new Promise((resolve, reject) => {
-      this.conn.shell(options, (err, stream) => {
+      this.conn.shell(shellOptions, (err, stream) => {
         if (err) {
           reject(err)
         } else {
@@ -229,6 +234,25 @@ class SSHConnection extends EventEmitter {
       this.conn.end()
       this.conn = null
     }
+  }
+
+  /**
+   * Gets the environment variables for the SSH session
+   * @param {Object} envVars - Environment variables from URL
+   * @returns {Object} - Combined environment variables
+   */
+  getEnvironment(envVars) {
+    const env = {
+      TERM: this.config.ssh.term
+    }
+
+    if (envVars) {
+      Object.keys(envVars).forEach((key) => {
+        env[key] = envVars[key]
+      })
+    }
+
+    return env
   }
 }
 

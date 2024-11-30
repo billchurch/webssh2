@@ -206,14 +206,20 @@ class WebSSH2Socket extends EventEmitter {
    * Creates a new SSH shell session.
    */
   createShell() {
+    // Get envVars from socket session if they exist
+    const envVars = this.socket.handshake.session.envVars || null
+
     this.ssh
-      .shell({
-        term: this.sessionState.term,
-        cols: this.sessionState.cols,
-        rows: this.sessionState.rows
-      })
-      .then(stream => {
-        stream.on("data", data => {
+      .shell(
+        {
+          term: this.sessionState.term,
+          cols: this.sessionState.cols,
+          rows: this.sessionState.rows
+        },
+        envVars
+      )
+      .then((stream) => {
+        stream.on("data", (data) => {
           this.socket.emit("data", data.toString("utf-8"))
         })
         // stream.stderr.on("data", data => debug(`STDERR: ${data}`)) // needed for shell.exec
