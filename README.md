@@ -18,6 +18,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Features](#features)
 - [Routes](#routes)
 - [Deprecation Notice](#deprecation-notice)
+- [Client-Side Module](#client-side-module)
 - [Tips](#tips)
 - [Support](#support)
 
@@ -321,9 +322,40 @@ WebSSH2 provides two main routes:
 
 Several configuration options and GET parameters have been deprecated. For a list of removed options and required actions, please refer to [DEPRECATED.md](./DEPRECATED.md).
 
+## Client-Side Module
+WebSSH2 uses a companion module called `webssh2_client` which provides the browser-side terminal interface and WebSocket communication layer.
+
+### About webssh2_client
+
+- **Repository**: [https://github.com/billchurch/webssh2_client](https://github.com/billchurch/webssh2_client)
+- **Purpose**: Provides the browser-based terminal emulator and WebSocket client
+- **Integration**: Automatically included as a dependency in package.json
+- **Version**: The compatible version is managed through the package.json dependency
+
+### Features
+
+The client module provides:
+- Terminal emulation using xterm.js
+- WebSocket communication with the WebSSH2 server
+- User interface for SSH connections
+- Terminal configuration and customization
+- Session management
+- File transfer capabilities
+
+### Client-Server Communication
+
+The server integrates with the client module by:
+1. Serving the client's static files from `/client/public`
+2. Injecting server configuration into the client via `window.webssh2Config`
+3. Managing WebSocket connections for terminal I/O
+4. Handling authentication and session management
+
+### Customization
+
+More to follow...
+
 ## Tips
 
-- To add custom JavaScript, modify `./src/client.htm`, `./src/index.js`, or add your file to `webpack.*.js`.
 - For security, use HTTPS when transmitting credentials via HTTP Basic Auth.
 - Terminal settings for `/ssh/host/:host` can be customized after login via `Menu | Settings` and persist across sessions.
 - You can enable debug from the console by passing the `DEBUG` environment variable to your start script: `DEBUG=webssh*,-webssh2:ssh2 npm run start`. The `webssh2:ssh2` namespace is very chatty and shows all of the SSH protocol information, the `-webssh2:ssh2` excludes that namespace from the line above, otherwise `DEBUG=webssh*` will capture all of the WebSSH2 specific bits. You may also debug Socket.IO and Express related events with `engine`, `socket` and `express` namespaces, or go for broke and debug everything with `DEBUG=*`.
