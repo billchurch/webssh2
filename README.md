@@ -170,6 +170,111 @@ You can customize the Keyboard Interactive authentication behavior using the fol
 
 For more information on SSH keyboard-interactive authentication, refer to [RFC 4256](https://tools.ietf.org/html/rfc4256).
 
+### SSH Private Key Authentication
+
+WebSSH2 supports SSH private key authentication when using the `/ssh/host/` endpoint with a private key configured in the server settings.
+
+#### Configuration
+
+Private key authentication can only be configured through the `config.json` file:
+
+```json
+{
+  "user": {
+    "name": "myuser",
+    "privatekey": "-----BEGIN RSA PRIVATE KEY-----\nYour-Private-Key-Here\n-----END RSA PRIVATE KEY-----",
+    "password": "optional-fallback-password"
+  }
+}
+```
+
+#### Key Requirements
+
+- Only `ssh-rsa` type keys are supported
+- The private key must be in PEM format
+- The key in `config.json` must be on a single line with `\n` as line separators
+- Must include the appropriate header and footer:
+  ```
+  -----BEGIN RSA PRIVATE KEY-----\n[... key content ...]\n-----END RSA PRIVATE KEY-----
+  ```
+
+#### Generating a Private Key
+To generate a new SSH private key, you can use the following command:
+
+```bash
+ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa
+```
+
+#### Converting Your Private Key
+
+To convert your existing SSH private key into the correct format for `config.json`, you can use this bash command:
+
+```bash
+echo '"'$(cat ~/.ssh/id_rsa | tr '\n' '~' | sed 's/~/\\n/g')'"'
+```
+
+This command:
+1. Reads your private key file
+2. Converts newlines to temporary characters
+3. Replaces those characters with `\n`
+4. Wraps the result in quotes
+5. Outputs the key in a format ready to paste into your `config.json`
+
+#### Authentication Process
+
+1. When connecting through the `/ssh/host/` endpoint, WebSSH2 will first attempt to authenticate using the private key specified in `config.json`
+2. If key authentication fails and `user.password` is configured, the system will automatically attempt password authentication
+3. If both authentication methods fail, you'll receive an authentication error
+
+#### Endpoint Support
+
+- `/ssh/host/:host` - Supports private key authentication configured via `config.json`
+- `/ssh` - Does NOT support private key authentication
+
+#### Security Considerations
+
+- Store private keys securely in your server configuration
+- Use appropriate file permissions for your `config.json` file
+- Consider using encrypted private keys for additional security
+- Always use HTTPS when accessing the WebSSH2 service
+
+#### Example Usage
+
+1. Convert and configure your private key:
+   ```bash
+   # First, convert your key
+   echo '"'$(cat ~/.ssh/id_rsa | tr '\n' '~' | sed 's/~/\\n/g')'"'
+   
+   # Copy the output and paste it into config.json
+   ```
+
+2. Configure `config.json`:
+   ```json
+   {
+     "user": {
+       "name": "myuser",
+       "privatekey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpA...[rest of key]...Yh5Q==\n-----END RSA PRIVATE KEY-----",
+       "password": "fallback-password"
+     }
+   }
+   ```
+
+3. Access the service via the `/ssh/host/` endpoint:
+   ```
+   https://your-server:2222/ssh/host/target-server
+   ```
+
+#### Troubleshooting
+
+If key authentication fails, check:
+- Key type is `ssh-rsa`
+- Key format in `config.json` is properly escaped with `\n` line separators
+- Key permissions on the target SSH server
+- Server's `authorized_keys` file configuration
+- SSH server logs for specific authentication failure reasons
+
+For additional support or troubleshooting, please open an issue on the GitHub repository.
+
 ## Routes
 
 WebSSH2 provides two main routes:
