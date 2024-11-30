@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.21"></a>
+## [0.2.21](https://github.com/billchurch/WebSSH2/compare/v0.2.20...v0.2.21) (2024-11-30)
+
+
+### Bug Fixes
+
+* bug: support /ssh/host without a hostname [#373](https://github.com/billchurch/WebSSH2/issues/373) ([8c55c83](https://github.com/billchurch/WebSSH2/commit/8c55c83))
+* config move algorithims to ssh property ([52a989b](https://github.com/billchurch/WebSSH2/commit/52a989b))
+* pass full ssh error to browser ([27d9bfb](https://github.com/billchurch/WebSSH2/commit/27d9bfb))
+* username/password in config file no longer honored [#374](https://github.com/billchurch/WebSSH2/issues/374) ([4185df7](https://github.com/billchurch/WebSSH2/commit/4185df7))
+
+
+### Features
+
+* add `ssh.disableInteractiveAuth` feature in support of [#379](https://github.com/billchurch/WebSSH2/issues/379) ([c7dfad0](https://github.com/billchurch/WebSSH2/commit/c7dfad0))
+* implement ssh private key auth [#379](https://github.com/billchurch/WebSSH2/issues/379) ([402b678](https://github.com/billchurch/WebSSH2/commit/402b678))
+
+
+
 <a name="0.2.20"></a>
 ## [0.2.20](https://github.com/billchurch/WebSSH2/compare/v0.2.19...v0.2.20) (2024-08-22)
 
