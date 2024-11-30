@@ -11,13 +11,13 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 ## Table of Contents
 
 - [Requirements](#requirements)
+- [Breaking Changes](#breaking-changes)
 - [Installation](#installation)
 - [Docker Setup](#docker-setup)
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Features](#features)
 - [Routes](#routes)
-- [Deprecation Notice](#deprecation-notice)
 - [Client-Side Module](#client-side-module)
 - [Tips](#tips)
 - [Support](#support)
@@ -25,6 +25,10 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 ## Requirements
 
 - Node.js 6.9.1
+
+## Breaking Changes
+- See [CONFIG.md](./CONFIG.md) for a list of breaking changes to the config.json file.
+- See [DEPRECATED.md](./DEPRECATED.md) for a list of deprecated options.
 
 ## Installation
 
@@ -390,10 +394,6 @@ WebSSH2 provides two main routes:
 - **Features:** 
   - Quick connections to specific hosts
   - Optional `port` parameter (e.g., `?port=2222`)
-
-## Deprecation Notice
-
-Several configuration options and GET parameters have been deprecated. For a list of removed options and required actions, please refer to [DEPRECATED.md](./DEPRECATED.md).
 
 ## Client-Side Module
 WebSSH2 uses a companion module called `webssh2_client` which provides the browser-side terminal interface and WebSocket communication layer.

@@ -4,16 +4,7 @@ This document outlines features, configuration options, and parameters that have
 
 ## Removed `config.json` Options
 
-The following configuration options have been **removed** from `config.json`:
-
-### Terminal Configuration
-
-The following options have been replaced with client-side terminal configuration handling in the browser:
-
-- `terminal.cursorBlink` (boolean): Whether the cursor blinks.
-- `terminal.scrollback` (integer): Scrollback limit.
-- `terminal.tabStopWidth` (integer): Tab stop width.
-- `terminal.bellStyle` (string): Bell style.
+See [CONFIG.md](./CONFIG.md) for a list of removed or changed options.
 
 ### Logging Configuration
 
