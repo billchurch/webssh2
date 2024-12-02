@@ -26,7 +26,7 @@ class WebSSH2Socket extends EventEmitter {
       username: null,
       password: null,
       privateKey: null,
-      keyPassword: null,
+      passphrase: null,
       host: null,
       port: null,
       term: null,
@@ -146,7 +146,7 @@ class WebSSH2Socket extends EventEmitter {
           username: creds.username,
           password: creds.password,
           privateKey: creds.privateKey,
-          keyPassword: creds.keyPassword,
+          passphrase: creds.passphrase,
           host: creds.host,
           port: creds.port
         })
