@@ -32,14 +32,14 @@ function createAuthMiddleware(config) {
   // eslint-disable-next-line consistent-return
   return (req, res, next) => {
     // Check if username and either password or private key is configured
-    if (config.user.name && (config.user.password || config.user.privatekey)) {
+    if (config.user.name && (config.user.password || config.user.privateKey)) {
       req.session.sshCredentials = {
         username: config.user.name
       }
 
       // Add credentials based on what's available
-      if (config.user.privatekey) {
-        req.session.sshCredentials.privatekey = config.user.privatekey
+      if (config.user.privateKey) {
+        req.session.sshCredentials.privateKey = config.user.privateKey
       }
       if (config.user.password) {
         req.session.sshCredentials.password = config.user.password

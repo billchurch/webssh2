@@ -26,7 +26,8 @@ const configSchema = {
       type: "object",
       properties: {
         name: { type: ["string", "null"] },
-        password: { type: ["string", "null"] }
+        password: { type: ["string", "null"] },
+        privateKey: { type: ["string", "null"] }
       },
       required: ["name", "password"]
     },
@@ -39,7 +40,6 @@ const configSchema = {
         readyTimeout: { type: "integer" },
         keepaliveInterval: { type: "integer" },
         keepaliveCountMax: { type: "integer" },
-        disableInteractiveAuth: { type: "boolean" },
         algorithms: {
           type: "object",
           properties: {

@@ -47,7 +47,7 @@ describe("SSHConnection", () => {
       user: {
         name: null,
         password: null,
-        privatekey: null
+        privateKey: null
       }
     }
 
@@ -149,7 +149,7 @@ MIIEpTestKeyContentHere
           port: 22,
           username: "user",
           password: "pass",
-          privatekey: validPrivateKey
+          privateKey: validPrivateKey
         }
 
         return sshConnection.connect(mockCreds).then(() => {
@@ -168,7 +168,7 @@ MIIEpTestKeyContentHere
           port: 22,
           username: "user",
           password: "pass",
-          privatekey: validPrivateKey
+          privateKey: validPrivateKey
         }
 
         let authAttempts = 0
@@ -205,7 +205,7 @@ MIIEpTestKeyContentHere
           host: "localhost",
           port: 22,
           username: "user",
-          privatekey: "invalid-key-format"
+          privateKey: "invalid-key-format"
         }
 
         return sshConnection.connect(mockCreds).catch((error) => {

@@ -160,9 +160,9 @@ class SSHConnection extends EventEmitter {
     }
 
     // Try private key first if available and useKey is true
-    if (useKey && (creds.privatekey || this.config.user.privatekey)) {
+    if (useKey && (creds.privateKey || this.config.user.privateKey)) {
       debug("Using private key authentication")
-      const privateKey = creds.privatekey || this.config.user.privatekey
+      const privateKey = creds.privateKey || this.config.user.privateKey
       if (!this.validatePrivateKey(privateKey)) {
         throw new SSHConnectionError("Invalid private key format")
       }

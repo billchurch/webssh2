@@ -152,7 +152,7 @@ describe("utils", () => {
         user: {
           name: null,
           password: null,
-          privatekey: null
+          privateKey: null
         },
         ssh: {
           host: null,

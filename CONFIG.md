@@ -84,7 +84,7 @@ Renamed and expanded options:
 ## Detailed Changes
 
 ### 1. Authentication Options
-- Added support for SSH private key authentication via `user.privatekey`
+- Added support for SSH private key authentication via `user.privateKey`
 - Removed `user.overridebasic` option
 - Added keyboard-interactive authentication controls
 
@@ -128,7 +128,7 @@ These settings are now managed client-side.
   "user": {
     "name": null,
     "password": null,
-    "privatekey": null
+    "privateKey": null
   },
   "ssh": {
     "host": null,

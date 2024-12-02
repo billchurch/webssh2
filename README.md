@@ -115,7 +115,7 @@ Edit `config.json` to customize the following options:
 - `user.name` - _string_ - Default SSH username (default: `null`)
 - `user.password` - _string_ - Default SSH password (default: `null`)
 - `ssh.host` - _string_ - Default SSH host (default: `null`)
-- `user.privatekey` - _string_ - Default SSH private key (default: `null`)
+- `user.privateKey` - _string_ - Default SSH private key (default: `null`)
 - `ssh.port` - _integer_ - Default SSH port (default: `22`)
 - `ssh.term` - _string_ - Terminal emulation (default: `"xterm-color"`)
 - `ssh.readyTimeout` - _integer_ - SSH handshake timeout in ms (default: `20000`)
@@ -206,7 +206,7 @@ Private key authentication can only be configured through the `config.json` file
 {
   "user": {
     "name": "myuser",
-    "privatekey": "-----BEGIN RSA PRIVATE KEY-----\nYour-Private-Key-Here\n-----END RSA PRIVATE KEY-----",
+    "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nYour-Private-Key-Here\n-----END RSA PRIVATE KEY-----",
     "password": "optional-fallback-password"
   }
 }
@@ -277,7 +277,7 @@ This command:
    {
      "user": {
        "name": "myuser",
-       "privatekey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpA...[rest of key]...Yh5Q==\n-----END RSA PRIVATE KEY-----",
+       "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpA...[rest of key]...Yh5Q==\n-----END RSA PRIVATE KEY-----",
        "password": "fallback-password"
      }
    }

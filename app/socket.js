@@ -25,7 +25,7 @@ class WebSSH2Socket extends EventEmitter {
       authenticated: false,
       username: null,
       password: null,
-      privatekey: null,
+      privateKey: null,
       keyPassword: null,
       host: null,
       port: null,
@@ -117,11 +117,6 @@ class WebSSH2Socket extends EventEmitter {
         ? creds.term
         : this.config.ssh.term
 
-      // Map the client's privateKey field to our internal privatekey field if present
-      if (creds.privateKey) {
-        creds.privatekey = creds.privateKey
-      }
-
       this.initializeConnection(creds)
     } else {
       debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
@@ -139,8 +134,8 @@ class WebSSH2Socket extends EventEmitter {
     )
 
     // Add private key from config if available and not provided in creds
-    if (this.config.user.privatekey && !creds.privatekey) {
-      creds.privatekey = this.config.user.privatekey
+    if (this.config.user.privateKey && !creds.privateKey) {
+      creds.privateKey = this.config.user.privateKey
     }
 
     this.ssh
@@ -150,7 +145,7 @@ class WebSSH2Socket extends EventEmitter {
           authenticated: true,
           username: creds.username,
           password: creds.password,
-          privatekey: creds.privatekey,
+          privateKey: creds.privateKey,
           keyPassword: creds.keyPassword,
           host: creds.host,
           port: creds.port
