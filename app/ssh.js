@@ -30,24 +30,19 @@ class SSHConnection extends EventEmitter {
    * @returns {boolean} - Whether the key appears to be valid
    */
   validatePrivateKey(key) {
-    const keyStart = "-----BEGIN RSA PRIVATE KEY-----"
-    const keyEnd = "-----END RSA PRIVATE KEY-----"
-    return (
-      typeof key === "string" &&
-      key.includes(keyStart) &&
-      key.includes(keyEnd) &&
-      key.trim().length > keyStart.length + keyEnd.length
-    )
+    const keyPattern =
+      /^-----BEGIN (?:RSA )?PRIVATE KEY-----\r?\n([A-Za-z0-9+/=\r\n]+)\r?\n-----END (?:RSA )?PRIVATE KEY-----\r?\n?$/
+    return keyPattern.test(key)
   }
 
   /**
-   * Connects to the SSH server using the provided credentials.
-   * @param {Object} creds - The credentials object containing host, port, username, and optional password.
-   * @returns {Promise<SSH>} - A promise that resolves with the SSH connection instance.
+   * Attempts to connect using the provided credentials
+   * @param {Object} creds - The credentials object
+   * @returns {Promise<Object>} - A promise that resolves with the SSH connection
    */
   connect(creds) {
-    this.creds = creds
     debug("connect: %O", maskSensitiveData(creds))
+    this.creds = creds
     return new Promise((resolve, reject) => {
       if (this.conn) {
         this.conn.end()
@@ -58,6 +53,7 @@ class SSHConnection extends EventEmitter {
 
       // First try with key authentication if available
       const sshConfig = this.getSSHConfig(creds, true)
+      debug("Initial connection config: %O", maskSensitiveData(sshConfig))
 
       this.setupConnectionHandlers(resolve, reject)
 
@@ -78,14 +74,6 @@ class SSHConnection extends EventEmitter {
     this.conn.on("ready", () => {
       debug(`connect: ready: ${this.creds.host}`)
       resolve(this.conn)
-    })
-
-    this.conn.on("end", () => {
-      debug("connect: end")
-    })
-
-    this.conn.on("close", () => {
-      debug("connect: close")
     })
 
     this.conn.on("error", (err) => {
@@ -114,7 +102,6 @@ class SSHConnection extends EventEmitter {
           this.setupConnectionHandlers(resolve, reject)
           this.conn.connect(passwordConfig)
         } else {
-          // No password available, emit event to request password
           debug("No password available, requesting password from client")
           this.emit("password-prompt", {
             host: this.creds.host,

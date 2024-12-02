@@ -87,14 +87,9 @@ function getValidatedPort(portInput) {
  * - port (number)
  * AND either:
  * - password (string) OR
- * - privatekey (string)
+ * - privatekey/privateKey (string)
  *
  * @param {Object} creds - The credentials object.
- * @param {string} creds.username - The username.
- * @param {string} [creds.password] - The password.
- * @param {string} [creds.privatekey] - The private key.
- * @param {string} creds.host - The host.
- * @param {number} creds.port - The port.
  * @returns {boolean} - Returns true if the credentials are valid, otherwise false.
  */
 function isValidCredentials(creds) {
@@ -109,9 +104,10 @@ function isValidCredentials(creds) {
     return false
   }
 
-  // Must have either password or privatekey
+  // Must have either password or privatekey/privateKey
   const hasPassword = typeof creds.password === "string"
-  const hasPrivateKey = typeof creds.privatekey === "string"
+  const hasPrivateKey =
+    typeof creds.privatekey === "string" || typeof creds.privateKey === "string"
 
   return hasPassword || hasPrivateKey
 }

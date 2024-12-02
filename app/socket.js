@@ -25,6 +25,8 @@ class WebSSH2Socket extends EventEmitter {
       authenticated: false,
       username: null,
       password: null,
+      privatekey: null,
+      keyPassword: null,
       host: null,
       port: null,
       term: null,
@@ -110,9 +112,16 @@ class WebSSH2Socket extends EventEmitter {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
 
     if (isValidCredentials(creds)) {
+      // Set term if provided, otherwise use config default
       this.sessionState.term = validateSshTerm(creds.term)
         ? creds.term
         : this.config.ssh.term
+
+      // Map the client's privateKey field to our internal privatekey field if present
+      if (creds.privateKey) {
+        creds.privatekey = creds.privateKey
+      }
+
       this.initializeConnection(creds)
     } else {
       debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
@@ -129,9 +138,8 @@ class WebSSH2Socket extends EventEmitter {
       maskSensitiveData(creds)
     )
 
-    // Add private key from config if available
+    // Add private key from config if available and not provided in creds
     if (this.config.user.privatekey && !creds.privatekey) {
-      // eslint-disable-next-line no-param-reassign
       creds.privatekey = this.config.user.privatekey
     }
 
@@ -143,6 +151,7 @@ class WebSSH2Socket extends EventEmitter {
           username: creds.username,
           password: creds.password,
           privatekey: creds.privatekey,
+          keyPassword: creds.keyPassword,
           host: creds.host,
           port: creds.port
         })
@@ -170,21 +179,16 @@ class WebSSH2Socket extends EventEmitter {
         debug(
           `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
         )
-        handleError(new SSHConnectionError(`${err.message}`))
-        this.socket.emit("ssherror", `${err.message}`)
+        const errorMessage =
+          err instanceof SSHConnectionError
+            ? err.message
+            : "SSH connection failed"
+        this.socket.emit("authentication", {
+          action: "auth_result",
+          success: false,
+          message: errorMessage
+        })
       })
-
-    // Set up password prompt handler
-    this.ssh.on("password-prompt", (data) => {
-      this.socket.emit("authentication", {
-        action: "password_prompt",
-        message: `Key authentication failed. Please enter password for ${data.username}@${data.host}`
-      })
-    })
-
-    this.socket.on("password_response", (password) => {
-      this.ssh.emit("password-response", password)
-    })
   }
 
   /**
