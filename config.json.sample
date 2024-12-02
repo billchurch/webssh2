@@ -9,7 +9,7 @@
   "user": {
     "name": null,
     "password": null,
-    "privatekey": null
+    "privateKey": null
   },
   "session": {
     "secret": "secret",
