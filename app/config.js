@@ -22,7 +22,9 @@ const defaultConfig = {
   },
   user: {
     name: null,
-    password: null
+    password: null,
+    privateKey: null,
+    passphrase: null
   },
   ssh: {
     host: null,

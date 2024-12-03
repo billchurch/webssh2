@@ -196,7 +196,7 @@ For more information on SSH keyboard-interactive authentication, refer to [RFC 4
 
 ### SSH Private Key Authentication
 
-WebSSH2 supports SSH private key authentication when using the `/ssh/host/` endpoint with a private key configured in the server settings.
+WebSSH2 supports SSH private key authentication when using the `/ssh/host/` endpoint with a private key configured in the server settings or via the interactive method with the `/ssh/` endpoint. 
 
 #### Configuration
 
@@ -215,13 +215,17 @@ Private key authentication can only be configured through the `config.json` file
 #### Key Requirements
 
 - Only `ssh-rsa` type keys are supported
+- Passphrase encryption is supported, and if used the `passphrase` must be provided
 - The private key must be in PEM format
 - The key in `config.json` must be on a single line with `\n` as line separators
 - Must include the appropriate header and footer:
   ```
   -----BEGIN RSA PRIVATE KEY-----\n[... key content ...]\n-----END RSA PRIVATE KEY-----
   ```
-
+  or for encrypted keys:
+  ```
+  -----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,5930F19760F7FBBC865400940A89D954\n\n[... key content ...]\n-----END RSA PRIVATE KEY-----
+  ```
 #### Generating a Private Key
 To generate a new SSH private key, you can use the following command:
 
@@ -231,10 +235,10 @@ ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa
 
 #### Converting Your Private Key
 
-To convert your existing SSH private key into the correct format for `config.json`, you can use this bash command:
+Keys uploaded or pasted using the interactive mode through the `/ssh` endpoint can work as-is, however if using a key with `config.json` you must convert your existing SSH private key into the correct format (single line). A bash one-liner you can to accomplish this is:
 
 ```bash
-echo '"'$(cat ~/.ssh/id_rsa | tr '\n' '~' | sed 's/~/\\n/g')'"'
+echo '    "privateKey": "'$(cat ~/.ssh/id_rsa | tr '\n' '~' | sed 's/~/\\n/g')'"'
 ```
 
 This command:

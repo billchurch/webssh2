@@ -41,6 +41,15 @@ class SSHConnection extends EventEmitter {
   }
 
   /**
+   * Checks if a private key is encrypted
+   * @param {string} key - The private key to check
+   * @returns {boolean} - Whether the key is encrypted
+   */
+  isEncryptedKey(key) {
+    return key.includes("Proc-Type: 4,ENCRYPTED")
+  }
+
+  /**
    * Attempts to connect using the provided credentials
    * @param {Object} creds - The credentials object
    * @returns {Promise<Object>} - A promise that resolves with the SSH connection
@@ -207,9 +216,9 @@ class SSHConnection extends EventEmitter {
 
   /**
    * Generates the SSH configuration object based on credentials.
-   * @param {Object} creds - The credentials object containing host, port, username, and optional password/privateKey/passphrase.
+   * @param {Object} creds - The credentials object
    * @param {boolean} useKey - Whether to attempt key authentication
-   * @returns {Object} - The SSH configuration object.
+   * @returns {Object} - The SSH configuration object
    */
   getSSHConfig(creds, useKey) {
     const config = {
@@ -235,10 +244,16 @@ class SSHConnection extends EventEmitter {
 
       config.privateKey = privateKey
 
-      // Add passphrase if provided
-      if (creds.passphrase) {
-        debug("Passphrase provided for private key")
-        config.passphrase = creds.passphrase
+      // Check if key is encrypted and passphrase is needed
+      if (this.isEncryptedKey(privateKey)) {
+        const passphrase = creds.passphrase || this.config.user.passphrase
+        if (!passphrase) {
+          throw new SSHConnectionError(
+            "Encrypted private key requires a passphrase"
+          )
+        }
+        debug("Adding passphrase for encrypted private key")
+        config.passphrase = passphrase
       }
     } else if (creds.password) {
       debug("Using password authentication")

@@ -84,7 +84,7 @@ Renamed and expanded options:
 ## Detailed Changes
 
 ### 1. Authentication Options
-- Added support for SSH private key authentication via `user.privateKey`
+- Added support for SSH private key authentication via `user.privateKey` and passphrase encrypted private keys via `user.passphrase`
 - Removed `user.overridebasic` option
 - Added keyboard-interactive authentication controls
 
@@ -128,7 +128,8 @@ These settings are now managed client-side.
   "user": {
     "name": null,
     "password": null,
-    "privateKey": null
+    "privateKey": null,
+    "passphrase": null
   },
   "ssh": {
     "host": null,
@@ -138,7 +139,39 @@ These settings are now managed client-side.
     "keepaliveInterval": 120000,
     "keepaliveCountMax": 10,
     "algorithms": {
-      // ... algorithm configurations ...
+      "cipher": [
+        "aes128-ctr",
+        "aes192-ctr",
+        "aes256-ctr",
+        "aes128-gcm",
+        "aes128-gcm@openssh.com",
+        "aes256-gcm",
+        "aes256-gcm@openssh.com",
+        "aes256-cbc"
+      ],
+      "compress": [
+        "none",
+        "zlib@openssh.com",
+        "zlib"
+      ],
+      "hmac": [
+        "hmac-sha2-256",
+        "hmac-sha2-512",
+        "hmac-sha1"
+      ],
+      "kex": [
+        "ecdh-sha2-nistp256",
+        "ecdh-sha2-nistp384",
+        "ecdh-sha2-nistp521",
+        "diffie-hellman-group-exchange-sha256",
+        "diffie-hellman-group14-sha1"
+      ],
+      "serverHostKey": [
+        "ecdsa-sha2-nistp256",
+        "ecdsa-sha2-nistp384",
+        "ecdsa-sha2-nistp521",
+        "ssh-rsa"
+      ]
     }
   },
   "options": {

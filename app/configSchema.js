@@ -27,7 +27,8 @@ const configSchema = {
       properties: {
         name: { type: ["string", "null"] },
         password: { type: ["string", "null"] },
-        privateKey: { type: ["string", "null"] }
+        privateKey: { type: ["string", "null"] },
+        passphrase: { type: ["string", "null"] }
       },
       required: ["name", "password"]
     },
