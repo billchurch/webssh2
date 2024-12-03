@@ -25,14 +25,19 @@ class SSHConnection extends EventEmitter {
   }
 
   /**
-   * Validates the format of an RSA private key
+   * Validates the format of an RSA private key, supporting both standard and encrypted keys
    * @param {string} key - The private key string to validate
    * @returns {boolean} - Whether the key appears to be valid
    */
   validatePrivateKey(key) {
-    const keyPattern =
-      /^-----BEGIN (?:RSA )?PRIVATE KEY-----\r?\n([A-Za-z0-9+/=\r\n]+)\r?\n-----END (?:RSA )?PRIVATE KEY-----\r?\n?$/
-    return keyPattern.test(key)
+    // Pattern for standard RSA private key
+    const standardKeyPattern = /^-----BEGIN (?:RSA )?PRIVATE KEY-----\r?\n([A-Za-z0-9+/=\r\n]+)\r?\n-----END (?:RSA )?PRIVATE KEY-----\r?\n?$/
+
+    // Pattern for encrypted RSA private key
+    const encryptedKeyPattern = /^-----BEGIN RSA PRIVATE KEY-----\r?\n(?:Proc-Type: 4,ENCRYPTED\r?\nDEK-Info: ([^\r\n]+)\r?\n\r?\n)([A-Za-z0-9+/=\r\n]+)\r?\n-----END RSA PRIVATE KEY-----\r?\n?$/
+
+    // Test for either standard or encrypted key format
+    return standardKeyPattern.test(key) || encryptedKeyPattern.test(key)
   }
 
   /**
@@ -76,7 +81,7 @@ class SSHConnection extends EventEmitter {
       resolve(this.conn)
     })
 
-    this.conn.on("error", (err) => {
+    this.conn.on("error", err => {
       debug(`connect: error: ${err.message}`)
 
       // Check if this is an authentication error and we haven't exceeded max attempts
@@ -109,7 +114,7 @@ class SSHConnection extends EventEmitter {
           })
 
           // Listen for password response one time
-          this.once("password-response", (password) => {
+          this.once("password-response", password => {
             this.creds.password = password
             const newConfig = this.getSSHConfig(this.creds, false)
             this.setupConnectionHandlers(resolve, reject)
@@ -141,8 +146,68 @@ class SSHConnection extends EventEmitter {
   }
 
   /**
+   * Handles keyboard-interactive authentication prompts.
+   * @param {string} name - The name of the authentication request.
+   * @param {string} instructions - The instructions for the keyboard-interactive prompt.
+   * @param {string} lang - The language of the prompt.
+   * @param {Array<Object>} prompts - The list of prompts provided by the server.
+   * @param {Function} finish - The callback to complete the keyboard-interactive authentication.
+   */
+
+  handleKeyboardInteractive(name, instructions, lang, prompts, finish) {
+    debug("handleKeyboardInteractive: Keyboard-interactive auth %O", prompts)
+
+    // Check if we should always send prompts to the client
+    if (this.config.ssh.alwaysSendKeyboardInteractivePrompts) {
+      this.sendPromptsToClient(name, instructions, prompts, finish)
+      return
+    }
+
+    const responses = []
+    let shouldSendToClient = false
+
+    for (let i = 0; i < prompts.length; i += 1) {
+      if (
+        prompts[i].prompt.toLowerCase().includes("password") &&
+        this.creds.password
+      ) {
+        responses.push(this.creds.password)
+      } else {
+        shouldSendToClient = true
+        break
+      }
+    }
+
+    if (shouldSendToClient) {
+      this.sendPromptsToClient(name, instructions, prompts, finish)
+    } else {
+      finish(responses)
+    }
+  }
+
+  /**
+   * Sends prompts to the client for keyboard-interactive authentication.
+   *
+   * @param {string} name - The name of the authentication method.
+   * @param {string} instructions - The instructions for the authentication.
+   * @param {Array<{ prompt: string, echo: boolean }>} prompts - The prompts to be sent to the client.
+   * @param {Function} finish - The callback function to be called when the client responds.
+   */
+  sendPromptsToClient(name, instructions, prompts, finish) {
+    this.emit("keyboard-interactive", {
+      name: name,
+      instructions: instructions,
+      prompts: prompts.map(p => ({ prompt: p.prompt, echo: p.echo }))
+    })
+
+    this.once("keyboard-interactive-response", responses => {
+      finish(responses)
+    })
+  }
+
+  /**
    * Generates the SSH configuration object based on credentials.
-   * @param {Object} creds - The credentials object containing host, port, username, and optional password.
+   * @param {Object} creds - The credentials object containing host, port, username, and optional password/privateKey/passphrase.
    * @param {boolean} useKey - Whether to attempt key authentication
    * @returns {Object} - The SSH configuration object.
    */
@@ -163,10 +228,18 @@ class SSHConnection extends EventEmitter {
     if (useKey && (creds.privateKey || this.config.user.privateKey)) {
       debug("Using private key authentication")
       const privateKey = creds.privateKey || this.config.user.privateKey
+
       if (!this.validatePrivateKey(privateKey)) {
         throw new SSHConnectionError("Invalid private key format")
       }
+
       config.privateKey = privateKey
+
+      // Add passphrase if provided
+      if (creds.passphrase) {
+        debug("Passphrase provided for private key")
+        config.passphrase = creds.passphrase
+      }
     } else if (creds.password) {
       debug("Using password authentication")
       config.password = creds.password
@@ -234,7 +307,7 @@ class SSHConnection extends EventEmitter {
     }
 
     if (envVars) {
-      Object.keys(envVars).forEach((key) => {
+      Object.keys(envVars).forEach(key => {
         env[key] = envVars[key]
       })
     }
