@@ -3,6 +3,7 @@
 
 const express = require("express")
 const config = require("./config")
+const SSHConnection = require("./ssh")
 const socketHandler = require("./socket")
 const sshRoutes = require("./routes")(config)
 const { applyMiddleware } = require("./middleware")
@@ -53,7 +54,7 @@ function initializeServer() {
     const io = configureSocketIO(server, sessionMiddleware, config)
 
     // Set up Socket.IO listeners
-    socketHandler(io, config)
+    socketHandler(io, config, SSHConnection)
 
     // Start the server
     startServer(server, config)

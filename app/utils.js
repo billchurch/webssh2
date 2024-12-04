@@ -239,6 +239,7 @@ function parseEnvVars(envString) {
 
   for (let i = 0; i < pairs.length; i += 1) {
     const pair = pairs[i].split(":")
+    // eslint-disable-next-line no-continue
     if (pair.length !== 2) continue
 
     const key = pair[0].trim()

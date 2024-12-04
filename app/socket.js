@@ -3,11 +3,8 @@
 
 const validator = require("validator")
 const EventEmitter = require("events")
-const SSHConnection = require("./ssh")
 const { createNamespacedDebug } = require("./logger")
 const { SSHConnectionError, handleError } = require("./errors")
-
-const debug = createNamespacedDebug("socket")
 const {
   isValidCredentials,
   maskSensitiveData,
@@ -15,12 +12,21 @@ const {
 } = require("./utils")
 const { MESSAGES } = require("./constants")
 
+const debug = createNamespacedDebug("socket")
+
 class WebSSH2Socket extends EventEmitter {
-  constructor(socket, config) {
+  /**
+   * Creates a new WebSSH2Socket instance
+   * @param {Object} socket - The Socket.IO socket instance
+   * @param {Object} config - The application configuration
+   * @param {Function} SSHConnectionClass - The SSH connection class constructor
+   */
+  constructor(socket, config, SSHConnectionClass) {
     super()
     this.socket = socket
     this.config = config
-    this.ssh = new SSHConnection(config)
+    this.SSHConnectionClass = SSHConnectionClass
+    this.ssh = null
     this.sessionState = {
       authenticated: false,
       username: null,
@@ -61,10 +67,6 @@ class WebSSH2Socket extends EventEmitter {
       debug(`handleConnection: ${this.socket.id}, emitting request_auth`)
       this.socket.emit("authentication", { action: "request_auth" })
     }
-
-    this.ssh.on("keyboard-interactive", data => {
-      this.handleKeyboardInteractive(data)
-    })
 
     this.socket.on("authenticate", creds => {
       this.handleAuthenticate(creds)
@@ -112,7 +114,6 @@ class WebSSH2Socket extends EventEmitter {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
 
     if (isValidCredentials(creds)) {
-      // Set term if provided, otherwise use config default
       this.sessionState.term = validateSshTerm(creds.term)
         ? creds.term
         : this.config.ssh.term
@@ -135,8 +136,17 @@ class WebSSH2Socket extends EventEmitter {
 
     // Add private key from config if available and not provided in creds
     if (this.config.user.privateKey && !creds.privateKey) {
+      // eslint-disable-next-line no-param-reassign
       creds.privateKey = this.config.user.privateKey
     }
+
+    // Create new SSH connection instance
+    this.ssh = new this.SSHConnectionClass(this.config)
+
+    // Set up SSH event handlers
+    this.ssh.on("keyboard-interactive", data => {
+      this.handleKeyboardInteractive(data)
+    })
 
     this.ssh
       .connect(creds)
@@ -170,7 +180,7 @@ class WebSSH2Socket extends EventEmitter {
 
         this.socket.emit("getTerminal", true)
       })
-      .catch((err) => {
+      .catch(err => {
         debug(
           `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
         )
@@ -217,8 +227,8 @@ class WebSSH2Socket extends EventEmitter {
         },
         envVars
       )
-      .then((stream) => {
-        stream.on("data", (data) => {
+      .then(stream => {
+        stream.on("data", data => {
           this.socket.emit("data", data.toString("utf-8"))
         })
         // stream.stderr.on("data", data => debug(`STDERR: ${data}`)) // needed for shell.exec
@@ -353,6 +363,10 @@ class WebSSH2Socket extends EventEmitter {
   }
 }
 
-module.exports = function(io, config) {
-  io.on("connection", socket => new WebSSH2Socket(socket, config))
+// Modified export to include dependency injection
+module.exports = function(io, config, SSHConnectionClass) {
+  io.on(
+    "connection",
+    socket => new WebSSH2Socket(socket, config, SSHConnectionClass)
+  )
 }
