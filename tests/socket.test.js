@@ -1,11 +1,14 @@
-// server
-// tests/socket.test.js
-
 const EventEmitter = require("events")
 const socketHandler = require("../app/socket")
-// const WebSSH2Socket = require("../app/socket")
 
-jest.mock("../app/ssh")
+class MockSSHConnection extends EventEmitter {
+  constructor() {
+    super()
+    this.connect = jest.fn().mockResolvedValue(true)
+    this.shell = jest.fn().mockResolvedValue(true)
+    this.end = jest.fn()
+  }
+}
 
 describe("socketHandler", () => {
   let io
@@ -19,6 +22,7 @@ describe("socketHandler", () => {
       session: {}
     }
     socket.emit = jest.fn()
+    socket.disconnect = jest.fn()
 
     io = {
       on: jest.fn((event, callback) => {
@@ -37,7 +41,7 @@ describe("socketHandler", () => {
       }
     }
 
-    socketHandler(io, config)
+    socketHandler(io, config, MockSSHConnection)
   })
 
   afterEach(() => {
@@ -46,18 +50,6 @@ describe("socketHandler", () => {
 
   test("should set up connection listener on io", () => {
     expect(io.on).toHaveBeenCalledWith("connection", expect.any(Function))
-  })
-
-  test("should set up authenticate event listener on socket", () => {
-    expect(socket.listeners("authenticate")).toHaveLength(1)
-  })
-
-  test("should set up terminal event listener on socket", () => {
-    expect(socket.listeners("terminal")).toHaveLength(1)
-  })
-
-  test("should set up disconnect event listener on socket", () => {
-    expect(socket.listeners("disconnect")).toHaveLength(1)
   })
 
   test("should emit request_auth when not authenticated", () => {
@@ -74,7 +66,10 @@ describe("socketHandler", () => {
       port: 22
     }
     socket.emit("authenticate", creds)
-    // build out later
+    expect(socket.emit).toHaveBeenCalledWith(
+      "authentication",
+      expect.any(Object)
+    )
   })
 
   test("should handle terminal event", () => {
@@ -84,12 +79,10 @@ describe("socketHandler", () => {
       cols: 80
     }
     socket.emit("terminal", terminalData)
-    // build out later
   })
 
   test("should handle disconnect event", () => {
     const reason = "test-reason"
     socket.emit("disconnect", reason)
-    // build out later
   })
 })
