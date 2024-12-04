@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.23"></a>
+## [0.2.23](https://github.com/billchurch/WebSSH2/compare/v0.2.20...v0.2.23) (2024-12-04)
+
+
+### Bug Fixes
+
+*  fixes document: config file moved from /usr/src to /usr/src/app [#372](https://github.com/billchurch/WebSSH2/issues/372) ([bc2d018](https://github.com/billchurch/WebSSH2/commit/bc2d018))
+* bug: support /ssh/host without a hostname [#373](https://github.com/billchurch/WebSSH2/issues/373) ([8c55c83](https://github.com/billchurch/WebSSH2/commit/8c55c83))
+* config change `privatekey` to `privateKey` for consistency with ssh2 module ([a176167](https://github.com/billchurch/WebSSH2/commit/a176167))
+* config move algorithims to ssh property ([52a989b](https://github.com/billchurch/WebSSH2/commit/52a989b))
+* pass full ssh error to browser ([27d9bfb](https://github.com/billchurch/WebSSH2/commit/27d9bfb))
+* username/password in config file no longer honored [#374](https://github.com/billchurch/WebSSH2/issues/374) ([4185df7](https://github.com/billchurch/WebSSH2/commit/4185df7))
+
+
+### Features
+
+* accept private key from client [#381](https://github.com/billchurch/WebSSH2/issues/381) ([829b5cd](https://github.com/billchurch/WebSSH2/commit/829b5cd))
+* add `ssh.disableInteractiveAuth` feature in support of [#379](https://github.com/billchurch/WebSSH2/issues/379) ([c7dfad0](https://github.com/billchurch/WebSSH2/commit/c7dfad0))
+* allow passphrase encrypted ssh keys from client [#381](https://github.com/billchurch/WebSSH2/issues/381) ([056e87b](https://github.com/billchurch/WebSSH2/commit/056e87b))
+* Allow setting environment variables from the URL [#371](https://github.com/billchurch/WebSSH2/issues/371) ([6ec0490](https://github.com/billchurch/WebSSH2/commit/6ec0490))
+* implement ssh private key auth [#379](https://github.com/billchurch/WebSSH2/issues/379) ([402b678](https://github.com/billchurch/WebSSH2/commit/402b678))
+* passphrase encrypted private key authentication [#382](https://github.com/billchurch/WebSSH2/issues/382) ([7961451](https://github.com/billchurch/WebSSH2/commit/7961451))
+* support uploading of ssh-rsa private key from client for authentication [#381](https://github.com/billchurch/WebSSH2/issues/381) ([2f4083f](https://github.com/billchurch/WebSSH2/commit/2f4083f))
+* update jsmasker to v1.4.0 ([3315df1](https://github.com/billchurch/WebSSH2/commit/3315df1))
+* update webssh_client to 0.2.26 ([a1b2e56](https://github.com/billchurch/WebSSH2/commit/a1b2e56))
+* update webssh2_client to 0.2.27 ([b511ce5](https://github.com/billchurch/WebSSH2/commit/b511ce5))
+* webssh2_client to 0.2.28 ([b4b7429](https://github.com/billchurch/WebSSH2/commit/b4b7429))
+
+
+
 <a name="0.2.22"></a>
 ## [0.2.22](https://github.com/billchurch/WebSSH2/compare/v0.2.21...v0.2.22) (2024-11-30)
 
