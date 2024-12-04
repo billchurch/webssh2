@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.24"></a>
+## [0.2.24](https://github.com/billchurch/WebSSH2/compare/v0.2.23...v0.2.24) (2024-12-04)
+
+
+### Bug Fixes
+
+* config.json.sample had `disableInteractiveAuth` set to `true`, changed to `false` ([0c5de9f](https://github.com/billchurch/WebSSH2/commit/0c5de9f))
+
+
+
 <a name="0.2.23"></a>
 ## [0.2.23](https://github.com/billchurch/WebSSH2/compare/v0.2.20...v0.2.23) (2024-12-04)
 
