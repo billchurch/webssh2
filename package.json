@@ -1,6 +1,6 @@
 {
   "name": "webssh2-server",
-  "version": "0.2.22",
+  "version": "2.0.0-alpha",
   "ignore": [
     ".gitignore"
   ],
@@ -25,7 +25,7 @@
     "Bill Church <wmchurch@gmail.com>"
   ],
   "engines": {
-    "node": ">= 6"
+    "node": ">= 22"
   },
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
@@ -49,7 +49,7 @@
     "start": "node index.js",
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
-    "watch": "NODE_ENV=development DEBUG=webssh* nodemon index.js -w app/ -w index.js -w config.json -w package.json",
+    "watch": "NODE_ENV=development DEBUG=webssh* node --watch index.js",
     "test": "jest",
     "release": "standard-version -a -s --release-as patch --commit-all",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
@@ -74,17 +74,14 @@
     ]
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-airbnb-base": "^13.2.0",
-    "eslint-config-prettier": "^3.6.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jest": "^21.27.2",
-    "eslint-plugin-node": "^8.0.1",
-    "eslint-plugin-prettier": "^2.7.0",
+    "@eslint/js": "^9.16.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-security": "^3.0.1",
     "jest": "^21.2.1",
-    "nodemon": "^1.12.1",
-    "prettier": "^1.19.1",
-    "prettier-eslint": "^7.1.0",
+    "prettier": "^3.4.2",
     "standard-version": "^4.4.0"
   },
   "main": "index.js",
