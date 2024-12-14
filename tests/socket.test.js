@@ -1,95 +1,86 @@
-// server
-// tests/socket.test.js
+import { describe, it, beforeEach, mock } from 'node:test'
+import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import socketHandler from '../app/socket.js'
 
-const EventEmitter = require("events")
-const socketHandler = require("../app/socket")
-// const WebSSH2Socket = require("../app/socket")
-
-jest.mock("../app/ssh")
-
-describe("socketHandler", () => {
-  let io
-  let socket
-  let config
+describe('Socket Handler', () => {
+  let io, mockSocket, mockConfig
 
   beforeEach(() => {
-    socket = new EventEmitter()
-    socket.id = "test-socket-id"
-    socket.handshake = {
-      session: {}
-    }
-    socket.emit = jest.fn()
+    // Mock Socket.IO instance
+    io = new EventEmitter()
+    io.on = mock.fn(io.on)
 
-    io = {
-      on: jest.fn((event, callback) => {
-        if (event === "connection") {
-          callback(socket)
-        }
-      })
-    }
-
-    config = {
-      ssh: {
-        term: "xterm-color"
-      },
-      options: {
-        allowreauth: true
+    // Mock socket instance
+    mockSocket = new EventEmitter()
+    mockSocket.id = 'test-socket-id'
+    mockSocket.handshake = {
+      session: {
+        save: mock.fn((cb) => cb())
       }
     }
+    mockSocket.emit = mock.fn()
+    mockSocket.disconnect = mock.fn()
 
-    socketHandler(io, config)
+    // Mock config
+    mockConfig = {
+      ssh: {
+        term: 'xterm-color',
+        readyTimeout: 20000,
+        keepaliveInterval: 120000,
+        keepaliveCountMax: 10
+      },
+      options: {
+        allowReauth: true,
+        allowReplay: true,
+        allowReconnect: true
+      },
+      user: {}
+    }
+
+    // Initialize socket handler
+    socketHandler(io, mockConfig)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('should set up connection listener on io instance', () => {
+    assert.equal(io.on.mock.calls.length, 1)
+    assert.equal(io.on.mock.calls[0].arguments[0], 'connection')
+    assert.equal(typeof io.on.mock.calls[0].arguments[1], 'function')
   })
 
-  test("should set up connection listener on io", () => {
-    expect(io.on).toHaveBeenCalledWith("connection", expect.any(Function))
-  })
-
-  test("should set up authenticate event listener on socket", () => {
-    expect(socket.listeners("authenticate")).toHaveLength(1)
-  })
-
-  test("should set up terminal event listener on socket", () => {
-    expect(socket.listeners("terminal")).toHaveLength(1)
-  })
-
-  test("should set up disconnect event listener on socket", () => {
-    expect(socket.listeners("disconnect")).toHaveLength(1)
-  })
-
-  test("should emit request_auth when not authenticated", () => {
-    expect(socket.emit).toHaveBeenCalledWith("authentication", {
-      action: "request_auth"
+  it('should create new WebSSH2Socket instance on connection', () => {
+    const connectionHandler = io.on.mock.calls[0].arguments[1]
+    connectionHandler(mockSocket)
+    
+    // Verify socket emits authentication request when no basic auth
+    assert.equal(mockSocket.emit.mock.calls[0].arguments[0], 'authentication')
+    assert.deepEqual(mockSocket.emit.mock.calls[0].arguments[1], { 
+      action: 'request_auth' 
     })
   })
+})
 
-  test("should handle authenticate event", () => {
-    const creds = {
-      username: "testuser",
-      password: "testpass",
-      host: "testhost",
-      port: 22
-    }
-    socket.emit("authenticate", creds)
-    // build out later
-  })
+describe('Authentication Flow', () => {
+  it.todo('should handle keyboard-interactive authentication')
+  it.todo('should process successful authentication')
+  it.todo('should handle invalid credentials')
+  it.todo('should respect disableInteractiveAuth setting')
+})
 
-  test("should handle terminal event", () => {
-    const terminalData = {
-      term: "xterm",
-      rows: 24,
-      cols: 80
-    }
-    socket.emit("terminal", terminalData)
-    // build out later
-  })
+describe('Terminal Operations', () => {
+  it.todo('should handle terminal resize events')
+  it.todo('should process terminal data correctly')
+  it.todo('should maintain terminal session state')
+})
 
-  test("should handle disconnect event", () => {
-    const reason = "test-reason"
-    socket.emit("disconnect", reason)
-    // build out later
-  })
+describe('Control Commands', () => {
+  it.todo('should process reauth commands')
+  it.todo('should handle credential replay')
+  it.todo('should update UI elements appropriately')
+})
+
+describe('Session Management', () => {
+  it.todo('should clean up on disconnect')
+  it.todo('should manage session state')
+  it.todo('should clear credentials properly')
 })

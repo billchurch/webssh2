@@ -1,48 +1,33 @@
-// server
-// tests/logger.test.js
+import { test, mock } from 'node:test'
+import assert from 'node:assert/strict'
+import { createNamespacedDebug, logError } from '../app/logger.js'
 
-const createDebug = require("debug")
-const { createNamespacedDebug, logError } = require("../app/logger")
+test('createNamespacedDebug creates debug function with correct namespace', (t) => {
+  const debug = createNamespacedDebug('test')
+  assert.equal(typeof debug, 'function')
+  assert.equal(debug.namespace, 'webssh2:test')
+})
 
-jest.mock("debug")
+test('logError logs error message without error object', (t) => {
+  const consoleMock = mock.method(console, 'error')
 
-describe("logger", () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-    console.error = jest.fn()
-  })
+  logError('test message')
 
-  describe("createNamespacedDebug", () => {
-    it("should create a debug function with the correct namespace", () => {
-      const mockDebug = jest.fn()
-      createDebug.mockReturnValue(mockDebug)
+  assert.equal(consoleMock.mock.calls.length, 1)
+  assert.deepEqual(consoleMock.mock.calls[0].arguments, ['test message'])
 
-      const result = createNamespacedDebug("test")
+  consoleMock.mock.restore()
+})
 
-      expect(createDebug).toHaveBeenCalledWith("webssh2:test")
-      expect(result).toBe(mockDebug)
-    })
-  })
+test('logError logs error message with error object', (t) => {
+  const consoleMock = mock.method(console, 'error')
+  const testError = new Error('test error')
 
-  describe("logError", () => {
-    it("should log an error message without an error object", () => {
-      const message = "Test error message"
+  logError('test message', testError)
 
-      logError(message)
+  assert.equal(consoleMock.mock.calls.length, 2)
+  assert.deepEqual(consoleMock.mock.calls[0].arguments, ['test message'])
+  assert.deepEqual(consoleMock.mock.calls[1].arguments, [`ERROR: ${testError}`])
 
-      expect(console.error).toHaveBeenCalledWith(message)
-      expect(console.error).toHaveBeenCalledTimes(1)
-    })
-
-    it("should log an error message with an error object", () => {
-      const message = "Test error message"
-      const error = new Error("Test error")
-
-      logError(message, error)
-
-      expect(console.error).toHaveBeenCalledWith(message)
-      expect(console.error).toHaveBeenCalledWith("ERROR: Error: Test error")
-      expect(console.error).toHaveBeenCalledTimes(2)
-    })
-  })
+  consoleMock.mock.restore()
 })

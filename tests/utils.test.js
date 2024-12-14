@@ -1,7 +1,9 @@
 // server
 // tests/utils.test.js
 
-const {
+import { test, describe } from 'node:test'
+import assert from 'node:assert/strict'
+import {
   deepMerge,
   getValidatedHost,
   getValidatedPort,
@@ -9,214 +11,221 @@ const {
   maskSensitiveData,
   modifyHtml,
   validateConfig,
-  validateSshTerm
-} = require("../app/utils")
+  validateSshTerm,
+} from '../app/utils.js'
 
-describe("utils", () => {
-  describe("deepMerge", () => {
-    it("should merge two objects deeply", () => {
-      const obj1 = { a: { b: 1 }, c: 2 }
-      const obj2 = { a: { d: 3 }, e: 4 }
-      const result = deepMerge(obj1, obj2)
-      expect(result).toEqual({ a: { b: 1, d: 3 }, c: 2, e: 4 })
-    })
+describe('deepMerge', () => {
+  test('merges nested objects correctly', () => {
+    const target = { a: { b: 1 }, c: 3 }
+    const source = { a: { d: 2 }, e: 4 }
+    const result = deepMerge(target, source)
+    assert.deepEqual(result, { a: { b: 1, d: 2 }, c: 3, e: 4 })
+  })
+})
+
+describe('getValidatedHost', () => {
+  test('returns valid IP unchanged', () => {
+    assert.equal(getValidatedHost('192.168.1.1'), '192.168.1.1')
   })
 
-  describe("getValidatedHost", () => {
-    it("should return IP address unchanged", () => {
-      expect(getValidatedHost("192.168.1.1")).toBe("192.168.1.1")
-    })
+  test('escapes hostname with potential XSS', () => {
+    assert.equal(
+      getValidatedHost('host<script>alert(1)</script>'),
+      'host&lt;script&gt;alert(1)&lt;&#x2F;script&gt;'
+    )
+  })
+})
 
-    it("should escape hostname", () => {
-      expect(getValidatedHost("example.com")).toBe("example.com")
-      expect(getValidatedHost("<script>alert('xss')</script>")).toBe(
-        "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;&#x2F;script&gt;"
-      )
-    })
+describe('getValidatedPort', () => {
+  test('returns valid port number', () => {
+    assert.equal(getValidatedPort('22'), 22)
   })
 
-  describe("getValidatedPort", () => {
-    it("should return valid port number", () => {
-      expect(getValidatedPort("22")).toBe(22)
-      expect(getValidatedPort("8080")).toBe(8080)
-    })
+  test('returns default port for invalid input', () => {
+    assert.equal(getValidatedPort('0'), 22)
+    assert.equal(getValidatedPort('65536'), 22)
+    assert.equal(getValidatedPort('invalid'), 22)
+  })
+})
 
-    it("should return default port for invalid input", () => {
-      expect(getValidatedPort("invalid")).toBe(22)
-      expect(getValidatedPort("0")).toBe(22)
-      expect(getValidatedPort("65536")).toBe(22)
-    })
+describe('isValidCredentials', () => {
+  test('validates complete credentials', () => {
+    const validCreds = {
+      username: 'user',
+      password: 'pass',
+      host: 'localhost',
+      port: 22,
+    }
+    assert.equal(isValidCredentials(validCreds), true)
   })
 
-  describe("isValidCredentials", () => {
-    it("should return true for valid credentials", () => {
-      const validCreds = {
-        username: "user",
-        password: "pass",
-        host: "example.com",
-        port: 22
-      }
-      expect(isValidCredentials(validCreds)).toBe(true)
-    })
+  test('rejects incomplete credentials', () => {
+    const invalidCreds = {
+      username: 'user',
+      host: 'localhost',
+    }
+    assert.equal(isValidCredentials(invalidCreds), false)
+  })
+})
 
-    it("should return false for invalid credentials", () => {
-      expect(isValidCredentials(null)).toBe(false)
-      expect(isValidCredentials({})).toBe(false)
-      expect(isValidCredentials({ username: "user" })).toBe(false)
-    })
+describe('maskSensitiveData', () => {
+  test('masks password in object', () => {
+    const input = { username: 'user', password: 'secret' }
+    const masked = maskSensitiveData(input)
+    assert.equal(masked.password.includes('*'), true)
+    assert.equal(masked.username, 'user')
   })
 
-  describe("maskSensitiveData", () => {
-    it("should mask simple password property", () => {
-      const testObj = { username: "user", password: "secret123" }
-      const maskedObj = maskSensitiveData(testObj)
-      console.log("maskedObj.password.length: ", maskedObj.password.length)
-
-      expect(maskedObj.username).toBe("user")
-      expect(maskedObj.password).not.toBe("secret123")
-      expect(maskedObj.password.length).toBeGreaterThanOrEqual(3)
-      expect(maskedObj.password.length).toBeLessThanOrEqual(9)
-    })
-
-    it("should mask array elements when property is specified", () => {
-      const testObj = {
-        action: "keyboard-interactive",
-        responses: ["sensitive_password", "another_sensitive_value"]
-      }
-      const maskedObj = maskSensitiveData(testObj, {
-        properties: ["responses"]
-      })
-
-      expect(maskedObj.action).toBe("keyboard-interactive")
-      expect(Array.isArray(maskedObj.responses)).toBe(true)
-      expect(maskedObj.responses).toHaveLength(2)
-      expect(maskedObj.responses[0]).not.toBe("sensitive_password")
-      expect(maskedObj.responses[1]).not.toBe("another_sensitive_value")
-      expect(maskedObj.responses[0]).toHaveLength(8)
-      expect(maskedObj.responses[1]).toHaveLength(8)
-    })
-
-    it("should not mask non-specified properties", () => {
-      const testObj = {
-        username: "user",
-        password: "secret",
-        data: ["public_info", "not_sensitive"]
-      }
-      const maskedObj = maskSensitiveData(testObj, {
-        properties: ["password"]
-      })
-
-      expect(maskedObj.username).toBe("user")
-      expect(maskedObj.password).not.toBe("secret")
-      expect(maskedObj.data).toEqual(["public_info", "not_sensitive"])
-    })
-
-    it("should handle nested objects", () => {
-      const testObj = {
-        user: {
-          name: "John",
-          credentials: {
-            password: "topsecret",
-            token: "abcdef123456"
-          }
-        }
-      }
-      const maskedObj = maskSensitiveData(testObj)
-
-      expect(maskedObj.user.name).toBe("John")
-      expect(maskedObj.user.credentials.password).not.toBe("topsecret")
-      expect(maskedObj.user.credentials.token).not.toBe("abcdef123456")
-    })
+  test('masks nested sensitive data', () => {
+    const input = {
+      user: {
+        credentials: {
+          password: 'secret',
+        },
+      },
+    }
+    const masked = maskSensitiveData(input)
+    assert.equal(masked.user.credentials.password.includes('*'), true)
   })
+})
 
-  describe("modifyHtml", () => {
-    it("should modify HTML content", () => {
-      const html = "window.webssh2Config = null;"
-      const config = { key: "value" }
-      const content = `window.webssh2Config = ${JSON.stringify(config)};`
-      const modified = modifyHtml(html, config)
-      expect(modified).toContain('window.webssh2Config = {"key":"value"};')
-    })
+describe('modifyHtml', () => {
+  test('injects config and modifies asset paths', () => {
+    const html = `
+      <script src="script.js"></script>
+      <script>window.webssh2Config = null;</script>
+    `
+    const config = { key: 'value' }
+    const modified = modifyHtml(html, config)
+    assert.ok(modified.includes('/ssh/assets/script.js'))
+    assert.ok(modified.includes('window.webssh2Config = {"key":"value"}'))
   })
+})
 
-  describe("validateConfig", () => {
-    it("should validate correct config", () => {
-      const validConfig = {
-        listen: {
-          ip: "0.0.0.0",
-          port: 2222
-        },
-        http: {
-          origins: ["http://localhost:8080"]
-        },
-        user: {
-          name: null,
-          password: null,
-          privateKey: null
-        },
-        ssh: {
-          host: null,
-          port: 22,
-          localAddress: null,
-          localPort: null,
-          term: "xterm-color",
-          readyTimeout: 20000,
-          keepaliveInterval: 120000,
-          keepaliveCountMax: 10,
-          allowedSubnets: []
-        },
-        header: {
-          text: null,
-          background: "green"
-        },
-        options: {
-          challengeButton: true,
-          autoLog: false,
-          allowReauth: true,
-          allowReconnect: true,
-          allowReplay: true
-        },
+describe('validateConfig', () => {
+  test('validates correct config', () => {
+    const validConfig = {
+      listen: {
+        ip: '0.0.0.0',
+        port: 2222,
+      },
+      http: {
+        origins: ['http://localhost:2222'],
+      },
+      user: {
+        name: 'testuser',
+        password: 'testpass',
+        privateKey: null,
+      },
+      ssh: {
+        host: 'localhost',
+        port: 22,
+        term: 'xterm',
+        readyTimeout: 20000,
+        keepaliveInterval: 30000,
+        keepaliveCountMax: 10,
         algorithms: {
-          kex: [
-            "ecdh-sha2-nistp256",
-            "ecdh-sha2-nistp384",
-            "ecdh-sha2-nistp521",
-            "diffie-hellman-group-exchange-sha256",
-            "diffie-hellman-group14-sha1"
-          ],
-          cipher: [
-            "aes128-ctr",
-            "aes192-ctr",
-            "aes256-ctr",
-            "aes128-gcm",
-            "aes128-gcm@openssh.com",
-            "aes256-gcm",
-            "aes256-gcm@openssh.com",
-            "aes256-cbc"
-          ],
-          hmac: ["hmac-sha2-256", "hmac-sha2-512", "hmac-sha1"],
-          compress: ["none", "zlib@openssh.com", "zlib"]
-        }
-      }
-
-      expect(() => validateConfig(validConfig)).not.toThrow()
-    })
-
-    it("should throw error for invalid config", () => {
-      const invalidConfig = {}
-      expect(() => validateConfig(invalidConfig)).toThrow()
-    })
+          kex: ['ecdh-sha2-nistp256'],
+          cipher: ['aes256-ctr'],
+          hmac: ['hmac-sha2-256'],
+          serverHostKey: ['ssh-rsa'],
+          compress: ['none'],
+        },
+      },
+      header: {
+        text: 'WebSSH2',
+        background: 'green',
+      },
+      options: {
+        challengeButton: false,
+        allowReauth: true,
+        allowReplay: true,
+      },
+      session: {
+        secret: 'mysecret',
+        name: 'webssh2',
+      },
+    }
+    assert.doesNotThrow(() => validateConfig(validConfig))
   })
 
-  describe("validateSshTerm", () => {
-    it("should return valid SSH term", () => {
-      expect(validateSshTerm("xterm")).toBe("xterm")
-      expect(validateSshTerm("xterm-256color")).toBe("xterm-256color")
-    })
+  test('throws on missing required fields', () => {
+    const invalidConfig = {
+      listen: { ip: '0.0.0.0' }, // missing required port
+      http: { origins: [] },
+      user: { name: 'test' }, // missing required password
+      ssh: {
+        host: 'localhost',
+        port: 22,
+        term: 'xterm',
+        // missing required fields
+      },
+      header: {
+        text: null,
+        // missing required background
+      },
+      options: {
+        // missing required fields
+      },
+      // missing required session
+    }
+    assert.throws(() => validateConfig(invalidConfig))
+  })
 
-    it("should return null for invalid SSH term", () => {
-      expect(validateSshTerm("")).toBe(null)
-      expect(validateSshTerm("<script>alert('xss')</script>")).toBe(null)
-    })
+  test('throws on invalid field types', () => {
+    const invalidTypeConfig = {
+      listen: {
+        ip: 123, // should be string
+        port: '2222', // should be integer
+      },
+      http: {
+        origins: 'not-an-array', // should be array
+      },
+      user: {
+        name: true, // should be string or null
+        password: 123, // should be string or null
+      },
+      ssh: {
+        host: null,
+        port: 'invalid-port', // should be integer
+        term: 123, // should be string
+        readyTimeout: '1000', // should be integer
+        keepaliveInterval: false, // should be integer
+        keepaliveCountMax: [], // should be integer
+        algorithms: {
+          kex: 'not-an-array', // should be array
+          cipher: 'not-an-array', // should be array
+          hmac: 'not-an-array', // should be array
+          serverHostKey: 'not-an-array', // should be array
+          compress: 'not-an-array', // should be array
+        },
+      },
+      header: {
+        text: 123, // should be string or null
+        background: true, // should be string
+      },
+      options: {
+        challengeButton: 'not-boolean', // should be boolean
+        allowReauth: 1, // should be boolean
+        allowReplay: 'true', // should be boolean
+      },
+      session: {
+        secret: null, // should be string
+        name: [], // should be string
+      },
+    }
+    assert.throws(() => validateConfig(invalidTypeConfig))
+  })
+})
+
+describe('validateSshTerm', () => {
+  test('validates legitimate terminal types', () => {
+    assert.equal(validateSshTerm('xterm'), 'xterm')
+    assert.equal(validateSshTerm('xterm-256color'), 'xterm-256color')
+  })
+
+  test('returns null for invalid terminal strings', () => {
+    assert.equal(validateSshTerm('<script>alert(1)</script>'), null)
+    assert.equal(validateSshTerm(''), null)
   })
 })

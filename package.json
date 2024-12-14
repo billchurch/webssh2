@@ -50,7 +50,7 @@
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
     "watch": "NODE_ENV=development DEBUG=webssh* node --watch index.js",
-    "test": "jest",
+    "test": "node --test tests/*.test.js",
     "release": "standard-version -a -s --release-as patch --commit-all",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
@@ -60,12 +60,6 @@
     "release:major": "npm run release -- --release-as major",
     "release:minor": "npm run release -- --release-as minor",
     "release:patch": "npm run release -- --release-as patch"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ]
   },
   "standard": {
     "ignore": [
@@ -83,12 +77,11 @@
     "@types/validator": "^13.12.2",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
-    "eslint": "^9.16.0",
+    "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-security": "^3.0.1",
-    "jest": "^21.2.1",
     "prettier": "^3.4.2",
     "standard-version": "^4.4.0",
     "ts-node": "^10.9.2",

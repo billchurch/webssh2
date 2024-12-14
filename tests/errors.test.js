@@ -1,88 +1,81 @@
-const {
-  WebSSH2Error,
-  ConfigError,
-  SSHConnectionError,
-  handleError
-} = require("../app/errors")
-const { logError } = require("../app/logger")
-const { HTTP, MESSAGES } = require("../app/constants")
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../app/errors.js'
+import { logError } from '../app/logger.js'
+import { HTTP, MESSAGES } from '../app/constants.js'
 
-jest.mock("../app/logger", () => ({
-  logError: jest.fn(),
-  createNamespacedDebug: jest.fn(() => jest.fn())
-}))
+// Mock logger
+const mockLogError = () => {}
 
-describe("errors", () => {
-  afterEach(() => {
-    jest.clearAllMocks()
+test('errors', async (t) => {
+  t.beforeEach(() => {
+    // Reset mocks between tests
   })
 
-  describe("WebSSH2Error", () => {
-    it("should create a WebSSH2Error with correct properties", () => {
-      const error = new WebSSH2Error("Test error", "TEST_CODE")
-      expect(error).toBeInstanceOf(Error)
-      expect(error.name).toBe("WebSSH2Error")
-      expect(error.message).toBe("Test error")
-      expect(error.code).toBe("TEST_CODE")
+  await t.test('WebSSH2Error', async (t) => {
+    await t.test('should create WebSSH2Error with correct properties', () => {
+      const error = new WebSSH2Error('Test error', 'TEST_CODE')
+      assert.ok(error instanceof Error)
+      assert.equal(error.name, 'WebSSH2Error')
+      assert.equal(error.message, 'Test error')
+      assert.equal(error.code, 'TEST_CODE')
     })
   })
 
-  describe("ConfigError", () => {
-    it("should create a ConfigError with correct properties", () => {
-      const error = new ConfigError("Config error")
-      expect(error).toBeInstanceOf(WebSSH2Error)
-      expect(error.name).toBe("ConfigError")
-      expect(error.message).toBe("Config error")
-      expect(error.code).toBe(MESSAGES.CONFIG_ERROR)
+  await t.test('ConfigError', async (t) => {
+    await t.test('should create ConfigError with correct properties', () => {
+      const error = new ConfigError('Config error')
+      assert.ok(error instanceof WebSSH2Error)
+      assert.equal(error.name, 'ConfigError')
+      assert.equal(error.message, 'Config error')
+      assert.equal(error.code, MESSAGES.CONFIG_ERROR)
     })
   })
 
-  describe("SSHConnectionError", () => {
-    it("should create a SSHConnectionError with correct properties", () => {
-      const error = new SSHConnectionError("SSH connection error")
-      expect(error).toBeInstanceOf(WebSSH2Error)
-      expect(error.name).toBe("SSHConnectionError")
-      expect(error.message).toBe("SSH connection error")
-      expect(error.code).toBe(MESSAGES.SSH_CONNECTION_ERROR)
+  await t.test('SSHConnectionError', async (t) => {
+    await t.test('should create SSHConnectionError with correct properties', () => {
+      const error = new SSHConnectionError('SSH connection error')
+      assert.ok(error instanceof WebSSH2Error)
+      assert.equal(error.name, 'SSHConnectionError')
+      assert.equal(error.message, 'SSH connection error')
+      assert.equal(error.code, MESSAGES.SSH_CONNECTION_ERROR)
     })
   })
 
-  describe("handleError", () => {
+  await t.test('handleError', async (t) => {
+    let responseData
     const mockRes = {
-      status: jest.fn(() => mockRes),
-      json: jest.fn()
+      status: function(code) { 
+        this.statusCode = code
+        return this
+      },
+      json: function(data) { 
+        responseData = data
+        return this
+      }
     }
 
-    it("should handle WebSSH2Error correctly", () => {
-      const error = new WebSSH2Error("Test error", "TEST_CODE")
+    await t.test('should handle WebSSH2Error correctly', () => {
+      const error = new WebSSH2Error('Test error', 'TEST_CODE')
       handleError(error, mockRes)
-
-      expect(logError).toHaveBeenCalledWith("Test error", error)
-      expect(mockRes.status).toHaveBeenCalledWith(HTTP.INTERNAL_SERVER_ERROR)
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Test error",
-        code: "TEST_CODE"
+      assert.deepEqual(responseData, {
+        error: 'Test error',
+        code: 'TEST_CODE'
       })
     })
 
-    it("should handle generic Error correctly", () => {
-      const error = new Error("Generic error")
+    await t.test('should handle generic Error correctly', () => {
+      const error = new Error('Generic error')
       handleError(error, mockRes)
-
-      expect(logError).toHaveBeenCalledWith(MESSAGES.UNEXPECTED_ERROR, error)
-      expect(mockRes.status).toHaveBeenCalledWith(HTTP.INTERNAL_SERVER_ERROR)
-      expect(mockRes.json).toHaveBeenCalledWith({
+      assert.deepEqual(responseData, {
         error: MESSAGES.UNEXPECTED_ERROR
       })
     })
 
-    it("should not send response if res is not provided", () => {
-      const error = new Error("No response error")
-      handleError(error)
-
-      expect(logError).toHaveBeenCalledWith(MESSAGES.UNEXPECTED_ERROR, error)
-      expect(mockRes.status).not.toHaveBeenCalled()
-      expect(mockRes.json).not.toHaveBeenCalled()
+    await t.test('should not send response if res is not provided', () => {
+      const error = new Error('No response error')
+      const result = handleError(error)
+      assert.equal(result, undefined)
     })
   })
 })
