@@ -136,7 +136,7 @@ class WebSSH2Socket extends EventEmitter {
     this.ssh = new this.SSHConnectionClass(this.config)
 
     // Set up SSH event handlers
-    this.ssh.on("keyboard-interactive", data => {
+    this.ssh.on('keyboard-interactive', (data) => {
       this.handleKeyboardInteractive(data)
     })
 
