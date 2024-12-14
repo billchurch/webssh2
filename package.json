@@ -51,7 +51,7 @@
     "lint:fix": "eslint app --fix",
     "watch": "NODE_ENV=development DEBUG=webssh* node --watch index.js",
     "test": "node --test tests/*.test.js",
-    "release": "standard-version -a -s --release-as patch --commit-all",
+    "release": "npm run lint:fix && npm run test && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish",

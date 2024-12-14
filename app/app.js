@@ -3,6 +3,7 @@
 
 import express from 'express'
 import config from './config.js'
+import SSHConnection from './ssh.js'
 import socketHandler from './socket.js'
 import { createRoutes } from './routes.js'
 import { applyMiddleware } from './middleware.js'
@@ -52,7 +53,7 @@ function initializeServer() {
     const io = configureSocketIO(server, sessionMiddleware, config)
 
     // Set up Socket.IO listeners
-    socketHandler(io, config)
+    socketHandler(io, config, SSHConnection)
 
     // Start the server
     startServer(server, config)

@@ -80,7 +80,7 @@ export function getValidatedPort(portInput) {
  * - port (number)
  * AND either:
  * - password (string) OR
- * - privateKey/privateKey (string)
+ * - privateKey (string) with optional passphrase (string)
  *
  * @param {Object} creds - The credentials object.
  * @returns {boolean} - Returns true if the credentials are valid, otherwise false.
@@ -97,11 +97,14 @@ export function isValidCredentials(creds) {
     return false
   }
 
-  // Must have either password or privateKey/privateKey
+  // Must have either password or privateKey
   const hasPassword = typeof creds.password === 'string'
-  const hasPrivateKey = typeof creds.privateKey === 'string' || typeof creds.privateKey === 'string'
+  const hasPrivateKey = typeof creds.privateKey === 'string'
 
-  return hasPassword || hasPrivateKey
+  // Passphrase is optional but must be string if provided
+  const hasValidPassphrase = !creds.passphrase || typeof creds.passphrase === 'string'
+
+  return (hasPassword || hasPrivateKey) && hasValidPassphrase
 }
 
 /**
@@ -171,7 +174,9 @@ export function modifyHtml(html, config) {
  * @returns {Object} The masked object
  */
 export function maskSensitiveData(obj, options) {
-  const defaultOptions = {}
+  const defaultOptions = {
+    properties: ['password', 'privateKey', 'passphrase', 'key', 'secret', 'token'],
+  }
   debug('maskSensitiveData')
 
   const maskingOptions = Object.assign({}, defaultOptions, options || {})

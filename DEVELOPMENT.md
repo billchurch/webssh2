@@ -149,7 +149,7 @@ If you encounter issues:
 4. Verify the ports (3000 and 2222) are available
 5. Clear browser cache if changes aren't reflecting
 
-## Building for Production
+## Building for Production (client)
 
 When ready to build for production:
 

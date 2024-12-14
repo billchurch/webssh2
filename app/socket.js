@@ -3,20 +3,27 @@
 
 import validator from 'validator'
 import { EventEmitter } from 'events'
-import SSHConnection from './ssh.js'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError, handleError } from './errors.js'
 
-const debug = createNamespacedDebug('socket')
 import { isValidCredentials, maskSensitiveData, validateSshTerm } from './utils.js'
 import { MESSAGES } from './constants.js'
 
+const debug = createNamespacedDebug('socket')
+
 class WebSSH2Socket extends EventEmitter {
-  constructor(socket, config) {
+  /**
+   * Creates a new WebSSH2Socket instance
+   * @param {Object} socket - The Socket.IO socket instance
+   * @param {Object} config - The application configuration
+   * @param {Function} SSHConnectionClass - The SSH connection class constructor
+   */
+  constructor(socket, config, SSHConnectionClass) {
     super()
     this.socket = socket
     this.config = config
-    this.ssh = new SSHConnection(config)
+    this.SSHConnectionClass = SSHConnectionClass
+    this.ssh = null
     this.sessionState = {
       authenticated: false,
       username: null,
@@ -57,10 +64,6 @@ class WebSSH2Socket extends EventEmitter {
       debug(`handleConnection: ${this.socket.id}, emitting request_auth`)
       this.socket.emit('authentication', { action: 'request_auth' })
     }
-
-    this.ssh.on('keyboard-interactive', (data) => {
-      this.handleKeyboardInteractive(data)
-    })
 
     this.socket.on('authenticate', (creds) => {
       this.handleAuthenticate(creds)
@@ -128,6 +131,14 @@ class WebSSH2Socket extends EventEmitter {
     if (this.config.user.privateKey && !creds.privateKey) {
       creds.privateKey = this.config.user.privateKey
     }
+
+    // Create new SSH connection instance
+    this.ssh = new this.SSHConnectionClass(this.config)
+
+    // Set up SSH event handlers
+    this.ssh.on("keyboard-interactive", data => {
+      this.handleKeyboardInteractive(data)
+    })
 
     this.ssh
       .connect(creds)
@@ -342,6 +353,6 @@ class WebSSH2Socket extends EventEmitter {
   }
 }
 
-export default function (io, config) {
-  io.on('connection', (socket) => new WebSSH2Socket(socket, config))
+export default function (io, config, SSHConnectionClass) {
+  io.on('connection', (socket) => new WebSSH2Socket(socket, config, SSHConnectionClass))
 }
