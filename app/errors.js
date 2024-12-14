@@ -1,9 +1,8 @@
 // server
 // app/errors.js
 
-const util = require("util")
-const { logError, createNamespacedDebug } = require("./logger")
-const { HTTP, MESSAGES } = require("./constants")
+import { logError, createNamespacedDebug } from './logger.js'
+import { HTTP, MESSAGES } from './constants.js'
 
 const debug = createNamespacedDebug("errors")
 
@@ -12,34 +11,33 @@ const debug = createNamespacedDebug("errors")
  * @param {string} message - The error message
  * @param {string} code - The error code
  */
-function WebSSH2Error(message, code) {
-  Error.captureStackTrace(this, this.constructor)
-  this.name = this.constructor.name
-  this.message = message
-  this.code = code
+class WebSSH2Error extends Error {
+  constructor(message, code) {
+    super(message)
+    this.name = this.constructor.name
+    this.code = code
+  }
 }
-
-util.inherits(WebSSH2Error, Error)
 
 /**
  * Custom error for configuration issues
  * @param {string} message - The error message
  */
-function ConfigError(message) {
-  WebSSH2Error.call(this, message, MESSAGES.CONFIG_ERROR)
+class ConfigError extends WebSSH2Error {
+  constructor(message) {
+    super(message, MESSAGES.CONFIG_ERROR)
+  }
 }
-
-util.inherits(ConfigError, WebSSH2Error)
 
 /**
  * Custom error for SSH connection issues
  * @param {string} message - The error message
  */
-function SSHConnectionError(message) {
-  WebSSH2Error.call(this, message, MESSAGES.SSH_CONNECTION_ERROR)
+class SSHConnectionError extends WebSSH2Error {
+  constructor(message) {
+    super(message, MESSAGES.SSH_CONNECTION_ERROR)
+  }
 }
-
-util.inherits(SSHConnectionError, WebSSH2Error)
 
 /**
  * Handles an error by logging it and optionally sending a response
@@ -66,9 +64,4 @@ function handleError(err, res) {
   }
 }
 
-module.exports = {
-  WebSSH2Error: WebSSH2Error,
-  ConfigError: ConfigError,
-  SSHConnectionError: SSHConnectionError,
-  handleError: handleError
-}
+export { WebSSH2Error, ConfigError, SSHConnectionError, handleError }

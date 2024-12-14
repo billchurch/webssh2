@@ -1,7 +1,7 @@
-const socketIo = require("socket.io")
-const sharedsession = require("express-socket.io-session")
-const { createNamespacedDebug } = require("./logger")
-const { DEFAULTS } = require("./constants")
+import socketIo from "socket.io"
+import sharedsession from "express-socket.io-session"
+import { createNamespacedDebug } from "./logger.js"
+import { DEFAULTS } from "./constants.js"
 
 const debug = createNamespacedDebug("app")
 
@@ -12,7 +12,7 @@ const debug = createNamespacedDebug("app")
  * @param {Object} config - The configuration object
  * @returns {import('socket.io').Server} The Socket.IO server instance
  */
-function configureSocketIO(server, sessionMiddleware, config) {
+export function configureSocketIO(server, sessionMiddleware, config) {
   const io = socketIo(server, {
     serveClient: false,
     path: DEFAULTS.IO_PATH,
@@ -32,5 +32,3 @@ function configureSocketIO(server, sessionMiddleware, config) {
 
   return io
 }
-
-module.exports = { configureSocketIO }

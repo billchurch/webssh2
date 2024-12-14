@@ -9,7 +9,7 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  */
 
-const { initializeServer } = require("./app/app")
+import { initializeServer } from "./app/app.js"
 
 /**
  * Main function to start the application
@@ -21,7 +21,5 @@ function main() {
 // Run the application
 main()
 
-// For testing purposes, export the functions
-module.exports = {
-  initializeServer
-}
+// For testing purposes, export the function
+export { initializeServer }

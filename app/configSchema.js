@@ -106,4 +106,5 @@ const configSchema = {
   },
   required: ["listen", "http", "user", "ssh", "header", "options"]
 }
-module.exports = configSchema
+
+export default configSchema

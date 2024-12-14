@@ -1,14 +1,19 @@
 // server
 // app/constants.js
 
-const path = require("path")
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import path from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 /**
  * Error messages
  */
-const MESSAGES = {
+export const MESSAGES = {
   INVALID_CREDENTIALS: "Invalid credentials format",
-  SSH_CONNECTION_ERROR: "SSH CONNECTION ERROR",
+  SSH_CONNECTION_ERROR: "SSH CONNECTION ERROR", 
   SHELL_ERROR: "SHELL ERROR",
   CONFIG_ERROR: "CONFIG_ERROR",
   UNEXPECTED_ERROR: "An unexpected error occurred",
@@ -21,29 +26,28 @@ const MESSAGES = {
 /**
  * Default values
  */
-const DEFAULTS = {
+export const DEFAULTS = {
   SSH_PORT: 22,
   LISTEN_PORT: 2222,
   SSH_TERM: "xterm-color",
-  IO_PING_TIMEOUT: 60000, // 1 minute
-  IO_PING_INTERVAL: 25000, // 25 seconds
+  IO_PING_TIMEOUT: 60000,
+  IO_PING_INTERVAL: 25000,
   IO_PATH: "/ssh/socket.io",
   WEBSSH2_CLIENT_PATH: path.resolve(
     __dirname,
     "..",
     "node_modules",
     "webssh2_client",
-    "client",
+    "client", 
     "public"
   ),
   CLIENT_FILE: "client.htm",
   MAX_AUTH_ATTEMPTS: 2
 }
-
 /**
  * HTTP Related
  */
-const HTTP = {
+export const HTTP = {
   OK: 200,
   UNAUTHORIZED: 401,
   INTERNAL_SERVER_ERROR: 500,
@@ -55,10 +59,4 @@ const HTTP = {
   SAMESITE: "Strict",
   SESSION_SID: "webssh2_sid",
   CREDS_CLEARED: "Credentials cleared."
-}
-
-module.exports = {
-  MESSAGES,
-  DEFAULTS,
-  HTTP
 }

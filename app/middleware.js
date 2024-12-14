@@ -1,14 +1,20 @@
 // server
 // app/middleware.js
 
-const createDebug = require("debug")
-const session = require("express-session")
-const bodyParser = require("body-parser")
+    // Scenario 2: Basic Auth
 
+import createDebug from "debug"
+import session from "express-session"
+import bodyParser from 'body-parser'
+
+const { urlencoded, json } = bodyParser
 const debug = createDebug("webssh2:middleware")
-const basicAuth = require("basic-auth")
-const validator = require("validator")
-const { HTTP } = require("./constants")
+import basicAuth from "basic-auth"
+
+import validator from 'validator'
+
+import { HTTP } from "./constants.js"
+
 
 /**
  * Middleware function that handles HTTP Basic Authentication for the application.
@@ -28,7 +34,7 @@ const { HTTP } = require("./constants")
  * If the authentication fails, the function will send a 401 Unauthorized response
  * with the appropriate WWW-Authenticate header.
  */
-function createAuthMiddleware(config) {
+export function createAuthMiddleware(config) {
   // eslint-disable-next-line consistent-return
   return (req, res, next) => {
     // Check if username and either password or private key is configured
@@ -73,7 +79,7 @@ function createAuthMiddleware(config) {
  * @param {Object} config - The configuration object
  * @returns {Function} The session middleware
  */
-function createSessionMiddleware(config) {
+export function createSessionMiddleware(config) {
   return session({
     secret: config.session.secret,
     resave: false,
@@ -86,15 +92,15 @@ function createSessionMiddleware(config) {
  * Creates body parser middleware
  * @returns {Function[]} Array of body parser middleware
  */
-function createBodyParserMiddleware() {
-  return [bodyParser.urlencoded({ extended: true }), bodyParser.json()]
+export function createBodyParserMiddleware() {
+  return [urlencoded({ extended: true }), json()]
 }
 
 /**
  * Creates cookie-setting middleware
  * @returns {Function} The cookie-setting middleware
  */
-function createCookieMiddleware() {
+export function createCookieMiddleware() {
   return (req, res, next) => {
     if (req.session.sshCredentials) {
       const cookieData = {
@@ -117,7 +123,7 @@ function createCookieMiddleware() {
  * @param {Object} config - The configuration object
  * @returns {Object} An object containing the session middleware
  */
-function applyMiddleware(app, config) {
+export function applyMiddleware(app, config) {
   const sessionMiddleware = createSessionMiddleware(config)
   app.use(sessionMiddleware)
 
@@ -127,12 +133,4 @@ function applyMiddleware(app, config) {
   debug("applyMiddleware")
 
   return { sessionMiddleware }
-}
-
-module.exports = {
-  applyMiddleware,
-  createAuthMiddleware,
-  createSessionMiddleware,
-  createBodyParserMiddleware,
-  createCookieMiddleware
 }

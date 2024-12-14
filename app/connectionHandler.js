@@ -1,12 +1,16 @@
 // server
 // app/connectionHandler.js
 
-const fs = require("fs")
-const path = require("path")
-const { createNamespacedDebug } = require("./logger")
-const { HTTP, MESSAGES, DEFAULTS } = require("./constants")
-const { modifyHtml } = require("./utils")
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import fs from "fs"
+import path from "path"
+import { createNamespacedDebug } from "./logger.js"
+import { HTTP, MESSAGES, DEFAULTS } from "./constants.js"
+import { modifyHtml } from "./utils.js"
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 const debug = createNamespacedDebug("connectionHandler")
 
 /**
@@ -58,4 +62,4 @@ function handleConnection(req, res) {
   handleFileRead(filePath, tempConfig, res)
 }
 
-module.exports = handleConnection
+export default handleConnection

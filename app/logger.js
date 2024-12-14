@@ -1,14 +1,14 @@
 // server
 // app/logger.js
 
-const createDebug = require("debug")
+import createDebug from 'debug'
 
 /**
  * Creates a debug function for a specific namespace
  * @param {string} namespace - The debug namespace
  * @returns {Function} The debug function
  */
-function createNamespacedDebug(namespace) {
+export function createNamespacedDebug(namespace) {
   return createDebug(`webssh2:${namespace}`)
 }
 
@@ -17,14 +17,9 @@ function createNamespacedDebug(namespace) {
  * @param {string} message - The error message
  * @param {Error} [error] - The error object
  */
-function logError(message, error) {
+export function logError(message, error) {
   console.error(message)
   if (error) {
     console.error(`ERROR: ${error}`)
   }
-}
-
-module.exports = {
-  createNamespacedDebug: createNamespacedDebug,
-  logError: logError
 }

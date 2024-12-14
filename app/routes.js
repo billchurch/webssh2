@@ -1,24 +1,17 @@
 // server
 // app/routes.js
 
-const express = require("express")
-
-const {
-  getValidatedHost,
-  getValidatedPort,
-  maskSensitiveData,
-  validateSshTerm
-} = require("./utils")
-const handleConnection = require("./connectionHandler")
-const { createNamespacedDebug } = require("./logger")
-const { createAuthMiddleware } = require("./middleware")
-const { ConfigError, handleError } = require("./errors")
-const { HTTP } = require("./constants")
-const { parseEnvVars } = require("./utils")
+import express from "express"
+import { getValidatedHost, getValidatedPort, maskSensitiveData, validateSshTerm, parseEnvVars } from "./utils.js"
+import handleConnection from "./connectionHandler.js"
+import { createNamespacedDebug } from "./logger.js"
+import { createAuthMiddleware } from "./middleware.js"
+import { ConfigError, handleError } from "./errors.js"
+import { HTTP } from "./constants.js"
 
 const debug = createNamespacedDebug("routes")
 
-module.exports = function(config) {
+export function createRoutes(config) {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
 

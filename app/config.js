@@ -1,14 +1,14 @@
 // server
 // app/config.js
 
-const path = require("path")
-const fs = require("fs")
-const readConfig = require("read-config-ng")
-const { deepMerge, validateConfig } = require("./utils")
-const { generateSecureSecret } = require("./crypto-utils")
-const { createNamespacedDebug } = require("./logger")
-const { ConfigError, handleError } = require("./errors")
-const { DEFAULTS } = require("./constants")
+import path from 'path'
+import fs from 'fs'
+import readConfig from 'read-config-ng'
+import { deepMerge, validateConfig } from './utils.js'
+import { generateSecureSecret } from './crypto-utils.js'
+import { createNamespacedDebug } from './logger.js'
+import { ConfigError, handleError } from './errors.js'
+import { DEFAULTS } from './constants.js'
 
 const debug = createNamespacedDebug("config")
 
@@ -78,9 +78,14 @@ const defaultConfig = {
   }
 }
 
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
 function getConfigPath() {
-  const nodeRoot = path.dirname(require.main.filename)
-  return path.join(nodeRoot, "config.json")
+  return path.join(__dirname, "..", "config.json")
 }
 
 function loadConfig() {
@@ -165,7 +170,7 @@ function getCorsConfig() {
   }
 }
 
-// Extend the config object with the getCorsConfig function
+// Add getCorsConfig to the config object
 config.getCorsConfig = getCorsConfig
 
-module.exports = config
+export default config

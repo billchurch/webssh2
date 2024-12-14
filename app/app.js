@@ -1,18 +1,19 @@
 // server
 // app/app.js
 
-const express = require("express")
-const config = require("./config")
-const socketHandler = require("./socket")
-const sshRoutes = require("./routes")(config)
-const { applyMiddleware } = require("./middleware")
-const { createServer, startServer } = require("./server")
-const { configureSocketIO } = require("./io")
-const { handleError, ConfigError } = require("./errors")
-const { createNamespacedDebug } = require("./logger")
-const { DEFAULTS, MESSAGES } = require("./constants")
+import express from 'express'
+import config from './config.js'
+import socketHandler from './socket.js'
+import { createRoutes } from './routes.js'
+import { applyMiddleware } from './middleware.js'
+import { createServer, startServer } from './server.js'
+import { configureSocketIO } from './io.js'
+import { handleError, ConfigError } from './errors.js'
+import { createNamespacedDebug } from './logger.js'
+import { DEFAULTS, MESSAGES } from './constants.js'
 
 const debug = createNamespacedDebug("app")
+const sshRoutes = createRoutes(config)
 
 /**
  * Creates and configures the Express application
@@ -67,4 +68,4 @@ function initializeServer() {
   }
 }
 
-module.exports = { initializeServer: initializeServer, config: config }
+export { initializeServer, config }

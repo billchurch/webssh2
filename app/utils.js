@@ -1,11 +1,11 @@
 // server
 // /app/utils.js
-const validator = require("validator")
-const Ajv = require("ajv")
-const maskObject = require("jsmasker")
-const { createNamespacedDebug } = require("./logger")
-const { DEFAULTS, MESSAGES } = require("./constants")
-const configSchema = require("./configSchema")
+import validator from 'validator'
+import Ajv from 'ajv'
+import maskObject from 'jsmasker'
+import { createNamespacedDebug } from './logger.js'
+import { DEFAULTS, MESSAGES } from './constants.js'
+import configSchema from './configSchema.js'
 
 const debug = createNamespacedDebug("utils")
 
@@ -15,8 +15,8 @@ const debug = createNamespacedDebug("utils")
  * @param {Object} source - The source object to merge from
  * @returns {Object} The merged object
  */
-function deepMerge(target, source) {
-  const output = Object.assign({}, target) // Avoid mutating target directly
+export function deepMerge(target, source) {
+  const output = Object.assign({}, target)
   Object.keys(source).forEach(key => {
     if (Object.hasOwnProperty.call(source, key)) {
       if (
@@ -40,7 +40,7 @@ function deepMerge(target, source) {
  * @param {string} host - The host string to validate and escape.
  * @returns {string} - The original IP or escaped hostname.
  */
-function getValidatedHost(host) {
+export function getValidatedHost(host) {
   let validatedHost
 
   if (validator.isIP(host)) {
@@ -61,7 +61,7 @@ function getValidatedHost(host) {
  * @param {string} [portInput] - The port string to validate and parse.
  * @returns {number} - The validated port number.
  */
-function getValidatedPort(portInput) {
+export function getValidatedPort(portInput) {
   const defaultPort = DEFAULTS.SSH_PORT
   const port = defaultPort
   debug("getValidatedPort: input: %O", portInput)
@@ -92,7 +92,7 @@ function getValidatedPort(portInput) {
  * @param {Object} creds - The credentials object.
  * @returns {boolean} - Returns true if the credentials are valid, otherwise false.
  */
-function isValidCredentials(creds) {
+export function isValidCredentials(creds) {
   const hasRequiredFields = !!(
     creds &&
     typeof creds.username === "string" &&
@@ -120,7 +120,7 @@ function isValidCredentials(creds) {
  * @param {string} [term] - The terminal name to validate.
  * @returns {string|null} - The sanitized terminal name if valid, null otherwise.
  */
-function validateSshTerm(term) {
+export function validateSshTerm(term) {
   debug(`validateSshTerm: %O`, term)
 
   if (!term) {
@@ -141,7 +141,7 @@ function validateSshTerm(term) {
  * @throws {Error} If the configuration object fails validation.
  * @returns {Object} The validated configuration object.
  */
-function validateConfig(config) {
+export function validateConfig(config) {
   const ajv = new Ajv()
   const validate = ajv.compile(configSchema)
   const valid = validate(config)
@@ -159,7 +159,7 @@ function validateConfig(config) {
  * @param {Object} config - The configuration object to inject into the HTML.
  * @returns {string} - The modified HTML content.
  */
-function modifyHtml(html, config) {
+export function modifyHtml(html, config) {
   debug("modifyHtml")
   const modifiedHtml = html.replace(
     /(src|href)="(?!http|\/\/)/g,
@@ -184,7 +184,7 @@ function modifyHtml(html, config) {
  * @param {boolean} [options.fullMask=false] - Whether to use a full mask for all properties
  * @returns {Object} The masked object
  */
-function maskSensitiveData(obj, options) {
+export function maskSensitiveData(obj, options) {
   const defaultOptions = {}
   debug("maskSensitiveData")
 
@@ -199,8 +199,7 @@ function maskSensitiveData(obj, options) {
  * @param {string} key - The environment variable key to validate
  * @returns {boolean} - Whether the key is valid
  */
-function isValidEnvKey(key) {
-  // Only allow uppercase letters, numbers, and underscore
+export function isValidEnvKey(key) {
   return /^[A-Z][A-Z0-9_]*$/.test(key)
 }
 
@@ -209,7 +208,7 @@ function isValidEnvKey(key) {
  * @param {string} value - The environment variable value to validate
  * @returns {boolean} - Whether the value is valid
  */
-function isValidEnvValue(value) {
+export function isValidEnvValue(value) {
   // Disallow special characters that could be used for command injection
   return !/[;&|`$]/.test(value)
 }
@@ -219,7 +218,7 @@ function isValidEnvValue(value) {
  * @param {string} envString - The environment string from URL query
  * @returns {Object|null} - Object containing validated env vars or null if invalid
  */
-function parseEnvVars(envString) {
+export function parseEnvVars(envString) {
   if (!envString) return null
 
   const envVars = {}
@@ -240,18 +239,4 @@ function parseEnvVars(envString) {
   }
 
   return Object.keys(envVars).length > 0 ? envVars : null
-}
-
-module.exports = {
-  deepMerge,
-  getValidatedHost,
-  getValidatedPort,
-  isValidCredentials,
-  isValidEnvKey,
-  isValidEnvValue,
-  maskSensitiveData,
-  modifyHtml,
-  parseEnvVars,
-  validateConfig,
-  validateSshTerm
 }

@@ -1,4 +1,4 @@
-const http = require("http")
+import http from "http"
 // const { createNamespacedDebug } = require("./logger")
 
 // const debug = createNamespacedDebug("server")
@@ -7,7 +7,7 @@ const http = require("http")
  * @param {express.Application} app - The Express application instance
  * @returns {http.Server} The HTTP server instance
  */
-function createServer(app) {
+export function createServer(app) {
   return http.createServer(app)
 }
 
@@ -24,7 +24,7 @@ function handleServerError(err) {
  * @param {http.Server} server - The server instance
  * @param {Object} config - The configuration object
  */
-function startServer(server, config) {
+export function startServer(server, config) {
   server.listen(config.listen.port, config.listen.ip, () => {
     console.log(
       `startServer: listening on ${config.listen.ip}:${config.listen.port}`
@@ -33,5 +33,3 @@ function startServer(server, config) {
 
   server.on("error", handleServerError)
 }
-
-module.exports = { createServer, startServer }

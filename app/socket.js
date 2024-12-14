@@ -1,19 +1,19 @@
 // server
 // app/socket.js
 
-const validator = require("validator")
-const EventEmitter = require("events")
-const SSHConnection = require("./ssh")
-const { createNamespacedDebug } = require("./logger")
-const { SSHConnectionError, handleError } = require("./errors")
+import validator from "validator"
+import { EventEmitter } from "events"
+import SSHConnection from "./ssh.js"
+import { createNamespacedDebug } from "./logger.js"
+import { SSHConnectionError, handleError } from "./errors.js"
 
 const debug = createNamespacedDebug("socket")
-const {
+import {
   isValidCredentials,
   maskSensitiveData,
   validateSshTerm
-} = require("./utils")
-const { MESSAGES } = require("./constants")
+} from "./utils.js"
+import { MESSAGES } from "./constants.js"
 
 class WebSSH2Socket extends EventEmitter {
   constructor(socket, config) {
@@ -353,6 +353,6 @@ class WebSSH2Socket extends EventEmitter {
   }
 }
 
-module.exports = function(io, config) {
+export default function(io, config) {
   io.on("connection", socket => new WebSSH2Socket(socket, config))
 }

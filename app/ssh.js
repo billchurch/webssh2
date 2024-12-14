@@ -1,12 +1,12 @@
 // server
 // app/ssh.js
 
-const SSH = require("ssh2").Client
-const EventEmitter = require("events")
-const { createNamespacedDebug } = require("./logger")
-const { SSHConnectionError, handleError } = require("./errors")
-const { maskSensitiveData } = require("./utils")
-const { DEFAULTS } = require("./constants")
+import { Client as SSH } from "ssh2"
+import { EventEmitter } from "events"
+import { createNamespacedDebug } from "./logger.js"
+import { SSHConnectionError, handleError } from "./errors.js"
+import { maskSensitiveData } from "./utils.js"
+import { DEFAULTS } from "./constants.js"
 
 const debug = createNamespacedDebug("ssh")
 
@@ -243,4 +243,4 @@ class SSHConnection extends EventEmitter {
   }
 }
 
-module.exports = SSHConnection
+export default SSHConnection
