@@ -10,19 +10,19 @@ import { createNamespacedDebug } from './logger.js'
 import { ConfigError, handleError } from './errors.js'
 import { DEFAULTS } from './constants.js'
 
-const debug = createNamespacedDebug("config")
+const debug = createNamespacedDebug('config')
 
 const defaultConfig = {
   listen: {
-    ip: "0.0.0.0",
-    port: DEFAULTS.LISTEN_PORT
+    ip: '0.0.0.0',
+    port: DEFAULTS.LISTEN_PORT,
   },
   http: {
-    origins: ["*:*"]
+    origins: ['*:*'],
   },
   user: {
     name: null,
-    password: null
+    password: null,
   },
   ssh: {
     host: null,
@@ -35,47 +35,47 @@ const defaultConfig = {
     disableInteractiveAuth: false,
     algorithms: {
       cipher: [
-        "aes128-ctr",
-        "aes192-ctr",
-        "aes256-ctr",
-        "aes128-gcm",
-        "aes128-gcm@openssh.com",
-        "aes256-gcm",
-        "aes256-gcm@openssh.com",
-        "aes256-cbc"
+        'aes128-ctr',
+        'aes192-ctr',
+        'aes256-ctr',
+        'aes128-gcm',
+        'aes128-gcm@openssh.com',
+        'aes256-gcm',
+        'aes256-gcm@openssh.com',
+        'aes256-cbc',
       ],
-      compress: ["none", "zlib@openssh.com", "zlib"],
-      hmac: ["hmac-sha2-256", "hmac-sha2-512", "hmac-sha1"],
+      compress: ['none', 'zlib@openssh.com', 'zlib'],
+      hmac: ['hmac-sha2-256', 'hmac-sha2-512', 'hmac-sha1'],
       kex: [
-        "ecdh-sha2-nistp256",
-        "ecdh-sha2-nistp384",
-        "ecdh-sha2-nistp521",
-        "diffie-hellman-group-exchange-sha256",
-        "diffie-hellman-group14-sha1"
+        'ecdh-sha2-nistp256',
+        'ecdh-sha2-nistp384',
+        'ecdh-sha2-nistp521',
+        'diffie-hellman-group-exchange-sha256',
+        'diffie-hellman-group14-sha1',
       ],
       serverHostKey: [
-        "ecdsa-sha2-nistp256",
-        "ecdsa-sha2-nistp384",
-        "ecdsa-sha2-nistp521",
-        "ssh-rsa"
-      ]
-    }
+        'ecdsa-sha2-nistp256',
+        'ecdsa-sha2-nistp384',
+        'ecdsa-sha2-nistp521',
+        'ssh-rsa',
+      ],
+    },
   },
   header: {
     text: null,
-    background: "green"
+    background: 'green',
   },
   options: {
     challengeButton: true,
     autoLog: false,
     allowReauth: true,
     allowReconnect: true,
-    allowReplay: true
+    allowReplay: true,
   },
   session: {
     secret: process.env.WEBSSH_SESSION_SECRET || generateSecureSecret(),
-    name: "webssh2.sid"
-  }
+    name: 'webssh2.sid',
+  },
 }
 
 import { fileURLToPath } from 'url'
@@ -85,7 +85,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 function getConfigPath() {
-  return path.join(__dirname, "..", "config.json")
+  return path.join(__dirname, '..', 'config.json')
 }
 
 function loadConfig() {
@@ -94,26 +94,21 @@ function loadConfig() {
   try {
     if (fs.existsSync(configPath)) {
       const providedConfig = readConfig.sync(configPath)
-      const mergedConfig = deepMerge(
-        JSON.parse(JSON.stringify(defaultConfig)),
-        providedConfig
-      )
+      const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
 
       if (process.env.PORT) {
         mergedConfig.listen.port = parseInt(process.env.PORT, 10)
-        debug("Using PORT from environment: %s", mergedConfig.listen.port)
+        debug('Using PORT from environment: %s', mergedConfig.listen.port)
       }
 
       const validatedConfig = validateConfig(mergedConfig)
-      debug("Merged and validated configuration")
+      debug('Merged and validated configuration')
       return validatedConfig
     }
-    debug("Missing config.json for webssh. Using default config")
+    debug('Missing config.json for webssh. Using default config')
     return defaultConfig
   } catch (err) {
-    const error = new ConfigError(
-      `Problem loading config.json for webssh: ${err.message}`
-    )
+    const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
     handleError(error)
     return defaultConfig
   }
@@ -165,8 +160,8 @@ const config = loadConfig()
 function getCorsConfig() {
   return {
     origin: config.http.origins,
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ['GET', 'POST'],
+    credentials: true,
   }
 }
 

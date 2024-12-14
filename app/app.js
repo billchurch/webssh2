@@ -12,7 +12,7 @@ import { handleError, ConfigError } from './errors.js'
 import { createNamespacedDebug } from './logger.js'
 import { DEFAULTS, MESSAGES } from './constants.js'
 
-const debug = createNamespacedDebug("app")
+const debug = createNamespacedDebug('app')
 const sshRoutes = createRoutes(config)
 
 /**
@@ -30,16 +30,14 @@ function createApp() {
     const { sessionMiddleware } = applyMiddleware(app, config)
 
     // Serve static files from the webssh2_client module with a custom prefix
-    app.use("/ssh/assets", express.static(clientPath))
+    app.use('/ssh/assets', express.static(clientPath))
 
     // Use the SSH routes
-    app.use("/ssh", sshRoutes)
+    app.use('/ssh', sshRoutes)
 
     return { app: app, sessionMiddleware: sessionMiddleware }
   } catch (err) {
-    throw new ConfigError(
-      `${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${err.message}`
-    )
+    throw new ConfigError(`${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${err.message}`)
   }
 }
 
@@ -59,7 +57,7 @@ function initializeServer() {
     // Start the server
     startServer(server, config)
 
-    debug("Server initialized")
+    debug('Server initialized')
 
     return { server: server, io: io, app: app }
   } catch (err) {

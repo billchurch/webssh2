@@ -1,4 +1,4 @@
-import http from "http"
+import http from 'http'
 // const { createNamespacedDebug } = require("./logger")
 
 // const debug = createNamespacedDebug("server")
@@ -16,7 +16,7 @@ export function createServer(app) {
  * @param {Error} err - The error object
  */
 function handleServerError(err) {
-  console.error("HTTP Server ERROR: %O", err)
+  console.error('HTTP Server ERROR: %O', err)
 }
 
 /**
@@ -26,10 +26,8 @@ function handleServerError(err) {
  */
 export function startServer(server, config) {
   server.listen(config.listen.port, config.listen.ip, () => {
-    console.log(
-      `startServer: listening on ${config.listen.ip}:${config.listen.port}`
-    )
+    console.log(`startServer: listening on ${config.listen.ip}:${config.listen.port}`)
   })
 
-  server.on("error", handleServerError)
+  server.on('error', handleServerError)
 }

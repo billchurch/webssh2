@@ -1,23 +1,29 @@
 // server
 // app/routes.js
 
-import express from "express"
-import { getValidatedHost, getValidatedPort, maskSensitiveData, validateSshTerm, parseEnvVars } from "./utils.js"
-import handleConnection from "./connectionHandler.js"
-import { createNamespacedDebug } from "./logger.js"
-import { createAuthMiddleware } from "./middleware.js"
-import { ConfigError, handleError } from "./errors.js"
-import { HTTP } from "./constants.js"
+import express from 'express'
+import {
+  getValidatedHost,
+  getValidatedPort,
+  maskSensitiveData,
+  validateSshTerm,
+  parseEnvVars,
+} from './utils.js'
+import handleConnection from './connectionHandler.js'
+import { createNamespacedDebug } from './logger.js'
+import { createAuthMiddleware } from './middleware.js'
+import { ConfigError, handleError } from './errors.js'
+import { HTTP } from './constants.js'
 
-const debug = createNamespacedDebug("routes")
+const debug = createNamespacedDebug('routes')
 
 export function createRoutes(config) {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
 
   // Scenario 1: No auth required, uses websocket authentication instead
-  router.get("/", (req, res) => {
-    debug("router.get./: Accessed / route")
+  router.get('/', (req, res) => {
+    debug('router.get./: Accessed / route')
     handleConnection(req, res)
   })
 
@@ -35,19 +41,17 @@ export function createRoutes(config) {
    * @param {Object} req - The Express request object
    * @param {Object} res - The Express response object
    */
-  router.get("/host/", auth, (req, res) => {
+  router.get('/host/', auth, (req, res) => {
     debug(`router.get.host: /ssh/host/ route`)
     const envVars = parseEnvVars(req.query.env)
     if (envVars) {
       req.session.envVars = envVars
-      debug("routes: Parsed environment variables: %O", envVars)
+      debug('routes: Parsed environment variables: %O', envVars)
     }
 
     try {
       if (!config.ssh.host) {
-        throw new ConfigError(
-          "Host parameter required when default host not configured"
-        )
+        throw new ConfigError('Host parameter required when default host not configured')
       }
 
       const { host } = config.ssh
@@ -65,7 +69,7 @@ export function createRoutes(config) {
       const sanitizedCredentials = maskSensitiveData(
         JSON.parse(JSON.stringify(req.session.sshCredentials))
       )
-      debug("/ssh/host/ Credentials: ", sanitizedCredentials)
+      debug('/ssh/host/ Credentials: ', sanitizedCredentials)
 
       handleConnection(req, res, { host: host })
     } catch (err) {
@@ -75,12 +79,12 @@ export function createRoutes(config) {
   })
 
   // Scenario 2: Auth required, uses HTTP Basic Auth
-  router.get("/host/:host?", auth, (req, res) => {
+  router.get('/host/:host?', auth, (req, res) => {
     debug(`router.get.host: /ssh/host/${req.params.host} route`)
     const envVars = parseEnvVars(req.query.env)
     if (envVars) {
       req.session.envVars = envVars
-      debug("routes: Parsed environment variables: %O", envVars)
+      debug('routes: Parsed environment variables: %O', envVars)
     }
 
     try {
@@ -102,7 +106,7 @@ export function createRoutes(config) {
       const sanitizedCredentials = maskSensitiveData(
         JSON.parse(JSON.stringify(req.session.sshCredentials))
       )
-      debug("/ssh/host/ Credentials: ", sanitizedCredentials)
+      debug('/ssh/host/ Credentials: ', sanitizedCredentials)
 
       handleConnection(req, res, { host: host })
     } catch (err) {
@@ -112,12 +116,12 @@ export function createRoutes(config) {
   })
 
   // Clear credentials route
-  router.get("/clear-credentials", (req, res) => {
+  router.get('/clear-credentials', (req, res) => {
     req.session.sshCredentials = null
     res.status(HTTP.OK).send(HTTP.CREDENTIALS_CLEARED)
   })
 
-  router.get("/force-reconnect", (req, res) => {
+  router.get('/force-reconnect', (req, res) => {
     req.session.sshCredentials = null
     res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
   })

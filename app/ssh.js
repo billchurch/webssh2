@@ -1,14 +1,14 @@
 // server
 // app/ssh.js
 
-import { Client as SSH } from "ssh2"
-import { EventEmitter } from "events"
-import { createNamespacedDebug } from "./logger.js"
-import { SSHConnectionError, handleError } from "./errors.js"
-import { maskSensitiveData } from "./utils.js"
-import { DEFAULTS } from "./constants.js"
+import { Client as SSH } from 'ssh2'
+import { EventEmitter } from 'events'
+import { createNamespacedDebug } from './logger.js'
+import { SSHConnectionError, handleError } from './errors.js'
+import { maskSensitiveData } from './utils.js'
+import { DEFAULTS } from './constants.js'
 
-const debug = createNamespacedDebug("ssh")
+const debug = createNamespacedDebug('ssh')
 
 /**
  * SSHConnection class handles SSH connections and operations.
@@ -41,7 +41,7 @@ class SSHConnection extends EventEmitter {
    * @returns {Promise<Object>} - A promise that resolves with the SSH connection
    */
   connect(creds) {
-    debug("connect: %O", maskSensitiveData(creds))
+    debug('connect: %O', maskSensitiveData(creds))
     this.creds = creds
     return new Promise((resolve, reject) => {
       if (this.conn) {
@@ -53,7 +53,7 @@ class SSHConnection extends EventEmitter {
 
       // First try with key authentication if available
       const sshConfig = this.getSSHConfig(creds, true)
-      debug("Initial connection config: %O", maskSensitiveData(sshConfig))
+      debug('Initial connection config: %O', maskSensitiveData(sshConfig))
 
       this.setupConnectionHandlers(resolve, reject)
 
@@ -71,24 +71,22 @@ class SSHConnection extends EventEmitter {
    * @param {Function} reject - Promise reject function
    */
   setupConnectionHandlers(resolve, reject) {
-    this.conn.on("ready", () => {
+    this.conn.on('ready', () => {
       debug(`connect: ready: ${this.creds.host}`)
       resolve(this.conn)
     })
 
-    this.conn.on("error", (err) => {
+    this.conn.on('error', (err) => {
       debug(`connect: error: ${err.message}`)
 
       // Check if this is an authentication error and we haven't exceeded max attempts
       if (this.authAttempts < DEFAULTS.MAX_AUTH_ATTEMPTS) {
         this.authAttempts += 1
-        debug(
-          `Authentication attempt ${this.authAttempts} failed, trying password authentication`
-        )
+        debug(`Authentication attempt ${this.authAttempts} failed, trying password authentication`)
 
         // Only try password auth if we have a password
         if (this.creds.password) {
-          debug("Retrying with password authentication")
+          debug('Retrying with password authentication')
 
           // Disconnect current connection
           if (this.conn) {
@@ -102,14 +100,14 @@ class SSHConnection extends EventEmitter {
           this.setupConnectionHandlers(resolve, reject)
           this.conn.connect(passwordConfig)
         } else {
-          debug("No password available, requesting password from client")
-          this.emit("password-prompt", {
+          debug('No password available, requesting password from client')
+          this.emit('password-prompt', {
             host: this.creds.host,
-            username: this.creds.username
+            username: this.creds.username,
           })
 
           // Listen for password response one time
-          this.once("password-response", (password) => {
+          this.once('password-response', (password) => {
             this.creds.password = password
             const newConfig = this.getSSHConfig(this.creds, false)
             this.setupConnectionHandlers(resolve, reject)
@@ -118,26 +116,15 @@ class SSHConnection extends EventEmitter {
         }
       } else {
         // We've exhausted all authentication attempts
-        const error = new SSHConnectionError(
-          "All authentication methods failed"
-        )
+        const error = new SSHConnectionError('All authentication methods failed')
         handleError(error)
         reject(error)
       }
     })
 
-    this.conn.on(
-      "keyboard-interactive",
-      (name, instructions, lang, prompts, finish) => {
-        this.handleKeyboardInteractive(
-          name,
-          instructions,
-          lang,
-          prompts,
-          finish
-        )
-      }
-    )
+    this.conn.on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
+      this.handleKeyboardInteractive(name, instructions, lang, prompts, finish)
+    })
   }
 
   /**
@@ -156,19 +143,19 @@ class SSHConnection extends EventEmitter {
       readyTimeout: this.config.ssh.readyTimeout,
       keepaliveInterval: this.config.ssh.keepaliveInterval,
       keepaliveCountMax: this.config.ssh.keepaliveCountMax,
-      debug: createNamespacedDebug("ssh2")
+      debug: createNamespacedDebug('ssh2'),
     }
 
     // Try private key first if available and useKey is true
     if (useKey && (creds.privateKey || this.config.user.privateKey)) {
-      debug("Using private key authentication")
+      debug('Using private key authentication')
       const privateKey = creds.privateKey || this.config.user.privateKey
       if (!this.validatePrivateKey(privateKey)) {
-        throw new SSHConnectionError("Invalid private key format")
+        throw new SSHConnectionError('Invalid private key format')
       }
       config.privateKey = privateKey
     } else if (creds.password) {
-      debug("Using password authentication")
+      debug('Using password authentication')
       config.password = creds.password
     }
 
@@ -183,7 +170,7 @@ class SSHConnection extends EventEmitter {
    */
   shell(options, envVars) {
     const shellOptions = Object.assign({}, options, {
-      env: this.getEnvironment(envVars)
+      env: this.getEnvironment(envVars),
     })
 
     return new Promise((resolve, reject) => {
@@ -230,7 +217,7 @@ class SSHConnection extends EventEmitter {
    */
   getEnvironment(envVars) {
     const env = {
-      TERM: this.config.ssh.term
+      TERM: this.config.ssh.term,
     }
 
     if (envVars) {

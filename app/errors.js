@@ -4,7 +4,7 @@
 import { logError, createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES } from './constants.js'
 
-const debug = createNamespacedDebug("errors")
+const debug = createNamespacedDebug('errors')
 
 /**
  * Custom error for WebSSH2
@@ -49,17 +49,13 @@ function handleError(err, res) {
     logError(err.message, err)
     debug(err.message)
     if (res) {
-      res
-        .status(HTTP.INTERNAL_SERVER_ERROR)
-        .json({ error: err.message, code: err.code })
+      res.status(HTTP.INTERNAL_SERVER_ERROR).json({ error: err.message, code: err.code })
     }
   } else {
     logError(MESSAGES.UNEXPECTED_ERROR, err)
     debug(`handleError: ${MESSAGES.UNEXPECTED_ERROR}: %O`, err)
     if (res) {
-      res
-        .status(HTTP.INTERNAL_SERVER_ERROR)
-        .json({ error: MESSAGES.UNEXPECTED_ERROR })
+      res.status(HTTP.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.UNEXPECTED_ERROR })
     }
   }
 }

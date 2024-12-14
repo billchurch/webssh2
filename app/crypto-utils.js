@@ -1,11 +1,11 @@
 // server
 // app/crypto-utils.js
 
-import crypto from "crypto"
+import crypto from 'crypto'
 /**
  * Generates a secure random session secret
  * @returns {string} A random 32-byte hex string
  */
 export function generateSecureSecret() {
-  return crypto.randomBytes(32).toString("hex")
+  return crypto.randomBytes(32).toString('hex')
 }

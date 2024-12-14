@@ -7,7 +7,7 @@ import { createNamespacedDebug } from './logger.js'
 import { DEFAULTS, MESSAGES } from './constants.js'
 import configSchema from './configSchema.js'
 
-const debug = createNamespacedDebug("utils")
+const debug = createNamespacedDebug('utils')
 
 /**
  * Deep merges two objects
@@ -17,13 +17,9 @@ const debug = createNamespacedDebug("utils")
  */
 export function deepMerge(target, source) {
   const output = Object.assign({}, target)
-  Object.keys(source).forEach(key => {
+  Object.keys(source).forEach((key) => {
     if (Object.hasOwnProperty.call(source, key)) {
-      if (
-        source[key] instanceof Object &&
-        !Array.isArray(source[key]) &&
-        source[key] !== null
-      ) {
+      if (source[key] instanceof Object && !Array.isArray(source[key]) && source[key] !== null) {
         output[key] = deepMerge(output[key] || {}, source[key])
       } else {
         output[key] = source[key]
@@ -64,17 +60,14 @@ export function getValidatedHost(host) {
 export function getValidatedPort(portInput) {
   const defaultPort = DEFAULTS.SSH_PORT
   const port = defaultPort
-  debug("getValidatedPort: input: %O", portInput)
+  debug('getValidatedPort: input: %O', portInput)
 
   if (portInput) {
     if (validator.isInt(portInput, { min: 1, max: 65535 })) {
       return parseInt(portInput, 10)
     }
   }
-  debug(
-    "getValidatedPort: port not specified or is invalid, setting port to: %O",
-    port
-  )
+  debug('getValidatedPort: port not specified or is invalid, setting port to: %O', port)
 
   return port
 }
@@ -95,9 +88,9 @@ export function getValidatedPort(portInput) {
 export function isValidCredentials(creds) {
   const hasRequiredFields = !!(
     creds &&
-    typeof creds.username === "string" &&
-    typeof creds.host === "string" &&
-    typeof creds.port === "number"
+    typeof creds.username === 'string' &&
+    typeof creds.host === 'string' &&
+    typeof creds.port === 'number'
   )
 
   if (!hasRequiredFields) {
@@ -105,9 +98,8 @@ export function isValidCredentials(creds) {
   }
 
   // Must have either password or privateKey/privateKey
-  const hasPassword = typeof creds.password === "string"
-  const hasPrivateKey =
-    typeof creds.privateKey === "string" || typeof creds.privateKey === "string"
+  const hasPassword = typeof creds.password === 'string'
+  const hasPrivateKey = typeof creds.privateKey === 'string' || typeof creds.privateKey === 'string'
 
   return hasPassword || hasPrivateKey
 }
@@ -128,8 +120,7 @@ export function validateSshTerm(term) {
   }
 
   const validatedSshTerm =
-    validator.isLength(term, { min: 1, max: 30 }) &&
-    validator.matches(term, /^[a-zA-Z0-9.-]+$/)
+    validator.isLength(term, { min: 1, max: 30 }) && validator.matches(term, /^[a-zA-Z0-9.-]+$/)
 
   return validatedSshTerm ? term : null
 }
@@ -146,9 +137,7 @@ export function validateConfig(config) {
   const validate = ajv.compile(configSchema)
   const valid = validate(config)
   if (!valid) {
-    throw new Error(
-      `${MESSAGES.CONFIG_VALIDATION_ERROR}: ${ajv.errorsText(validate.errors)}`
-    )
+    throw new Error(`${MESSAGES.CONFIG_VALIDATION_ERROR}: ${ajv.errorsText(validate.errors)}`)
   }
   return config
 }
@@ -160,14 +149,11 @@ export function validateConfig(config) {
  * @returns {string} - The modified HTML content.
  */
 export function modifyHtml(html, config) {
-  debug("modifyHtml")
-  const modifiedHtml = html.replace(
-    /(src|href)="(?!http|\/\/)/g,
-    '$1="/ssh/assets/'
-  )
+  debug('modifyHtml')
+  const modifiedHtml = html.replace(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/')
 
   return modifiedHtml.replace(
-    "window.webssh2Config = null;",
+    'window.webssh2Config = null;',
     `window.webssh2Config = ${JSON.stringify(config)};`
   )
 }
@@ -186,7 +172,7 @@ export function modifyHtml(html, config) {
  */
 export function maskSensitiveData(obj, options) {
   const defaultOptions = {}
-  debug("maskSensitiveData")
+  debug('maskSensitiveData')
 
   const maskingOptions = Object.assign({}, defaultOptions, options || {})
   const maskedObject = maskObject(obj, maskingOptions)
@@ -219,14 +205,18 @@ export function isValidEnvValue(value) {
  * @returns {Object|null} - Object containing validated env vars or null if invalid
  */
 export function parseEnvVars(envString) {
-  if (!envString) return null
+  if (!envString) {
+    return null
+  }
 
   const envVars = {}
-  const pairs = envString.split(",")
+  const pairs = envString.split(',')
 
   for (let i = 0; i < pairs.length; i += 1) {
-    const pair = pairs[i].split(":")
-    if (pair.length !== 2) continue
+    const pair = pairs[i].split(':')
+    if (pair.length !== 2) {
+      continue
+    }
 
     const key = pair[0].trim()
     const value = pair[1].trim()

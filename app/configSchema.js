@@ -2,109 +2,102 @@
  * Schema for validating the config
  */
 const configSchema = {
-  type: "object",
+  type: 'object',
   properties: {
     listen: {
-      type: "object",
+      type: 'object',
       properties: {
-        ip: { type: "string", format: "ipv4" },
-        port: { type: "integer", minimum: 1, maximum: 65535 }
+        ip: { type: 'string', format: 'ipv4' },
+        port: { type: 'integer', minimum: 1, maximum: 65535 },
       },
-      required: ["ip", "port"]
+      required: ['ip', 'port'],
     },
     http: {
-      type: "object",
+      type: 'object',
       properties: {
         origins: {
-          type: "array",
-          items: { type: "string" }
-        }
+          type: 'array',
+          items: { type: 'string' },
+        },
       },
-      required: ["origins"]
+      required: ['origins'],
     },
     user: {
-      type: "object",
+      type: 'object',
       properties: {
-        name: { type: ["string", "null"] },
-        password: { type: ["string", "null"] },
-        privateKey: { type: ["string", "null"] }
+        name: { type: ['string', 'null'] },
+        password: { type: ['string', 'null'] },
+        privateKey: { type: ['string', 'null'] },
       },
-      required: ["name", "password"]
+      required: ['name', 'password'],
     },
     ssh: {
-      type: "object",
+      type: 'object',
       properties: {
-        host: { type: ["string", "null"] },
-        port: { type: "integer", minimum: 1, maximum: 65535 },
-        term: { type: "string" },
-        readyTimeout: { type: "integer" },
-        keepaliveInterval: { type: "integer" },
-        keepaliveCountMax: { type: "integer" },
+        host: { type: ['string', 'null'] },
+        port: { type: 'integer', minimum: 1, maximum: 65535 },
+        term: { type: 'string' },
+        readyTimeout: { type: 'integer' },
+        keepaliveInterval: { type: 'integer' },
+        keepaliveCountMax: { type: 'integer' },
         algorithms: {
-          type: "object",
+          type: 'object',
           properties: {
             kex: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             cipher: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             hmac: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             serverHostKey: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             compress: {
-              type: "array",
-              items: { type: "string" }
-            }
+              type: 'array',
+              items: { type: 'string' },
+            },
           },
-          required: ["kex", "cipher", "hmac", "serverHostKey", "compress"]
-        }
+          required: ['kex', 'cipher', 'hmac', 'serverHostKey', 'compress'],
+        },
       },
-      required: [
-        "host",
-        "port",
-        "term",
-        "readyTimeout",
-        "keepaliveInterval",
-        "keepaliveCountMax"
-      ]
+      required: ['host', 'port', 'term', 'readyTimeout', 'keepaliveInterval', 'keepaliveCountMax'],
     },
     header: {
-      type: "object",
+      type: 'object',
       properties: {
-        text: { type: ["string", "null"] },
-        background: { type: "string" }
+        text: { type: ['string', 'null'] },
+        background: { type: 'string' },
       },
-      required: ["text", "background"]
+      required: ['text', 'background'],
     },
     options: {
-      type: "object",
+      type: 'object',
       properties: {
-        challengeButton: { type: "boolean" },
-        autoLog: { type: "boolean" },
-        allowReauth: { type: "boolean" },
-        allowReconnect: { type: "boolean" },
-        allowReplay: { type: "boolean" }
+        challengeButton: { type: 'boolean' },
+        autoLog: { type: 'boolean' },
+        allowReauth: { type: 'boolean' },
+        allowReconnect: { type: 'boolean' },
+        allowReplay: { type: 'boolean' },
       },
-      required: ["challengeButton", "allowReauth", "allowReplay"]
+      required: ['challengeButton', 'allowReauth', 'allowReplay'],
     },
     session: {
-      type: "object",
+      type: 'object',
       properties: {
-        secret: { type: "string" },
-        name: { type: "string" }
+        secret: { type: 'string' },
+        name: { type: 'string' },
       },
-      required: ["secret", "name"]
-    }
+      required: ['secret', 'name'],
+    },
   },
-  required: ["listen", "http", "user", "ssh", "header", "options"]
+  required: ['listen', 'http', 'user', 'ssh', 'header', 'options'],
 }
 
 export default configSchema

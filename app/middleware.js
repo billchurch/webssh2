@@ -1,20 +1,19 @@
 // server
 // app/middleware.js
 
-    // Scenario 2: Basic Auth
+// Scenario 2: Basic Auth
 
-import createDebug from "debug"
-import session from "express-session"
+import createDebug from 'debug'
+import session from 'express-session'
 import bodyParser from 'body-parser'
 
 const { urlencoded, json } = bodyParser
-const debug = createDebug("webssh2:middleware")
-import basicAuth from "basic-auth"
+const debug = createDebug('webssh2:middleware')
+import basicAuth from 'basic-auth'
 
 import validator from 'validator'
 
-import { HTTP } from "./constants.js"
-
+import { HTTP } from './constants.js'
 
 /**
  * Middleware function that handles HTTP Basic Authentication for the application.
@@ -35,12 +34,11 @@ import { HTTP } from "./constants.js"
  * with the appropriate WWW-Authenticate header.
  */
 export function createAuthMiddleware(config) {
-  // eslint-disable-next-line consistent-return
   return (req, res, next) => {
     // Check if username and either password or private key is configured
     if (config.user.name && (config.user.password || config.user.privateKey)) {
       req.session.sshCredentials = {
-        username: config.user.name
+        username: config.user.name,
       }
 
       // Add credentials based on what's available
@@ -57,7 +55,7 @@ export function createAuthMiddleware(config) {
     // Scenario 2: Basic Auth
 
     // If no configured credentials, fall back to Basic Auth
-    debug("auth: Basic Auth")
+    debug('auth: Basic Auth')
     const credentials = basicAuth(req)
     if (!credentials) {
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
@@ -67,7 +65,7 @@ export function createAuthMiddleware(config) {
     // Validate and sanitize credentials
     req.session.sshCredentials = {
       username: validator.escape(credentials.name),
-      password: credentials.pass
+      password: credentials.pass,
     }
     req.session.usedBasicAuth = true
     next()
@@ -84,7 +82,7 @@ export function createSessionMiddleware(config) {
     secret: config.session.secret,
     resave: false,
     saveUninitialized: true,
-    name: config.session.name
+    name: config.session.name,
   })
 }
 
@@ -105,12 +103,12 @@ export function createCookieMiddleware() {
     if (req.session.sshCredentials) {
       const cookieData = {
         host: req.session.sshCredentials.host,
-        port: req.session.sshCredentials.port
+        port: req.session.sshCredentials.port,
       }
       res.cookie(HTTP.COOKIE, JSON.stringify(cookieData), {
         httpOnly: false,
         path: HTTP.PATH,
-        sameSite: HTTP.SAMESITE
+        sameSite: HTTP.SAMESITE,
       })
     }
     next()
@@ -130,7 +128,7 @@ export function applyMiddleware(app, config) {
   app.use(createBodyParserMiddleware())
   app.use(createCookieMiddleware())
 
-  debug("applyMiddleware")
+  debug('applyMiddleware')
 
   return { sessionMiddleware }
 }

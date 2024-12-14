@@ -1,9 +1,9 @@
-import socketIo from "socket.io"
-import sharedsession from "express-socket.io-session"
-import { createNamespacedDebug } from "./logger.js"
-import { DEFAULTS } from "./constants.js"
+import socketIo from 'socket.io'
+import sharedsession from 'express-socket.io-session'
+import { createNamespacedDebug } from './logger.js'
+import { DEFAULTS } from './constants.js'
 
-const debug = createNamespacedDebug("app")
+const debug = createNamespacedDebug('app')
 
 /**
  * Configures Socket.IO with the given server
@@ -18,17 +18,17 @@ export function configureSocketIO(server, sessionMiddleware, config) {
     path: DEFAULTS.IO_PATH,
     pingTimeout: DEFAULTS.IO_PING_TIMEOUT,
     pingInterval: DEFAULTS.IO_PING_INTERVAL,
-    cors: config.getCorsConfig()
+    cors: config.getCorsConfig(),
   })
 
   // Share session with io sockets
   io.use(
     sharedsession(sessionMiddleware, {
-      autoSave: true
+      autoSave: true,
     })
   )
 
-  debug("IO configured")
+  debug('IO configured')
 
   return io
 }
