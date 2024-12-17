@@ -16,8 +16,8 @@ describe('Socket Handler', () => {
     mockSocket.id = 'test-socket-id'
     mockSocket.handshake = {
       session: {
-        save: mock.fn((cb) => cb())
-      }
+        save: mock.fn((cb) => cb()),
+      },
     }
     mockSocket.emit = mock.fn()
     mockSocket.disconnect = mock.fn()
@@ -28,14 +28,14 @@ describe('Socket Handler', () => {
         term: 'xterm-color',
         readyTimeout: 20000,
         keepaliveInterval: 120000,
-        keepaliveCountMax: 10
+        keepaliveCountMax: 10,
       },
       options: {
         allowReauth: true,
         allowReplay: true,
-        allowReconnect: true
+        allowReconnect: true,
       },
-      user: {}
+      user: {},
     }
 
     // Initialize socket handler
@@ -51,11 +51,11 @@ describe('Socket Handler', () => {
   it('should create new WebSSH2Socket instance on connection', () => {
     const connectionHandler = io.on.mock.calls[0].arguments[1]
     connectionHandler(mockSocket)
-    
+
     // Verify socket emits authentication request when no basic auth
     assert.equal(mockSocket.emit.mock.calls[0].arguments[0], 'authentication')
-    assert.deepEqual(mockSocket.emit.mock.calls[0].arguments[1], { 
-      action: 'request_auth' 
+    assert.deepEqual(mockSocket.emit.mock.calls[0].arguments[1], {
+      action: 'request_auth',
     })
   })
 })
