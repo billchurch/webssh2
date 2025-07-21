@@ -1,5 +1,33 @@
 # Keyboard Interactive SSH Server
-A test SSH server that uses keyboard-interactive authentication and listens on port 4444:
+
+A test SSH server that uses keyboard-interactive authentication and listens on port 4444.
+
+## Quick Start
+
+For comprehensive testing instructions and automated setup, see [TESTING_GUIDE.md](./TESTING_GUIDE.md).
+
+### Automated Setup with tmux
+
+```bash
+# Start complete development environment
+./start-dev.sh
+
+# Test SSH connection
+./test-connection.sh
+
+# Stop all services
+./stop-dev.sh
+```
+
+## Docker Configurations
+
+We provide three Docker configurations for different testing scenarios:
+
+1. **Dockerfile** - Basic SSH server with keyboard-interactive authentication
+2. **Dockerfile.debug** - SSH server with password authentication and debug logging (recommended)
+3. **Dockerfile.password** - SSH server with standard password authentication
+
+## Basic Setup
 
 ```Dockerfile
 # Use the Debian Bullseye Slim image as the base
@@ -56,3 +84,20 @@ ssh -p 4444 testuser@localhost
 ```
 
 You'll be prompted for a password as part of the keyboard-interactive authentication process.
+
+## Test Credentials
+
+- **Host**: localhost
+- **Port**: 4444
+- **Username**: testuser
+- **Password**: testpassword
+
+## Development with tmux
+
+The provided scripts automate the entire development setup:
+
+1. **start-dev.sh** - Starts Docker SSH server, WebSSH2 server, and client in separate tmux sessions
+2. **stop-dev.sh** - Stops all services and cleans up
+3. **test-connection.sh** - Tests SSH connectivity to ensure the server is working
+
+See [TESTING_GUIDE.md](./TESTING_GUIDE.md) for detailed tmux usage and troubleshooting.
