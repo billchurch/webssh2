@@ -1,6 +1,6 @@
 {
   "name": "Debian Bullseye Node.js DevContainer",
-  "image": "mcr.microsoft.com/vscode/devcontainers/base:bullseye",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22.12.0"
@@ -19,15 +19,10 @@
         "bierner.markdown-mermaid",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "GitHub.copilot-chat",
-        "GitHub.copilot",
-        "mohsen1.prettify-json",
-        "mechatroner.rainbow-csv",
         "ms-vscode-remote.remote-containers",
         "oderwat.indent-rainbow",
         "rvest.vs-code-prettier-eslint",
-        "stylelint.vscode-stylelint",
-        "vivaxy.vscode-conventional-commits"
+        "stylelint.vscode-stylelint"
       ]
     },
     "settings": {

@@ -24,7 +24,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 
 ## Requirements
 
-- Node.js 6.9.1
+- Node.js 22 LTS (Jod)
 
 ## Breaking Changes
 - See [CONFIG.md](./CONFIG.md) for a list of breaking changes to the config.json file.

@@ -4,7 +4,7 @@ This guide explains how to set up and run the WebSSH2 client and server componen
 
 ## Prerequisites
 
-- Node.js (>= 6.9.1)
+- Node.js 22 LTS (Jod)
 - npm
 - Git
 - Two terminal windows/sessions
@@ -134,7 +134,7 @@ Both client and server components support file watching and automatic reloading:
 
 ## Important Notes
 
-1. The server and client components must use Socket.IO v2.2.0 due to current Node.js v6.9.1 compatibility requirements
+1. The server and client components must use Socket.IO v2.2.0 for compatibility
 2. Client development server (3000) and WebSSH2 server (2222) must run simultaneously
 3. CORS is automatically handled in development mode
 4. The development configuration is only injected in development mode

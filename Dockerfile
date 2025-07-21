@@ -9,7 +9,7 @@ RUN apt-get update \
 
 # nvm environment variables
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION 6.9.1
+ENV NODE_VERSION 22
 
 RUN mkdir -p $NVM_DIR
 

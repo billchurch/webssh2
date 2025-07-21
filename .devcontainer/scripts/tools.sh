@@ -41,3 +41,7 @@ chmod 644 ~/.ssh/allowed_signers
 echo "allowed_signers file created successfully."
 
 npm install
+
+npm cache clean --force
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
