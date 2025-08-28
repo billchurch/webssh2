@@ -1,16 +1,12 @@
 // server
 // app/connectionHandler.js
 
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
 import fs from 'fs'
 import path from 'path'
+import webssh2Client from 'webssh2_client'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
 import { modifyHtml } from './utils.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 const debug = createNamespacedDebug('connectionHandler')
 
 /**
@@ -38,14 +34,7 @@ function handleFileRead(filePath, config, res) {
 function handleConnection(req, res) {
   debug('Handling connection req.path:', req.path)
 
-  const clientPath = path.resolve(
-    __dirname,
-    '..',
-    'node_modules',
-    'webssh2_client',
-    'client',
-    'public'
-  )
+  const clientPath = webssh2Client.getPublicPath()
 
   const tempConfig = {
     socket: {
