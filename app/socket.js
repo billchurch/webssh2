@@ -43,10 +43,7 @@ class WebSSH2Socket extends EventEmitter {
   initializeSocketEvents() {
     debug(`io.on connection: ${this.socket.id}`)
 
-    if (
-      this.socket.request.session.usedBasicAuth &&
-      this.socket.request.session.sshCredentials
-    ) {
+    if (this.socket.request.session.usedBasicAuth && this.socket.request.session.sshCredentials) {
       const creds = this.socket.request.session.sshCredentials
       debug(
         `handleConnection: ${this.socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
@@ -121,7 +118,9 @@ class WebSSH2Socket extends EventEmitter {
         this.sessionState.rows = parseInt(creds.rows, 10)
         debug(`handleAuthenticate: storing rows: ${this.sessionState.rows}`)
       }
-      debug(`handleAuthenticate: sessionState now has cols=${this.sessionState.cols}, rows=${this.sessionState.rows}`)
+      debug(
+        `handleAuthenticate: sessionState now has cols=${this.sessionState.cols}, rows=${this.sessionState.rows}`
+      )
 
       this.initializeConnection(creds)
     } else {
@@ -229,7 +228,7 @@ class WebSSH2Socket extends EventEmitter {
       cols: this.sessionState.cols || 80,
       rows: this.sessionState.rows || 24,
     }
-    
+
     debug(`createShell: Creating shell with options:`, shellOptions)
 
     this.ssh

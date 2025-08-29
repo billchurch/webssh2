@@ -285,12 +285,14 @@ class SSHConnection extends EventEmitter {
       width: options.width,
       height: options.height,
     }
-    
+
     // Only include environment options if we have envVars
-    const envOptions = envVars ? {
-      env: this.getEnvironment(envVars)
-    } : undefined
-    
+    const envOptions = envVars
+      ? {
+          env: this.getEnvironment(envVars),
+        }
+      : undefined
+
     debug(`shell: Creating shell with PTY options:`, ptyOptions, 'and env options:', envOptions)
 
     return new Promise((resolve, reject) => {
