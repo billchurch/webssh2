@@ -276,12 +276,26 @@ class SSHConnection extends EventEmitter {
    * @returns {Promise<Object>} - A promise that resolves with the SSH shell stream
    */
   shell(options, envVars) {
-    const shellOptions = Object.assign({}, options, {
-      env: this.getEnvironment(envVars),
-    })
+    // Separate PTY options from environment options
+    // SSH2 expects them as separate parameters
+    const ptyOptions = {
+      term: options.term,
+      rows: options.rows,
+      cols: options.cols,
+      width: options.width,
+      height: options.height,
+    }
+    
+    // Only include environment options if we have envVars
+    const envOptions = envVars ? {
+      env: this.getEnvironment(envVars)
+    } : undefined
+    
+    debug(`shell: Creating shell with PTY options:`, ptyOptions, 'and env options:', envOptions)
 
     return new Promise((resolve, reject) => {
-      this.conn.shell(shellOptions, (err, stream) => {
+      // Pass PTY options as first param, env options as second
+      this.conn.shell(ptyOptions, envOptions, (err, stream) => {
         if (err) {
           reject(err)
         } else {

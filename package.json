@@ -40,7 +40,7 @@
     "jsmasker": "^1.4.0",
     "read-config-ng": "~3.0.7",
     "socket.io": "^4.8.1",
-    "ssh2": "1.16",
+    "ssh2": "1.17",
     "validator": "^13.15.15",
     "webssh2_client": "^0.2.29"
   },

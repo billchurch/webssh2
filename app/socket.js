@@ -106,10 +106,22 @@ class WebSSH2Socket extends EventEmitter {
 
   handleAuthenticate(creds) {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
+    debug(`handleAuthenticate: received cols=${creds.cols}, rows=${creds.rows}`)
 
     if (isValidCredentials(creds)) {
       // Set term if provided, otherwise use config default
       this.sessionState.term = validateSshTerm(creds.term) ? creds.term : this.config.ssh.term
+
+      // Store terminal dimensions if provided with credentials
+      if (creds.cols && validator.isInt(creds.cols.toString())) {
+        this.sessionState.cols = parseInt(creds.cols, 10)
+        debug(`handleAuthenticate: storing cols: ${this.sessionState.cols}`)
+      }
+      if (creds.rows && validator.isInt(creds.rows.toString())) {
+        this.sessionState.rows = parseInt(creds.rows, 10)
+        debug(`handleAuthenticate: storing rows: ${this.sessionState.rows}`)
+      }
+      debug(`handleAuthenticate: sessionState now has cols=${this.sessionState.cols}, rows=${this.sessionState.rows}`)
 
       this.initializeConnection(creds)
     } else {
@@ -212,15 +224,16 @@ class WebSSH2Socket extends EventEmitter {
     // Get envVars from socket session if they exist
     const envVars = this.socket.request.session.envVars || null
 
+    const shellOptions = {
+      term: this.sessionState.term || 'xterm-color',
+      cols: this.sessionState.cols || 80,
+      rows: this.sessionState.rows || 24,
+    }
+    
+    debug(`createShell: Creating shell with options:`, shellOptions)
+
     this.ssh
-      .shell(
-        {
-          term: this.sessionState.term,
-          cols: this.sessionState.cols,
-          rows: this.sessionState.rows,
-        },
-        envVars
-      )
+      .shell(shellOptions, envVars)
       .then((stream) => {
         stream.on('data', (data) => {
           this.socket.emit('data', data.toString('utf-8'))
