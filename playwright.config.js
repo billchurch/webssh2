@@ -60,12 +60,13 @@ export default defineConfig({
   ],
 
   // Web server configuration
-  webServer: {
-    command: 'NODE_ENV=development node index.js',  // WebSocket is now default
-    url: 'http://localhost:2222',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  // Commented out - run server manually before tests
+  // webServer: {
+  //   command: 'NODE_ENV=development node index.js',  // WebSocket is now default
+  //   url: 'http://localhost:2222',
+  //   reuseExistingServer: true,  // Always try to reuse existing server
+  //   timeout: 120 * 1000,
+  //   stdout: 'pipe',
+  //   stderr: 'pipe',
+  // },
 })
