@@ -2,6 +2,7 @@
 // /app/utils.js
 import validator from 'validator'
 import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
 import maskObject from 'jsmasker'
 import { createNamespacedDebug } from './logger.js'
 import { DEFAULTS, MESSAGES } from './constants.js'
@@ -137,6 +138,7 @@ export function validateSshTerm(term) {
  */
 export function validateConfig(config) {
   const ajv = new Ajv()
+  addFormats(ajv)
   const validate = ajv.compile(configSchema)
   const valid = validate(config)
   if (!valid) {

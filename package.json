@@ -31,9 +31,10 @@
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
   "dependencies": {
-    "ajv": "^4.11.8",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "basic-auth": "^2.0.1",
-    "body-parser": "^1.20.3",
+    "body-parser": "^2.2.0",
     "debug": "^4.4.1",
     "express": "^4.14.1",
     "express-session": "^1.18.0",
