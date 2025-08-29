@@ -93,7 +93,32 @@ class SSHConnection extends EventEmitter {
     })
 
     this.conn.on('error', (err) => {
-      debug(`connect: error: ${err.message}`)
+      // Sometimes err.message is empty, use err.code or err.toString() as fallback
+      const errorMessage = err.message || err.code || err.toString() || 'Unknown error'
+      debug(`connect: error: ${errorMessage}`)
+
+      // Check if this is a connection error (DNS, network, etc) vs authentication error
+      const isConnectionError =
+        errorMessage.includes('ENOTFOUND') ||
+        errorMessage.includes('ECONNREFUSED') ||
+        errorMessage.includes('ETIMEDOUT') ||
+        errorMessage.includes('EHOSTUNREACH') ||
+        errorMessage.includes('ENETUNREACH') ||
+        errorMessage.includes('getaddrinfo') ||
+        // Also check err.level if it's a system-level error
+        (err.level === 'client-socket' && !errorMessage.includes('authentication'))
+
+      if (isConnectionError) {
+        // This is a connection error, not an auth error
+        const displayMessage =
+          errorMessage === 'Error'
+            ? `Connection failed: Unable to connect to ${this.creds.host}:${this.creds.port || 22}`
+            : `Connection failed: ${errorMessage}`
+        const error = new SSHConnectionError(displayMessage)
+        handleError(error)
+        reject(error)
+        return
+      }
 
       // Check if this is an authentication error and we haven't exceeded max attempts
       if (this.authAttempts < DEFAULTS.MAX_AUTH_ATTEMPTS) {
