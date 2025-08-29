@@ -114,8 +114,9 @@ Edit `config.json` to customize the following options:
 - `http.origins` - _array_ - CORS origins for socket.io (default: `["*:*"]`)
 - `user.name` - _string_ - Default SSH username (default: `null`)
 - `user.password` - _string_ - Default SSH password (default: `null`)
+- `user.privateKey` - _string_ - Default SSH private key in PEM format (default: `null`)
+- `user.passphrase` - _string_ - Passphrase for encrypted private key (default: `null`)
 - `ssh.host` - _string_ - Default SSH host (default: `null`)
-- `user.privateKey` - _string_ - Default SSH private key (default: `null`)
 - `ssh.port` - _integer_ - Default SSH port (default: `22`)
 - `ssh.term` - _string_ - Terminal emulation (default: `"xterm-color"`)
 - `ssh.readyTimeout` - _integer_ - SSH handshake timeout in ms (default: `20000`)
@@ -200,17 +201,20 @@ WebSSH2 supports SSH private key authentication when using the `/ssh/host/` endp
 
 #### Configuration
 
-Private key authentication can only be configured through the `config.json` file:
+Private key authentication can be configured through the `config.json` file for use with the `/ssh/host/` endpoints:
 
 ```json
 {
   "user": {
     "name": "myuser",
     "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nYour-Private-Key-Here\n-----END RSA PRIVATE KEY-----",
+    "passphrase": "passphrase-for-encrypted-key",
     "password": "optional-fallback-password"
   }
 }
 ```
+
+Note: The `/ssh` endpoint also supports private key authentication through the interactive web interface, where users can paste or upload their private keys directly.
 
 #### Key Requirements
 
@@ -257,7 +261,7 @@ This command:
 #### Endpoint Support
 
 - `/ssh/host/:host` - Supports private key authentication configured via `config.json`
-- `/ssh` - Does NOT support private key authentication
+- `/ssh` - Supports private key authentication via interactive web interface (users can provide keys directly)
 
 #### Security Considerations
 
@@ -282,6 +286,7 @@ This command:
      "user": {
        "name": "myuser",
        "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpA...[rest of key]...Yh5Q==\n-----END RSA PRIVATE KEY-----",
+       "passphrase": "your-passphrase-here",
        "password": "fallback-password"
      }
    }
