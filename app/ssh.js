@@ -59,18 +59,19 @@ class SSHConnection extends EventEmitter {
   connect(creds) {
     debug('connect: %O', maskSensitiveData(creds))
     this.creds = creds
+
+    if (this.conn) {
+      this.conn.end()
+    }
+
+    this.conn = new SSH()
+    this.authAttempts = 0
+
+    // First try with key authentication if available
+    const sshConfig = this.getSSHConfig(creds, true)
+    debug('Initial connection config: %O', maskSensitiveData(sshConfig))
+
     return new Promise((resolve, reject) => {
-      if (this.conn) {
-        this.conn.end()
-      }
-
-      this.conn = new SSH()
-      this.authAttempts = 0
-
-      // First try with key authentication if available
-      const sshConfig = this.getSSHConfig(creds, true)
-      debug('Initial connection config: %O', maskSensitiveData(sshConfig))
-
       this.setupConnectionHandlers(resolve, reject)
 
       try {

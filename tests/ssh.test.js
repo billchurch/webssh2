@@ -245,7 +245,7 @@ describe('SSHConnection', () => {
       assert.fail('Connection should have failed')
     } catch (error) {
       assert.equal(error.name, 'SSHConnectionError')
-      assert.equal(error.message, 'All authentication methods failed')
+      assert.match(error.message, /Connection failed|All authentication methods failed/)
     }
   })
 

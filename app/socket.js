@@ -132,7 +132,7 @@ class WebSSH2Socket extends EventEmitter {
     }
   }
 
-  initializeConnection(creds) {
+  async initializeConnection(creds) {
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
       maskSensitiveData(creds)
@@ -151,50 +151,48 @@ class WebSSH2Socket extends EventEmitter {
       this.handleKeyboardInteractive(data)
     })
 
-    this.ssh
-      .connect(creds)
-      .then(() => {
-        this.sessionState = Object.assign({}, this.sessionState, {
-          authenticated: true,
-          username: creds.username,
-          password: creds.password,
-          privateKey: creds.privateKey,
-          passphrase: creds.passphrase,
-          host: creds.host,
-          port: creds.port,
-        })
+    try {
+      await this.ssh.connect(creds)
 
-        const authResult = { action: 'auth_result', success: true }
-        this.socket.emit('authentication', authResult)
-
-        const permissions = {
-          autoLog: this.config.options.autoLog || false,
-          allowReplay: this.config.options.allowReplay || false,
-          allowReconnect: this.config.options.allowReconnect || false,
-          allowReauth: this.config.options.allowReauth || false,
-        }
-        this.socket.emit('permissions', permissions)
-
-        this.updateElement('footer', `ssh://${creds.host}:${creds.port}`)
-
-        if (this.config.header && this.config.header.text !== null) {
-          this.updateElement('header', this.config.header.text)
-        }
-
-        this.socket.emit('getTerminal', true)
+      this.sessionState = Object.assign({}, this.sessionState, {
+        authenticated: true,
+        username: creds.username,
+        password: creds.password,
+        privateKey: creds.privateKey,
+        passphrase: creds.passphrase,
+        host: creds.host,
+        port: creds.port,
       })
-      .catch((err) => {
-        debug(
-          `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
-        )
-        const errorMessage =
-          err instanceof SSHConnectionError ? err.message : 'SSH connection failed'
-        this.socket.emit('authentication', {
-          action: 'auth_result',
-          success: false,
-          message: errorMessage,
-        })
+
+      const authResult = { action: 'auth_result', success: true }
+      this.socket.emit('authentication', authResult)
+
+      const permissions = {
+        autoLog: this.config.options.autoLog || false,
+        allowReplay: this.config.options.allowReplay || false,
+        allowReconnect: this.config.options.allowReconnect || false,
+        allowReauth: this.config.options.allowReauth || false,
+      }
+      this.socket.emit('permissions', permissions)
+
+      this.updateElement('footer', `ssh://${creds.host}:${creds.port}`)
+
+      if (this.config.header && this.config.header.text !== null) {
+        this.updateElement('header', this.config.header.text)
+      }
+
+      this.socket.emit('getTerminal', true)
+    } catch (err) {
+      debug(
+        `initializeConnection: SSH CONNECTION ERROR: ${this.socket.id}, Host: ${creds.host}, Error: ${err.message}`
+      )
+      const errorMessage = err instanceof SSHConnectionError ? err.message : 'SSH connection failed'
+      this.socket.emit('authentication', {
+        action: 'auth_result',
+        success: false,
+        message: errorMessage,
       })
+    }
   }
 
   /**
@@ -219,7 +217,7 @@ class WebSSH2Socket extends EventEmitter {
   /**
    * Creates a new SSH shell session.
    */
-  createShell() {
+  async createShell() {
     // Get envVars from socket session if they exist
     const envVars = this.socket.request.session.envVars || null
 
@@ -231,37 +229,38 @@ class WebSSH2Socket extends EventEmitter {
 
     debug(`createShell: Creating shell with options:`, shellOptions)
 
-    this.ssh
-      .shell(shellOptions, envVars)
-      .then((stream) => {
-        stream.on('data', (data) => {
-          this.socket.emit('data', data.toString('utf-8'))
-        })
-        // stream.stderr.on("data", data => debug(`STDERR: ${data}`)) // needed for shell.exec
-        stream.on('close', (code, signal) => {
-          debug('close: SSH Stream closed')
-          this.handleConnectionClose(code, signal)
-        })
+    try {
+      const stream = await this.ssh.shell(shellOptions, envVars)
 
-        stream.on('end', () => {
-          debug('end: SSH Stream ended')
-        })
-
-        stream.on('error', (err) => {
-          debug('error: SSH Stream error %O', err)
-        })
-
-        this.socket.on('data', (data) => {
-          stream.write(data)
-        })
-        this.socket.on('control', (controlData) => {
-          this.handleControl(controlData)
-        })
-        this.socket.on('resize', (data) => {
-          this.handleResize(data)
-        })
+      stream.on('data', (data) => {
+        this.socket.emit('data', data.toString('utf-8'))
       })
-      .catch((err) => this.handleError('createShell: ERROR', err))
+      // stream.stderr.on("data", data => debug(`STDERR: ${data}`)) // needed for shell.exec
+      stream.on('close', (code, signal) => {
+        debug('close: SSH Stream closed')
+        this.handleConnectionClose(code, signal)
+      })
+
+      stream.on('end', () => {
+        debug('end: SSH Stream ended')
+      })
+
+      stream.on('error', (err) => {
+        debug('error: SSH Stream error %O', err)
+      })
+
+      this.socket.on('data', (data) => {
+        stream.write(data)
+      })
+      this.socket.on('control', (controlData) => {
+        this.handleControl(controlData)
+      })
+      this.socket.on('resize', (data) => {
+        this.handleResize(data)
+      })
+    } catch (err) {
+      this.handleError('createShell: ERROR', err)
+    }
   }
 
   handleResize(data) {
@@ -344,7 +343,7 @@ class WebSSH2Socket extends EventEmitter {
   /**
    * Clears session credentials.
    */
-  clearSessionCredentials() {
+  async clearSessionCredentials() {
     if (this.socket.request.session.sshCredentials) {
       this.socket.request.session.sshCredentials.username = null
       this.socket.request.session.sshCredentials.password = null
@@ -354,14 +353,22 @@ class WebSSH2Socket extends EventEmitter {
     this.sessionState.username = null
     this.sessionState.password = null
 
-    this.socket.request.session.save((err) => {
-      if (err) {
-        console.error(
-          `clearSessionCredentials: ${MESSAGES.FAILED_SESSION_SAVE} ${this.socket.id}:`,
-          err
-        )
-      }
-    })
+    try {
+      await new Promise((resolve, reject) => {
+        this.socket.request.session.save((err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      })
+    } catch (err) {
+      console.error(
+        `clearSessionCredentials: ${MESSAGES.FAILED_SESSION_SAVE} ${this.socket.id}:`,
+        err
+      )
+    }
   }
 }
 

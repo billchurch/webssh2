@@ -1,7 +1,7 @@
 // server
 // app/connectionHandler.js
 
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import path from 'path'
 import webssh2Client from 'webssh2_client'
 import { createNamespacedDebug } from './logger.js'
@@ -15,15 +15,14 @@ const debug = createNamespacedDebug('connectionHandler')
  * @param {Object} config - The configuration object to inject into the HTML.
  * @param {Object} res - The Express response object.
  */
-function handleFileRead(filePath, config, res) {
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(HTTP.INTERNAL_SERVER_ERROR).send(MESSAGES.CLIENT_FILE_ERROR)
-    }
-
+async function handleFileRead(filePath, config, res) {
+  try {
+    const data = await fs.readFile(filePath, 'utf8')
     const modifiedHtml = modifyHtml(data, config)
     res.send(modifiedHtml)
-  })
+  } catch {
+    res.status(HTTP.INTERNAL_SERVER_ERROR).send(MESSAGES.CLIENT_FILE_ERROR)
+  }
 }
 
 /**
@@ -31,7 +30,7 @@ function handleFileRead(filePath, config, res) {
  * @param {Object} req - The Express request object.
  * @param {Object} res - The Express response object.
  */
-function handleConnection(req, res) {
+async function handleConnection(req, res) {
   debug('Handling connection req.path:', req.path)
 
   const clientPath = webssh2Client.getPublicPath()
@@ -45,7 +44,7 @@ function handleConnection(req, res) {
   }
 
   const filePath = path.join(clientPath, DEFAULTS.CLIENT_FILE)
-  handleFileRead(filePath, tempConfig, res)
+  await handleFileRead(filePath, tempConfig, res)
 }
 
 export default handleConnection

@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events'
 import socketHandler from '../app/socket.js'
 
 describe('Socket Handler', () => {
-  let io, mockSocket, mockConfig
+  let io, mockSocket, mockConfig, MockSSHConnection
 
   beforeEach(() => {
     // Mock Socket.IO instance
@@ -14,9 +14,11 @@ describe('Socket Handler', () => {
     // Mock socket instance
     mockSocket = new EventEmitter()
     mockSocket.id = 'test-socket-id'
-    mockSocket.handshake = {
+    mockSocket.request = {
       session: {
         save: mock.fn((cb) => cb()),
+        sshCredentials: null,
+        usedBasicAuth: false
       },
     }
     mockSocket.emit = mock.fn()
@@ -29,6 +31,7 @@ describe('Socket Handler', () => {
         readyTimeout: 20000,
         keepaliveInterval: 120000,
         keepaliveCountMax: 10,
+        disableInteractiveAuth: false,
       },
       options: {
         allowReauth: true,
@@ -36,10 +39,22 @@ describe('Socket Handler', () => {
         allowReconnect: true,
       },
       user: {},
+      header: null,
+    }
+
+    // Mock SSH Connection class
+    MockSSHConnection = class extends EventEmitter {
+      connect() {
+        return Promise.resolve()
+      }
+      shell() {
+        return Promise.resolve(new EventEmitter())
+      }
+      end() {}
     }
 
     // Initialize socket handler
-    socketHandler(io, mockConfig)
+    socketHandler(io, mockConfig, MockSSHConnection)
   })
 
   it('should set up connection listener on io instance', () => {
