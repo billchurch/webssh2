@@ -79,7 +79,7 @@ export function createRoutes(config) {
   })
 
   // Scenario 2: Auth required, uses HTTP Basic Auth
-  router.get('/host/:host?', auth, (req, res) => {
+  router.get('/host/:host', auth, (req, res) => {
     debug(`router.get.host: /ssh/host/${req.params.host} route`)
     const envVars = parseEnvVars(req.query.env)
     if (envVars) {
