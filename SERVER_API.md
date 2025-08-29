@@ -70,7 +70,9 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
        password: string,
        host: string,
        port: number,
-       term?: string // Optional terminal type
+       term?: string, // Optional terminal type
+       cols?: number, // Optional terminal columns (added for early dimension setup)
+       rows?: number  // Optional terminal rows (added for early dimension setup)
      }
      ```
 

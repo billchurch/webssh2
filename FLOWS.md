@@ -15,9 +15,9 @@ sequenceDiagram
         SocketIO->>SSHConnection: Jump to "Connect with credentials"
     else No pre-existing credentials
         SocketIO->>Client: Emit "authentication" (request_auth)
-        Client->>SocketIO: Emit "authenticate" (with credentials)
+        Client->>SocketIO: Emit "authenticate" (with credentials + optional cols/rows)
     end
-    SocketIO->>SSHConnection: Connect with credentials
+    SocketIO->>SSHConnection: Connect with credentials (stores dimensions if provided)
     SSHConnection->>SSHServer: Establish SSH connection
     alt Keyboard Interactive Auth
         SSHServer->>SSHConnection: Request additional auth
@@ -30,8 +30,8 @@ sequenceDiagram
     SSHServer->>SSHConnection: Connection established
     SSHConnection->>SocketIO: Connection successful
     SocketIO->>Client: Emit "authentication" (success)
-    Client->>SocketIO: Emit "terminal" (with specs)
-    SocketIO->>SSHConnection: Create shell with specs
+    Client->>SocketIO: Emit "terminal" (with specs - fallback if not sent earlier)
+    SocketIO->>SSHConnection: Create shell with specs (uses stored or new dimensions)
     SSHConnection->>SSHServer: Create shell session
     SSHConnection->>SocketIO: Shell created
     SocketIO->>Client: Ready for input/output
