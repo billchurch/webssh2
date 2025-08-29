@@ -44,10 +44,10 @@ class WebSSH2Socket extends EventEmitter {
     debug(`io.on connection: ${this.socket.id}`)
 
     if (
-      this.socket.handshake.session.usedBasicAuth &&
-      this.socket.handshake.session.sshCredentials
+      this.socket.request.session.usedBasicAuth &&
+      this.socket.request.session.sshCredentials
     ) {
-      const creds = this.socket.handshake.session.sshCredentials
+      const creds = this.socket.request.session.sshCredentials
       debug(
         `handleConnection: ${this.socket.id}, Host: ${creds.host}: HTTP Basic Credentials Exist, creds: %O`,
         maskSensitiveData(creds)
@@ -210,7 +210,7 @@ class WebSSH2Socket extends EventEmitter {
    */
   createShell() {
     // Get envVars from socket session if they exist
-    const envVars = this.socket.handshake.session.envVars || null
+    const envVars = this.socket.request.session.envVars || null
 
     this.ssh
       .shell(
@@ -333,16 +333,16 @@ class WebSSH2Socket extends EventEmitter {
    * Clears session credentials.
    */
   clearSessionCredentials() {
-    if (this.socket.handshake.session.sshCredentials) {
-      this.socket.handshake.session.sshCredentials.username = null
-      this.socket.handshake.session.sshCredentials.password = null
+    if (this.socket.request.session.sshCredentials) {
+      this.socket.request.session.sshCredentials.username = null
+      this.socket.request.session.sshCredentials.password = null
     }
-    this.socket.handshake.session.usedBasicAuth = false
+    this.socket.request.session.usedBasicAuth = false
     this.sessionState.authenticated = false
     this.sessionState.username = null
     this.sessionState.password = null
 
-    this.socket.handshake.session.save((err) => {
+    this.socket.request.session.save((err) => {
       if (err) {
         console.error(
           `clearSessionCredentials: ${MESSAGES.FAILED_SESSION_SAVE} ${this.socket.id}:`,
