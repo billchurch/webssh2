@@ -2,8 +2,7 @@
 // app/config.js
 
 import path from 'path'
-import fs from 'fs'
-import readConfig from 'read-config-ng'
+import { promises as fs } from 'fs'
 import { deepMerge, validateConfig } from './utils.js'
 import { generateSecureSecret } from './crypto-utils.js'
 import { createNamespacedDebug } from './logger.js'
@@ -90,30 +89,82 @@ function getConfigPath() {
   return path.join(__dirname, '..', 'config.json')
 }
 
-function loadConfig() {
+/**
+ * Asynchronously loads configuration from config.json using read-config-ng async API
+ * @returns {Promise<Object>} Configuration object
+ */
+async function loadConfigAsync() {
   const configPath = getConfigPath()
 
   try {
-    if (fs.existsSync(configPath)) {
-      const providedConfig = readConfig.sync(configPath)
-      const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
+    // Check if config file exists using async fs.access
+    await fs.access(configPath)
 
+    // Use native Node.js JSON parsing instead of read-config-ng for async
+    const data = await fs.readFile(configPath, 'utf8')
+    const providedConfig = JSON.parse(data)
+    const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
+
+    if (process.env.PORT) {
+      mergedConfig.listen.port = parseInt(process.env.PORT, 10)
+      debug('Using PORT from environment: %s', mergedConfig.listen.port)
+    }
+
+    const validatedConfig = validateConfig(mergedConfig)
+    debug('Merged and validated configuration')
+    return validatedConfig
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      debug('Missing config.json for webssh. Using default config')
+      const config = JSON.parse(JSON.stringify(defaultConfig))
+
+      // Apply PORT environment variable to default config
       if (process.env.PORT) {
-        mergedConfig.listen.port = parseInt(process.env.PORT, 10)
-        debug('Using PORT from environment: %s', mergedConfig.listen.port)
+        config.listen.port = parseInt(process.env.PORT, 10)
+        debug('Using PORT from environment: %s', config.listen.port)
       }
 
-      const validatedConfig = validateConfig(mergedConfig)
-      debug('Merged and validated configuration')
-      return validatedConfig
+      return config
     }
-    debug('Missing config.json for webssh. Using default config')
-    return defaultConfig
-  } catch (err) {
+
     const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
     handleError(error)
-    return defaultConfig
+    const config = JSON.parse(JSON.stringify(defaultConfig))
+
+    // Apply PORT environment variable even on error fallback
+    if (process.env.PORT) {
+      config.listen.port = parseInt(process.env.PORT, 10)
+      debug('Using PORT from environment: %s', config.listen.port)
+    }
+
+    return config
   }
+}
+
+// For backward compatibility, we need to maintain a singleton config object
+// This will be initialized when the module is first imported
+let configInstance = null
+let configLoadPromise = null
+
+/**
+ * Gets the initialized configuration instance
+ * @returns {Promise<Object>} Configuration object
+ */
+export function getConfig() {
+  if (configInstance) {
+    return Promise.resolve(configInstance)
+  }
+
+  if (!configLoadPromise) {
+    configLoadPromise = loadConfigAsync().then((config) => {
+      configInstance = config
+      // Add getCorsConfig to the config object
+      configInstance.getCorsConfig = getCorsConfig
+      return configInstance
+    })
+  }
+
+  return configLoadPromise
 }
 
 /**
@@ -157,17 +208,97 @@ function loadConfig() {
  * @returns {string} .session.secret - Session secret key
  * @returns {string} .session.name - Session cookie name
  */
-const config = loadConfig()
+/**
+ * Loads configuration synchronously for backward compatibility
+ * @returns {Object} Configuration object
+ */
+function loadConfigSync() {
+  try {
+    // Use native fs module with native JSON parsing (read-config-ng v4.0.2 is broken)
+    // eslint-disable-next-line no-undef
+    const fs = require('fs')
+    const configPath = getConfigPath()
+
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8')
+      const providedConfig = JSON.parse(data)
+      const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
+
+      if (process.env.PORT) {
+        mergedConfig.listen.port = parseInt(process.env.PORT, 10)
+        debug('Using PORT from environment: %s', mergedConfig.listen.port)
+      }
+
+      const validatedConfig = validateConfig(mergedConfig)
+      debug('Merged and validated configuration')
+      return validatedConfig
+    }
+    debug('Missing config.json for webssh. Using default config')
+    const config = JSON.parse(JSON.stringify(defaultConfig))
+
+    // Apply PORT environment variable to default config
+    if (process.env.PORT) {
+      config.listen.port = parseInt(process.env.PORT, 10)
+      debug('Using PORT from environment: %s', config.listen.port)
+    }
+
+    return config
+  } catch (err) {
+    // Handle JSON parse errors or other issues gracefully
+    const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
+    handleError(error)
+    const config = JSON.parse(JSON.stringify(defaultConfig))
+
+    // Apply PORT environment variable even on error fallback
+    if (process.env.PORT) {
+      config.listen.port = parseInt(process.env.PORT, 10)
+      debug('Using PORT from environment: %s', config.listen.port)
+    }
+
+    return config
+  }
+}
+
+// For now, we'll use a hybrid approach during migration
+// The config is loaded lazily when first accessed for backward compatibility
+// But we also expose async methods for the new implementation
+const config = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      if (!configInstance) {
+        configInstance = loadConfigSync()
+        // Add getCorsConfig to the config object
+        configInstance.getCorsConfig = getCorsConfig
+      }
+      return configInstance[prop]
+    },
+  }
+)
 
 function getCorsConfig() {
+  const currentConfig = configInstance || config
   return {
-    origin: config.http.origins,
+    origin: currentConfig.http.origins,
     methods: ['GET', 'POST'],
     credentials: true,
   }
 }
 
+/**
+ * Resets the configuration instance for testing purposes
+ * @internal
+ */
+export function resetConfigForTesting() {
+  configInstance = null
+  configLoadPromise = null
+  debug('Config instance reset for testing')
+}
+
 // Add getCorsConfig to the config object
 config.getCorsConfig = getCorsConfig
 
+// Export both the synchronous config (for backward compatibility)
+// and the async getConfig function for the new implementation
 export default config
+export { loadConfigAsync, getConfigPath }
