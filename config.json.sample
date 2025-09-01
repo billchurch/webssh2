@@ -1,22 +1,35 @@
 {
+  "_comment": "WebSSH2 Configuration File - All settings can be overridden with environment variables",
+  "_envPrefix": "Use WEBSSH2_ prefix for environment variables (e.g. WEBSSH2_LISTEN_PORT=3000)",
+  "_documentation": "See ENV_VARIABLES.md for complete environment variable reference",
+
   "listen": {
+    "_comment": "Server binding configuration",
     "ip": "0.0.0.0",
     "port": 2222
   },
+
   "http": {
-    "origins": ["*.*"]
+    "_comment": "HTTP server settings",
+    "origins": ["*:*"]
   },
+
   "user": {
+    "_comment": "Default user credentials (can be overridden per connection)",
     "name": null,
     "password": null,
     "privateKey": null,
     "passphrase": null
   },
+
   "session": {
-    "secret": "secret",
-    "name": "webssh2"
+    "_comment": "Session management",
+    "secret": "change-this-secret-in-production",
+    "name": "webssh2.sid"
   },
+
   "ssh": {
+    "_comment": "SSH connection settings",
     "host": null,
     "port": 22,
     "localAddress": null,
@@ -28,10 +41,12 @@
     "allowedSubnets": [],
     "alwaysSendKeyboardInteractivePrompts": false,
     "disableInteractiveAuth": false,
+
     "algorithms": {
+      "_comment": "SSH algorithm preferences - can use WEBSSH2_SSH_ALGORITHMS_PRESET=modern|legacy|strict instead",
       "cipher": [
         "aes128-ctr",
-        "aes192-ctr",
+        "aes192-ctr", 
         "aes256-ctr",
         "aes128-gcm",
         "aes128-gcm@openssh.com",
@@ -41,7 +56,7 @@
       ],
       "compress": [
         "none",
-        "zlib@openssh.com",
+        "zlib@openssh.com", 
         "zlib"
       ],
       "hmac": [
@@ -52,23 +67,27 @@
       "kex": [
         "ecdh-sha2-nistp256",
         "ecdh-sha2-nistp384",
-        "ecdh-sha2-nistp521",
+        "ecdh-sha2-nistp521", 
         "diffie-hellman-group-exchange-sha256",
         "diffie-hellman-group14-sha1"
       ],
       "serverHostKey": [
         "ecdsa-sha2-nistp256",
-        "ecdsa-sha2-nistp384",
+        "ecdsa-sha2-nistp384", 
         "ecdsa-sha2-nistp521",
         "ssh-rsa"
       ]
     }
   },
+
   "header": {
+    "_comment": "Web interface header customization",
     "text": null,
     "background": "green"
   },
+
   "options": {
+    "_comment": "UI and behavior options",
     "challengeButton": true,
     "autoLog": false,
     "allowReauth": true,

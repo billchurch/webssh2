@@ -7,6 +7,10 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import fs from 'fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
+import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
+
+// Ensure clean state at module load
+resetConfigForTesting()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -14,31 +18,27 @@ const __dirname = dirname(__filename)
 describe('Config Module - Async Tests', () => {
   const configPath = join(__dirname, '..', 'config.json')
   const backupPath = join(__dirname, '..', 'config.json.backup')
-  let originalEnvPort
+  let originalEnv
 
   beforeEach(() => {
-    // Store original PORT env variable
-    originalEnvPort = process.env.PORT
+    // Store original environment variables
+    originalEnv = storeEnvironmentVariables()
+    
+    // Clean up all environment variables
+    cleanupEnvironmentVariables()
     
     // Backup existing config if it exists
     if (fs.existsSync(configPath)) {
       fs.copyFileSync(configPath, backupPath)
     }
     
-    // Clear PORT env variable
-    delete process.env.PORT
-    
     // Reset config instance for fresh testing
     resetConfigForTesting()
   })
 
   afterEach(() => {
-    // Restore original PORT env variable
-    if (originalEnvPort !== undefined) {
-      process.env.PORT = originalEnvPort
-    } else {
-      delete process.env.PORT
-    }
+    // Restore original environment variables
+    restoreEnvironmentVariables(originalEnv)
     
     // Restore original config
     try {

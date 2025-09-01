@@ -42,7 +42,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.15",
-    "webssh2_client": "^0.2.30"
+    "webssh2_client": "^0.2.31-alpha.0"
   },
   "scripts": {
     "start": "node index.js",

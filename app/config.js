@@ -8,6 +8,7 @@ import { generateSecureSecret } from './crypto-utils.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError, handleError } from './errors.js'
 import { DEFAULTS } from './constants.js'
+import { loadEnvironmentConfig } from './envConfig.js'
 
 const debug = createNamespacedDebug('config')
 
@@ -90,53 +91,49 @@ function getConfigPath() {
 }
 
 /**
- * Asynchronously loads configuration from config.json using read-config-ng async API
+ * Asynchronously loads configuration with priority: ENV vars > config.json > defaults
  * @returns {Promise<Object>} Configuration object
  */
 async function loadConfigAsync() {
   const configPath = getConfigPath()
+  let config = JSON.parse(JSON.stringify(defaultConfig)) // Start with defaults
 
   try {
     // Check if config file exists using async fs.access
     await fs.access(configPath)
 
-    // Use native Node.js JSON parsing instead of read-config-ng for async
+    // Use native Node.js JSON parsing to load config.json
     const data = await fs.readFile(configPath, 'utf8')
     const providedConfig = JSON.parse(data)
-    const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
 
-    if (process.env.PORT) {
-      mergedConfig.listen.port = parseInt(process.env.PORT, 10)
-      debug('Using PORT from environment: %s', mergedConfig.listen.port)
-    }
-
-    const validatedConfig = validateConfig(mergedConfig)
-    debug('Merged and validated configuration')
-    return validatedConfig
+    // Merge config.json over defaults
+    config = deepMerge(config, providedConfig)
+    debug('Loaded and merged config.json')
   } catch (err) {
     if (err.code === 'ENOENT') {
       debug('Missing config.json for webssh. Using default config')
-      const config = JSON.parse(JSON.stringify(defaultConfig))
-
-      // Apply PORT environment variable to default config
-      if (process.env.PORT) {
-        config.listen.port = parseInt(process.env.PORT, 10)
-        debug('Using PORT from environment: %s', config.listen.port)
-      }
-
-      return config
+    } else {
+      debug('Error loading config.json: %s', err.message)
+      const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
+      handleError(error)
+      // Continue with defaults on config file error
     }
+  }
 
-    const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
-    handleError(error)
-    const config = JSON.parse(JSON.stringify(defaultConfig))
+  // Load environment variables and merge with highest priority
+  const envConfig = loadEnvironmentConfig()
+  if (Object.keys(envConfig).length > 0) {
+    config = deepMerge(config, envConfig)
+    debug('Merged environment variables into configuration')
+  }
 
-    // Apply PORT environment variable even on error fallback
-    if (process.env.PORT) {
-      config.listen.port = parseInt(process.env.PORT, 10)
-      debug('Using PORT from environment: %s', config.listen.port)
-    }
-
+  try {
+    const validatedConfig = validateConfig(config)
+    debug('Configuration loaded and validated successfully')
+    return validatedConfig
+  } catch (validationErr) {
+    debug('Configuration validation failed: %s', validationErr.message)
+    // Return unvalidated config for development/debugging
     return config
   }
 }
@@ -209,52 +206,48 @@ export function getConfig() {
  * @returns {string} .session.name - Session cookie name
  */
 /**
- * Loads configuration synchronously for backward compatibility
+ * Loads configuration synchronously with priority: ENV vars > config.json > defaults
  * @returns {Object} Configuration object
  */
 function loadConfigSync() {
-  try {
-    // Use native fs module with native JSON parsing (read-config-ng v4.0.2 is broken)
-    // eslint-disable-next-line no-undef
-    const fs = require('fs')
-    const configPath = getConfigPath()
+  // eslint-disable-next-line no-undef
+  const fs = require('fs')
+  const configPath = getConfigPath()
+  let config = JSON.parse(JSON.stringify(defaultConfig)) // Start with defaults
 
+  try {
+    // Load config.json if it exists
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8')
       const providedConfig = JSON.parse(data)
-      const mergedConfig = deepMerge(JSON.parse(JSON.stringify(defaultConfig)), providedConfig)
 
-      if (process.env.PORT) {
-        mergedConfig.listen.port = parseInt(process.env.PORT, 10)
-        debug('Using PORT from environment: %s', mergedConfig.listen.port)
-      }
-
-      const validatedConfig = validateConfig(mergedConfig)
-      debug('Merged and validated configuration')
-      return validatedConfig
+      // Merge config.json over defaults
+      config = deepMerge(config, providedConfig)
+      debug('Loaded and merged config.json (sync)')
+    } else {
+      debug('Missing config.json for webssh. Using default config (sync)')
     }
-    debug('Missing config.json for webssh. Using default config')
-    const config = JSON.parse(JSON.stringify(defaultConfig))
-
-    // Apply PORT environment variable to default config
-    if (process.env.PORT) {
-      config.listen.port = parseInt(process.env.PORT, 10)
-      debug('Using PORT from environment: %s', config.listen.port)
-    }
-
-    return config
   } catch (err) {
-    // Handle JSON parse errors or other issues gracefully
+    debug('Error loading config.json (sync): %s', err.message)
     const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
     handleError(error)
-    const config = JSON.parse(JSON.stringify(defaultConfig))
+    // Continue with defaults on config file error
+  }
 
-    // Apply PORT environment variable even on error fallback
-    if (process.env.PORT) {
-      config.listen.port = parseInt(process.env.PORT, 10)
-      debug('Using PORT from environment: %s', config.listen.port)
-    }
+  // Load environment variables and merge with highest priority
+  const envConfig = loadEnvironmentConfig()
+  if (Object.keys(envConfig).length > 0) {
+    config = deepMerge(config, envConfig)
+    debug('Merged environment variables into configuration (sync)')
+  }
 
+  try {
+    const validatedConfig = validateConfig(config)
+    debug('Configuration loaded and validated successfully (sync)')
+    return validatedConfig
+  } catch (validationErr) {
+    debug('Configuration validation failed (sync): %s', validationErr.message)
+    // Return unvalidated config for development/debugging
     return config
   }
 }
