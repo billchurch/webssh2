@@ -123,7 +123,7 @@ tmux new-session -d -s webssh2-server -c "$PROJECT_ROOT/webssh2"
 tmux send-keys -t webssh2-server "# WebSSH2 Server (Port 2222)" C-m
 tmux send-keys -t webssh2-server "npm install" C-m
 sleep 2
-tmux send-keys -t webssh2-server "npm run watch" C-m
+tmux send-keys -t webssh2-server "npm run dev" C-m
 
 # Create tmux session for WebSSH2 client
 echo -e "${GREEN}Starting WebSSH2 client session...${NC}"
@@ -131,7 +131,7 @@ tmux new-session -d -s webssh2-client -c "$PROJECT_ROOT/webssh2_client"
 tmux send-keys -t webssh2-client "# WebSSH2 Client (Port 3000)" C-m
 tmux send-keys -t webssh2-client "npm install" C-m
 sleep 2
-tmux send-keys -t webssh2-client "npm run watch" C-m
+tmux send-keys -t webssh2-client "npm run dev" C-m
 
 echo -e "${GREEN}All sessions started!${NC}"
 echo ""
@@ -171,12 +171,12 @@ tmux send-keys -t webssh2-docker "docker run --rm -p 4444:4444 --name ssh-debug-
 # 2. Start WebSSH2 server
 tmux new-session -d -s webssh2-server
 tmux send-keys -t webssh2-server "cd webssh2" C-m
-tmux send-keys -t webssh2-server "npm run watch" C-m
+tmux send-keys -t webssh2-server "npm run dev" C-m
 
 # 3. Start WebSSH2 client
 tmux new-session -d -s webssh2-client
 tmux send-keys -t webssh2-client "cd webssh2_client" C-m
-tmux send-keys -t webssh2-client "npm run watch" C-m
+tmux send-keys -t webssh2-client "npm run dev" C-m
 ```
 
 ### tmux Quick Reference

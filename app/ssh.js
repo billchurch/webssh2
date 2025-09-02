@@ -25,21 +25,41 @@ class SSHConnection extends EventEmitter {
   }
 
   /**
-   * Validates the format of an RSA private key, supporting both standard and encrypted keys
+   * Validates the format of a private key, supporting modern SSH key formats
    * @param {string} key - The private key string to validate
    * @returns {boolean} - Whether the key appears to be valid
    */
   validatePrivateKey(key) {
-    // Pattern for standard RSA private key
-    const standardKeyPattern =
-      /^-----BEGIN (?:RSA )?PRIVATE KEY-----\r?\n([A-Za-z0-9+/=\r\n]+)\r?\n-----END (?:RSA )?PRIVATE KEY-----\r?\n?$/
+    if (!key || typeof key !== 'string') {
+      return false
+    }
 
-    // Pattern for encrypted RSA private key
-    const encryptedKeyPattern =
-      /^-----BEGIN RSA PRIVATE KEY-----\r?\n(?:Proc-Type: 4,ENCRYPTED\r?\nDEK-Info: ([^\r\n]+)\r?\n\r?\n)([A-Za-z0-9+/=\r\n]+)\r?\n-----END RSA PRIVATE KEY-----\r?\n?$/
+    // Trim whitespace for consistent validation
+    const trimmedKey = key.trim()
 
-    // Test for either standard or encrypted key format
-    return standardKeyPattern.test(key) || encryptedKeyPattern.test(key)
+    // Patterns for various private key formats
+    const keyPatterns = [
+      // OpenSSH format (modern default for all key types)
+      /^-----BEGIN OPENSSH PRIVATE KEY-----[\s\S]*-----END OPENSSH PRIVATE KEY-----$/,
+      
+      // Traditional RSA format
+      /^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*-----END (?:RSA )?PRIVATE KEY-----$/,
+      
+      // EC (ECDSA) private key format
+      /^-----BEGIN EC PRIVATE KEY-----[\s\S]*-----END EC PRIVATE KEY-----$/,
+      
+      // DSA private key format
+      /^-----BEGIN DSA PRIVATE KEY-----[\s\S]*-----END DSA PRIVATE KEY-----$/,
+      
+      // PKCS#8 format (can contain any key type)
+      /^-----BEGIN PRIVATE KEY-----[\s\S]*-----END PRIVATE KEY-----$/,
+      
+      // Encrypted PKCS#8 format
+      /^-----BEGIN ENCRYPTED PRIVATE KEY-----[\s\S]*-----END ENCRYPTED PRIVATE KEY-----$/
+    ]
+
+    // Test against all supported formats
+    return keyPatterns.some(pattern => pattern.test(trimmedKey))
   }
 
   /**
@@ -48,7 +68,20 @@ class SSHConnection extends EventEmitter {
    * @returns {boolean} - Whether the key is encrypted
    */
   isEncryptedKey(key) {
-    return key.includes('Proc-Type: 4,ENCRYPTED')
+    if (!key || typeof key !== 'string') {
+      return false
+    }
+
+    // Check for various encryption indicators
+    return (
+      // Traditional encrypted RSA format
+      key.includes('Proc-Type: 4,ENCRYPTED') ||
+      // Encrypted PKCS#8 format
+      key.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----') ||
+      // OpenSSH encrypted format - contains encryption headers
+      (key.includes('-----BEGIN OPENSSH PRIVATE KEY-----') && 
+       (key.includes('bcrypt') || key.includes('aes') || key.includes('3des')))
+    )
   }
 
   /**

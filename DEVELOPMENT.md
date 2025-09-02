@@ -49,7 +49,7 @@ cd webssh2_server
 2. Start the server in development mode:
 
 ```bash
-npm run watch
+npm run dev
 ```
 
 This will:
@@ -68,7 +68,7 @@ cd webssh2_client
 2. Start the client in development mode:
 
 ```bash
-npm run watch
+npm run dev
 ```
 
 This will:
@@ -143,7 +143,7 @@ Both client and server components support file watching and automatic reloading:
 
 If you encounter issues:
 
-1. Ensure both servers are running (`npm run watch` in both directories)
+1. Ensure both servers are running (`npm run dev` in both directories)
 2. Check the browser console for client-side errors
 3. Check terminal output for server-side errors
 4. Verify the ports (3000 and 2222) are available
