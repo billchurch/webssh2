@@ -41,25 +41,25 @@ class SSHConnection extends EventEmitter {
     const keyPatterns = [
       // OpenSSH format (modern default for all key types)
       /^-----BEGIN OPENSSH PRIVATE KEY-----[\s\S]*-----END OPENSSH PRIVATE KEY-----$/,
-      
+
       // Traditional RSA format
       /^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*-----END (?:RSA )?PRIVATE KEY-----$/,
-      
+
       // EC (ECDSA) private key format
       /^-----BEGIN EC PRIVATE KEY-----[\s\S]*-----END EC PRIVATE KEY-----$/,
-      
+
       // DSA private key format
       /^-----BEGIN DSA PRIVATE KEY-----[\s\S]*-----END DSA PRIVATE KEY-----$/,
-      
+
       // PKCS#8 format (can contain any key type)
       /^-----BEGIN PRIVATE KEY-----[\s\S]*-----END PRIVATE KEY-----$/,
-      
+
       // Encrypted PKCS#8 format
-      /^-----BEGIN ENCRYPTED PRIVATE KEY-----[\s\S]*-----END ENCRYPTED PRIVATE KEY-----$/
+      /^-----BEGIN ENCRYPTED PRIVATE KEY-----[\s\S]*-----END ENCRYPTED PRIVATE KEY-----$/,
     ]
 
     // Test against all supported formats
-    return keyPatterns.some(pattern => pattern.test(trimmedKey))
+    return keyPatterns.some((pattern) => pattern.test(trimmedKey))
   }
 
   /**
@@ -79,8 +79,8 @@ class SSHConnection extends EventEmitter {
       // Encrypted PKCS#8 format
       key.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----') ||
       // OpenSSH encrypted format - contains encryption headers
-      (key.includes('-----BEGIN OPENSSH PRIVATE KEY-----') && 
-       (key.includes('bcrypt') || key.includes('aes') || key.includes('3des')))
+      (key.includes('-----BEGIN OPENSSH PRIVATE KEY-----') &&
+        (key.includes('bcrypt') || key.includes('aes') || key.includes('3des')))
     )
   }
 
