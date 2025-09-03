@@ -218,6 +218,10 @@ class WebSSH2Socket extends EventEmitter {
    * Creates a new SSH shell session.
    */
   async createShell() {
+    if (!this.ssh) {
+      debug('createShell: SSH not initialized; skipping')
+      return
+    }
     // Get envVars from socket session if they exist
     const envVars = this.socket.request.session.envVars || null
 
@@ -271,7 +275,9 @@ class WebSSH2Socket extends EventEmitter {
     if (cols && validator.isInt(cols.toString())) {
       this.sessionState.cols = parseInt(cols, 10)
     }
-    this.ssh.resizeTerminal(this.sessionState.rows, this.sessionState.cols)
+    if (this.ssh && typeof this.ssh.resizeTerminal === 'function') {
+      this.ssh.resizeTerminal(this.sessionState.rows, this.sessionState.cols)
+    }
   }
 
   /**
@@ -279,7 +285,11 @@ class WebSSH2Socket extends EventEmitter {
    * @param {string} controlData - The control command received.
    */
   handleControl(controlData) {
-    if (validator.isIn(controlData, ['replayCredentials', 'reauth']) && this.ssh.stream) {
+    if (
+      validator.isIn(controlData, ['replayCredentials', 'reauth']) &&
+      this.ssh &&
+      this.ssh.stream
+    ) {
       if (controlData === 'replayCredentials') {
         this.replayCredentials()
       } else if (controlData === 'reauth') {
@@ -294,7 +304,7 @@ class WebSSH2Socket extends EventEmitter {
    * Replays stored credentials.
    */
   replayCredentials() {
-    if (this.config.options.allowReplay && this.ssh.stream) {
+    if (this.config.options.allowReplay && this.ssh && this.ssh.stream) {
       this.ssh.stream.write(`${this.sessionState.password}\n`)
     }
   }
@@ -335,9 +345,19 @@ class WebSSH2Socket extends EventEmitter {
    * @param {string} reason - The reason for the closure.
    */
   handleConnectionClose(code, signal) {
-    this.ssh.end()
+    if (this.ssh && typeof this.ssh.end === 'function') {
+      try {
+        this.ssh.end()
+      } catch (e) {
+        debug(`handleConnectionClose: error ending SSH: ${e?.message || e}`)
+      }
+    }
+    this.ssh = null
     debug(`handleConnectionClose: ${this.socket.id}, Code: ${code}, Signal: ${signal}`)
-    this.socket.disconnect(true)
+    // Ensure socket is disconnected; guard in case already closed
+    if (this.socket && this.socket.disconnect) {
+      this.socket.disconnect(true)
+    }
   }
 
   /**

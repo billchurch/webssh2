@@ -6,7 +6,6 @@ import { EventEmitter } from 'events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError, handleError } from './errors.js'
 import { maskSensitiveData } from './utils.js'
-import { DEFAULTS } from './constants.js'
 
 const debug = createNamespacedDebug('ssh')
 
@@ -21,7 +20,6 @@ class SSHConnection extends EventEmitter {
     this.conn = null
     this.stream = null
     this.creds = null
-    this.authAttempts = 0
   }
 
   /**
@@ -98,9 +96,8 @@ class SSHConnection extends EventEmitter {
     }
 
     this.conn = new SSH()
-    this.authAttempts = 0
 
-    // First try with key authentication if available
+    // Build a single connection config with preferred auth order
     const sshConfig = this.getSSHConfig(creds, true)
     debug('Initial connection config: %O', maskSensitiveData(sshConfig))
 
@@ -154,47 +151,10 @@ class SSHConnection extends EventEmitter {
         return
       }
 
-      // Check if this is an authentication error and we haven't exceeded max attempts
-      if (this.authAttempts < DEFAULTS.MAX_AUTH_ATTEMPTS) {
-        this.authAttempts += 1
-        debug(`Authentication attempt ${this.authAttempts} failed, trying password authentication`)
-
-        // Only try password auth if we have a password
-        if (this.creds.password) {
-          debug('Retrying with password authentication')
-
-          // Disconnect current connection
-          if (this.conn) {
-            this.conn.end()
-          }
-
-          // Create new connection with password authentication
-          this.conn = new SSH()
-          const passwordConfig = this.getSSHConfig(this.creds, false)
-
-          this.setupConnectionHandlers(resolve, reject)
-          this.conn.connect(passwordConfig)
-        } else {
-          debug('No password available, requesting password from client')
-          this.emit('password-prompt', {
-            host: this.creds.host,
-            username: this.creds.username,
-          })
-
-          // Listen for password response one time
-          this.once('password-response', (password) => {
-            this.creds.password = password
-            const newConfig = this.getSSHConfig(this.creds, false)
-            this.setupConnectionHandlers(resolve, reject)
-            this.conn.connect(newConfig)
-          })
-        }
-      } else {
-        // We've exhausted all authentication attempts
-        const error = new SSHConnectionError('All authentication methods failed')
-        handleError(error)
-        reject(error)
-      }
+      // Authentication failures are handled within a single connection via authHandler
+      const error = new SSHConnectionError('All authentication methods failed')
+      handleError(error)
+      reject(error)
     })
 
     this.conn.on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
@@ -269,6 +229,7 @@ class SSHConnection extends EventEmitter {
       host: creds.host,
       port: creds.port,
       username: creds.username,
+      // Keep keyboard-interactive available; authHandler controls order
       tryKeyboard: true,
       algorithms: this.config.ssh.algorithms,
       readyTimeout: this.config.ssh.readyTimeout,
@@ -277,28 +238,37 @@ class SSHConnection extends EventEmitter {
       debug: createNamespacedDebug('ssh2'),
     }
 
-    // Try private key first if available and useKey is true
+    // Populate available credentials
+    const authOrder = []
+
+    // Prefer private key first (if provided and allowed)
     if (useKey && (creds.privateKey || this.config.user.privateKey)) {
-      debug('Using private key authentication')
       const privateKey = creds.privateKey || this.config.user.privateKey
       if (!this.validatePrivateKey(privateKey)) {
         throw new SSHConnectionError('Invalid private key format')
       }
       config.privateKey = privateKey
-
-      // Check if key is encrypted and passphrase is needed
       if (this.isEncryptedKey(privateKey)) {
         const passphrase = creds.passphrase || this.config.user.passphrase
         if (!passphrase) {
           throw new SSHConnectionError('Encrypted private key requires a passphrase')
         }
-        debug('Adding passphrase for encrypted private key')
         config.passphrase = passphrase
       }
-    } else if (creds.password) {
-      debug('Using password authentication')
-      config.password = creds.password
+      authOrder.push('publickey')
     }
+
+    // Then try password if present
+    if (creds.password) {
+      config.password = creds.password
+      authOrder.push('password')
+    }
+
+    // Finally, allow keyboard-interactive as a fallback
+    authOrder.push('keyboard-interactive')
+
+    // Use a single connection to iterate through methods in order
+    config.authHandler = authOrder
 
     return config
   }
