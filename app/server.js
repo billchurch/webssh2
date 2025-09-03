@@ -1,7 +1,7 @@
 import http from 'http'
-// const { createNamespacedDebug } = require("./logger")
+import debug from 'debug'
 
-// const debug = createNamespacedDebug("server")
+const serverDebug = debug('webssh:server')
 /**
  * Creates and configures the HTTP server
  * @param {express.Application} app - The Express application instance
@@ -26,7 +26,7 @@ function handleServerError(err) {
  */
 export function startServer(server, config) {
   server.listen(config.listen.port, config.listen.ip, () => {
-    console.log(`startServer: listening on ${config.listen.ip}:${config.listen.port}`)
+    serverDebug(`Server listening on ${config.listen.ip}:${config.listen.port}`)
   })
 
   server.on('error', handleServerError)
