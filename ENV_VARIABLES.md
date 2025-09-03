@@ -50,6 +50,17 @@ WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com,api.test.com"
 WEBSSH2_HTTP_ORIGINS='["localhost:3000","*.example.com","api.test.com"]'
 ```
 
+### Security Headers & CSP
+
+The server applies security headers and a Content Security Policy (CSP) by default.
+
+- Configuration: Defined in code at `app/security-headers.js` and applied by `app/middleware.js`.
+- Environment variables: There are currently no `WEBSSH2_` environment variables to toggle or customize CSP/headers.
+- Customization options:
+  - Edit `CSP_CONFIG` and `SECURITY_HEADERS` in `app/security-headers.js` for global changes.
+  - Use `createCSPMiddleware(customCSP)` for route-specific CSP overrides.
+  - HSTS (`Strict-Transport-Security`) is only added on HTTPS requests.
+
 ### User Defaults
 
 | Variable | Type | Default | Description |
