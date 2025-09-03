@@ -72,7 +72,8 @@ describe('SSHConnection', () => {
       }
     )
 
-    sshServer.listen(TEST_PORT)
+    // Bind explicitly to loopback to avoid sandbox restrictions on 0.0.0.0
+    sshServer.listen(TEST_PORT, '127.0.0.1')
     sshConnection = new SSHConnection(mockConfig)
   })
 
