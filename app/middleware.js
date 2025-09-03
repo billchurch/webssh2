@@ -14,6 +14,7 @@ import basicAuth from 'basic-auth'
 import validator from 'validator'
 
 import { HTTP } from './constants.js'
+import { createSecurityHeadersMiddleware } from './security-headers.js'
 
 /**
  * Middleware function that handles HTTP Basic Authentication for the application.
@@ -122,13 +123,16 @@ export function createCookieMiddleware() {
  * @returns {Object} An object containing the session middleware
  */
 export function applyMiddleware(app, config) {
+  // Apply security headers first (before session to ensure they're always set)
+  app.use(createSecurityHeadersMiddleware())
+
   const sessionMiddleware = createSessionMiddleware(config)
   app.use(sessionMiddleware)
 
   app.use(createBodyParserMiddleware())
   app.use(createCookieMiddleware())
 
-  debug('applyMiddleware')
+  debug('applyMiddleware applied: security headers, session, body parser, cookies')
 
   return { sessionMiddleware }
 }

@@ -165,7 +165,7 @@ docker rm webssh2-test-ssh
 ### WebSocket connection fails
 ```bash
 # Ensure server is running with WebSocket support
-USE_WEBSOCKET=true npm run watch:websocket
+USE_WEBSOCKET=true npm run dev
 ```
 
 ### Tests timeout

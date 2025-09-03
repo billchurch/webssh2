@@ -70,7 +70,7 @@ if [ ! -d "node_modules" ]; then
     tmux send-keys -t webssh2-server "npm install" C-m
     sleep 5
 fi
-tmux send-keys -t webssh2-server "npm run watch" C-m
+tmux send-keys -t webssh2-server "npm run dev" C-m
 
 # Create tmux session for WebSSH2 client
 echo -e "${GREEN}Starting WebSSH2 client session...${NC}"
@@ -80,7 +80,7 @@ if [ ! -d "node_modules" ]; then
     tmux send-keys -t webssh2-client "npm install" C-m
     sleep 5
 fi
-tmux send-keys -t webssh2-client "npm run watch" C-m
+tmux send-keys -t webssh2-client "npm run dev" C-m
 
 # Wait for services to start
 echo -e "${YELLOW}Waiting for services to start...${NC}"

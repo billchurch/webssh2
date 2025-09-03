@@ -93,6 +93,15 @@ Renamed and expanded options:
 - Socket.IO path is now fixed at "/ssh/socket.io"
 - Added server host key algorithm configurations
 
+### 2a. Security Headers (New Default)
+- The server now applies a secure set of HTTP response headers by default via `app/security-headers.js`.
+- A Content Security Policy (CSP) is included and tuned for xterm.js and terminal styling. It purposely allows `'unsafe-inline'` for scripts/styles required by the client-side terminal rendering.
+- These headers are applied before session middleware in `app/middleware.js`.
+
+Notes:
+- There is no config.json or environment toggle for CSP or headers at this time. To customize, adjust `app/security-headers.js` (or add a route-specific CSP using `createCSPMiddleware`).
+- HSTS (`Strict-Transport-Security`) is set only when the request is HTTPS (`req.secure`).
+
 ### 3. Terminal Configuration
 All terminal-specific configurations have been removed from server config:
 ```diff
@@ -183,3 +192,17 @@ These settings are now managed client-side.
   }
 }
 ```
+
+## Security Headers & CSP (Reference)
+
+The default CSP and headers are defined in `app/security-headers.js`:
+
+- Content-Security-Policy: restricts sources; allows WebSocket (`ws:`/`wss:`) connections and inline script/style needed by the terminal.
+- X-Content-Type-Options: `nosniff`
+- X-Frame-Options: `DENY`
+- X-XSS-Protection: `1; mode=block`
+- Referrer-Policy: `strict-origin-when-cross-origin`
+- Permissions-Policy: disables geolocation, microphone, camera
+- Strict-Transport-Security: 1 year (HTTPS requests only)
+
+To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-headers.js`. For per-route CSP, use `createCSPMiddleware(customCSP)` in your route setup.
