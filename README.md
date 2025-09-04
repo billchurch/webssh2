@@ -229,6 +229,40 @@ Security notes:
 - Exec requests respect the same SSH authentication and authorization as shells.
 - You can provide environment variables via query (`env=FOO:bar,BAZ:qux`) which are applied to both shell and exec sessions.
 
+#### Exec Troubleshooting
+
+- PTY for TUIs: Interactive full‑screen apps (e.g., `mc`, `htop`, `sudo`) typically require a TTY. Clients should set `pty: true` in the `exec` payload, and forward stdin and terminal resize events while the command runs.
+- Mouse inputs print escapes: This happens when the client does not forward raw stdin to the server or no PTY is allocated. Ensure the client requests `pty: true` and forwards `data` (stdin) and `resize` events during exec. The official CLI forwards both when `--pty` is used.
+- TERM/terminfo mismatches: If keys or line‑drawing characters look wrong, try a simpler terminal type (`term: "xterm"`), or ensure the remote host has a terminfo entry for your TERM (`infocmp $TERM`).
+- Dimensions and resizing: Exec PTY sizing uses `cols/rows` from the session (or the exec payload). Clients should emit `resize` during exec so the server calls `setWindow` on the exec stream.
+- No live output: Non‑PTY exec may buffer output until completion. Use `pty: true` for interactive, incremental output.
+- Timeout behavior: If the client sets `timeoutMs`, the server attempts to signal/close the exec stream and emits `exec-exit` with `{ code: null, signal: 'TIMEOUT' }`.
+- Exit codes: The server emits `exec-exit` with the remote exit `code` (and `signal` when applicable). Clients can map this directly to their process exit status.
+
+Example (Socket.IO payload):
+
+```js
+// Client → Server
+socket.emit('exec', {
+  command: 'htop',
+  pty: true,
+  term: 'xterm-256color',
+  cols: 120,
+  rows: 40,
+  env: { FOO: 'bar' },
+  timeoutMs: 30000
+})
+
+// Server → Client
+socket.on('exec-data', ({ type, data }) => {
+  if (type === 'stdout') process.stdout.write(data)
+  else process.stderr.write(data)
+})
+socket.on('exec-exit', ({ code, signal }) => {
+  console.log('exit:', code, signal)
+})
+```
+
 #### Configuration
 
 Private key authentication can be configured through the `config.json` file for use with the `/ssh/host/` endpoints:
