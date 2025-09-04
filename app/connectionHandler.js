@@ -3,10 +3,10 @@
 
 import { promises as fs } from 'fs'
 import path from 'path'
-import webssh2Client from 'webssh2_client'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
 import { modifyHtml } from './utils.js'
+import { getClientPublicPath } from './client-path.js'
 const debug = createNamespacedDebug('connectionHandler')
 
 /**
@@ -33,7 +33,7 @@ async function handleFileRead(filePath, config, res) {
 async function handleConnection(req, res) {
   debug('Handling connection req.path:', req.path)
 
-  const clientPath = webssh2Client.getPublicPath()
+  const clientPath = getClientPublicPath()
 
   const tempConfig = {
     socket: {

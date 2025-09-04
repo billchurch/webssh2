@@ -2,7 +2,6 @@
 // app/app.js
 
 import express from 'express'
-import webssh2Client from 'webssh2_client'
 import config, { getConfig } from './config.js'
 import SSHConnection from './ssh.js'
 import socketHandler from './socket.js'
@@ -13,6 +12,7 @@ import { configureSocketIO } from './io.js'
 import { handleError, ConfigError } from './errors.js'
 import { createNamespacedDebug } from './logger.js'
 import { MESSAGES } from './constants.js'
+import { getClientPublicPath } from './client-path.js'
 
 const debug = createNamespacedDebug('app')
 
@@ -26,7 +26,7 @@ function createAppAsync(appConfig) {
 
   try {
     // Resolve the correct path to the webssh2_client module
-    const clientPath = webssh2Client.getPublicPath()
+    const clientPath = getClientPublicPath()
 
     // Apply middleware
     const { sessionMiddleware } = applyMiddleware(app, appConfig)
@@ -57,7 +57,7 @@ function createApp() {
 
   try {
     // Resolve the correct path to the webssh2_client module
-    const clientPath = webssh2Client.getPublicPath()
+    const clientPath = getClientPublicPath()
 
     // Apply middleware
     const { sessionMiddleware } = applyMiddleware(app, config)

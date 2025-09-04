@@ -38,7 +38,7 @@
     "debug": "^4.4.1",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
-    "jsmasker": "^1.7.0",
+    "jsmasker": "^2.0.0",
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.15",
