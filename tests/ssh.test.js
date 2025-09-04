@@ -266,4 +266,126 @@ describe('SSHConnection', () => {
       assert.equal(error.message, 'All authentication methods failed')
     }
   })
+
+  test('should exec command and receive stdout and exit code', async () => {
+    // Reconfigure server to support exec
+    sshServer.removeAllListeners('connection')
+    sshServer.on('connection', (client) => {
+      client.on('authentication', (ctx) => {
+        if (
+          ctx.method === 'password' &&
+          ctx.username === TEST_CREDENTIALS.username &&
+          ctx.password === TEST_CREDENTIALS.password
+        ) {
+          ctx.accept()
+        } else {
+          ctx.reject()
+        }
+      })
+
+      client.on('ready', () => {
+        client.on('session', (accept) => {
+          const session = accept()
+          // Accept PTY if requested prior to exec (optional)
+          session.on('pty', (accept) => accept && accept())
+          session.on('exec', (accept, _reject, info) => {
+            const stream = accept()
+            // Simulate command behavior
+            const out = `ran: ${info.command}\n`
+            stream.write(out)
+            // exit code 0
+            stream.exit(0)
+            stream.close()
+          })
+        })
+      })
+    })
+
+    const credentials = {
+      host: 'localhost',
+      port: TEST_PORT,
+      username: TEST_CREDENTIALS.username,
+      password: TEST_CREDENTIALS.password,
+    }
+
+    await sshConnection.connect(credentials)
+    const stream = await sshConnection.exec('echo hello')
+
+    let stdout = ''
+    let code = null
+
+    await new Promise((resolve, reject) => {
+      stream.on('data', (data) => {
+        stdout += data.toString('utf-8')
+      })
+      stream.on('close', (c) => {
+        code = c
+        resolve()
+      })
+      stream.on('error', reject)
+    })
+
+    assert.match(stdout, /ran: echo hello/)
+    assert.equal(code, 0)
+  })
+
+  test('should exec with PTY when requested', async () => {
+    // Reconfigure server to capture PTY request, then exec
+    sshServer.removeAllListeners('connection')
+    let ptyRequested = false
+    sshServer.on('connection', (client) => {
+      client.on('authentication', (ctx) => {
+        if (
+          ctx.method === 'password' &&
+          ctx.username === TEST_CREDENTIALS.username &&
+          ctx.password === TEST_CREDENTIALS.password
+        ) {
+          ctx.accept()
+        } else {
+          ctx.reject()
+        }
+      })
+
+      client.on('ready', () => {
+        client.on('session', (accept) => {
+          const session = accept()
+          session.on('pty', (accept) => {
+            ptyRequested = true
+            accept && accept()
+          })
+          session.on('exec', (accept, _reject) => {
+            const stream = accept()
+            stream.write('pty-exec\n')
+            stream.exit(0)
+            stream.close()
+          })
+        })
+      })
+    })
+
+    const credentials = {
+      host: 'localhost',
+      port: TEST_PORT,
+      username: TEST_CREDENTIALS.username,
+      password: TEST_CREDENTIALS.password,
+    }
+
+    await sshConnection.connect(credentials)
+    const stream = await sshConnection.exec('uptime', {
+      pty: true,
+      term: 'xterm',
+      cols: 80,
+      rows: 24,
+    })
+
+    let stdout = ''
+    await new Promise((resolve, reject) => {
+      stream.on('data', (data) => (stdout += data.toString('utf-8')))
+      stream.on('close', () => resolve())
+      stream.on('error', reject)
+    })
+
+    assert.equal(ptyRequested, true, 'PTY should be requested for exec')
+    assert.match(stdout, /pty-exec/)
+  })
 })

@@ -17,6 +17,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Features](#features)
+ - [Exec Channel](#exec-channel)
 - [Routes](#routes)
 - [Client-Side Module](#client-side-module)
 - [Tips](#tips)
@@ -198,6 +199,35 @@ For more information on SSH keyboard-interactive authentication, refer to [RFC 4
 ### SSH Private Key Authentication
 
 WebSSH2 supports SSH private key authentication when using the `/ssh/host/` endpoint with a private key configured in the server settings or via the interactive method with the `/ssh/` endpoint. 
+
+### Exec Channel
+
+WebSSH2 supports non-interactive command execution over SSH using the SSH2 exec channel, in addition to the interactive shell.
+
+- When clients emit an `exec` request, the server executes the provided command and streams output back to the client.
+- This feature is additive and does not change the existing interactive shell flow.
+
+WebSocket events (server API additions):
+- Client → Server: `exec`
+  - Payload:
+    - `command` (string, required): command to execute
+    - `pty` (boolean, optional): request a PTY for the exec channel
+    - `term`, `cols`, `rows` (optional): PTY settings; defaults to session values
+    - `env` (object, optional): environment variables to merge with session env
+    - `timeoutMs` (number, optional): kill/terminate exec if exceeded
+- Server → Client: `exec-data`
+  - Payload: `{ type: 'stdout' | 'stderr', data: string }`
+- Server → Client: `exec-exit`
+  - Payload: `{ code: number|null, signal: string|null }`
+
+Compatibility and behavior:
+- Stdout is sent on both the existing `data` event and `exec-data` with `type: 'stdout'` for backward compatibility with terminal sinks.
+- Stderr is sent only via `exec-data` with `type: 'stderr'` to avoid polluting legacy terminal output handlers.
+- The SSH connection remains open after command completion so multiple execs can reuse a single session.
+
+Security notes:
+- Exec requests respect the same SSH authentication and authorization as shells.
+- You can provide environment variables via query (`env=FOO:bar,BAZ:qux`) which are applied to both shell and exec sessions.
 
 #### Configuration
 

@@ -313,12 +313,60 @@ class SSHConnection extends EventEmitter {
   }
 
   /**
+   * Executes a single non-interactive command over the SSH connection.
+   * Optionally requests a PTY when options.pty is true to emulate TTY behavior.
+   *
+   * @param {string} command - The command to execute
+   * @param {Object} [options] - Execution options
+   * @param {boolean} [options.pty] - Request a PTY for the exec channel
+   * @param {string} [options.term] - Terminal type
+   * @param {number} [options.rows] - Rows for PTY
+   * @param {number} [options.cols] - Columns for PTY
+   * @param {number} [options.width] - Pixel width for PTY
+   * @param {number} [options.height] - Pixel height for PTY
+   * @param {Object} [envVars] - Environment variables to set for the command
+   * @returns {Promise<Object>} - Resolves with the SSH exec stream
+   */
+  exec(command, options = {}, envVars) {
+    const execOptions = {}
+
+    // Include environment vars if provided (same behavior as shell())
+    if (envVars) {
+      execOptions.env = this.getEnvironment(envVars)
+    }
+
+    // PTY request if needed
+    if (options.pty) {
+      execOptions.pty = {
+        term: options.term,
+        rows: options.rows,
+        cols: options.cols,
+        width: options.width,
+        height: options.height,
+      }
+    }
+
+    debug('exec: Executing command with options:', command, execOptions)
+
+    return new Promise((resolve, reject) => {
+      this.conn.exec(command, execOptions, (err, stream) => {
+        if (err) {
+          reject(err)
+        } else {
+          this.stream = stream
+          resolve(stream)
+        }
+      })
+    })
+  }
+
+  /**
    * Resizes the terminal window for the current SSH session.
    * @param {number} rows - The number of rows for the terminal.
    * @param {number} cols - The number of columns for the terminal.
    */
   resizeTerminal(rows, cols) {
-    if (this.stream) {
+    if (this.stream && typeof this.stream.setWindow === 'function') {
       this.stream.setWindow(rows, cols)
     }
   }

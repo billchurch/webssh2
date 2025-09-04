@@ -68,6 +68,10 @@ class WebSSH2Socket extends EventEmitter {
     this.socket.on('terminal', (data) => {
       this.handleTerminal(data)
     })
+    // Exec event allows single-command execution over SSH
+    this.socket.on('exec', (payload) => {
+      this.handleExec(payload)
+    })
     this.socket.on('disconnect', (reason) => {
       this.handleConnectionClose(reason)
     })
@@ -264,6 +268,104 @@ class WebSSH2Socket extends EventEmitter {
       })
     } catch (err) {
       this.handleError('createShell: ERROR', err)
+    }
+  }
+
+  /**
+   * Handles a single exec command request.
+   * @param {Object} payload - The exec request payload
+   * @param {string} payload.command - Command to execute
+   * @param {boolean} [payload.pty] - Request PTY for exec
+   * @param {string} [payload.term]
+   * @param {number} [payload.cols]
+   * @param {number} [payload.rows]
+   * @param {Object} [payload.env] - Additional env vars to merge
+   * @param {number} [payload.timeoutMs] - Optional timeout for the command
+   */
+  async handleExec(payload) {
+    if (!this.ssh) {
+      debug('handleExec: SSH not initialized; skipping')
+      this.socket.emit('ssherror', 'SSH not initialized')
+      return
+    }
+
+    const command = payload && typeof payload.command === 'string' ? payload.command.trim() : ''
+    if (!command) {
+      this.socket.emit('ssherror', 'Invalid exec request: command is required')
+      return
+    }
+
+    // Build options using provided dimensions or stored session defaults
+    const usePty = !!payload?.pty
+    const execOptions = {
+      pty: usePty,
+      term: payload?.term || this.sessionState.term || 'xterm-color',
+      cols: payload?.cols || this.sessionState.cols || 80,
+      rows: payload?.rows || this.sessionState.rows || 24,
+    }
+
+    // Environment variables: start from session env, then merge payload.env overrides
+    const sessionEnvVars = this.socket.request.session.envVars || null
+    const mergedEnvVars = { ...(sessionEnvVars || {}) }
+    if (payload?.env && typeof payload.env === 'object') {
+      Object.assign(mergedEnvVars, payload.env)
+    }
+
+    debug('handleExec: command=%o, options=%o, env=%o', command, execOptions, mergedEnvVars)
+
+    try {
+      const stream = await this.ssh.exec(command, execOptions, mergedEnvVars)
+
+      let timeout
+      if (payload?.timeoutMs && Number.isInteger(payload.timeoutMs) && payload.timeoutMs > 0) {
+        timeout = setTimeout(() => {
+          try {
+            // Try to signal/close the stream on timeout
+            if (typeof stream.signal === 'function') {
+              stream.signal('SIGTERM')
+            }
+            if (typeof stream.close === 'function') {
+              stream.close()
+            }
+          } catch (e) {
+            debug('handleExec: error during timeout cleanup %O', e)
+          }
+          this.socket.emit('exec-exit', { code: null, signal: 'TIMEOUT' })
+        }, payload.timeoutMs)
+      }
+
+      stream.on('data', (data) => {
+        const text = data.toString('utf-8')
+        // Reuse existing data channel for stdout, plus typed exec-data
+        this.socket.emit('data', text)
+        this.socket.emit('exec-data', { type: 'stdout', data: text })
+      })
+
+      if (stream.stderr && typeof stream.stderr.on === 'function') {
+        stream.stderr.on('data', (data) => {
+          const text = data.toString('utf-8')
+          this.socket.emit('exec-data', { type: 'stderr', data: text })
+        })
+      }
+
+      stream.on('close', (code, signal) => {
+        if (timeout) {
+          clearTimeout(timeout)
+        }
+        debug('handleExec: stream closed, code=%o, signal=%o', code, signal)
+        // For exec, do not force socket/session close to allow multiple execs
+        this.socket.emit('exec-exit', { code, signal })
+      })
+
+      stream.on('error', (err) => {
+        if (timeout) {
+          clearTimeout(timeout)
+        }
+        debug('handleExec: stream error %O', err)
+        this.socket.emit('ssherror', `SSH exec error: ${err?.message || String(err)}`)
+      })
+    } catch (err) {
+      this.handleError('exec: ERROR', err)
     }
   }
 

@@ -50,6 +50,18 @@ describe('Socket Handler', () => {
       shell() {
         return Promise.resolve(new EventEmitter())
       }
+      exec(command, options, envVars) {
+        const stream = new EventEmitter()
+        // rudimentary stderr emitter
+        stream.stderr = new EventEmitter()
+        // simulate async behavior
+        process.nextTick(() => {
+          stream.emit('data', Buffer.from(`OUT:${command}`))
+          stream.stderr.emit('data', Buffer.from('ERR:warn'))
+          stream.emit('close', 0, null)
+        })
+        return Promise.resolve(stream)
+      }
       end() {}
     }
 
@@ -72,6 +84,75 @@ describe('Socket Handler', () => {
     assert.deepEqual(mockSocket.emit.mock.calls[0].arguments[1], {
       action: 'request_auth',
     })
+  })
+
+  it('should handle exec requests and emit typed output and exit', async () => {
+    const connectionHandler = io.on.mock.calls[0].arguments[1]
+
+    // Configure session to auto-authenticate on connect
+    mockSocket.request.session.usedBasicAuth = true
+    mockSocket.request.session.sshCredentials = {
+      host: 'localhost',
+      port: 22,
+      username: 'user',
+      password: 'pass',
+    }
+
+    connectionHandler(mockSocket)
+
+    // Wait until auth_result is emitted to ensure ssh is initialized
+    await new Promise((resolve) => setImmediate(resolve))
+    await new Promise((resolve) => setImmediate(resolve))
+
+    // After authentication success, emit an exec request
+    EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 'echo 123' })
+    await new Promise((resolve) => setImmediate(resolve))
+
+    // Collect emitted events
+    const events = mockSocket.emit.mock.calls.map((c) => c.arguments[0])
+    assert.ok(events.includes('data'), 'should emit stdout on data channel')
+    assert.ok(events.includes('exec-data'), 'should emit typed exec-data')
+    assert.ok(events.includes('exec-exit'), 'should emit exec-exit on completion')
+
+    // Verify typed payloads
+    const typedPayloads = mockSocket.emit.mock.calls
+      .filter((c) => c.arguments[0] === 'exec-data')
+      .map((c) => c.arguments[1])
+    assert.ok(
+      typedPayloads.some((p) => p?.type === 'stdout' && /OUT:echo 123/.test(p?.data)),
+      'stdout typed payload present'
+    )
+    assert.ok(
+      typedPayloads.some((p) => p?.type === 'stderr' && /ERR:warn/.test(p?.data)),
+      'stderr typed payload present'
+    )
+
+    const exitPayloads = mockSocket.emit.mock.calls
+      .filter((c) => c.arguments[0] === 'exec-exit')
+      .map((c) => c.arguments[1])
+    assert.equal(exitPayloads[0]?.code, 0)
+  })
+
+  it('should emit error when exec payload is invalid', async () => {
+    const connectionHandler = io.on.mock.calls[0].arguments[1]
+
+    mockSocket.request.session.usedBasicAuth = true
+    mockSocket.request.session.sshCredentials = {
+      host: 'localhost',
+      port: 22,
+      username: 'user',
+      password: 'pass',
+    }
+
+    connectionHandler(mockSocket)
+    await new Promise((resolve) => setImmediate(resolve))
+    await new Promise((resolve) => setImmediate(resolve))
+
+    EventEmitter.prototype.emit.call(mockSocket, 'exec', { })
+    await new Promise((resolve) => setImmediate(resolve))
+
+    const ssherrorEmits = mockSocket.emit.mock.calls.filter((c) => c.arguments[0] === 'ssherror')
+    assert.ok(ssherrorEmits.length > 0, 'should emit ssherror for invalid payload')
   })
 })
 
