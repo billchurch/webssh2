@@ -317,6 +317,17 @@ class WebSSH2Socket extends EventEmitter {
       const stream = await this.ssh.exec(command, execOptions, mergedEnvVars)
 
       let timeout
+      // Forward client input to exec stream when present (interactive PTY exec)
+      const onClientData = (data) => {
+        try {
+          stream.write(data)
+        } catch (e) {
+          debug('handleExec: error writing to stream %O', e)
+        }
+      }
+      const onClientResize = (data) => this.handleResize(data)
+      this.socket.on('data', onClientData)
+      this.socket.on('resize', onClientResize)
       if (payload?.timeoutMs && Number.isInteger(payload.timeoutMs) && payload.timeoutMs > 0) {
         timeout = setTimeout(() => {
           try {
@@ -354,6 +365,8 @@ class WebSSH2Socket extends EventEmitter {
         }
         debug('handleExec: stream closed, code=%o, signal=%o', code, signal)
         // For exec, do not force socket/session close to allow multiple execs
+        this.socket.off('data', onClientData)
+        this.socket.off('resize', onClientResize)
         this.socket.emit('exec-exit', { code, signal })
       })
 
@@ -362,6 +375,8 @@ class WebSSH2Socket extends EventEmitter {
           clearTimeout(timeout)
         }
         debug('handleExec: stream error %O', err)
+        this.socket.off('data', onClientData)
+        this.socket.off('resize', onClientResize)
         this.socket.emit('ssherror', `SSH exec error: ${err?.message || String(err)}`)
       })
     } catch (err) {
