@@ -1,29 +1,8 @@
-# Use debian:bookworm-slim runtime as a parent image
-FROM debian:bookworm-slim
+# Use node:22-alpine as a parent image for smallest size and best security
+FROM node:22-alpine
 
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-RUN apt-get update \
-    && apt-get install -y curl \
-    && apt-get -y autoclean
-
-# nvm environment variables
-ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION 22
-
-RUN mkdir -p $NVM_DIR
-
-# install nvm
-# https://github.com/creationix/nvm#install-script
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-
-ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-RUN echo "source $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    nvm alias default $NODE_VERSION && \
-    nvm use default" | bash
+# Alpine uses ash shell by default, which is sufficient for our needs
+# No need to install bash unless specifically required
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
