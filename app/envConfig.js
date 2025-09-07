@@ -210,6 +210,10 @@ export function loadEnvironmentConfig() {
       } else {
         const parsedValue = parseValue(envValue, mapping.type)
         setNestedProperty(config, mapping.path, parsedValue)
+        // Debug header text specifically
+        if (mapping.path === 'header.text') {
+          debug('WEBSSH2_HEADER_TEXT processed: %s -> %s', envValue, parsedValue)
+        }
       }
     }
   })

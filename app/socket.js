@@ -43,6 +43,36 @@ class WebSSH2Socket extends EventEmitter {
   initializeSocketEvents() {
     debug(`io.on connection: ${this.socket.id}`)
 
+    // Process query parameters from Socket.IO handshake
+    // This handles cases where client connects directly with query params (CDN deployments)
+    if (this.socket.handshake && this.socket.handshake.query) {
+      const query = this.socket.handshake.query
+      
+      if (query.header || query.headerBackground || query.headerStyle) {
+        // Only set headerOverride if not already set by HTTP route
+        if (!this.socket.request.session.headerOverride) {
+          this.socket.request.session.headerOverride = {}
+        }
+        
+        if (query.header && !this.socket.request.session.headerOverride.text) {
+          this.socket.request.session.headerOverride.text = query.header
+          debug('Header text from WebSocket query: %s', query.header)
+        }
+        
+        if (query.headerBackground && !this.socket.request.session.headerOverride.background) {
+          this.socket.request.session.headerOverride.background = query.headerBackground
+          debug('Header background from WebSocket query: %s', query.headerBackground)
+        }
+        
+        if (query.headerStyle && !this.socket.request.session.headerOverride.style) {
+          this.socket.request.session.headerOverride.style = query.headerStyle
+          debug('Header style from WebSocket query: %s', query.headerStyle)
+        }
+        
+        debug('Header override after WebSocket query processing: %O', this.socket.request.session.headerOverride)
+      }
+    }
+
     if (this.socket.request.session.usedBasicAuth && this.socket.request.session.sshCredentials) {
       const creds = this.socket.request.session.sshCredentials
       debug(
@@ -181,8 +211,46 @@ class WebSSH2Socket extends EventEmitter {
 
       this.updateElement('footer', `ssh://${creds.host}:${creds.port}`)
 
-      if (this.config.header && this.config.header.text !== null) {
-        this.updateElement('header', this.config.header.text)
+      // Check for header in priority order: URL/WebSocket parameters, environment, then config
+      const headerOverride = this.socket.request.session.headerOverride
+      let headerText = null
+      let headerBackground = null
+      let headerStyle = null
+      let headerSource = null
+      
+      if (headerOverride && (headerOverride.text || headerOverride.style)) {
+        headerText = headerOverride.text
+        headerBackground = headerOverride.background
+        headerStyle = headerOverride.style
+        headerSource = 'URL/WebSocket parameters'
+        debug('Using header from %s - text: %s, background: %s, style: %s', headerSource, headerText, headerBackground, headerStyle)
+      } else if (this.config.header && this.config.header.text !== null) {
+        headerText = this.config.header.text
+        headerBackground = this.config.header.background
+        headerSource = 'environment/config'
+        debug('Using header from %s - text: %s, background: %s', headerSource, headerText, headerBackground)
+      }
+      
+      // Send header events based on what's available
+      if (headerStyle) {
+        // When headerStyle is provided, send BOTH header text and headerStyle
+        debug('Header style found from %s, calling updateElement with style: %s', headerSource, headerStyle)
+        if (headerText) {
+          debug('Header text found from %s, calling updateElement with text: %s', headerSource, headerText)
+          this.updateElement('header', headerText)
+        }
+        this.updateElement('headerStyle', headerStyle)
+      } else if (headerText) {
+        debug('Header text found from %s, calling updateElement with text: %s', headerSource, headerText)
+        this.updateElement('header', headerText)
+        
+        // Also send background if available
+        if (headerBackground) {
+          debug('Header background found from %s, calling updateElement with background: %s', headerSource, headerBackground)
+          this.updateElement('headerBackground', headerBackground)
+        }
+      } else {
+        debug('Header not set - config.header: %O, headerOverride: %O', this.config.header, headerOverride)
       }
 
       this.socket.emit('getTerminal', true)
@@ -454,6 +522,7 @@ class WebSSH2Socket extends EventEmitter {
    * @param {any} value - The new value for the element.
    */
   updateElement(element, value) {
+    debug('updateElement called: element=%s, value=%s', element, value)
     this.socket.emit('updateUI', { element, value })
   }
 

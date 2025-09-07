@@ -140,6 +140,10 @@ async function loadConfigAsync() {
   if (Object.keys(envConfig).length > 0) {
     config = deepMerge(config, envConfig)
     debug('Merged environment variables into configuration')
+    // Debug header configuration after env merge
+    if (config.header) {
+      debug('Header config after env merge: %O', config.header)
+    }
   }
 
   try {
@@ -254,6 +258,10 @@ function loadConfigSync() {
   if (Object.keys(envConfig).length > 0) {
     config = deepMerge(config, envConfig)
     debug('Merged environment variables into configuration (sync)')
+    // Debug header configuration after env merge
+    if (config.header) {
+      debug('Header config after env merge (sync): %O', config.header)
+    }
   }
 
   try {

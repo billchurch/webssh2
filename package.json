@@ -42,7 +42,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.15",
-    "webssh2_client": "^0.2.31-alpha.2"
+    "webssh2_client": "^2.0.0-alpha.3"
   },
   "scripts": {
     "start": "node index.js",
@@ -73,7 +73,7 @@
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.3.1",
     "@types/ssh2": "^1.15.5",
     "@types/validator": "^13.15.3",
     "@typescript-eslint/eslint-plugin": "^8.42.0",

@@ -24,6 +24,25 @@ export function createRoutes(config) {
   // Scenario 1: No auth required, uses websocket authentication instead
   router.get('/', (req, res) => {
     debug('router.get./: Accessed / route')
+    
+    // Process header parameters from URL
+    if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
+      req.session.headerOverride = {}
+      if (req.query.header) {
+        req.session.headerOverride.text = req.query.header
+        debug('Header text from URL parameter: %s', req.query.header)
+      }
+      if (req.query.headerBackground) {
+        req.session.headerOverride.background = req.query.headerBackground
+        debug('Header background from URL parameter: %s', req.query.headerBackground)
+      }
+      if (req.query.headerStyle) {
+        req.session.headerOverride.style = req.query.headerStyle
+        debug('Header style from URL parameter: %s', req.query.headerStyle)
+      }
+      debug('Header override set in session: %O', req.session.headerOverride)
+    }
+    
     handleConnection(req, res)
   })
 
@@ -47,6 +66,24 @@ export function createRoutes(config) {
     if (envVars) {
       req.session.envVars = envVars
       debug('routes: Parsed environment variables: %O', envVars)
+    }
+    
+    // Process header parameters from URL
+    if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
+      req.session.headerOverride = {}
+      if (req.query.header) {
+        req.session.headerOverride.text = req.query.header
+        debug('Header text from URL parameter: %s', req.query.header)
+      }
+      if (req.query.headerBackground) {
+        req.session.headerOverride.background = req.query.headerBackground
+        debug('Header background from URL parameter: %s', req.query.headerBackground)
+      }
+      if (req.query.headerStyle) {
+        req.session.headerOverride.style = req.query.headerStyle
+        debug('Header style from URL parameter: %s', req.query.headerStyle)
+      }
+      debug('Header override set in session: %O', req.session.headerOverride)
     }
 
     try {
@@ -85,6 +122,24 @@ export function createRoutes(config) {
     if (envVars) {
       req.session.envVars = envVars
       debug('routes: Parsed environment variables: %O', envVars)
+    }
+    
+    // Process header parameters from URL
+    if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
+      req.session.headerOverride = {}
+      if (req.query.header) {
+        req.session.headerOverride.text = req.query.header
+        debug('Header text from URL parameter: %s', req.query.header)
+      }
+      if (req.query.headerBackground) {
+        req.session.headerOverride.background = req.query.headerBackground
+        debug('Header background from URL parameter: %s', req.query.headerBackground)
+      }
+      if (req.query.headerStyle) {
+        req.session.headerOverride.style = req.query.headerStyle
+        debug('Header style from URL parameter: %s', req.query.headerStyle)
+      }
+      debug('Header override set in session: %O', req.session.headerOverride)
     }
 
     try {
