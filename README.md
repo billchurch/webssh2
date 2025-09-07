@@ -28,8 +28,8 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - Node.js 22 LTS (Jod)
 
 ## Breaking Changes
-- See [CONFIG.md](./CONFIG.md) for a list of breaking changes to the config.json file.
-- See [DEPRECATED.md](./DEPRECATED.md) for a list of deprecated options.
+- See [CONFIG.md](./DOCS/CONFIG.md) for a list of breaking changes to the config.json file.
+- See [DEPRECATED.md](./DOCS/DEPRECATED.md) for a list of deprecated options.
 
 ## Installation
 
@@ -505,7 +505,7 @@ More to follow...
 - For security, use HTTPS when transmitting credentials via HTTP Basic Auth.
 - Terminal settings for `/ssh/host/:host` can be customized after login via `Menu | Settings` and persist across sessions.
 - You can enable debug from the console by passing the `DEBUG` environment variable to your start script: `DEBUG=webssh*,-webssh2:ssh2 npm run start`. The `webssh2:ssh2` namespace is very chatty and shows all of the SSH protocol information, the `-webssh2:ssh2` excludes that namespace from the line above, otherwise `DEBUG=webssh*` will capture all of the WebSSH2 specific bits. You may also debug Socket.IO and Express related events with `engine`, `socket` and `express` namespaces, or go for broke and debug everything with `DEBUG=*`.
-- For development information see [DEVELOPMENT.md](./DEVELOPMENT.md).
+- For development information see [DEVELOPMENT.md](./DOCS/DEVELOPMENT.md).
 
 For more detailed information on configuration and usage, please refer to the full documentation or open an issue on GitHub.
 
