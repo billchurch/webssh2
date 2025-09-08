@@ -117,6 +117,90 @@ export function createCookieMiddleware() {
 }
 
 /**
+ * Creates SSO authentication middleware for POST requests
+ * Extracts credentials from POST body or APM headers
+ * @param {Object} config - The configuration object
+ * @returns {Function} The SSO middleware
+ */
+export function createSSOAuthMiddleware(config) {
+  return (req, res, next) => {
+    // Skip if not a POST request
+    if (req.method !== 'POST') {
+      return next()
+    }
+
+    // Check for APM header credentials first
+    if (req.headers['x-apm-username'] && req.headers['x-apm-password']) {
+      debug('SSO Auth: Found APM header credentials')
+      // Headers will be processed in the route handler
+      return next()
+    }
+
+    // Check for form-encoded credentials
+    if (req.body && req.body.username && req.body.password) {
+      debug('SSO Auth: Found POST body credentials')
+      // Body will be processed in the route handler
+      return next()
+    }
+
+    // If SSO is enabled and no credentials found, check config for defaults
+    if (config.sso && config.sso.enabled) {
+      if (config.user.name && config.user.password) {
+        debug('SSO Auth: Using configured default credentials')
+        req.body = req.body || {}
+        req.body.username = req.body.username || config.user.name
+        req.body.password = req.body.password || config.user.password
+        return next()
+      }
+    }
+
+    next()
+  }
+}
+
+/**
+ * Creates CSRF protection middleware for SSO
+ * @param {Object} config - The configuration object
+ * @returns {Function} The CSRF middleware
+ */
+export function createCSRFMiddleware(config) {
+  return (req, res, next) => {
+    // Skip CSRF if disabled in config
+    if (!config.sso || !config.sso.csrfProtection) {
+      return next()
+    }
+
+    // Skip CSRF for trusted proxies (e.g., BIG-IP APM)
+    if (config.sso.trustedProxies && config.sso.trustedProxies.length > 0) {
+      const clientIp = req.ip || req.connection.remoteAddress
+      if (config.sso.trustedProxies.includes(clientIp)) {
+        debug('CSRF: Skipping for trusted proxy: %s', clientIp)
+        return next()
+      }
+    }
+
+    // Skip CSRF if APM headers are present (trusted SSO source)
+    if (req.headers['x-apm-username'] || req.headers['x-apm-session']) {
+      debug('CSRF: Skipping for APM authenticated request')
+      return next()
+    }
+
+    // For POST requests, check CSRF token if enabled
+    if (req.method === 'POST') {
+      const token = req.body._csrf || req.headers['x-csrf-token']
+      const sessionToken = req.session.csrfToken
+
+      if (!sessionToken || token !== sessionToken) {
+        debug('CSRF: Token validation failed')
+        return res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
+      }
+    }
+
+    next()
+  }
+}
+
+/**
  * Applies all middleware to the Express app
  * @param {express.Application} app - The Express application
  * @param {Object} config - The configuration object
@@ -124,15 +208,27 @@ export function createCookieMiddleware() {
  */
 export function applyMiddleware(app, config) {
   // Apply security headers first (before session to ensure they're always set)
-  app.use(createSecurityHeadersMiddleware())
+  app.use(createSecurityHeadersMiddleware(config))
 
   const sessionMiddleware = createSessionMiddleware(config)
   app.use(sessionMiddleware)
 
   app.use(createBodyParserMiddleware())
+
+  // Add SSO and CSRF middleware if SSO is enabled
+  if (config.sso && config.sso.enabled) {
+    app.use(createCSRFMiddleware(config))
+    app.use(createSSOAuthMiddleware(config))
+    debug('applyMiddleware: SSO and CSRF middleware enabled')
+  }
+
   app.use(createCookieMiddleware())
 
-  debug('applyMiddleware applied: security headers, session, body parser, cookies')
+  debug(
+    `applyMiddleware applied: security headers, session, body parser, cookies${
+      config.sso && config.sso.enabled ? ', SSO, CSRF' : ''
+    }`
+  )
 
   return { sessionMiddleware }
 }

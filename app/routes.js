@@ -24,7 +24,7 @@ export function createRoutes(config) {
   // Scenario 1: No auth required, uses websocket authentication instead
   router.get('/', (req, res) => {
     debug('router.get./: Accessed / route')
-    
+
     // Process header parameters from URL
     if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
       req.session.headerOverride = {}
@@ -42,7 +42,7 @@ export function createRoutes(config) {
       }
       debug('Header override set in session: %O', req.session.headerOverride)
     }
-    
+
     handleConnection(req, res)
   })
 
@@ -67,7 +67,7 @@ export function createRoutes(config) {
       req.session.envVars = envVars
       debug('routes: Parsed environment variables: %O', envVars)
     }
-    
+
     // Process header parameters from URL
     if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
       req.session.headerOverride = {}
@@ -123,7 +123,7 @@ export function createRoutes(config) {
       req.session.envVars = envVars
       debug('routes: Parsed environment variables: %O', envVars)
     }
-    
+
     // Process header parameters from URL
     if (req.query.header || req.query.headerBackground || req.query.headerStyle) {
       req.session.headerOverride = {}
@@ -162,6 +162,171 @@ export function createRoutes(config) {
         JSON.parse(JSON.stringify(req.session.sshCredentials))
       )
       debug('/ssh/host/ Credentials: ', sanitizedCredentials)
+
+      handleConnection(req, res, { host: host })
+    } catch (err) {
+      const error = new ConfigError(`Invalid configuration: ${err.message}`)
+      handleError(error, res)
+    }
+  })
+
+  // POST route for SSO authentication (e.g., BIG-IP APM)
+  // This route accepts form-encoded credentials instead of Basic Auth
+  router.post('/host/', (req, res) => {
+    debug(`router.post.host: /ssh/host/ route`)
+
+    try {
+      if (!config.ssh.host) {
+        throw new ConfigError('Host parameter required when default host not configured')
+      }
+
+      // Extract credentials from POST body or APM headers
+      const username = req.body.username || req.headers['x-apm-username']
+      const password = req.body.password || req.headers['x-apm-password']
+
+      if (!username || !password) {
+        return res.status(HTTP.UNAUTHORIZED).send('Username and password required')
+      }
+
+      const host = req.body.host || config.ssh.host
+      const port = getValidatedPort(req.body.port)
+      const sshterm = validateSshTerm(req.body.sshterm || req.body['sshterm'])
+
+      // Process header parameters from POST body
+      if (req.body['header.name'] || req.body['header.background'] || req.body['header.color']) {
+        req.session.headerOverride = {}
+        if (req.body['header.name']) {
+          req.session.headerOverride.text = req.body['header.name']
+          debug('Header text from POST: %s', req.body['header.name'])
+        }
+        if (req.body['header.background']) {
+          req.session.headerOverride.background = req.body['header.background']
+          debug('Header background from POST: %s', req.body['header.background'])
+        }
+        if (req.body['header.color']) {
+          req.session.headerOverride.style = `color: ${req.body['header.color']}`
+          debug('Header color from POST: %s', req.body['header.color'])
+        }
+      }
+
+      // Parse environment variables if provided
+      const envVars = parseEnvVars(req.body.env)
+      if (envVars) {
+        req.session.envVars = envVars
+        debug('routes: Parsed environment variables from POST: %O', envVars)
+      }
+
+      // Store credentials in session (same structure as Basic Auth)
+      req.session.sshCredentials = {
+        username: username,
+        password: password,
+        host: host,
+        port: port,
+      }
+
+      if (sshterm) {
+        req.session.sshCredentials.term = sshterm
+      }
+
+      // Set flag indicating authentication method
+      req.session.usedBasicAuth = true // Keep same flag for compatibility
+      req.session.authMethod = 'POST' // Track actual auth method
+
+      const sanitizedCredentials = maskSensitiveData(
+        JSON.parse(JSON.stringify(req.session.sshCredentials))
+      )
+      debug('/ssh/host/ POST Credentials: ', sanitizedCredentials)
+
+      // Handle session recording parameters
+      if (req.body.allowreplay === 'true' || req.body.allowreplay === true) {
+        req.session.allowReplay = true
+      }
+      if (req.body.mrhsession) {
+        req.session.mrhSession = req.body.mrhsession
+      }
+      if (req.body.readyTimeout) {
+        req.session.readyTimeout = parseInt(req.body.readyTimeout, 10)
+      }
+
+      handleConnection(req, res, { host: host })
+    } catch (err) {
+      const error = new ConfigError(`Invalid configuration: ${err.message}`)
+      handleError(error, res)
+    }
+  })
+
+  // POST route with specific host
+  router.post('/host/:host', (req, res) => {
+    debug(`router.post.host: /ssh/host/${req.params.host} route`)
+
+    try {
+      // Extract credentials from POST body or APM headers
+      const username = req.body.username || req.headers['x-apm-username']
+      const password = req.body.password || req.headers['x-apm-password']
+
+      if (!username || !password) {
+        return res.status(HTTP.UNAUTHORIZED).send('Username and password required')
+      }
+
+      const host = getValidatedHost(req.params.host)
+      const port = getValidatedPort(req.body.port)
+      const sshterm = validateSshTerm(req.body.sshterm || req.body['sshterm'])
+
+      // Process header parameters from POST body
+      if (req.body['header.name'] || req.body['header.background'] || req.body['header.color']) {
+        req.session.headerOverride = {}
+        if (req.body['header.name']) {
+          req.session.headerOverride.text = req.body['header.name']
+          debug('Header text from POST: %s', req.body['header.name'])
+        }
+        if (req.body['header.background']) {
+          req.session.headerOverride.background = req.body['header.background']
+          debug('Header background from POST: %s', req.body['header.background'])
+        }
+        if (req.body['header.color']) {
+          req.session.headerOverride.style = `color: ${req.body['header.color']}`
+          debug('Header color from POST: %s', req.body['header.color'])
+        }
+      }
+
+      // Parse environment variables if provided
+      const envVars = parseEnvVars(req.body.env)
+      if (envVars) {
+        req.session.envVars = envVars
+        debug('routes: Parsed environment variables from POST: %O', envVars)
+      }
+
+      // Store credentials in session (same structure as Basic Auth)
+      req.session.sshCredentials = {
+        username: username,
+        password: password,
+        host: host,
+        port: port,
+      }
+
+      if (sshterm) {
+        req.session.sshCredentials.term = sshterm
+      }
+
+      // Set flag indicating authentication method
+      req.session.usedBasicAuth = true // Keep same flag for compatibility
+      req.session.authMethod = 'POST' // Track actual auth method
+
+      const sanitizedCredentials = maskSensitiveData(
+        JSON.parse(JSON.stringify(req.session.sshCredentials))
+      )
+      debug('/ssh/host/:host POST Credentials: ', sanitizedCredentials)
+
+      // Handle session recording parameters
+      if (req.body.allowreplay === 'true' || req.body.allowreplay === true) {
+        req.session.allowReplay = true
+      }
+      if (req.body.mrhsession) {
+        req.session.mrhSession = req.body.mrhsession
+      }
+      if (req.body.readyTimeout) {
+        req.session.readyTimeout = parseInt(req.body.readyTimeout, 10)
+      }
 
       handleConnection(req, res, { host: host })
     } catch (err) {

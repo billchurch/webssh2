@@ -20,9 +20,12 @@ export function deepMerge(target, source) {
   const output = Object.assign({}, target)
   Object.keys(source).forEach((key) => {
     if (Object.hasOwnProperty.call(source, key)) {
+      // eslint-disable-next-line security/detect-object-injection -- key is from source object's own properties
       if (source[key] instanceof Object && !Array.isArray(source[key]) && source[key] !== null) {
+        // eslint-disable-next-line security/detect-object-injection -- key is from source object's own properties
         output[key] = deepMerge(output[key] || {}, source[key])
       } else {
+        // eslint-disable-next-line security/detect-object-injection -- key is from source object's own properties
         output[key] = source[key]
       }
     }
@@ -220,6 +223,7 @@ export function parseEnvVars(envString) {
   const pairs = envString.split(',')
 
   for (let i = 0; i < pairs.length; i += 1) {
+    // eslint-disable-next-line security/detect-object-injection -- i is a numeric loop counter
     const pair = pairs[i].split(':')
     if (pair.length !== 2) {
       continue
@@ -229,6 +233,7 @@ export function parseEnvVars(envString) {
     const value = pair[1].trim()
 
     if (isValidEnvKey(key) && isValidEnvValue(value)) {
+      // eslint-disable-next-line security/detect-object-injection -- key is validated by isValidEnvKey
       envVars[key] = value
     } else {
       debug(`parseEnvVars: Invalid env var pair: ${key}:${value}`)

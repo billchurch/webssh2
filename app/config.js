@@ -93,6 +93,16 @@ const defaultConfig = {
     secret: process.env.WEBSSH_SESSION_SECRET || generateSecureSecret(),
     name: 'webssh2.sid',
   },
+  sso: {
+    enabled: false,
+    csrfProtection: false,
+    trustedProxies: [],
+    headerMapping: {
+      username: 'x-apm-username',
+      password: 'x-apm-password',
+      session: 'x-apm-session',
+    },
+  },
 }
 
 import { fileURLToPath } from 'url'
@@ -118,6 +128,7 @@ async function loadConfigAsync() {
     await fs.access(configPath)
 
     // Use native Node.js JSON parsing to load config.json
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
     const data = await fs.readFile(configPath, 'utf8')
     const providedConfig = JSON.parse(data)
 
@@ -236,7 +247,9 @@ function loadConfigSync() {
 
   try {
     // Load config.json if it exists
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
     if (fs.existsSync(configPath)) {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
       const data = fs.readFileSync(configPath, 'utf8')
       const providedConfig = JSON.parse(data)
 
@@ -287,6 +300,7 @@ const config = new Proxy(
         // Add getCorsConfig to the config object
         configInstance.getCorsConfig = getCorsConfig
       }
+      // eslint-disable-next-line security/detect-object-injection -- prop comes from internal config access, not user input
       return configInstance[prop]
     },
   }

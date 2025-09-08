@@ -5,7 +5,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
-import { modifyHtml, maskSensitiveData } from './utils.js'
+import { modifyHtml } from './utils.js'
 import { getClientPublicPath } from './client-path.js'
 const debug = createNamespacedDebug('connectionHandler')
 
@@ -17,6 +17,7 @@ const debug = createNamespacedDebug('connectionHandler')
  */
 async function handleFileRead(filePath, config, res) {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is from trusted client module, not user input
     const data = await fs.readFile(filePath, 'utf8')
     const modifiedHtml = modifyHtml(data, config)
     res.send(modifiedHtml)
@@ -43,24 +44,26 @@ async function handleConnection(req, res) {
     autoConnect: req.path.startsWith('/host/'), // Automatically connect if path starts with /host/
   }
 
-  // Include SSH credentials from session when using basic auth
+  // Session-only authentication: credentials stay server-side for security
+  // The WebSocket connection will automatically use session credentials
   if (req.session.usedBasicAuth && req.session.sshCredentials) {
+    // Only send non-sensitive connection info to client
     tempConfig.ssh = {
       host: req.session.sshCredentials.host,
       port: req.session.sshCredentials.port,
-      username: req.session.sshCredentials.username,
-      password: req.session.sshCredentials.password,
-      ...(req.session.sshCredentials.privateKey && { privateKey: req.session.sshCredentials.privateKey }),
-      ...(req.session.sshCredentials.passphrase && { passphrase: req.session.sshCredentials.passphrase }),
-      ...(req.session.sshCredentials.term && { sshterm: req.session.sshCredentials.term })
+      // Terminal type is safe to send (not sensitive)
+      ...(req.session.sshCredentials.term && { sshterm: req.session.sshCredentials.term }),
     }
-    debug('Including SSH credentials from basic auth session: %O', {
+
+    // Enable auto-connect since we have session credentials
+    tempConfig.autoConnect = true
+
+    debug('Session-only auth enabled - credentials remain server-side: %O', {
       host: tempConfig.ssh.host,
       port: tempConfig.ssh.port,
-      username: tempConfig.ssh.username,
-      hasPassword: !!tempConfig.ssh.password,
-      hasPrivateKey: !!tempConfig.ssh.privateKey,
-      term: tempConfig.ssh.sshterm
+      term: tempConfig.ssh?.sshterm,
+      sessionId: req.sessionID,
+      hasCredentials: true,
     })
   }
 
