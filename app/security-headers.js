@@ -25,7 +25,7 @@ export const CSP_CONFIG = {
   'frame-src': ["'none'"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
-  'form-action': ["'self'"],
+  'form-action': ["'self'", 'https:'], // Allow HTTPS form submissions for SSO
   'upgrade-insecure-requests': [],
 }
 
@@ -63,10 +63,30 @@ export const SECURITY_HEADERS = {
  * @param {Object} config - Application configuration (optional)
  * @returns {Function} Express middleware function
  */
-export function createSecurityHeadersMiddleware() {
+export function createSecurityHeadersMiddleware(config = {}) {
   return (req, res, next) => {
+    // Create a copy of security headers to modify if needed
+    const headers = { ...SECURITY_HEADERS }
+
+    // If SSO is enabled and trusted proxies are configured, adjust CSP
+    if (
+      config.sso &&
+      config.sso.enabled &&
+      config.sso.trustedProxies &&
+      config.sso.trustedProxies.length > 0
+    ) {
+      const cspConfig = { ...CSP_CONFIG }
+      // Add trusted proxy domains to form-action if needed
+      // This allows forms to be submitted from APM portals
+      if (!cspConfig['form-action'].includes('https:')) {
+        cspConfig['form-action'].push('https:')
+      }
+      headers['Content-Security-Policy'] = generateCSPHeaderFromConfig(cspConfig)
+      debug('SSO mode: Adjusted CSP for trusted proxies')
+    }
+
     // Apply all security headers
-    Object.entries(SECURITY_HEADERS).forEach(([header, value]) => {
+    Object.entries(headers).forEach(([header, value]) => {
       // Skip HSTS header for non-HTTPS requests
       if (header === 'Strict-Transport-Security' && !req.secure) {
         return
@@ -77,6 +97,22 @@ export function createSecurityHeadersMiddleware() {
     debug('Security headers applied to %s %s', req.method, req.url)
     next()
   }
+}
+
+/**
+ * Helper function to generate CSP header from config object
+ * @param {Object} cspConfig - CSP configuration object
+ * @returns {string} The complete CSP header value
+ */
+function generateCSPHeaderFromConfig(cspConfig) {
+  return Object.entries(cspConfig)
+    .map(([directive, values]) => {
+      if (values.length === 0) {
+        return directive
+      }
+      return `${directive} ${values.join(' ')}`
+    })
+    .join('; ')
 }
 
 /**

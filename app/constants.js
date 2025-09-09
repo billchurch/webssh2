@@ -50,6 +50,7 @@ export const DEFAULTS = {
 export const HTTP = {
   OK: 200,
   UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
   INTERNAL_SERVER_ERROR: 500,
   AUTHENTICATE: 'WWW-Authenticate',
   REALM: 'Basic realm="WebSSH2"',
@@ -58,5 +59,5 @@ export const HTTP = {
   PATH: '/ssh/host/',
   SAMESITE: 'Strict',
   SESSION_SID: 'webssh2_sid',
-  CREDS_CLEARED: 'Credentials cleared.',
+  CREDENTIALS_CLEARED: 'Credentials cleared.',
 }

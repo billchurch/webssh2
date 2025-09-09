@@ -183,6 +183,7 @@ class SSHConnection extends EventEmitter {
     let shouldSendToClient = false
 
     for (let i = 0; i < prompts.length; i += 1) {
+      // eslint-disable-next-line security/detect-object-injection -- i is a numeric loop counter, not user input
       if (prompts[i].prompt.toLowerCase().includes('password') && this.creds.password) {
         responses.push(this.creds.password)
       } else {
@@ -397,6 +398,7 @@ class SSHConnection extends EventEmitter {
 
     if (envVars) {
       Object.keys(envVars).forEach((key) => {
+        // eslint-disable-next-line security/detect-object-injection -- key is from validated environment variables
         env[key] = envVars[key]
       })
     }

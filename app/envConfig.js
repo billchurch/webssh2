@@ -155,6 +155,14 @@ const ENV_VAR_MAPPING = {
   // Session
   WEBSSH2_SESSION_SECRET: { path: 'session.secret', type: 'string' },
   WEBSSH2_SESSION_NAME: { path: 'session.name', type: 'string' },
+
+  // SSO Configuration
+  WEBSSH2_SSO_ENABLED: { path: 'sso.enabled', type: 'boolean' },
+  WEBSSH2_SSO_CSRF_PROTECTION: { path: 'sso.csrfProtection', type: 'boolean' },
+  WEBSSH2_SSO_TRUSTED_PROXIES: { path: 'sso.trustedProxies', type: 'array' },
+  WEBSSH2_SSO_HEADER_USERNAME: { path: 'sso.headerMapping.username', type: 'string' },
+  WEBSSH2_SSO_HEADER_PASSWORD: { path: 'sso.headerMapping.password', type: 'string' },
+  WEBSSH2_SSO_HEADER_SESSION: { path: 'sso.headerMapping.session', type: 'string' },
 }
 
 /**
@@ -168,10 +176,14 @@ function setNestedProperty(obj, path, value) {
   let current = obj
 
   for (let i = 0; i < keys.length - 1; i += 1) {
+    // eslint-disable-next-line security/detect-object-injection -- i is a numeric loop counter
     const key = keys[i]
+    // eslint-disable-next-line security/detect-object-injection -- key is from config path, not user input
     if (!current[key] || typeof current[key] !== 'object') {
+      // eslint-disable-next-line security/detect-object-injection -- key is from config path, not user input
       current[key] = {}
     }
+    // eslint-disable-next-line security/detect-object-injection -- key is from config path, not user input
     current = current[key]
   }
 
@@ -188,6 +200,7 @@ export function loadEnvironmentConfig() {
   let envVarsFound = 0
 
   Object.entries(ENV_VAR_MAPPING).forEach(([envVar, mapping]) => {
+    // eslint-disable-next-line security/detect-object-injection -- envVar is from ENV_VAR_MAPPING keys, not user input
     const envValue = process.env[envVar]
 
     if (envValue !== undefined) {
@@ -230,6 +243,7 @@ export function getEnvironmentVariableMap() {
   const envMap = {}
 
   Object.entries(ENV_VAR_MAPPING).forEach(([envVar, mapping]) => {
+    // eslint-disable-next-line security/detect-object-injection -- envVar is from ENV_VAR_MAPPING keys, not user input
     envMap[envVar] = {
       path: mapping.path,
       type: mapping.type,
@@ -263,8 +277,16 @@ function getEnvVarDescription(envVar, mapping) {
     WEBSSH2_HEADER_BACKGROUND: 'Background color for the header',
     WEBSSH2_SESSION_SECRET: 'Secret key for session encryption',
     PORT: 'Legacy environment variable for server port (use WEBSSH2_LISTEN_PORT)',
+    WEBSSH2_SSO_ENABLED: 'Enable/disable SSO functionality',
+    WEBSSH2_SSO_CSRF_PROTECTION: 'Enable CSRF token validation for POST requests',
+    WEBSSH2_SSO_TRUSTED_PROXIES:
+      'Comma-separated list of trusted proxy IP addresses (bypasses CSRF)',
+    WEBSSH2_SSO_HEADER_USERNAME: 'Header name for username mapping (e.g., x-apm-username)',
+    WEBSSH2_SSO_HEADER_PASSWORD: 'Header name for password mapping (e.g., x-apm-password)',
+    WEBSSH2_SSO_HEADER_SESSION: 'Header name for session mapping (e.g., x-apm-session)',
   }
 
+  // eslint-disable-next-line security/detect-object-injection -- envVar is from function parameter, validated by caller
   return descriptions[envVar] || `Configuration for ${mapping.path} (${mapping.type})`
 }
 
