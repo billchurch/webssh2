@@ -60,7 +60,10 @@
     "ci": "npm run test",
     "release:major": "npm run release -- --release-as major",
     "release:minor": "npm run release -- --release-as minor",
-    "release:patch": "npm run release -- --release-as patch"
+    "release:patch": "npm run release -- --release-as patch",
+    "security:check": "./scripts/check-compromised.sh",
+    "security:audit": "npm audit && echo 'Consider running: trivy fs .'",
+    "security:socket": "echo 'Install socket.dev CLI and run: socket.dev cli scan'"
   },
   "standard": {
     "ignore": [

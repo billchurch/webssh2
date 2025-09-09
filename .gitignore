@@ -51,3 +51,5 @@ test-results/
 AGENTS.md
 
 client/public
+.sonarlint/connectedMode.json
+.vscode/settings.json

@@ -137,15 +137,15 @@ export function createSSOAuthMiddleware(config) {
     }
 
     // Check for form-encoded credentials
-    if (req.body && req.body.username && req.body.password) {
+    if (req.body?.username && req.body?.password) {
       debug('SSO Auth: Found POST body credentials')
       // Body will be processed in the route handler
       return next()
     }
 
     // If SSO is enabled and no credentials found, check config for defaults
-    if (config.sso && config.sso.enabled) {
-      if (config.user.name && config.user.password) {
+    if (config.sso?.enabled) {
+      if (config.user?.name && config.user?.password) {
         debug('SSO Auth: Using configured default credentials')
         req.body = req.body || {}
         req.body.username = req.body.username || config.user.name
@@ -166,13 +166,13 @@ export function createSSOAuthMiddleware(config) {
 export function createCSRFMiddleware(config) {
   return (req, res, next) => {
     // Skip CSRF if disabled in config
-    if (!config.sso || !config.sso.csrfProtection) {
+    if (!config.sso?.csrfProtection) {
       return next()
     }
 
     // Skip CSRF for trusted proxies (e.g., BIG-IP APM)
-    if (config.sso.trustedProxies && config.sso.trustedProxies.length > 0) {
-      const clientIp = req.ip || req.connection.remoteAddress
+    if (config.sso?.trustedProxies?.length > 0) {
+      const clientIp = req.ip || req.connection?.remoteAddress
       if (config.sso.trustedProxies.includes(clientIp)) {
         debug('CSRF: Skipping for trusted proxy: %s', clientIp)
         return next()
@@ -216,7 +216,7 @@ export function applyMiddleware(app, config) {
   app.use(createBodyParserMiddleware())
 
   // Add SSO and CSRF middleware if SSO is enabled
-  if (config.sso && config.sso.enabled) {
+  if (config.sso?.enabled) {
     app.use(createCSRFMiddleware(config))
     app.use(createSSOAuthMiddleware(config))
     debug('applyMiddleware: SSO and CSRF middleware enabled')
@@ -226,7 +226,7 @@ export function applyMiddleware(app, config) {
 
   debug(
     `applyMiddleware applied: security headers, session, body parser, cookies${
-      config.sso && config.sso.enabled ? ', SSO, CSRF' : ''
+      config.sso?.enabled ? ', SSO, CSRF' : ''
     }`
   )
 

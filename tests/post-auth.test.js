@@ -37,155 +37,170 @@ const mockConfig = {
 // Helper to create test app
 function createTestApp(config = mockConfig) {
   const app = express()
-  
+
   // Add session middleware
-  app.use(session({
-    secret: config.session.secret,
-    resave: false,
-    saveUninitialized: true,
-    name: config.session.name,
-  }))
-  
+  app.use(
+    session({
+      secret: config.session.secret,
+      resave: false,
+      saveUninitialized: true,
+      name: config.session.name,
+    })
+  )
+
   // Add body parser
   app.use(createBodyParserMiddleware())
-  
+
   // Add routes
   const routes = createRoutes(config)
   app.use('/ssh', routes)
-  
+
   return app
 }
 
-test('POST /ssh/host/ - should authenticate with form data', async (t) => {
+// Helper to assert HTML response
+function assertHTMLResponse(response, message = 'Should return HTML content') {
+  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), message)
+}
+
+// Helper to create authenticated POST request
+function createAuthenticatedPOST(app, endpoint, formData, headers = {}) {
+  const req = request(app).post(endpoint).set('Content-Type', 'application/x-www-form-urlencoded')
+
+  // Add custom headers
+  Object.entries(headers).forEach(([key, value]) => {
+    req.set(key, value)
+  })
+
+  return req.send(formData)
+}
+
+// Test data fixtures
+const testCredentials = {
+  form: 'username=testuser&password=testpass',
+  apmHeaders: {
+    'x-apm-username': 'apmuser',
+    'x-apm-password': 'apmpass',
+  },
+  basicAuth: Buffer.from('testuser:testpass').toString('base64'),
+}
+
+const testHosts = {
+  default: 'server.example.com',
+  specific: 'myserver.example.com',
+  apm: 'apm.example.com',
+}
+
+test('POST /ssh/host/ - should authenticate with form data', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .send('username=testuser&password=testpass&host=server.example.com&port=22')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should return HTML content')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `${testCredentials.form}&host=${testHosts.default}&port=22`
+  ).expect(200)
+
+  assertHTMLResponse(response)
 })
 
-test('POST /ssh/host/:host - should authenticate with specific host', async (t) => {
+test('POST /ssh/host/:host - should authenticate with specific host', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/myserver.example.com')
-    .send('username=testuser&password=testpass&port=2222')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should return HTML content')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    `/ssh/host/${testHosts.specific}`,
+    `${testCredentials.form}&port=2222`
+  ).expect(200)
+
+  assertHTMLResponse(response)
 })
 
-test('POST /ssh/host/ - should authenticate with APM headers', async (t) => {
+test('POST /ssh/host/ - should authenticate with APM headers', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .set('x-apm-username', 'apmuser')
-    .set('x-apm-password', 'apmpass')
-    .send('host=apm.example.com')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should return HTML content with APM headers')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `host=${testHosts.apm}`,
+    testCredentials.apmHeaders
+  ).expect(200)
+
+  assertHTMLResponse(response, 'Should return HTML content with APM headers')
 })
 
-test('POST /ssh/host/ - should fail without credentials', async (t) => {
+test('POST /ssh/host/ - should fail without credentials', async () => {
   const app = createTestApp()
-  
-  await request(app)
-    .post('/ssh/host/')
-    .send('host=server.example.com')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(401)
+
+  await createAuthenticatedPOST(app, '/ssh/host/', `host=${testHosts.default}`).expect(401)
 })
 
-test('POST /ssh/host/ - should handle custom header parameters', async (t) => {
+test('POST /ssh/host/ - should handle custom header parameters', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .send('username=testuser&password=testpass&host=server.example.com' +
-          '&header.name=Production%20Server&header.background=red&header.color=white')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should return HTML with custom headers')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `${testCredentials.form}&host=${testHosts.default}` +
+      '&header.name=Production%20Server&header.background=red&header.color=white'
+  ).expect(200)
+
+  assertHTMLResponse(response, 'Should return HTML with custom headers')
 })
 
-test('POST /ssh/host/ - should handle session recording parameters', async (t) => {
+test('POST /ssh/host/ - should handle session recording parameters', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .send('username=testuser&password=testpass&host=server.example.com' +
-          '&allowreplay=true&mrhsession=session123&readyTimeout=30000')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should handle session recording parameters')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `${testCredentials.form}&host=${testHosts.default}` +
+      '&allowreplay=true&mrhsession=session123&readyTimeout=30000'
+  ).expect(200)
+
+  assertHTMLResponse(response, 'Should handle session recording parameters')
 })
 
-test('POST /ssh/host/ - should prefer POST body over APM headers', async (t) => {
+test('POST /ssh/host/ - should prefer POST body over APM headers', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .set('x-apm-username', 'apmuser')
-    .set('x-apm-password', 'apmpass')
-    .send('username=formuser&password=formpass&host=server.example.com')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `username=formuser&password=formpass&host=${testHosts.default}`,
+    testCredentials.apmHeaders
+  ).expect(200)
+
   // The route should use form data (formuser) over APM headers (apmuser)
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should prefer POST body credentials')
+  assertHTMLResponse(response, 'Should prefer POST body credentials')
 })
 
-test('POST /ssh/host/:host - should validate host parameter', async (t) => {
+test('POST /ssh/host/:host - should validate host parameter', async () => {
   const app = createTestApp()
-  
+
   // Test with invalid host (e.g., containing path traversal that Express rejects)
-  const response = await request(app)
-    .post('/ssh/host/../../etc/passwd')
-    .send('username=testuser&password=testpass')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(404) // Express rejects path traversal in route parameters
+  await createAuthenticatedPOST(app, '/ssh/host/../../etc/passwd', testCredentials.form).expect(404) // Express rejects path traversal in route parameters
 })
 
-test('POST /ssh/host/ - should handle environment variables', async (t) => {
+test('POST /ssh/host/ - should handle environment variables', async () => {
   const app = createTestApp()
-  
-  const response = await request(app)
-    .post('/ssh/host/')
-    .send('username=testuser&password=testpass&host=server.example.com' +
-          '&env=TERM%3Dxterm%26LANG%3Den_US.UTF-8')
-    .set('Content-Type', 'application/x-www-form-urlencoded')
-    .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'Should handle environment variables')
+
+  const response = await createAuthenticatedPOST(
+    app,
+    '/ssh/host/',
+    `${testCredentials.form}&host=${testHosts.default}` + '&env=TERM%3Dxterm%26LANG%3Den_US.UTF-8'
+  ).expect(200)
+
+  assertHTMLResponse(response, 'Should handle environment variables')
 })
 
 // Test backward compatibility with GET routes
-test('GET routes should still work with Basic Auth', async (t) => {
+test('GET routes should still work with Basic Auth', async () => {
   const app = createTestApp()
-  const credentials = Buffer.from('testuser:testpass').toString('base64')
-  
+
   const response = await request(app)
-    .get('/ssh/host/server.example.com')
-    .set('Authorization', `Basic ${credentials}`)
+    .get(`/ssh/host/${testHosts.default}`)
+    .set('Authorization', `Basic ${testCredentials.basicAuth}`)
     .expect(200)
-  
-  assert.ok(response.text.includes('<!DOCTYPE html') || response.text.includes('<html'), 
-    'GET routes should continue working with Basic Auth')
+
+  assertHTMLResponse(response, 'GET routes should continue working with Basic Auth')
 })

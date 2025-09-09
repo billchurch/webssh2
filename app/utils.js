@@ -17,9 +17,9 @@ const debug = createNamespacedDebug('utils')
  * @returns {Object} The merged object
  */
 export function deepMerge(target, source) {
-  const output = Object.assign({}, target)
+  const output = { ...target }
   Object.keys(source).forEach((key) => {
-    if (Object.hasOwnProperty.call(source, key)) {
+    if (Object.hasOwn(source, key)) {
       // eslint-disable-next-line security/detect-object-injection -- key is from source object's own properties
       if (source[key] instanceof Object && !Array.isArray(source[key]) && source[key] !== null) {
         // eslint-disable-next-line security/detect-object-injection -- key is from source object's own properties
@@ -184,7 +184,7 @@ export function maskSensitiveData(obj, options) {
   }
   debug('maskSensitiveData')
 
-  const maskingOptions = Object.assign({}, defaultOptions, options || {})
+  const maskingOptions = { ...defaultOptions, ...(options || {}) }
   const maskedObject = maskObject(obj, maskingOptions)
 
   return maskedObject
@@ -222,9 +222,8 @@ export function parseEnvVars(envString) {
   const envVars = {}
   const pairs = envString.split(',')
 
-  for (let i = 0; i < pairs.length; i += 1) {
-    // eslint-disable-next-line security/detect-object-injection -- i is a numeric loop counter
-    const pair = pairs[i].split(':')
+  for (const pairString of pairs) {
+    const pair = pairString.split(':')
     if (pair.length !== 2) {
       continue
     }

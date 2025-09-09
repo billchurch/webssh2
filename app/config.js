@@ -1,7 +1,7 @@
 // server
 // app/config.js
 
-import path from 'path'
+import path, { dirname } from 'path'
 import { promises as fs } from 'fs'
 import { deepMerge, validateConfig } from './utils.js'
 import { generateSecureSecret } from './crypto-utils.js'
@@ -106,7 +106,6 @@ const defaultConfig = {
 }
 
 import { fileURLToPath } from 'url'
-import { dirname } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -235,79 +234,12 @@ export function getConfig() {
  * @returns {string} .session.secret - Session secret key
  * @returns {string} .session.name - Session cookie name
  */
-/**
- * Loads configuration synchronously with priority: ENV vars > config.json > defaults
- * @returns {Object} Configuration object
- */
-function loadConfigSync() {
-  // eslint-disable-next-line no-undef
-  const fs = require('fs')
-  const configPath = getConfigPath()
-  let config = JSON.parse(JSON.stringify(defaultConfig)) // Start with defaults
-
-  try {
-    // Load config.json if it exists
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
-    if (fs.existsSync(configPath)) {
-      // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
-      const data = fs.readFileSync(configPath, 'utf8')
-      const providedConfig = JSON.parse(data)
-
-      // Merge config.json over defaults
-      config = deepMerge(config, providedConfig)
-      debug('Loaded and merged config.json (sync)')
-    } else {
-      debug('Missing config.json for webssh. Using default config (sync)')
-    }
-  } catch (err) {
-    debug('Error loading config.json (sync): %s', err.message)
-    const error = new ConfigError(`Problem loading config.json for webssh: ${err.message}`)
-    handleError(error)
-    // Continue with defaults on config file error
-  }
-
-  // Load environment variables and merge with highest priority
-  const envConfig = loadEnvironmentConfig()
-  if (Object.keys(envConfig).length > 0) {
-    config = deepMerge(config, envConfig)
-    debug('Merged environment variables into configuration (sync)')
-    // Debug header configuration after env merge
-    if (config.header) {
-      debug('Header config after env merge (sync): %O', config.header)
-    }
-  }
-
-  try {
-    const validatedConfig = validateConfig(config)
-    debug('Configuration loaded and validated successfully (sync)')
-    return validatedConfig
-  } catch (validationErr) {
-    debug('Configuration validation failed (sync): %s', validationErr.message)
-    // Return unvalidated config for development/debugging
-    return config
-  }
-}
-
-// For now, we'll use a hybrid approach during migration
-// The config is loaded lazily when first accessed for backward compatibility
-// But we also expose async methods for the new implementation
-const config = new Proxy(
-  {},
-  {
-    get(target, prop) {
-      if (!configInstance) {
-        configInstance = loadConfigSync()
-        // Add getCorsConfig to the config object
-        configInstance.getCorsConfig = getCorsConfig
-      }
-      // eslint-disable-next-line security/detect-object-injection -- prop comes from internal config access, not user input
-      return configInstance[prop]
-    },
-  }
-)
 
 function getCorsConfig() {
-  const currentConfig = configInstance || config
+  const currentConfig = configInstance
+  if (!currentConfig) {
+    throw new ConfigError('Configuration not loaded. Call getConfig() first.')
+  }
   return {
     origin: currentConfig.http.origins,
     methods: ['GET', 'POST'],
@@ -319,16 +251,11 @@ function getCorsConfig() {
  * Resets the configuration instance for testing purposes
  * @internal
  */
-export function resetConfigForTesting() {
+function resetConfigForTesting() {
   configInstance = null
   configLoadPromise = null
   debug('Config instance reset for testing')
 }
 
-// Add getCorsConfig to the config object
-config.getCorsConfig = getCorsConfig
-
-// Export both the synchronous config (for backward compatibility)
-// and the async getConfig function for the new implementation
-export default config
-export { loadConfigAsync, getConfigPath }
+// Export only the async functions for the new implementation
+export { loadConfigAsync, getConfigPath, getCorsConfig, resetConfigForTesting }
