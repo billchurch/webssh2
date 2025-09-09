@@ -69,12 +69,7 @@ export function createSecurityHeadersMiddleware(config = {}) {
     const headers = { ...SECURITY_HEADERS }
 
     // If SSO is enabled and trusted proxies are configured, adjust CSP
-    if (
-      config.sso &&
-      config.sso.enabled &&
-      config.sso.trustedProxies &&
-      config.sso.trustedProxies.length > 0
-    ) {
+    if (config.sso?.enabled && config.sso?.trustedProxies?.length > 0) {
       const cspConfig = { ...CSP_CONFIG }
       // Add trusted proxy domains to form-action if needed
       // This allows forms to be submitted from APM portals

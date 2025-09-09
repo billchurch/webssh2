@@ -9,7 +9,7 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  */
 
-import { initializeServer, initializeServerAsync } from './app/app.js'
+import { initializeServerAsync } from './app/app.js'
 import { createNamespacedDebug } from './app/logger.js'
 import { handleError } from './app/errors.js'
 
@@ -31,26 +31,9 @@ async function mainAsync() {
   }
 }
 
-/**
- * Main function to start the application (sync version for backward compatibility)
- * @deprecated Use mainAsync instead
- */
-function main() {
-  debug('Starting WebSSH2 server with sync initialization...')
-  initializeServer()
-}
 
-// Determine which initialization method to use based on environment
-// Default to async for modern Node.js applications
-const useAsyncInit = process.env.WEBSSH_USE_ASYNC_INIT !== 'false'
+// Always use async initialization
+mainAsync()
 
-if (useAsyncInit) {
-  // Use async initialization by default
-  mainAsync()
-} else {
-  // Fall back to sync initialization if explicitly requested
-  main()
-}
-
-// For testing purposes, export both functions
-export { initializeServer, initializeServerAsync, main, mainAsync }
+// For testing purposes, export the async functions
+export { initializeServerAsync, mainAsync }
