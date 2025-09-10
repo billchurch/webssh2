@@ -5,7 +5,7 @@
     ".gitignore"
   ],
   "bin": {
-    "webssh2-server": "./index.js"
+    "webssh2-server": "./index.ts"
   },
   "description": "A Websocket to SSH2 gateway using xterm.js, socket.io, ssh2",
   "homepage": "https://github.com/billchurch/WebSSH2",
@@ -45,25 +45,35 @@
     "webssh2_client": "^2.0.0-alpha.6"
   },
   "scripts": {
-    "start": "node index.js",
-    "lint": "eslint app",
-    "lint:fix": "eslint app --fix",
-    "dev": "NODE_ENV=development DEBUG=webssh2:* node --watch index.js",
+    "start": "node --loader ts-node/esm index.ts",
+    "build": "tsc --build",
+    "build:clean": "tsc --build --clean",
+    "build:watch": "tsc --build --watch",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:ts": "eslint '**/*.{ts,tsx}'",
+    "dev": "NODE_ENV=development DEBUG=webssh2:* node --watch --loader ts-node/esm index.js",
+    "dev:ts": "NODE_ENV=development DEBUG=webssh2:* node --watch --loader ts-node/esm --enable-source-maps index.ts",
     "watch": "npm run dev",
-    "test": "WEBSSH2_SKIP_NETWORK=1 node scripts/run-node-tests.mjs",
-    "test:all": "WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
-    "release": "npm run lint:fix && npm run test && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
+    "test": "WEBSSH2_SKIP_NETWORK=1 node --loader ts-node/esm scripts/run-node-tests.mjs",
+    "test:all": "WEBSSH2_SKIP_NETWORK=0 node --loader ts-node/esm scripts/run-node-tests.mjs",
+    "test:ts": "WEBSSH2_SKIP_NETWORK=1 node --loader ts-node/esm --test test/**/*.test.ts",
+    "prerelease": "npm run typecheck && npm run lint:fix && npm run test",
+    "release": "npm run prerelease && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish",
     "pretest": "npm run lint:fix",
-    "ci": "npm run test",
+    "ci": "npm run typecheck && npm run test",
     "release:major": "npm run release -- --release-as major",
     "release:minor": "npm run release -- --release-as minor",
     "release:patch": "npm run release -- --release-as patch",
     "security:check": "./scripts/check-compromised.sh",
     "security:audit": "npm audit && echo 'Consider running: trivy fs .'",
-    "security:socket": "echo 'Install socket.dev CLI and run: socket.dev cli scan'"
+    "security:socket": "echo 'Install socket.dev CLI and run: socket.dev cli scan'",
+    "prepare": "husky"
   },
   "standard": {
     "ignore": [
@@ -86,6 +96,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",

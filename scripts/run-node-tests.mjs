@@ -13,9 +13,11 @@ function walk(dir) {
     const st = statSync(full)
     if (st.isDirectory()) {
       // Skip Playwright tests from node test runner
-      if (full.includes(`${join('tests', 'playwright')}`)) continue
+      if (full.includes(`${join('tests', 'playwright')}`)) {
+        continue
+      }
       files.push(...walk(full))
-    } else if (entry.endsWith('.test.js')) {
+    } else if (entry.endsWith('.test.ts')) {
       files.push(full)
     }
   }
@@ -29,7 +31,7 @@ const skipNetwork = ['1', 'true', 'yes'].includes(
   String(process.env.WEBSSH2_SKIP_NETWORK || '').toLowerCase()
 )
 if (skipNetwork) {
-  files = files.filter((f) => !/\/ssh\.test\.js$/.test(f))
+  files = files.filter((f) => !/\/ssh\.test\.ts$/.test(f))
 }
 
 if (files.length === 0) {
@@ -39,8 +41,10 @@ if (files.length === 0) {
 
 const child = spawn(
   process.execPath,
-  ['--test', '--test-concurrency=1', ...files],
-  { stdio: 'inherit' }
+  ['--loader', 'ts-node/esm', '--test', '--test-concurrency=1', ...files],
+  {
+    stdio: 'inherit',
+  }
 )
 
 child.on('exit', (code, signal) => {
@@ -50,4 +54,3 @@ child.on('exit', (code, signal) => {
   }
   process.exit(code ?? 1)
 })
-

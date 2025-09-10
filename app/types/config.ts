@@ -40,6 +40,12 @@ export interface WebSSH2Config {
   session?: {
     secret?: string
   }
+  options?: {
+    autoLog?: boolean
+    allowReplay?: boolean
+    allowReconnect?: boolean
+    allowReauth?: boolean
+  }
 }
 
 export interface SSHCredentials {
@@ -50,6 +56,9 @@ export interface SSHCredentials {
   host: string
   port: number
   term?: string
+  cols?: number | string
+  rows?: number | string
+  [key: string]: unknown
 }
 
 export interface SessionState {
