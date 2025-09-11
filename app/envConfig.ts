@@ -136,12 +136,17 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
   let current: Record<string, unknown> = obj
   for (let i = 0; i < keys.length - 1; i += 1) {
     const key = keys[i]
+    // Keys originate from static mapping (ENV_VAR_MAPPING), not user input
+    // eslint-disable-next-line security/detect-object-injection
     const next = current[key]
     if (!next || typeof next !== 'object') {
+      // eslint-disable-next-line security/detect-object-injection
       current[key] = {}
     }
+    // eslint-disable-next-line security/detect-object-injection
     current = current[key] as Record<string, unknown>
   }
+
   current[keys[keys.length - 1]] = value
 }
 

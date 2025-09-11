@@ -16,11 +16,16 @@ export function deepMerge<T extends object>(target: T, source: unknown): T {
   if (source && typeof source === 'object') {
     const src = source as Record<string, unknown>
     for (const key of Object.keys(src)) {
+      // Keys originate from an internal object (not user input)
+      // eslint-disable-next-line security/detect-object-injection
       const value = src[key]
       if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // eslint-disable-next-line security/detect-object-injection
         const prev = (output[key] as Record<string, unknown>) || {}
+        // eslint-disable-next-line security/detect-object-injection
         output[key] = deepMerge(prev, value as Record<string, unknown>)
       } else {
+        // eslint-disable-next-line security/detect-object-injection
         output[key] = value
       }
     }
@@ -142,6 +147,8 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
     const key = pair[0].trim()
     const value = pair[1].trim()
     if (isValidEnvKey(key) && isValidEnvValue(value)) {
+      // Key validated by isValidEnvKey
+      // eslint-disable-next-line security/detect-object-injection
       envVars[key] = value
     } else {
       debug('parseEnvVars: Invalid env var pair: %s:%s', key, value)
