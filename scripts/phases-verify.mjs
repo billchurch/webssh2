@@ -13,8 +13,10 @@ let ok = true
 ok &&= run('npm', ['run', '-s', 'lint'])
 
 // 2) Typecheck only when explicitly enabled (non-disruptive default)
-if (process.env.ENABLE_TYPECHECK === '1' && existsSync('tsconfig.json')) {
-  ok &&= run('npx', ['tsc', '-p', 'tsconfig.json', '--noEmit'])
+if (process.env.ENABLE_TYPECHECK === '1') {
+  // Use the build tsconfig to enforce strict TS checks on mirrored modules only
+  const project = existsSync('tsconfig.build.json') ? 'tsconfig.build.json' : 'tsconfig.json'
+  ok &&= run('npx', ['tsc', '-p', project, '--noEmit'])
 }
 
 // 3) Tests (current Node runner)

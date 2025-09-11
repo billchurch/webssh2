@@ -5,6 +5,7 @@ with strict typing, zero `any`, `tsx` for dev, Vitest for tests,
 and zero breaking changes to HTTP routes or Socket.IO contracts.
 
 **Principles.**
+
 - Do not change public routes or event names
 - Small, reversible PRs
 - Runtime validation at boundaries
@@ -39,6 +40,7 @@ npm run bench:compare -- --max-regress 15
 ## 1) Tooling baseline (PR0)
 
 **Configs**
+
 - `tsconfig.json` (ESM, NodeNext)
   - `allowJs: true`
   - `checkJs: true`
@@ -61,6 +63,7 @@ npm run bench:compare -- --max-regress 15
 `type-coverage`, `zod` (or AJV, see §4)
 
 **Scripts**
+
 ```json
 {
   "scripts": {
@@ -79,7 +82,9 @@ npm run bench:compare -- --max-regress 15
 ```
 
 **ESLint (flat config, matches repo)**
+
 - Extend `eslint.config.js` with a TS override; keep existing Prettier and security rules.
+
 ```js
 // eslint.config.js (additions)
 import tsParser from '@typescript-eslint/parser'
@@ -104,6 +109,7 @@ export default [
 ```
 
 **CI gate**
+
 ```yaml
 - run: npm ci
 - run: npm run typecheck
@@ -127,6 +133,7 @@ Create `app/types/contracts/v1`:
   `InterServerEvents`, `SocketData`.
 
 Add helper:
+
 ```ts
 // app/types/socket-helpers.ts
 import type { Socket } from "socket.io";
@@ -152,6 +159,7 @@ Validate at boundaries only, then pass typed data inside.
 Choose one runtime engine and stick with it.
 
 **Option A, Zod at runtime** (recommended)
+
 - Great DX, simpler code
 - Validate only once per input
 
@@ -197,6 +205,7 @@ export const parseOrThrow = <T>(
 ```
 
 **Option B, AJV in prod, Zod in dev** (optional)
+
 - Convert Zod to JSON Schema at build
 - Run AJV for hot paths
 
@@ -264,6 +273,7 @@ Unit tests in Vitest. Keep Playwright e2e. Add contract checks.
 No public changes, update `CHANGELOG`.
 
 **Batch order**
+
 - PR2, Utilities and constants first (low risk)
 - PR3, Config and envConfig, lock defaults with tests
 - PR4, Core server wiring, IO, sockets, middleware, routes
@@ -275,10 +285,12 @@ No public changes, update `CHANGELOG`.
 ## 6) Contract tests and smoke tests
 
 **HTTP contracts**
+
 - Validate JSON with JSON Schema, not brittle snapshots
 - Assert status, headers, shape
 
 **Socket contracts**
+
 - Use `socket.io-client` against server
 - Validate payloads with the same schema used at runtime
 
@@ -294,6 +306,7 @@ test("exec payload shape", () => {
 ```
 
 **Smoke suite**
+
 - Can establish SSH connection
 - Resize events work
 - Exec data flows, exit reported
@@ -322,6 +335,7 @@ Run smoke after each PR.
 ## 8) Developer ergonomics
 
 - Path aliases with ESM friendly style
+
 ```json
 {
   "compilerOptions": {
@@ -345,6 +359,7 @@ Run smoke after each PR.
 ---
 
 ## 9) Test transition plan
+
 - Keep current Node runner during early PRs:
   - `"test:node": "WEBSSH2_SKIP_NETWORK=1 node scripts/run-node-tests.mjs"`
   - `"test": "npm run test:node && vitest run"`
@@ -523,8 +538,8 @@ stay ESM only.
 - For human functional checkpoints at critical phases, add `[checkpoint]` to the PR title (if you open a PR for review without merging) to require manual approval in CI.
 
 Minimum verify gates:
-- Lint clean, tests pass, (optional) typecheck if TS is present, progress dashboard updated.
 
+- Lint clean, tests pass, (optional) typecheck if TS is present, progress dashboard updated.
 
 ---
 
@@ -572,12 +587,14 @@ export function initSocket(io: Server): void {
     });
   });
 }
+```
 
 ---
 
 ## Roadmap Snapshot
 
 Completed
+
 - PR0–PR3: TS scaffolding, @ts-check on core, initial types and smoke tests
 - PR4–PR6: JSON schema for exec payload, route helper tests
 - PR7–PR10: TS mirrors for core leaf modules + io/socket typings
@@ -585,9 +602,9 @@ Completed
 - PR12–PR15: Security hardening + HTTP/Socket.IO contract tests
 
 Upcoming
+
 - PR16: TS mirrors for `socket` and `routes` (no runtime change)
 - PR17: Strict typecheck pass for mirrored modules (ENABLE_TYPECHECK=1)
 - PR18: Flip `socket` and `routes` to `dist` implementations
 - PR19: Raise strictness (noImplicitAny, exactOptionalPropertyTypes), prune disables
 - Final: Checkpoint + merge to `main`
-```

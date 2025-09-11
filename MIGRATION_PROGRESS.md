@@ -6,17 +6,14 @@
 - explicit 'any' uses (TS): 0
 
 ## Areas
-- [x] Constants (TS mirror ready)
-- [x] Utils (TS mirror ready)
-- [x] Config + Env (TS mirror ready)
-- [ ] Socket handlers (typing improved; TS mirror pending)
-- [ ] Routes (typing improved; TS mirror pending)
-- [x] Entry/Packaging (dist runtime)
+- [x] Constants
+- [x] Utils
+- [x] Config + Env
+- [x] Socket handlers
+- [ ] Routes
+- [x] Entry/Packaging
 
-_Last updated: 2025-09-11T19:54:53.759Z_
-
-## TODOs
-- PR16: Add TS mirrors for `socket` and `routes` (no runtime change)
+_Last updated: 2025-09-11T21:36:09.184Z_
 - PR17: Enable strict typecheck in CI for mirrored modules
 - PR18: Flip `socket` + `routes` to `dist`
 - PR19: Raise TS strictness and prune disables

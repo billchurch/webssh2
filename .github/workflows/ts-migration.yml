@@ -13,9 +13,8 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: npm run typecheck
-        continue-on-error: true
-      - run: npm test
+      - name: Phase verify (lint + strict typecheck + tests)
+        run: ENABLE_TYPECHECK=1 node scripts/phases-verify.mjs
       - name: Generate migration progress
         run: node scripts/migration-progress.mjs
       - uses: actions/upload-artifact@v4
@@ -32,4 +31,3 @@ jobs:
       - run: |
           echo "Checkpoint gate active."
           echo "A maintainer must approve the 'ts-migration-checkpoint' environment to proceed."
-
