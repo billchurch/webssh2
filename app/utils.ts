@@ -85,8 +85,13 @@ export function validateSshTerm(term?: string): string | null {
 }
 
 export function validateConfig(config: unknown): unknown {
-  const AjvCtor = Ajv as unknown as { new (): unknown }
-  const ajv = new AjvCtor()
+  type ValidateFn = ((data: unknown) => boolean) & { errors?: unknown }
+  type AjvLike = {
+    compile: (schema: unknown) => ValidateFn
+    errorsText: (errors?: unknown) => string
+  }
+  const AjvCtor = Ajv as unknown as { new (): AjvLike }
+  const ajv: AjvLike = new AjvCtor()
   ;(addFormats as unknown as (a: unknown) => void)(ajv)
   const validate = ajv.compile(configSchema as unknown as object)
   const valid = validate(config)
