@@ -572,4 +572,22 @@ export function initSocket(io: Server): void {
     });
   });
 }
+
+---
+
+## Roadmap Snapshot
+
+Completed
+- PR0–PR3: TS scaffolding, @ts-check on core, initial types and smoke tests
+- PR4–PR6: JSON schema for exec payload, route helper tests
+- PR7–PR10: TS mirrors for core leaf modules + io/socket typings
+- PR11: Flip runtime to `dist` (compile TS + mirror JS)
+- PR12–PR15: Security hardening + HTTP/Socket.IO contract tests
+
+Upcoming
+- PR16: TS mirrors for `socket` and `routes` (no runtime change)
+- PR17: Strict typecheck pass for mirrored modules (ENABLE_TYPECHECK=1)
+- PR18: Flip `socket` and `routes` to `dist` implementations
+- PR19: Raise strictness (noImplicitAny, exactOptionalPropertyTypes), prune disables
+- Final: Checkpoint + merge to `main`
 ```
