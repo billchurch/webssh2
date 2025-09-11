@@ -4,14 +4,12 @@
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noResolve": true
   },
   "include": [
     "app/app.js",
-    "app/server.js",
-    "app/middleware.js",
-    "app/security-headers.js",
-    "app/connectionHandler.js"
-  ]
+    "app/server.js"
+  ],
+  "exclude": ["app/**/*.ts", "dist", "tests"]
 }
-

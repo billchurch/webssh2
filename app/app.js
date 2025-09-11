@@ -17,9 +17,9 @@ import { getClientPublicPath } from './client-path.js'
 const debug = createNamespacedDebug('app')
 
 /**
- * Creates and configures the Express application (async version)
- * @param {Object} appConfig - Configuration object
- * @returns {Promise<Object>} An object containing the app and sessionMiddleware
+ * Creates and configures the Express application (sync)
+ * @param {import('./types/config.js').Config} appConfig - Configuration object
+ * @returns {{ app: import('express').Application, sessionMiddleware: import('express').RequestHandler }}
  */
 function createAppAsync(appConfig) {
   const app = express()
@@ -29,7 +29,10 @@ function createAppAsync(appConfig) {
     const clientPath = getClientPublicPath()
 
     // Apply middleware
-    const { sessionMiddleware } = applyMiddleware(app, appConfig)
+    const _mw = /** @type {{ sessionMiddleware: import('express').RequestHandler }} */ (
+      applyMiddleware(app, appConfig)
+    )
+    const { sessionMiddleware } = _mw
 
     // Create routes with the config
     const sshRoutes = createRoutes(appConfig)
@@ -42,13 +45,14 @@ function createAppAsync(appConfig) {
 
     return { app: app, sessionMiddleware: sessionMiddleware }
   } catch (err) {
-    throw new ConfigError(`${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${err.message}`)
+    const message = err && typeof err === 'object' && 'message' in err ? err.message : String(err)
+    throw new ConfigError(`${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${message}`)
   }
 }
 
 /**
  * Initializes and starts the server asynchronously
- * @returns {Promise<Object>} An object containing the server, io, and app instances
+ * @returns {Promise<{ server: import('node:http').Server, io: import('socket.io').Server, app: import('express').Application, config: import('./types/config.js').Config }>}
  */
 async function initializeServerAsync() {
   try {
@@ -58,7 +62,9 @@ async function initializeServerAsync() {
 
     const { app, sessionMiddleware } = createAppAsync(appConfig)
     const server = createServer(app)
-    const io = configureSocketIO(server, sessionMiddleware, appConfig)
+    // Socket.IO expects a config that exposes getCorsConfig(); getConfig attaches it at load time
+    const cfgForIO = /** @type {{ getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }} */ (appConfig)
+    const io = configureSocketIO(server, /** @type {any} */ (sessionMiddleware), cfgForIO)
 
     // Set up Socket.IO listeners
     socketHandler(io, appConfig, SSHConnection)
@@ -70,7 +76,8 @@ async function initializeServerAsync() {
 
     return { server: server, io: io, app: app, config: appConfig }
   } catch (err) {
-    handleError(err)
+    if (err instanceof Error) handleError(err)
+    else handleError(new Error(String(err)))
     process.exit(1)
   }
 }
