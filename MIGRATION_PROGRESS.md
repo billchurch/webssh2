@@ -24,4 +24,4 @@
 - [x] PR18: flip socket/routes to TS runtime (impl shims + copy exclude)
 - [x] PR19: ratchet strict flags
 
-_Last updated: 2025-09-11T22:29:52.545Z_
+_Last updated: 2025-09-11T22:32:20.229Z_
