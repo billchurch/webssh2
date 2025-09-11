@@ -1,8 +1,8 @@
 # Migration Progress
 
-- Total source files: 0
-- TypeScript files: 0 (0%)
-- JavaScript files: 0
+- Total source files: 21
+- TypeScript files: 2 (10%)
+- JavaScript files: 19
 - explicit 'any' uses (TS): 0
 
 ## Areas
@@ -13,5 +13,4 @@
 - [ ] Routes
 - [ ] Entry/Packaging
 
-_Last updated: pending_
-
+_Last updated: 2025-09-11T18:16:08.761Z_

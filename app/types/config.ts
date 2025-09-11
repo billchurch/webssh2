@@ -1,4 +1,11 @@
-// app/types/config.ts
+export interface AlgorithmsConfig {
+  cipher: string[]
+  compress: string[]
+  hmac: string[]
+  kex: string[]
+  serverHostKey: string[]
+}
+
 export interface SSHConfig {
   host: string | null
   port: number
@@ -6,61 +13,53 @@ export interface SSHConfig {
   readyTimeout: number
   keepaliveInterval: number
   keepaliveCountMax: number
-  disableInteractiveAuth: boolean
   alwaysSendKeyboardInteractivePrompts: boolean
-  algorithms: {
-    cipher: string[]
-    compress: string[]
-    hmac: string[]
-    kex: string[]
-    serverHostKey: string[]
+  disableInteractiveAuth: boolean
+  algorithms: AlgorithmsConfig
+}
+
+export interface HeaderConfig {
+  text: string | null
+  background: string
+}
+
+export interface OptionsConfig {
+  challengeButton: boolean
+  autoLog: boolean
+  allowReauth: boolean
+  allowReconnect: boolean
+  allowReplay: boolean
+}
+
+export interface SessionConfig {
+  secret: string
+  name: string
+}
+
+export interface SsoConfig {
+  enabled: boolean
+  csrfProtection: boolean
+  trustedProxies: string[]
+  headerMapping: {
+    username: string
+    password: string
+    session: string
   }
 }
 
-export interface WebSSH2Config {
-  listen: {
-    ip: string
-    port: number
-  }
-  http: {
-    origins: string[]
-  }
+export interface Config {
+  listen: { ip: string; port: number }
+  http: { origins: string[] }
   user: {
     name: string | null
     password: string | null
     privateKey: string | null
-    passphrase?: string | null
+    passphrase: string | null
   }
   ssh: SSHConfig
-  useminified?: boolean
-  header?: {
-    text: string | null
-    background?: string
-  }
-  session?: {
-    secret?: string
-  }
-}
-
-export interface SSHCredentials {
-  username: string
-  password?: string
-  privateKey?: string
-  passphrase?: string
-  host: string
-  port: number
-  term?: string
-}
-
-export interface SessionState {
-  authenticated: boolean
-  username: string | null
-  password: string | null
-  privateKey: string | null
-  passphrase: string | null
-  host: string | null
-  port: number | null
-  term: string | null
-  cols: number | null
-  rows: number | null
+  header: HeaderConfig
+  options: OptionsConfig
+  session: SessionConfig
+  sso: SsoConfig
+  getCorsConfig?: () => { origin: string[]; methods: string[]; credentials: boolean }
 }
