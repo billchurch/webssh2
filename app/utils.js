@@ -1,5 +1,6 @@
 // server
 // /app/utils.js
+// @ts-check
 import validator from 'validator'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
@@ -12,9 +13,10 @@ const debug = createNamespacedDebug('utils')
 
 /**
  * Deep merges two objects
- * @param {Object} target - The target object to merge into
- * @param {Object} source - The source object to merge from
- * @returns {Object} The merged object
+ * @template T
+ * @param {T} target - The target object to merge into
+ * @param {any} source - The source object to merge from
+ * @returns {T} The merged object
  */
 export function deepMerge(target, source) {
   const output = { ...target }
@@ -36,7 +38,6 @@ export function deepMerge(target, source) {
 /**
  * Determines if a given host is an IP address or a hostname.
  * If it's a hostname, it escapes it for safety.
- *
  * @param {string} host - The host string to validate and escape.
  * @returns {string} - The original IP or escaped hostname.
  */

@@ -1,5 +1,6 @@
 // server
 // app/errors.js
+// @ts-check
 
 import { logError, createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES } from './constants.js'
@@ -8,10 +9,12 @@ const debug = createNamespacedDebug('errors')
 
 /**
  * Custom error for WebSSH2
- * @param {string} message - The error message
- * @param {string} code - The error code
  */
 class WebSSH2Error extends Error {
+  /**
+   * @param {string} message
+   * @param {string} code
+   */
   constructor(message, code) {
     super(message)
     this.name = this.constructor.name
@@ -19,21 +22,17 @@ class WebSSH2Error extends Error {
   }
 }
 
-/**
- * Custom error for configuration issues
- * @param {string} message - The error message
- */
+/** Configuration error */
 class ConfigError extends WebSSH2Error {
+  /** @param {string} message */
   constructor(message) {
     super(message, MESSAGES.CONFIG_ERROR)
   }
 }
 
-/**
- * Custom error for SSH connection issues
- * @param {string} message - The error message
- */
+/** SSH connection error */
 class SSHConnectionError extends WebSSH2Error {
+  /** @param {string} message */
   constructor(message) {
     super(message, MESSAGES.SSH_CONNECTION_ERROR)
   }
@@ -42,7 +41,7 @@ class SSHConnectionError extends WebSSH2Error {
 /**
  * Handles an error by logging it and optionally sending a response
  * @param {Error} err - The error to handle
- * @param {Object} [res] - The response object (if in an Express route)
+ * @param {{ status: (code:number)=>{ json: (body:any)=>void } }} [res] - Express-like response
  */
 function handleError(err, res) {
   if (err instanceof WebSSH2Error) {

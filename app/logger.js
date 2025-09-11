@@ -1,12 +1,13 @@
 // server
 // app/logger.js
+// @ts-check
 
 import createDebug from 'debug'
 
 /**
  * Creates a debug function for a specific namespace
  * @param {string} namespace - The debug namespace
- * @returns {Function} The debug function
+ * @returns {(formatter: any, ...args: any[]) => void}
  */
 export function createNamespacedDebug(namespace) {
   return createDebug(`webssh2:${namespace}`)
