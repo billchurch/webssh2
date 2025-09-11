@@ -14,7 +14,7 @@ import { loadEnvironmentConfig } from './envConfig.js'
 const debug = createNamespacedDebug('config')
 
 /**
- * @typedef {import('./types/config').Config} Config
+ * @typedef {import('./types/config.js').Config} Config
  */
 
 /** @type {Config} */

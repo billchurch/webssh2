@@ -13,7 +13,7 @@ import { MESSAGES } from './constants.js'
 const debug = createNamespacedDebug('socket')
 
 /**
- * @typedef {import('./types/config').Config} Config
+ * @typedef {import('./types/config.js').Config} Config
  */
 
 class WebSSH2Socket extends EventEmitter {

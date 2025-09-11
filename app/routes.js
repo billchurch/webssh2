@@ -126,7 +126,7 @@ export function handleRouteError(err, res) {
  * @param {any} req
  * @param {any} res
  * @param {string | null} hostParam
- * @param {import('./types/config').Config} config
+ * @param {import('./types/config.js').Config} config
  */
 function handlePostAuthentication(req, res, hostParam, config) {
   try {

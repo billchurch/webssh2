@@ -3,7 +3,6 @@
 // JSON Schema for Socket.IO exec payloads, validated with AJV
 // @ts-check
 
-/** @type {import('ajv').JSONSchemaType<any>} */
 export const execSchema = {
   type: 'object',
   properties: {
