@@ -24,38 +24,42 @@ const debug = createNamespacedDebug('routes')
  * @param {any} session
  */
 export function processHeaderParameters(source, session) {
-  const isGet = typeof source.header !== 'undefined'
-  const headerKey = isGet ? 'header' : 'header.name'
-  const backgroundKey = isGet ? 'headerBackground' : 'header.background'
-  const styleKey = isGet ? 'headerStyle' : 'header.color'
+  const isGet =
+    Object.prototype.hasOwnProperty.call(source || {}, 'header') ||
+    Object.prototype.hasOwnProperty.call(source || {}, 'headerBackground') ||
+    Object.prototype.hasOwnProperty.call(source || {}, 'headerStyle')
 
-  if (source[headerKey] || source[backgroundKey] || source[styleKey]) {
-    session.headerOverride = {}
+  let headerVal
+  let backgroundVal
+  let styleVal
 
-    if (source[headerKey]) {
-      session.headerOverride.text = source[headerKey]
-      debug('Header text from %s: %s', isGet ? 'URL parameter' : 'POST', source[headerKey])
+  if (isGet) {
+    const { header, headerBackground, headerStyle } = source || {}
+    headerVal = header
+    backgroundVal = headerBackground
+    styleVal = headerStyle
+  } else {
+    // POST body uses dotted keys. Access only whitelisted keys.
+    headerVal = source && source['header.name']
+    backgroundVal = source && source['header.background']
+    const colorVal = source && source['header.color']
+    styleVal = colorVal ? `color: ${colorVal}` : undefined
+  }
+
+  if (headerVal || backgroundVal || styleVal) {
+    session.headerOverride = session.headerOverride || {}
+    if (headerVal) {
+      session.headerOverride.text = headerVal
+      debug('Header text from %s: %s', isGet ? 'URL parameter' : 'POST', headerVal)
     }
-
-    if (source[backgroundKey]) {
-      session.headerOverride.background = source[backgroundKey]
-      debug(
-        'Header background from %s: %s',
-        isGet ? 'URL parameter' : 'POST',
-        source[backgroundKey]
-      )
+    if (backgroundVal) {
+      session.headerOverride.background = backgroundVal
+      debug('Header background from %s: %s', isGet ? 'URL parameter' : 'POST', backgroundVal)
     }
-
-    if (source[styleKey]) {
-      if (isGet) {
-        session.headerOverride.style = source[styleKey]
-        debug('Header style from URL parameter: %s', source[styleKey])
-      } else {
-        session.headerOverride.style = `color: ${source[styleKey]}`
-        debug('Header color from POST: %s', source[styleKey])
-      }
+    if (styleVal) {
+      session.headerOverride.style = styleVal
+      debug('Header style from %s: %s', isGet ? 'URL parameter' : 'POST', styleVal)
     }
-
     debug('Header override set in session: %O', session.headerOverride)
   }
 }
