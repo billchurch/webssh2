@@ -144,8 +144,9 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
     if (pair.length !== 2) {
       continue
     }
-    const key = pair[0].trim()
-    const value = pair[1].trim()
+    const [keyRaw, valueRaw] = pair as [string, string]
+    const key = keyRaw.trim()
+    const value = valueRaw.trim()
     if (isValidEnvKey(key) && isValidEnvValue(value)) {
       // Key validated by isValidEnvKey
       // eslint-disable-next-line security/detect-object-injection

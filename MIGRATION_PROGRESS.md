@@ -14,12 +14,12 @@
 - [x] Entry/Packaging
 
 ## Strictness
-- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true
-- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true
+- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=undefined, noImplicitOverride=undefined, useUnknownInCatchVariables=undefined
+- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=undefined, noImplicitOverride=undefined, useUnknownInCatchVariables=undefined
 - CI: ENABLE_TYPECHECK=on
 
 ## Milestones
 - [x] PR16-alt: TS mirrors for socket/routes
 - [x] PR17: strict typecheck + expanded Socket.IO contract types
 
-_Last updated: 2025-09-11T22:08:27.543Z_
+_Last updated: 2025-09-11T22:15:16.477Z_
