@@ -1,7 +1,7 @@
 # Migration Progress
 
-- Total source files: 29
-- TypeScript files: 9 (31%)
+- Total source files: 31
+- TypeScript files: 11 (35%)
 - JavaScript files: 20
 - explicit 'any' uses (TS): 0
 
@@ -13,4 +13,4 @@
 - [ ] Routes
 - [ ] Entry/Packaging
 
-_Last updated: 2025-09-11T18:47:07.471Z_
+_Last updated: 2025-09-11T18:50:58.894Z_
