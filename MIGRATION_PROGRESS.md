@@ -6,11 +6,20 @@
 - explicit 'any' uses (TS): 0
 
 ## Areas
-- [ ] Constants
-- [ ] Utils
-- [ ] Config + Env
-- [ ] Socket handlers
-- [ ] Routes
-- [ ] Entry/Packaging
+- [x] Constants
+- [x] Utils
+- [x] Config + Env
+- [x] Socket handlers (contracts v1 present)
+- [x] Routes
+- [x] Entry/Packaging
 
-_Last updated: 2025-09-11T21:58:01.446Z_
+## Strictness
+- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true
+- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true
+- CI: ENABLE_TYPECHECK=on
+
+## Milestones
+- [x] PR16-alt: TS mirrors for socket/routes
+- [x] PR17: strict typecheck + expanded Socket.IO contract types
+
+_Last updated: 2025-09-11T22:00:52.027Z_
