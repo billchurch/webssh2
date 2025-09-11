@@ -3,7 +3,7 @@
 // Type-only mirror that re-exports JS implementation without changing runtime
 
 import type { Router } from 'express'
-import * as Impl from './routes.js'
+import * as Impl from './routes.impl.js'
 import type { Config } from './types/config.js'
 
 // Re-export helpers with explicit types, delegating to JS implementation

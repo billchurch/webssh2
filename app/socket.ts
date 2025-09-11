@@ -7,7 +7,7 @@ import type { Config } from './types/config.js'
 // prettier-ignore
 import type { ClientToServerEvents as C2S, ServerToClientEvents as S2C, InterServerEvents as IS, SocketData as SD } from './types/contracts/v1/socket.js'
 
-import impl from './socket.js'
+import impl from './socket.impl.js'
 
 // Default initializer with strong types; delegates to JS implementation
 export default function init(

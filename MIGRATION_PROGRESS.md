@@ -1,8 +1,8 @@
 # Migration Progress
 
-- Total source files: 33
-- TypeScript files: 13 (39%)
-- JavaScript files: 20
+- Total source files: 37
+- TypeScript files: 15 (41%)
+- JavaScript files: 22
 - explicit 'any' uses (TS): 0
 
 ## Areas
@@ -22,4 +22,4 @@
 - [x] PR16-alt: TS mirrors for socket/routes
 - [x] PR17: strict typecheck + expanded Socket.IO contract types
 
-_Last updated: 2025-09-11T22:00:52.027Z_
+_Last updated: 2025-09-11T22:08:27.543Z_
