@@ -8,7 +8,9 @@
     "declarationMap": false,
     "emitDeclarationOnly": false,
     "noEmit": true,
-    "strict": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
     "skipLibCheck": true,
     "target": "ES2022",
     "lib": ["ES2023"],
@@ -27,4 +29,3 @@
     "tests/**/*.ts"
   ]
 }
-

@@ -6,14 +6,11 @@
 - explicit 'any' uses (TS): 0
 
 ## Areas
-- [x] Constants
-- [x] Utils
-- [x] Config + Env
-- [x] Socket handlers
+- [ ] Constants
+- [ ] Utils
+- [ ] Config + Env
+- [ ] Socket handlers
 - [ ] Routes
-- [x] Entry/Packaging
+- [ ] Entry/Packaging
 
-_Last updated: 2025-09-11T21:36:09.184Z_
-- PR17: Enable strict typecheck in CI for mirrored modules
-- PR18: Flip `socket` + `routes` to `dist`
-- PR19: Raise TS strictness and prune disables
+_Last updated: 2025-09-11T21:43:29.702Z_
