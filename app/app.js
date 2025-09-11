@@ -63,7 +63,8 @@ async function initializeServerAsync() {
     const { app, sessionMiddleware } = createAppAsync(appConfig)
     const server = createServer(app)
     // Socket.IO expects a config that exposes getCorsConfig(); getConfig attaches it at load time
-    const cfgForIO = /** @type {{ getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }} */ (appConfig)
+    /** @type {{ getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }} */
+    const cfgForIO = appConfig
     const io = configureSocketIO(server, /** @type {any} */ (sessionMiddleware), cfgForIO)
 
     // Set up Socket.IO listeners
@@ -76,8 +77,11 @@ async function initializeServerAsync() {
 
     return { server: server, io: io, app: app, config: appConfig }
   } catch (err) {
-    if (err instanceof Error) handleError(err)
-    else handleError(new Error(String(err)))
+    if (err instanceof Error) {
+      handleError(err)
+    } else {
+      handleError(new Error(String(err)))
+    }
     process.exit(1)
   }
 }

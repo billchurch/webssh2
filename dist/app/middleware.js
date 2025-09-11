@@ -17,6 +17,14 @@ import { HTTP } from './constants.js'
 import { createSecurityHeadersMiddleware } from './security-headers.js'
 
 /**
+ * @typedef {import('express').Request} Request
+ * @typedef {import('express').Response} Response
+ * @typedef {import('express').NextFunction} NextFunction
+ * @typedef {import('express').RequestHandler} RequestHandler
+ * @typedef {import('./types/config.js').Config} Config
+ */
+
+/**
  * Middleware function that handles HTTP Basic Authentication for the application.
  *
  * If the `config.user.name` and `config.user.password` are set, it will use those
@@ -34,10 +42,20 @@ import { createSecurityHeadersMiddleware } from './security-headers.js'
  * If the authentication fails, the function will send a 401 Unauthorized response
  * with the appropriate WWW-Authenticate header.
  */
+/**
+ * Basic/Auth middleware builder
+ * @param {Config} config
+ * @returns {RequestHandler}
+ */
 export function createAuthMiddleware(config) {
-  return (req, res, next) => {
+  return (
+    /** @type {Request & { session?: any }} */ req,
+    /** @type {Response} */ res,
+    /** @type {NextFunction} */ next
+  ) => {
     // Check if username and either password or private key is configured
     if (config.user.name && (config.user.password || config.user.privateKey)) {
+      req.session = req.session || {}
       req.session.sshCredentials = {
         username: config.user.name,
       }
@@ -64,6 +82,7 @@ export function createAuthMiddleware(config) {
     }
 
     // Validate and sanitize credentials
+    req.session = req.session || {}
     req.session.sshCredentials = {
       username: validator.escape(credentials.name),
       password: credentials.pass,
@@ -78,6 +97,10 @@ export function createAuthMiddleware(config) {
  * @param {Object} config - The configuration object
  * @returns {Function} The session middleware
  */
+/**
+ * @param {Config} config
+ * @returns {RequestHandler}
+ */
 export function createSessionMiddleware(config) {
   return session({
     secret: config.session.secret,
@@ -91,6 +114,9 @@ export function createSessionMiddleware(config) {
  * Creates body parser middleware
  * @returns {Function[]} Array of body parser middleware
  */
+/**
+ * @returns {RequestHandler[]}
+ */
 export function createBodyParserMiddleware() {
   return [urlencoded({ extended: true }), json()]
 }
@@ -99,9 +125,16 @@ export function createBodyParserMiddleware() {
  * Creates cookie-setting middleware
  * @returns {Function} The cookie-setting middleware
  */
+/**
+ * @returns {RequestHandler}
+ */
 export function createCookieMiddleware() {
-  return (req, res, next) => {
-    if (req.session.sshCredentials) {
+  return (
+    /** @type {Request & { session?: any }} */ req,
+    /** @type {Response} */ res,
+    /** @type {NextFunction} */ next
+  ) => {
+    if (req.session?.sshCredentials) {
       const cookieData = {
         host: req.session.sshCredentials.host,
         port: req.session.sshCredentials.port,
@@ -122,8 +155,16 @@ export function createCookieMiddleware() {
  * @param {Object} config - The configuration object
  * @returns {Function} The SSO middleware
  */
+/**
+ * @param {Config} config
+ * @returns {RequestHandler}
+ */
 export function createSSOAuthMiddleware(config) {
-  return (req, res, next) => {
+  return (
+    /** @type {Request} */ req,
+    /** @type {Response} */ res,
+    /** @type {NextFunction} */ next
+  ) => {
     // Skip if not a POST request
     if (req.method !== 'POST') {
       return next()
@@ -147,7 +188,8 @@ export function createSSOAuthMiddleware(config) {
     if (config.sso?.enabled) {
       if (config.user?.name && config.user?.password) {
         debug('SSO Auth: Using configured default credentials')
-        req.body = req.body || {}
+        // ensure body exists when using defaults
+        req.body = /** @type {any} */ (req.body || {})
         req.body.username = req.body.username || config.user.name
         req.body.password = req.body.password || config.user.password
         return next()
@@ -163,8 +205,16 @@ export function createSSOAuthMiddleware(config) {
  * @param {Object} config - The configuration object
  * @returns {Function} The CSRF middleware
  */
+/**
+ * @param {Config} config
+ * @returns {RequestHandler}
+ */
 export function createCSRFMiddleware(config) {
-  return (req, res, next) => {
+  return (
+    /** @type {Request & { session?: any }} */ req,
+    /** @type {Response} */ res,
+    /** @type {NextFunction} */ next
+  ) => {
     // Skip CSRF if disabled in config
     if (!config.sso?.csrfProtection) {
       return next()
@@ -187,8 +237,8 @@ export function createCSRFMiddleware(config) {
 
     // For POST requests, check CSRF token if enabled
     if (req.method === 'POST') {
-      const token = req.body._csrf || req.headers['x-csrf-token']
-      const sessionToken = req.session.csrfToken
+      const token = /** @type {any} */ (req.body?._csrf) || req.headers['x-csrf-token']
+      const sessionToken = req.session?.csrfToken
 
       if (!sessionToken || token !== sessionToken) {
         debug('CSRF: Token validation failed')
@@ -205,6 +255,12 @@ export function createCSRFMiddleware(config) {
  * @param {express.Application} app - The Express application
  * @param {Object} config - The configuration object
  * @returns {Object} An object containing the session middleware
+ */
+/**
+ * Applies all middleware
+ * @param {import('express').Application} app
+ * @param {Config} config
+ * @returns {{ sessionMiddleware: RequestHandler }}
  */
 export function applyMiddleware(app, config) {
   // Apply security headers first (before session to ensure they're always set)

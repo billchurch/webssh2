@@ -1,8 +1,8 @@
 # Migration Progress
 
-- Total source files: 37
-- TypeScript files: 15 (41%)
-- JavaScript files: 22
+- Total source files: 55
+- TypeScript files: 27 (49%)
+- JavaScript files: 28
 - explicit 'any' uses (TS): 0
 
 ## Areas
@@ -24,4 +24,4 @@
 - [x] PR18: flip socket/routes to TS runtime (impl shims + copy exclude)
 - [x] PR19: ratchet strict flags
 
-_Last updated: 2025-09-11T22:32:20.229Z_
+_Last updated: 2025-09-11T22:53:36.813Z_

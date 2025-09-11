@@ -1,7 +1,11 @@
-export default handleConnection;
-/**
- * Handle the connection request and send the modified client HTML.
- * @param {Object} req - The Express request object.
- * @param {Object} res - The Express response object.
- */
-declare function handleConnection(req: Object, res: Object): Promise<void>;
+import type { Request, Response } from 'express';
+type Sess = {
+    [k: string]: unknown;
+};
+export default function handleConnection(req: Request & {
+    session?: Sess;
+    sessionID?: string;
+}, res: Response, opts?: {
+    host?: string;
+}): Promise<void>;
+export {};
