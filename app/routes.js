@@ -1,5 +1,6 @@
 // server
 // app/routes.js
+// @ts-check
 
 import express from 'express'
 import {
@@ -18,6 +19,10 @@ import { HTTP } from './constants.js'
 const debug = createNamespacedDebug('routes')
 
 // Helper functions to reduce code duplication
+/**
+ * @param {any} source
+ * @param {any} session
+ */
 function processHeaderParameters(source, session) {
   const isGet = typeof source.header !== 'undefined'
   const headerKey = isGet ? 'header' : 'header.name'
@@ -55,6 +60,10 @@ function processHeaderParameters(source, session) {
   }
 }
 
+/**
+ * @param {any} source
+ * @param {any} session
+ */
 function processEnvironmentVariables(source, session) {
   const envVars = parseEnvVars(source.env)
   if (envVars) {
@@ -63,6 +72,10 @@ function processEnvironmentVariables(source, session) {
   }
 }
 
+/**
+ * @param {any} session
+ * @param {{ host: any, port: any, username?: any, password?: any, term?: any }} param1
+ */
 function setupSshCredentials(session, { host, port, username, password, term }) {
   session.sshCredentials = session.sshCredentials || {}
   session.sshCredentials.host = host
@@ -84,6 +97,10 @@ function setupSshCredentials(session, { host, port, username, password, term }) 
   return sanitizedCredentials
 }
 
+/**
+ * @param {any} body
+ * @param {any} session
+ */
 function processSessionRecordingParams(body, session) {
   if (body.allowreplay === 'true' || body.allowreplay === true) {
     session.allowReplay = true
@@ -96,11 +113,21 @@ function processSessionRecordingParams(body, session) {
   }
 }
 
+/**
+ * @param {Error} err
+ * @param {{ status: (code:number)=>{ send: (body:any)=>void, json: (b:any)=>void } }} res
+ */
 function handleRouteError(err, res) {
   const error = new ConfigError(`Invalid configuration: ${err.message}`)
   handleError(error, res)
 }
 
+/**
+ * @param {any} req
+ * @param {any} res
+ * @param {string | null} hostParam
+ * @param {import('./types/config').Config} config
+ */
 function handlePostAuthentication(req, res, hostParam, config) {
   try {
     // Extract credentials from POST body or APM headers
@@ -148,6 +175,9 @@ function handlePostAuthentication(req, res, hostParam, config) {
   }
 }
 
+/**
+ * @param {import('./types/config').Config} config
+ */
 export function createRoutes(config) {
   const router = express.Router()
   const auth = createAuthMiddleware(config)

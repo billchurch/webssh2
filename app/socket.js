@@ -1,5 +1,6 @@
 // server
 // app/socket.js
+// @ts-check
 
 import validator from 'validator'
 import { EventEmitter } from 'events'
@@ -11,12 +12,21 @@ import { MESSAGES } from './constants.js'
 
 const debug = createNamespacedDebug('socket')
 
+/**
+ * @typedef {import('./types/config').Config} Config
+ */
+
 class WebSSH2Socket extends EventEmitter {
   /**
    * Creates a new WebSSH2Socket instance
    * @param {Object} socket - The Socket.IO socket instance
    * @param {Object} config - The application configuration
    * @param {Function} SSHConnectionClass - The SSH connection class constructor
+   */
+  /**
+   * @param {any} socket
+   * @param {Config} config
+   * @param {new (config: Config) => any} SSHConnectionClass
    */
   constructor(socket, config, SSHConnectionClass) {
     super()
@@ -110,6 +120,7 @@ class WebSSH2Socket extends EventEmitter {
     })
   }
 
+  /** @param {any} data */
   handleKeyboardInteractive(data) {
     const self = this
     debug(`handleKeyboardInteractive: ${this.socket.id}, %O`, data)
@@ -138,6 +149,7 @@ class WebSSH2Socket extends EventEmitter {
     })
   }
 
+  /** @param {any} creds */
   handleAuthenticate(creds) {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
     debug(`handleAuthenticate: received cols=${creds.cols}, rows=${creds.rows}`)
@@ -169,6 +181,7 @@ class WebSSH2Socket extends EventEmitter {
     }
   }
 
+  /** @param {any} creds */
   async initializeConnection(creds) {
     debug(
       `initializeConnection: ${this.socket.id}, INITIALIZING SSH CONNECTION: Host: ${creds.host}, creds: %O`,
@@ -305,6 +318,7 @@ class WebSSH2Socket extends EventEmitter {
    * Handles terminal data.
    * @param {Object} data - The terminal data.
    */
+  /** @param {any} data */
   handleTerminal(data) {
     const { term, rows, cols } = data
     if (term && validateSshTerm(term)) {
@@ -384,6 +398,7 @@ class WebSSH2Socket extends EventEmitter {
    * @param {Object} [payload.env] - Additional env vars to merge
    * @param {number} [payload.timeoutMs] - Optional timeout for the command
    */
+  /** @param {any} payload */
   async handleExec(payload) {
     if (!this.ssh) {
       debug('handleExec: SSH not initialized; skipping')
@@ -486,6 +501,7 @@ class WebSSH2Socket extends EventEmitter {
     }
   }
 
+  /** @param {any} data */
   handleResize(data) {
     const { rows, cols } = data
     if (rows && validator.isInt(rows.toString())) {
@@ -503,6 +519,7 @@ class WebSSH2Socket extends EventEmitter {
    * Handles control commands.
    * @param {string} controlData - The control command received.
    */
+  /** @param {string} controlData */
   handleControl(controlData) {
     if (
       validator.isIn(controlData, ['replayCredentials', 'reauth']) &&
@@ -543,6 +560,10 @@ class WebSSH2Socket extends EventEmitter {
    * @param {string} context - The error context.
    * @param {Error} err - The error object.
    */
+  /**
+   * @param {string} context
+   * @param {Error} [err]
+   */
   handleError(context, err) {
     const errorMessage = err ? `: ${err.message}` : ''
     handleError(new SSHConnectionError(`SSH ${context}${errorMessage}`))
@@ -555,6 +576,10 @@ class WebSSH2Socket extends EventEmitter {
    * @param {string} element - The element to update.
    * @param {any} value - The new value for the element.
    */
+  /**
+   * @param {string} element
+   * @param {unknown} value
+   */
   updateElement(element, value) {
     debug('updateElement called: element=%s, value=%s', element, value)
     this.socket.emit('updateUI', { element, value })
@@ -564,6 +589,7 @@ class WebSSH2Socket extends EventEmitter {
    * Handles the closure of the connection.
    * @param {string} reason - The reason for the closure.
    */
+  /** @param {any} [code] @param {any} [signal] */
   handleConnectionClose(code, signal) {
     if (this.ssh && typeof this.ssh.end === 'function') {
       try {

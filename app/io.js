@@ -1,3 +1,4 @@
+// @ts-check
 import { Server } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import { DEFAULTS } from './constants.js'
@@ -6,9 +7,9 @@ const debug = createNamespacedDebug('app')
 
 /**
  * Configures Socket.IO with the given server
- * @param {http.Server} server - The HTTP server instance
- * @param {Function} sessionMiddleware - The session middleware
- * @param {Object} config - The configuration object
+ * @param {import('node:http').Server} server - The HTTP server instance
+ * @param {(req: any, res: any, next: (err?: any) => void) => void} sessionMiddleware - session middleware
+ * @param {{ getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }} config
  * @returns {import('socket.io').Server} The Socket.IO server instance
  */
 export function configureSocketIO(server, sessionMiddleware, config) {
