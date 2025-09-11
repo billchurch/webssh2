@@ -122,13 +122,13 @@ export default [
 
 ---
 
-## 2) Shared types and contracts (PR1, PR17)
+## 2) Shared types and contracts (PR1, PR17, PR18)
 
 Create/maintain `app/types/contracts/v1`:
 
 - `config.ts`  
   `export interface Config { /* derived from defaults */ }`
-- `socket.ts` (expanded in PR17)
+- `socket.ts` (expanded in PR17; flipped in PR18)
   - Client→Server: `authenticate`, `terminal`, `resize`, `data`, `control('replayCredentials'|'reauth')`, `exec`
   - Server→Client: `authentication` union (`request_auth` | `auth_result` | `keyboard-interactive`), `permissions`, `updateUI`, `getTerminal`, `ssherror`, `data`, `exec-data`, `exec-exit`
 
@@ -603,10 +603,11 @@ Completed
 - PR11: Flip runtime to `dist` (compile TS + mirror JS)
 - PR12–PR15: Security hardening + HTTP/Socket.IO contract tests
 
-Upcoming
+Upcoming (updated)
 
-- PR16: TS mirrors for `socket` and `routes` (no runtime change)
-- PR17: Strict typecheck pass for mirrored modules (ENABLE_TYPECHECK=1)
-- PR18: Flip `socket` and `routes` to `dist` implementations
-- PR19: Raise strictness (noImplicitAny, exactOptionalPropertyTypes), prune disables
+- PR16: TS mirrors for `socket` and `routes` (no runtime change) — done
+- PR17: Strict typecheck pass for mirrored modules (ENABLE_TYPECHECK=1) — done
+- PR18: Flip `socket` and `routes` to `dist` implementations (impl shims + copy exclusions) — done
+- PR19: Raise strictness (noUncheckedIndexedAccess, noImplicitOverride, useUnknownInCatchVariables, noImplicitReturns, noUnusedLocals, noUnusedParameters, noFallthroughCasesInSwitch) — done
+- PR20: Flip `errors` and `logger` to TS runtime (copy exclusions); checkpoint — next
 - Final: Checkpoint + merge to `main`

@@ -14,12 +14,14 @@
 - [x] Entry/Packaging
 
 ## Strictness
-- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=undefined, noImplicitOverride=undefined, useUnknownInCatchVariables=undefined
-- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=undefined, noImplicitOverride=undefined, useUnknownInCatchVariables=undefined
+- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true
+- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true
 - CI: ENABLE_TYPECHECK=on
 
 ## Milestones
 - [x] PR16-alt: TS mirrors for socket/routes
 - [x] PR17: strict typecheck + expanded Socket.IO contract types
+- [x] PR18: flip socket/routes to TS runtime (impl shims + copy exclude)
+- [x] PR19: ratchet strict flags
 
-_Last updated: 2025-09-11T22:15:16.477Z_
+_Last updated: 2025-09-11T22:29:52.545Z_
