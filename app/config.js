@@ -1,5 +1,6 @@
 // server
 // app/config.js
+// @ts-check
 
 import path, { dirname } from 'path'
 import { promises as fs } from 'fs'
@@ -12,6 +13,11 @@ import { loadEnvironmentConfig } from './envConfig.js'
 
 const debug = createNamespacedDebug('config')
 
+/**
+ * @typedef {import('./types/config').Config} Config
+ */
+
+/** @type {Config} */
 const defaultConfig = {
   listen: {
     ip: '0.0.0.0',
@@ -118,8 +124,13 @@ function getConfigPath() {
  * Asynchronously loads configuration with priority: ENV vars > config.json > defaults
  * @returns {Promise<Object>} Configuration object
  */
+/**
+ * Asynchronously loads configuration with priority: ENV vars > config.json > defaults
+ * @returns {Promise<Config>}
+ */
 async function loadConfigAsync() {
   const configPath = getConfigPath()
+  /** @type {Config} */
   let config = JSON.parse(JSON.stringify(defaultConfig)) // Start with defaults
 
   try {
@@ -129,6 +140,7 @@ async function loadConfigAsync() {
     // Use native Node.js JSON parsing to load config.json
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is constructed from __dirname, not user input
     const data = await fs.readFile(configPath, 'utf8')
+    /** @type {Partial<Config>} */
     const providedConfig = JSON.parse(data)
 
     // Merge config.json over defaults

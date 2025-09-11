@@ -1,9 +1,12 @@
 // server
 // app/envConfig.js
+// @ts-check
 
 import { createNamespacedDebug } from './logger.js'
 
 const debug = createNamespacedDebug('envConfig')
+
+/** @typedef {'string'|'number'|'boolean'|'array'|'preset'} EnvValueType */
 
 /**
  * SSH Algorithm Presets
@@ -39,6 +42,11 @@ const ALGORITHM_PRESETS = {
  * @param {'string'|'number'|'boolean'|'array'} type - The expected type
  * @returns {*} The parsed value
  */
+/**
+ * Parses a string value to the appropriate type
+ * @param {string} value
+ * @param {EnvValueType} type
+ */
 function parseValue(value, type) {
   if (value === undefined || value === null) {
     return null
@@ -71,6 +79,10 @@ function parseValue(value, type) {
  * @param {string} value - The string value to parse as array
  * @returns {string[]} The parsed array
  */
+/**
+ * Parses an array value from environment variable
+ * @param {string} value
+ */
 function parseArrayValue(value) {
   if (!value) {
     return []
@@ -97,6 +109,8 @@ function parseArrayValue(value) {
  * Environment variable mapping configuration
  * Maps env var names to config paths and types
  * Note: Order matters for variables that map to the same path
+ * @typedef {{ path: string, type: EnvValueType }} EnvVarMap
+ * @type {Record<string, EnvVarMap>}
  */
 const ENV_VAR_MAPPING = {
   // Legacy PORT support (maps to listen.port) - processed first
@@ -170,6 +184,12 @@ const ENV_VAR_MAPPING = {
  * @param {Object} obj - The object to modify
  * @param {string} path - The dot-notation path
  * @param {*} value - The value to set
+ */
+/**
+ * Sets a nested property in an object using dot notation
+ * @param {Record<string, any>} obj
+ * @param {string} path
+ * @param {any} value
  */
 function setNestedProperty(obj, path, value) {
   const keys = path.split('.')
