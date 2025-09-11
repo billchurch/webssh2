@@ -122,15 +122,15 @@ export default [
 
 ---
 
-## 2) Shared types and contracts (PR1)
+## 2) Shared types and contracts (PR1, PR17)
 
-Create `app/types/contracts/v1`:
+Create/maintain `app/types/contracts/v1`:
 
 - `config.ts`  
   `export interface Config { /* derived from defaults */ }`
-- `socket.ts`  
-  `ClientToServerEvents`, `ServerToClientEvents`,
-  `InterServerEvents`, `SocketData`.
+- `socket.ts` (expanded in PR17)
+  - Client→Server: `authenticate`, `terminal`, `resize`, `data`, `control('replayCredentials'|'reauth')`, `exec`
+  - Server→Client: `authentication` union (`request_auth` | `auth_result` | `keyboard-interactive`), `permissions`, `updateUI`, `getTerminal`, `ssherror`, `data`, `exec-data`, `exec-exit`
 
 Add helper:
 
@@ -211,9 +211,11 @@ export const parseOrThrow = <T>(
 
 Pick one to avoid drift.
 
+Status (PR17): Exec payloads validated (via tests). Negative-path tests added to cover invalid `authenticate`, `terminal`, `resize`, and `control` payloads.
+
 ---
 
-## 4) Typed error model (PR1)
+## 4) Typed error model (PR1, ongoing)
 
 ```ts
 // app/types/errors.ts  (name matches existing WebSSH2Error)
