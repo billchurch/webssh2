@@ -107,7 +107,7 @@ export async function loadConfigAsync(): Promise<Config> {
     await fs.access(configPath)
     const data = await fs.readFile(configPath, 'utf8')
     const providedConfig = JSON.parse(data) as Partial<Config>
-    config = deepMerge(config, providedConfig)
+    config = deepMerge<Config>(config, providedConfig)
     debug('Loaded and merged config.json')
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string }
@@ -124,7 +124,7 @@ export async function loadConfigAsync(): Promise<Config> {
 
   const envConfig = loadEnvironmentConfig()
   if (Object.keys(envConfig).length > 0) {
-    config = deepMerge(config, envConfig as Partial<Config>)
+    config = deepMerge<Config>(config, envConfig as Partial<Config>)
     debug('Merged environment variables into configuration')
     if (config.header) {
       debug('Header config after env merge: %O', config.header)

@@ -11,8 +11,8 @@ import configSchema from './configSchema.js'
 
 const debug = createNamespacedDebug('utils')
 
-export function deepMerge<T extends Record<string, unknown>>(target: T, source: unknown): T {
-  const output: Record<string, unknown> = { ...target }
+export function deepMerge<T extends object>(target: T, source: unknown): T {
+  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
   if (source && typeof source === 'object') {
     const src = source as Record<string, unknown>
     for (const key of Object.keys(src)) {
@@ -85,8 +85,9 @@ export function validateSshTerm(term?: string): string | null {
 }
 
 export function validateConfig(config: unknown): unknown {
-  const ajv = new Ajv()
-  addFormats(ajv)
+  const AjvCtor = Ajv as unknown as { new (): unknown }
+  const ajv = new AjvCtor()
+  ;(addFormats as unknown as (a: unknown) => void)(ajv)
   const validate = ajv.compile(configSchema as unknown as object)
   const valid = validate(config)
   if (!valid) {
