@@ -57,6 +57,7 @@
     "progress": "node scripts/migration-progress.mjs",
     "test:all": "WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-js.mjs",
     "release": "npm run lint:fix && npm run test && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
