@@ -1,5 +1,6 @@
 // server
 // app/crypto-utils.js
+// @ts-check
 
 import crypto from 'crypto'
 /**
