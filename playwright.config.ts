@@ -1,8 +1,15 @@
+/** Unified Playwright config
+ * - Runs tests in tests/playwright
+ * - Starts WebSSH2 via webServer
+ * - If ENABLE_E2E_SSH=1, starts containerized sshd in global setup and stops in teardown
+ */
 import { defineConfig, devices } from '@playwright/test'
+
+const enableE2E = process.env.ENABLE_E2E_SSH === '1'
 
 export default defineConfig({
   testDir: './tests/playwright',
-  timeout: 60 * 1000,
+  timeout: 60_000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -25,6 +32,11 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120_000,
   },
-  globalSetup: './tests/playwright/global-setup.ts',
-  globalTeardown: './tests/playwright/global-teardown.ts',
+  ...(enableE2E
+    ? {
+        globalSetup: './tests/playwright/global-setup.ts',
+        globalTeardown: './tests/playwright/global-teardown.ts',
+      }
+    : {}),
 })
+
