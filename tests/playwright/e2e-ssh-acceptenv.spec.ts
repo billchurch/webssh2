@@ -49,7 +49,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     // Start SSH test server container
     const runArgs = [
       'run', '--rm', '-d', '--name', containerName,
-      '-p', '2244:22',
+      '-p', '2299:22',
       '-e', 'SSH_USER=testuser',
       '-e', 'SSH_PASSWORD=testpassword',
       '-e', 'SSH_DEBUG_LEVEL=3',
@@ -62,7 +62,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     if (started.status !== 0) {
       throw new Error('Failed to start SSH test container')
     }
-    await waitForPort('127.0.0.1', 2244, 20_000)
+    await waitForPort('127.0.0.1', 2299, 20_000)
   })
 
   test.afterAll(() => {
@@ -75,7 +75,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     })
     const page = await context.newPage()
 
-    await page.goto(`${baseURL}/ssh/host/localhost?port=2244&env=FOO:bar`)
+    await page.goto(`${baseURL}/ssh/host/localhost?port=2299&env=FOO:bar`)
 
     // Focus terminal and query the env var
     await page.locator('.xterm-helper-textarea').click()
@@ -89,7 +89,11 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     )
     expect(content).toContain('bar')
 
+    // Capture a screenshot for artifacts/debugging
+    const shotPath = test.info().outputPath('e2e-ssh-acceptenv.png')
+    await page.screenshot({ path: shotPath, fullPage: true })
+    await test.info().attach('screenshot', { path: shotPath, contentType: 'image/png' })
+
     await context.close()
   })
 })
-

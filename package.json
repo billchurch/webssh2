@@ -58,7 +58,7 @@
     "progress": "echo 'Migration progress script removed; see DOCS/CONSTANTS.md and ts-migration-progress.md if present.'",
     "test:all": "npm run build && WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
     "test:e2e:ssh": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright-e2e-ssh.config.ts tests/playwright/e2e-ssh-acceptenv.spec.ts",
-    "e2e:setup": "playwright install --with-deps"
+    "e2e:setup": "playwright install --with-deps",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
@@ -82,12 +82,8 @@
     ]
   },
   "devDependencies": {
-    "@playwright/test": "^1.47.2",
-    "@vitest/coverage-v8": "^2.0.5",
-    "tsx": "^4.19.1",
-    "vitest": "^2.0.5",
-    "husky": "^9.1.6",
     "@eslint/js": "^9.34.0",
+    "@playwright/test": "^1.55.0",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
@@ -96,15 +92,19 @@
     "@types/validator": "^13.15.3",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
+    "@vitest/coverage-v8": "^2.0.5",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
+    "husky": "^9.1.6",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "tsx": "^4.19.1",
+    "typescript": "^5.9.2",
+    "vitest": "^2.0.5"
   },
   "main": "dist/index.js",
   "directories": {
