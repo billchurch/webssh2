@@ -49,6 +49,7 @@
     "start": "node dist/index.js",
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
+    "lint:fix:strict": "eslint 'app/**/*.ts' --fix --rule '@typescript-eslint/prefer-nullish-coalescing:warn' --rule '@typescript-eslint/no-unnecessary-condition:warn'",
     "dev": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "dev:ts": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "watch": "npm run dev",

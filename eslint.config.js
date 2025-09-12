@@ -75,6 +75,10 @@ export default [
       parser: tsParser,
       ecmaVersion: 2024,
       sourceType: 'module',
+      parserOptions: {
+        project: ['./tsconfig.build.json'],
+        tsconfigRootDir: new URL('.', import.meta.url).pathname,
+      },
     },
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
@@ -82,6 +86,10 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
       'node/file-extension-in-import': ['error', 'always'],
     },
   },

@@ -190,7 +190,7 @@ function handlePostAuthentication(
     debug(`${routePath} Credentials: `, sanitizedCredentials)
 
     processSessionRecordingParams(req.body, req.session)
-    handleConnection(req, res, { host })
+    void handleConnection(req, res, { host })
   } catch (err) {
     handleRouteError(err as Error, res)
   }
@@ -204,7 +204,7 @@ export function createRoutes(config: Config): Router {
     const r = req as ReqWithSession
     debug('router.get./: Accessed / route')
     processHeaderParameters(r.query, r.session)
-    handleConnection(
+    void handleConnection(
       req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
       res as Response
     )
@@ -228,7 +228,7 @@ export function createRoutes(config: Config): Router {
         term: (r.query['sshterm'] ? sshterm : null) ?? null,
       })
       debug('/ssh/host/ Credentials: ', sanitizedCredentials)
-      handleConnection(
+      void handleConnection(
         req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
         res as Response,
         { host }
@@ -253,7 +253,7 @@ export function createRoutes(config: Config): Router {
         term: (r.query['sshterm'] ? sshterm : null) ?? null,
       })
       debug('/ssh/host/ Credentials: ', sanitizedCredentials)
-      handleConnection(
+      void handleConnection(
         req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
         res as Response,
         { host }
