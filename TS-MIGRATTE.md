@@ -152,6 +152,23 @@ few PRs, import shared types to improve accuracy before renames.
 
 ---
 
+## 2b) Flip cadence updates (PR22)
+
+Following the same shim pattern used for `routes`/`socket`, we flipped
+`connectionHandler` and `io` to TS-built entrypoints while delegating
+runtime behavior to the original JS via `*.impl.js -> *.impl.target.js`.
+
+- Updated `scripts/copy-js.mjs` to:
+  - Exclude `app/connectionHandler.js` and `app/io.js` from 1:1 copying
+  - Copy originals to `dist/app/connectionHandler.impl.target.js` and
+    `dist/app/io.impl.target.js`
+- Pointed `app/connectionHandler.impl.js` and `app/io.impl.js` at the
+  new `*.impl.target.js` files.
+- Left imports in existing JS untouched; Node resolves to the TS-compiled
+  wrappers, avoiding circular deps while keeping runtime behavior stable.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

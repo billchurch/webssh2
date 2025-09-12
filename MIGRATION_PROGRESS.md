@@ -23,5 +23,6 @@
 - [x] PR17: strict typecheck + expanded Socket.IO contract types
 - [x] PR18: flip socket/routes to TS runtime (impl shims + copy exclude)
 - [x] PR19: ratchet strict flags
+- [x] PR22: flip connectionHandler/io to TS runtime (impl shims + copy exclude)
 
-_Last updated: 2025-09-11T22:53:36.813Z_
+_Last updated: 2025-09-11T23:55:10.000Z_

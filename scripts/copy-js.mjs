@@ -9,8 +9,13 @@ let files = ['index.js', ...globSync('app/**/*.js', { dot: false, nodir: true })
 // Exclude these from 1:1 copy; we copy them under special names below
 const ROUTES_SRC = 'app/routes.js'
 const SOCKET_SRC = 'app/socket.js'
+const CONNECTION_HANDLER_SRC = 'app/connectionHandler.js'
+const IO_SRC = 'app/io.js'
 files = files.filter((p) => p !== ROUTES_SRC)
 files = files.filter((p) => p !== SOCKET_SRC)
+// PR22 flip: connectionHandler/io now built from TS
+files = files.filter((p) => p !== CONNECTION_HANDLER_SRC)
+files = files.filter((p) => p !== IO_SRC)
 // PR20 flip: errors/logger now built from TS
 files = files.filter((p) => !/^(?:app\/)?errors\.js$/.test(p))
 files = files.filter((p) => !/^(?:app\/)?logger\.js$/.test(p))
@@ -27,6 +32,8 @@ for (const f of files) {
 const special = [
   [ROUTES_SRC, 'dist/app/routes.impl.target.js'],
   [SOCKET_SRC, 'dist/app/socket.impl.target.js'],
+  [CONNECTION_HANDLER_SRC, 'dist/app/connectionHandler.impl.target.js'],
+  [IO_SRC, 'dist/app/io.impl.target.js'],
 ]
 for (const [src, dest] of special) {
   if (existsSync(src)) {
@@ -36,4 +43,6 @@ for (const [src, dest] of special) {
   }
 }
 
-console.log(`Copied ${files.length} JS files to dist/ (plus special targets for routes/socket)`) 
+console.log(
+  `Copied ${files.length} JS files to dist/ (plus special targets for routes/socket/connectionHandler/io)`
+)
