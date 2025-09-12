@@ -80,7 +80,7 @@ const defaultConfig: Config = {
     replayCRLF: false,
   },
   session: {
-    secret: process.env['WEBSSH_SESSION_SECRET'] || generateSecureSecret(),
+    secret: process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret(),
     name: 'webssh2.sid',
   },
   sso: {
@@ -138,9 +138,7 @@ export async function loadConfigAsync(): Promise<Config> {
   if (Object.keys(envConfig).length > 0) {
     config = deepMerge<Config>(config, envConfig as Partial<Config>)
     debug('Merged environment variables into configuration')
-    if (config.header) {
-      debug('Header config after env merge: %O', config.header)
-    }
+    debug('Header config after env merge: %O', config.header)
   }
 
   try {

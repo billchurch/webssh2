@@ -8,7 +8,7 @@ export function getClientPublicPath(): string {
   try {
     return webssh2Client.getPublicPath()
   } catch (err) {
-    debug('Falling back to DEFAULTS.WEBSSH2_CLIENT_PATH:', (err as { message?: string })?.message)
+    debug('Falling back to DEFAULTS.WEBSSH2_CLIENT_PATH:', (err as { message?: string }).message)
     return DEFAULTS.WEBSSH2_CLIENT_PATH
   }
 }
