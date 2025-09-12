@@ -3,7 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import { execSchema } from '../app/validators/execSchema.js'
+import { execSchema } from '../dist/app/validators/execSchema.js'
 
 test('execSchema validates minimal valid payload', () => {
   const ajv = new Ajv({ allErrors: true })
@@ -25,4 +25,3 @@ test('execSchema rejects invalid payloads', () => {
   assert.strictEqual(validate({ command: 'ls', env: { FOO: 1 } }), false) // non-string env
   assert.strictEqual(validate({ command: 'ls', extra: true }), false) // additional properties
 })
-

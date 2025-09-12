@@ -1,7 +1,7 @@
 // Contract test: verify expected HTTP routes are registered without invoking handlers
 import test from 'node:test'
 import assert from 'node:assert'
-import { createRoutes } from '../../app/routes.js'
+import { createRoutes } from '../../dist/app/routes.js'
 
 const minimalConfig = {
   ssh: { host: 'example.com', port: 22, term: 'xterm-256color' },

@@ -6,7 +6,7 @@ import {
   processEnvironmentVariables,
   setupSshCredentials,
   processSessionRecordingParams,
-} from '../app/routes.js'
+} from '../dist/app/routes.js'
 
 test('processHeaderParameters sets session overrides from GET-like source', () => {
   const session = {}
@@ -54,4 +54,3 @@ test('processSessionRecordingParams toggles replay and sets extras', () => {
   assert.strictEqual(session.mrhSession, 'abc')
   assert.strictEqual(session.readyTimeout, 3000)
 })
-

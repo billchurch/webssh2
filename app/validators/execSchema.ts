@@ -1,8 +1,3 @@
-// TypeScript mirror for exec payload validation schema
-// Delegates runtime to JS implementation via impl shim
-
-import * as Impl from './execSchema.impl.js'
-
 export interface ExecPayload {
   command: string
   pty?: boolean
@@ -20,4 +15,17 @@ export type JSONSchema = {
   additionalProperties: boolean
 }
 
-export const execSchema: JSONSchema = Impl.execSchema as unknown as JSONSchema
+export const execSchema: JSONSchema = {
+  type: 'object',
+  properties: {
+    command: { type: 'string', minLength: 1 },
+    pty: { type: 'boolean' },
+    term: { type: 'string' },
+    cols: { type: 'integer', minimum: 1 },
+    rows: { type: 'integer', minimum: 1 },
+    env: { type: 'object', additionalProperties: { type: 'string' } },
+    timeoutMs: { type: 'integer', minimum: 1 },
+  },
+  required: ['command'],
+  additionalProperties: false,
+}

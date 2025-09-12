@@ -5,8 +5,8 @@ import assert from 'node:assert'
 import express from 'express'
 import request from 'supertest'
 import session from 'express-session'
-import { createRoutes } from '../app/routes.js'
-import { createBodyParserMiddleware } from '../app/middleware.js'
+import { createRoutes } from '../dist/app/routes.js'
+import { createBodyParserMiddleware } from '../dist/app/middleware.js'
 
 // Mock configuration for testing
 const mockConfig = {
