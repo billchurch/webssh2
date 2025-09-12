@@ -14,8 +14,8 @@
 - [x] Entry/Packaging
 
 ## Strictness
-- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true
-- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true
+- Base tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true, noPropertyAccessFromIndexSignature=true
+- Build tsconfig: strict=true, noImplicitAny=true, exactOptionalPropertyTypes=true, noUncheckedIndexedAccess=true, noImplicitOverride=true, useUnknownInCatchVariables=true, noPropertyAccessFromIndexSignature=true
 - CI: ENABLE_TYPECHECK=on
 
 ## Milestones

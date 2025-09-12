@@ -78,7 +78,7 @@ const defaultConfig: Config = {
     allowReplay: true,
   },
   session: {
-    secret: process.env.WEBSSH_SESSION_SECRET || generateSecureSecret(),
+    secret: process.env['WEBSSH_SESSION_SECRET'] || generateSecureSecret(),
     name: 'webssh2.sid',
   },
   sso: {

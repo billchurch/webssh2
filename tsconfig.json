@@ -19,6 +19,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
+    "noPropertyAccessFromIndexSignature": true,
     "target": "ES2022",
     "lib": ["ES2023"],
     "module": "NodeNext",
