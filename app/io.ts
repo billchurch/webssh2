@@ -1,15 +1,29 @@
 import type { Server as HttpServer } from 'node:http'
-import type { Server as SocketIOServer } from 'socket.io'
 import type { RequestHandler } from 'express'
+import { Server as SocketIOServer } from 'socket.io'
+import { createNamespacedDebug } from './logger.js'
+import { DEFAULTS } from './constants.js'
 
-import * as Impl from './io.impl.js'
+const debug = createNamespacedDebug('app')
 
-export const configureSocketIO: (
+export function configureSocketIO(
   server: HttpServer,
   sessionMiddleware: RequestHandler,
   config: { getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }
-) => SocketIOServer = Impl.configureSocketIO as unknown as (
-  server: HttpServer,
-  sessionMiddleware: RequestHandler,
-  config: { getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean } }
-) => SocketIOServer
+): SocketIOServer {
+  const io = new SocketIOServer(server, {
+    serveClient: false,
+    path: DEFAULTS.IO_PATH,
+    pingTimeout: DEFAULTS.IO_PING_TIMEOUT,
+    pingInterval: DEFAULTS.IO_PING_INTERVAL,
+    cors: config.getCorsConfig(),
+  })
+
+  io.use((socket, next) => {
+    // @ts-expect-error socket.request.res is optional; express-session expects a Response-like object
+    sessionMiddleware(socket.request, socket.request.res || {}, next)
+  })
+
+  debug('IO configured')
+  return io
+}

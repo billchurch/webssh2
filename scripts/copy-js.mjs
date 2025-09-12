@@ -8,14 +8,12 @@ let files = ['index.js', ...globSync('app/**/*.js', { dot: false, nodir: true })
 // PR18 flip: do not overwrite compiled TS mirrors for socket/routes
 // Exclude these from 1:1 copy; we copy them under special names below
 const SOCKET_SRC = 'app/socket.js'
-const IO_SRC = 'app/io.js'
 const SSH_SRC = 'app/ssh.js'
 const CLIENT_PATH_SRC = 'app/client-path.js'
 const CRYPTO_UTILS_SRC = 'app/crypto-utils.js'
 const APP_SRC = 'app/app.js'
 files = files.filter((p) => p !== SOCKET_SRC)
 // PR22 flip: connectionHandler/io now built from TS
-files = files.filter((p) => p !== IO_SRC)
 // PR23 flip: ssh now built from TS entrypoint
 files = files.filter((p) => p !== SSH_SRC)
 // PR24 flip: validators/execSchema built from TS entrypoint
@@ -40,7 +38,6 @@ for (const f of files) {
 // Copy original runtime implementations under distinct names used by *.impl.js shims.
 const special = [
   [SOCKET_SRC, 'dist/app/socket.impl.target.js'],
-  [IO_SRC, 'dist/app/io.impl.target.js'],
   [SSH_SRC, 'dist/app/ssh.impl.target.js'],
   [CLIENT_PATH_SRC, 'dist/app/client-path.impl.target.js'],
   [CRYPTO_UTILS_SRC, 'dist/app/crypto-utils.impl.target.js'],
