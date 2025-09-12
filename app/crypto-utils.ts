@@ -1,4 +1,5 @@
-import * as Impl from './crypto-utils.impl.js'
+import crypto from 'node:crypto'
 
-export const generateSecureSecret: () => string =
-  Impl.generateSecureSecret as unknown as () => string
+export function generateSecureSecret(): string {
+  return crypto.randomBytes(32).toString('hex')
+}
