@@ -13,6 +13,8 @@ const CONNECTION_HANDLER_SRC = 'app/connectionHandler.js'
 const IO_SRC = 'app/io.js'
 const EXEC_SCHEMA_SRC = 'app/validators/execSchema.js'
 const SSH_SRC = 'app/ssh.js'
+const MIDDLEWARE_SRC = 'app/middleware.js'
+const SECURITY_HEADERS_SRC = 'app/security-headers.js'
 files = files.filter((p) => p !== ROUTES_SRC)
 files = files.filter((p) => p !== SOCKET_SRC)
 // PR22 flip: connectionHandler/io now built from TS
@@ -22,6 +24,9 @@ files = files.filter((p) => p !== IO_SRC)
 files = files.filter((p) => p !== SSH_SRC)
 // PR24 flip: validators/execSchema built from TS entrypoint
 files = files.filter((p) => p !== EXEC_SCHEMA_SRC)
+// PR25 flip: middleware/security-headers now built from TS entrypoint
+files = files.filter((p) => p !== MIDDLEWARE_SRC)
+files = files.filter((p) => p !== SECURITY_HEADERS_SRC)
 // PR20 flip: errors/logger now built from TS
 files = files.filter((p) => !/^(?:app\/)?errors\.js$/.test(p))
 files = files.filter((p) => !/^(?:app\/)?logger\.js$/.test(p))
@@ -42,6 +47,8 @@ const special = [
   [IO_SRC, 'dist/app/io.impl.target.js'],
   [SSH_SRC, 'dist/app/ssh.impl.target.js'],
   [EXEC_SCHEMA_SRC, 'dist/app/validators/execSchema.impl.target.js'],
+  [MIDDLEWARE_SRC, 'dist/app/middleware.impl.target.js'],
+  [SECURITY_HEADERS_SRC, 'dist/app/security-headers.impl.target.js'],
 ]
 for (const [src, dest] of special) {
   if (existsSync(src)) {

@@ -1,1 +1,2 @@
-export * from './security-headers.js'
+// Flip helper: runtime implementation shim for security-headers
+export * from './security-headers.impl.target.js'

@@ -196,6 +196,20 @@ shim: `app/validators/execSchema.ts` and
 
 ---
 
+## 2e) Flip middleware + headers (PR25)
+
+Both `middleware` and `security-headers` now build from TS wrappers
+that delegate to the original JS via `*.impl.target.js` files. This
+keeps runtime behavior stable while exposing strong types to TS
+consumers and avoiding circular imports.
+
+- Updated `scripts/copy-js.mjs` to exclude `app/middleware.js` and
+  `app/security-headers.js` from direct copy and emit special targets
+  used by the shims.
+- Swapped shims to re-export from `*.impl.target.js`.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

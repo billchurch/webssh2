@@ -5,11 +5,10 @@
     "checkJs": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "noResolve": true
+    "types": ["node"]
   },
   "include": [
-    "app/app.js",
-    "app/server.js"
+    "app/**/*.js"
   ],
   "exclude": ["app/**/*.ts", "dist", "tests"]
 }
