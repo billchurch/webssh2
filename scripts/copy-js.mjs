@@ -17,6 +17,7 @@ const MIDDLEWARE_SRC = 'app/middleware.js'
 const SECURITY_HEADERS_SRC = 'app/security-headers.js'
 const CLIENT_PATH_SRC = 'app/client-path.js'
 const CRYPTO_UTILS_SRC = 'app/crypto-utils.js'
+const APP_SRC = 'app/app.js'
 files = files.filter((p) => p !== ROUTES_SRC)
 files = files.filter((p) => p !== SOCKET_SRC)
 // PR22 flip: connectionHandler/io now built from TS
@@ -32,6 +33,8 @@ files = files.filter((p) => p !== SECURITY_HEADERS_SRC)
 // PR27 flip: helpers now built from TS
 files = files.filter((p) => p !== CLIENT_PATH_SRC)
 files = files.filter((p) => p !== CRYPTO_UTILS_SRC)
+// PR29 flip: app entry now built from TS
+files = files.filter((p) => p !== APP_SRC)
 // PR20 flip: errors/logger now built from TS
 files = files.filter((p) => !/^(?:app\/)?errors\.js$/.test(p))
 files = files.filter((p) => !/^(?:app\/)?logger\.js$/.test(p))
@@ -56,6 +59,7 @@ const special = [
   [SECURITY_HEADERS_SRC, 'dist/app/security-headers.impl.target.js'],
   [CLIENT_PATH_SRC, 'dist/app/client-path.impl.target.js'],
   [CRYPTO_UTILS_SRC, 'dist/app/crypto-utils.impl.target.js'],
+  [APP_SRC, 'dist/app/app.impl.target.js'],
 ]
 for (const [src, dest] of special) {
   if (existsSync(src)) {

@@ -221,6 +221,15 @@ original JS. This exposes types while keeping the runtime intact.
 
 ---
 
+## 2g) Flip app (PR29)
+
+Finally, the top-level `app` entry is now a TS-built wrapper that
+delegates to the original JS via `app/app.impl.js -> dist/app/app.impl.target.js`.
+`scripts/copy-js.mjs` excludes `app/app.js` and emits the special target.
+This keeps index.js imports stable while surfacing strong types.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

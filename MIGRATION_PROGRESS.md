@@ -29,5 +29,6 @@
 - [x] PR25: flip middleware + security-headers to TS runtime (impl shims + copy exclude)
 - [x] PR27: flip client-path + crypto-utils to TS runtime (impl shims + copy exclude)
 - [x] PR28: add/strengthen ambient type overrides for external libs
+- [x] PR29: flip app entry (app.js) to TS runtime (impl shim + copy exclude)
 
-_Last updated: 2025-09-12T00:36:40.000Z_
+_Last updated: 2025-09-12T00:40:20.000Z_
