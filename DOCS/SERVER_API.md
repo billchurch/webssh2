@@ -77,15 +77,15 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
      ```
 
 2. `terminal`
-   - Emit this event to provide terminal specifications.
+   - Emit this event to provide terminal dimensions.
    - Payload:
      ```javascript
      {
-       term: string, // e.g., "xterm-256color"
        cols: number,
        rows: number
      }
      ```
+   - Note: Terminal type (`term`) is managed server-side based on authentication parameters or server configuration.
 
 3. `data`
    - Emit this event to send user input to the SSH session.
@@ -119,9 +119,10 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
 ## Establishing SSH Session
 
 1. After successful authentication, the server emits `getTerminal`.
-2. The client emits `terminal` with terminal specifications.
-3. The server establishes the SSH connection and starts emitting `data` events with terminal output.
-4. The client can now send `data` events with user input.
+2. The client emits `terminal` with terminal dimensions (cols/rows only).
+3. The server uses terminal type from authentication parameters or server defaults.
+4. The server establishes the SSH connection and starts emitting `data` events with terminal output.
+5. The client can now send `data` events with user input.
 
 ## Error Handling
 

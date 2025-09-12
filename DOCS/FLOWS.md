@@ -12,12 +12,14 @@ sequenceDiagram
     Express->>Client: Send client files
     Client->>SocketIO: Establish Socket.IO connection
     alt HTTP Basic Auth used
+        Note over SocketIO: Server has term from URL params
         SocketIO->>SSHConnection: Jump to "Connect with credentials"
     else No pre-existing credentials
         SocketIO->>Client: Emit "authentication" (request_auth)
-        Client->>SocketIO: Emit "authenticate" (with credentials + optional cols/rows)
+        Client->>SocketIO: Emit "authenticate" (with credentials + optional term/cols/rows)
+        Note over SocketIO: Server stores term from credentials
     end
-    SocketIO->>SSHConnection: Connect with credentials (stores dimensions if provided)
+    SocketIO->>SSHConnection: Connect with credentials
     SSHConnection->>SSHServer: Establish SSH connection
     alt Keyboard Interactive Auth
         SSHServer->>SSHConnection: Request additional auth
@@ -30,8 +32,9 @@ sequenceDiagram
     SSHServer->>SSHConnection: Connection established
     SSHConnection->>SocketIO: Connection successful
     SocketIO->>Client: Emit "authentication" (success)
-    Client->>SocketIO: Emit "terminal" (with specs - fallback if not sent earlier)
-    SocketIO->>SSHConnection: Create shell with specs (uses stored or new dimensions)
+    SocketIO->>Client: Emit "getTerminal"
+    Client->>SocketIO: Emit "terminal" (with dimensions only)
+    SocketIO->>SSHConnection: Create shell with server-side term + client dimensions
     SSHConnection->>SSHServer: Create shell session
     SSHConnection->>SocketIO: Shell created
     SocketIO->>Client: Ready for input/output

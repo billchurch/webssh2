@@ -159,8 +159,11 @@ class WebSSH2Socket extends EventEmitter {
   private handleAuthenticate(creds: Record<string, unknown>): void {
     debug(`handleAuthenticate: ${this.socket.id}, %O`, maskSensitiveData(creds))
     if (isValidCredentials(creds as Credentials)) {
-      this.sessionState.term =
-        validateSshTerm((creds as Credentials).term) ?? (this.config.ssh.term as string)
+      const validatedTerm = validateSshTerm((creds as Credentials).term)
+      this.sessionState.term = validatedTerm ?? (this.config.ssh.term as string)
+      debug(
+        `handleAuthenticate: creds.term='${(creds as Credentials).term}', validatedTerm='${validatedTerm}', sessionState.term='${this.sessionState.term}'`
+      )
       if ((creds as Credentials).cols && validator.isInt(String((creds as Credentials).cols))) {
         this.sessionState.cols = parseInt(
           String((creds as Credentials).cols as unknown as string),
@@ -211,6 +214,10 @@ class WebSSH2Socket extends EventEmitter {
         allowReauth: !!this.config.options.allowReauth,
       })
       this.socket.emit('getTerminal', true)
+
+      // Update footer with connection status
+      const connectionString = `ssh://${this.sessionState.host}:${this.sessionState.port}`
+      this.socket.emit('updateUI', { element: 'footer', value: connectionString })
     } catch (err) {
       const errorMessage = err instanceof SSHConnectionError ? err.message : 'SSH connection failed'
       this.socket.emit('authentication', {
@@ -286,10 +293,11 @@ class WebSSH2Socket extends EventEmitter {
   }
 
   private handleTerminal(data: Record<string, unknown>): void {
-    const { term, rows, cols } = data as Record<string, unknown>
-    if (term && validateSshTerm(String(term))) {
-      this.sessionState.term = String(term)
-    }
+    const { rows, cols } = data as Record<string, unknown>
+    debug(
+      `handleTerminal: received dimensions rows='${rows}' cols='${cols}', using server sessionState.term='${this.sessionState.term}'`
+    )
+    // Server is now the sole source of truth for term - ignore any term from client
     if (rows && validator.isInt(String(rows))) {
       this.sessionState.rows = parseInt(String(rows), 10)
     }
@@ -413,6 +421,9 @@ class WebSSH2Socket extends EventEmitter {
       rows: this.sessionState.rows ?? DEFAULTS.TERM_ROWS,
       cols: this.sessionState.cols ?? DEFAULTS.TERM_COLS,
     }
+    debug(
+      `createShell: sessionState.term=${this.sessionState.term}, config.ssh.term=${this.config.ssh.term}, final options.term=${options.term}`
+    )
     const stream = await this.ssh.shell(options, sessionEnv)
     this.shellStream = stream
 

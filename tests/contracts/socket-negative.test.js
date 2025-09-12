@@ -52,8 +52,8 @@ describe('Socket.IO Negative Paths', () => {
     onConn(mockSocket)
     await new Promise((r) => setImmediate(r))
 
-    // send invalid term and non-integer sizes
-    EventEmitter.prototype.emit.call(mockSocket, 'terminal', { term: 'bad!@', rows: 'abc', cols: 'xyz' })
+    // send non-integer sizes (term now ignored from client)
+    EventEmitter.prototype.emit.call(mockSocket, 'terminal', { rows: 'abc', cols: 'xyz' })
     await new Promise((r) => setImmediate(r))
 
     assert.equal(lastShellOptions.term, 'xterm-color', 'falls back to default term')

@@ -232,7 +232,7 @@ export function createRoutes(config: Config): Router {
       const sanitizedCredentials = setupSshCredentials(r.session, {
         host,
         port,
-        term: (r.query['sshterm'] ? sshterm : null) ?? null,
+        term: sshterm,
       })
       debug('/ssh/host/ Credentials: ', sanitizedCredentials)
       void handleConnection(
@@ -257,7 +257,7 @@ export function createRoutes(config: Config): Router {
       const sanitizedCredentials = setupSshCredentials(r.session, {
         host,
         port,
-        term: (r.query['sshterm'] ? sshterm : null) ?? null,
+        term: sshterm,
       })
       debug('/ssh/host/ Credentials: ', sanitizedCredentials)
       void handleConnection(

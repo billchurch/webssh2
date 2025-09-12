@@ -69,8 +69,8 @@ describe('socket env propagation', () => {
 
     initSockets(io, config, SSHClass)
 
-    // Trigger terminal event to start shell
-    fakeSocket.emit('terminal', { term: 'xterm' })
+    // Trigger terminal event to start shell (dimensions only, term managed by server)
+    fakeSocket.emit('terminal', { cols: 80, rows: 24 })
 
     // We expect TERM + FOO only (bad-key filtered)
     const env = instances[0]?.lastShellEnv

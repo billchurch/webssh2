@@ -197,7 +197,7 @@ export default class SSHConnection extends EventEmitter {
   }
 
   private getEnvironment(envVars?: Record<string, unknown>): Record<string, string> {
-    const base: Record<string, string> = { TERM: String(this.config.ssh.term) }
+    const base: Record<string, string> = {}
     if (!envVars || typeof envVars !== 'object') {
       return base
     }
