@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
 const TEST_CONFIG = {
   baseUrl: 'http://localhost:2222',
   sshHost: 'localhost',
-  sshPort: '4444',
+  sshPort: '2244',
   validUsername: 'testuser',
   validPassword: 'testpassword'
 }

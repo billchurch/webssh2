@@ -45,7 +45,7 @@ Tests WebSocket performance and stability:
 
 1. **Start the test SSH server:**
 ```bash
-docker run -d --name webssh2-test-ssh -p 4444:22 \
+docker run -d --name webssh2-test-ssh -p 2244:22 \
   -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
   ghcr.io/billchurch/ssh_test:alpine
 ```
@@ -143,7 +143,7 @@ npx playwright show-trace test-results/*/trace.zip
 
 Default test credentials (for test SSH server):
 - **Host**: localhost
-- **Port**: 4444
+- **Port**: 2244
 - **Username**: testuser
 - **Password**: testpassword
 
@@ -155,7 +155,7 @@ Default test credentials (for test SSH server):
 sudo systemctl start docker
 ```
 
-### Port 4444 already in use
+### Port 2244 already in use
 ```bash
 # Stop existing container
 docker stop webssh2-test-ssh

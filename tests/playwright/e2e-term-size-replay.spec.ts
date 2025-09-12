@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { DEFAULTS } from '../../app/constants'
+import { SSH_PORT } from './test-config'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
@@ -19,7 +20,7 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
     const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
     const page = await context.newPage()
 
-    await page.goto(`${baseURL}/ssh/host/localhost?port=2244&sshterm=xterm-256color`)
+    await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}&sshterm=xterm-256color`)
     await page.locator('.xterm-helper-textarea').click()
     await page.keyboard.type('printenv TERM')
     await page.keyboard.press('Enter')
@@ -33,7 +34,7 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
     const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
     const page = await context.newPage()
 
-    await page.goto(`${baseURL}/ssh/host/localhost?port=2244`)
+    await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}`)
     await page.locator('.xterm-helper-textarea').click()
     await page.keyboard.type('stty size')
     await page.keyboard.press('Enter')
@@ -50,7 +51,7 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
   test('replays credentials to shell on control:replayCredentials', async ({ browser, baseURL }) => {
     const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
     const page = await context.newPage()
-    await page.goto(`${baseURL}/ssh/host/localhost?port=2244`)
+    await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}`)
     await page.locator('.xterm-helper-textarea').click()
     // Read password silently, then echo it back
     await page.keyboard.type('stty -echo; printf "pw:"; read X; stty echo; echo; echo $X')
@@ -81,4 +82,3 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
     await context.close()
   })
 })
-

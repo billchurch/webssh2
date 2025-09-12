@@ -5,6 +5,8 @@
  */
 import { defineConfig, devices } from '@playwright/test'
 
+const WEB_PORT = process.env.E2E_WEB_PORT || '2222'
+
 const enableE2E = process.env.ENABLE_E2E_SSH === '1'
 
 export default defineConfig({
@@ -16,7 +18,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:2222',
+    baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -27,10 +29,12 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
-    command: 'WEBSSH2_LISTEN_PORT=2222 DEBUG=webssh2:* node dist/index.js',
-    url: 'http://localhost:2222/ssh',
+    // Keep server logs quiet by default; opt-in with E2E_DEBUG
+    command: `WEBSSH2_LISTEN_PORT=${WEB_PORT} node dist/index.js`,
+    url: `http://localhost:${WEB_PORT}/ssh`,
     reuseExistingServer: true,
     timeout: 120_000,
+    env: { DEBUG: process.env.E2E_DEBUG ?? '' },
   },
   ...(enableE2E
     ? {
@@ -39,4 +43,3 @@ export default defineConfig({
       }
     : {}),
 })
-

@@ -26,7 +26,7 @@ fi
 # Check if test SSH server is running
 if ! docker ps | grep -q webssh2-test-ssh; then
     echo -e "${YELLOW}Starting test SSH server...${NC}"
-    docker run -d --name webssh2-test-ssh -p 4444:22 \
+    docker run -d --name webssh2-test-ssh -p 2244:22 \
         -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
         ghcr.io/billchurch/ssh_test:alpine
     

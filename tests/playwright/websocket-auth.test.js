@@ -3,20 +3,21 @@
  * 
  * Tests both interactive authentication and Basic Auth scenarios
  * Requires Docker test SSH server to be running:
- * docker run -d --name webssh2-test-ssh -p 4444:22 \
+ * docker run -d --name webssh2-test-ssh -p 2244:22 \
  *   -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
  *   ghcr.io/billchurch/ssh_test:alpine
  */
 
 import { test, expect } from '@playwright/test'
+import { BASE_URL, SSH_PORT, SSH_HOST, USERNAME, PASSWORD } from './test-config.js'
 
 // Test configuration
 const TEST_CONFIG = {
-  baseUrl: 'http://localhost:2222',
-  sshHost: 'localhost',
-  sshPort: '4444',
-  validUsername: 'testuser',
-  validPassword: 'testpassword',
+  baseUrl: BASE_URL,
+  sshHost: SSH_HOST,
+  sshPort: String(SSH_PORT),
+  validUsername: USERNAME,
+  validPassword: PASSWORD,
   invalidUsername: 'wronguser',
   invalidPassword: 'wrongpass',
   nonExistentHost: 'nonexistent.invalid.host',

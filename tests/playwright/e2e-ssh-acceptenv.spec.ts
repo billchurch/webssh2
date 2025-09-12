@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { SSH_PORT } from './test-config'
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 test.describe('E2E: AcceptEnv via containerized SSHD', () => {
@@ -10,7 +11,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     })
     const page = await context.newPage()
 
-    await page.goto(`${baseURL}/ssh/host/localhost?port=2244&env=FOO:bar`)
+    await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}&env=FOO:bar`)
 
     // Focus terminal and query the env var
     await page.locator('.xterm-helper-textarea').click()
