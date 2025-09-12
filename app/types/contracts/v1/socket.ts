@@ -65,6 +65,7 @@ export type AuthenticationEvent =
       instructions?: string
       prompts?: Array<{ prompt: string; echo: boolean }>
     }
+  | { action: 'reauth' }
 
 // Server → Client events
 export interface ServerToClientEvents {

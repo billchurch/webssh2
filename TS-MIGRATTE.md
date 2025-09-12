@@ -230,6 +230,25 @@ This keeps index.js imports stable while surfacing strong types.
 
 ---
 
+## 2h) Socket full migration (PR30)
+
+Removed the legacy `app/socket.js` and its shim. `app/socket.ts` now
+implements the runtime with strict types and no `any`, including:
+
+- Auth flow events (`authentication`, `permissions`, `getTerminal`)
+- `terminal` event to start a shell with sanitized defaults
+- `data` and `resize` client events wired to the SSH stream and resize
+- `exec` flow with runtime payload validation and typed streaming
+- `control` handler warning on invalid commands (legacy behavior)
+
+Updated `scripts/copy-js.mjs` to exclude `app/socket.js` from 1:1 copy
+to ensure the TS build is the only runtime. Adjusted tests to import
+`dist/app/socket.js` where they previously imported the JS source.
+
+With this, all major server modules now run from TS outputs.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

@@ -1,2 +1,7 @@
 // Flip helper: runtime implementation shim for crypto-utils
-export * from './crypto-utils.impl.target.js'
+// Implement directly to avoid top-level await during dev.
+import crypto from 'node:crypto'
+
+export function generateSecureSecret() {
+  return crypto.randomBytes(32).toString('hex')
+}

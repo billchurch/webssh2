@@ -3,15 +3,13 @@ import { mkdirSync, existsSync, cpSync } from 'node:fs'
 import { globSync } from 'glob'
 import { dirname, join } from 'node:path'
 
-let files = ['index.js', ...globSync('app/**/*.js', { dot: false, nodir: true })]
+let files = [...globSync('app/**/*.js', { dot: false, nodir: true })]
 
-// PR18 flip: do not overwrite compiled TS mirrors for socket/routes
-// Exclude these from 1:1 copy; we copy them under special names below
-const SOCKET_SRC = 'app/socket.js'
+// PR30 flip: do not overwrite compiled TS mirrors for client-path/crypto-utils/app (and now socket)
 const CLIENT_PATH_SRC = 'app/client-path.js'
 const CRYPTO_UTILS_SRC = 'app/crypto-utils.js'
 const APP_SRC = 'app/app.js'
-files = files.filter((p) => p !== SOCKET_SRC)
+const SOCKET_SRC = 'app/socket.js'
 // PR22 flip: connectionHandler/io now built from TS
 // PR23 flip: ssh now built from TS entrypoint
 // PR24 flip: validators/execSchema built from TS entrypoint
@@ -21,6 +19,8 @@ files = files.filter((p) => p !== CLIENT_PATH_SRC)
 files = files.filter((p) => p !== CRYPTO_UTILS_SRC)
 // PR29 flip: app entry now built from TS
 files = files.filter((p) => p !== APP_SRC)
+// PR30 flip: socket now built from TS
+files = files.filter((p) => p !== SOCKET_SRC)
 // PR20 flip: errors/logger now built from TS
 files = files.filter((p) => !/^(?:app\/)?errors\.js$/.test(p))
 files = files.filter((p) => !/^(?:app\/)?logger\.js$/.test(p))
@@ -35,7 +35,6 @@ for (const f of files) {
 // Special-case copies to avoid circular deps with TS mirrors.
 // Copy original runtime implementations under distinct names used by *.impl.js shims.
 const special = [
-  [SOCKET_SRC, 'dist/app/socket.impl.target.js'],
   [CLIENT_PATH_SRC, 'dist/app/client-path.impl.target.js'],
   [CRYPTO_UTILS_SRC, 'dist/app/crypto-utils.impl.target.js'],
   [APP_SRC, 'dist/app/app.impl.target.js'],
@@ -49,5 +48,5 @@ for (const [src, dest] of special) {
 }
 
 console.log(
-  `Copied ${files.length} JS files to dist/ (plus special targets for routes/socket/connectionHandler/io)`
+  `Copied ${files.length} JS files to dist/ (plus special targets for client-path/crypto-utils/app)`
 )

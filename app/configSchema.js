@@ -86,6 +86,7 @@ const configSchema = {
         allowReauth: { type: 'boolean' },
         allowReconnect: { type: 'boolean' },
         allowReplay: { type: 'boolean' },
+        replayCRLF: { type: 'boolean' },
       },
       required: ['challengeButton', 'allowReauth', 'allowReplay'],
     },

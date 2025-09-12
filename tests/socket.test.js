@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../app/socket.js'
+import socketHandler from '../dist/app/socket.js'
 
 describe('Socket Handler', () => {
   let io, mockSocket, mockConfig, MockSSHConnection

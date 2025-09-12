@@ -137,6 +137,7 @@ WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
 | `WEBSSH2_OPTIONS_ALLOW_REAUTH` | boolean | `true` | Allow reauthentication |
 | `WEBSSH2_OPTIONS_ALLOW_RECONNECT` | boolean | `true` | Allow reconnection |
 | `WEBSSH2_OPTIONS_ALLOW_REPLAY` | boolean | `true` | Allow session replay |
+| `WEBSSH2_OPTIONS_REPLAY_CRLF` | boolean | `false` | Send CRLF for credential replay (default is CR) |
 
 ### Session Management
 

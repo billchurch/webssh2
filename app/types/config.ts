@@ -29,6 +29,7 @@ export interface OptionsConfig {
   allowReauth: boolean
   allowReconnect: boolean
   allowReplay: boolean
+  replayCRLF?: boolean
 }
 
 export interface SessionConfig {

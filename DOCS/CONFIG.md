@@ -206,3 +206,10 @@ The default CSP and headers are defined in `app/security-headers.js`:
 - Strict-Transport-Security: 1 year (HTTPS requests only)
 
 To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-headers.js`. For per-route CSP, use `createCSPMiddleware(customCSP)` in your route setup.
+### Credential Replay Line Ending
+
+You can choose whether credential replay sends a carriage return (CR) or carriage return + line feed (CRLF).
+
+- `options.replayCRLF` (boolean, default `false`): When `true`, the server will send CRLF when replaying credentials (useful for some sudo/tty configurations). When `false` (default), it sends CR only.
+
+This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.

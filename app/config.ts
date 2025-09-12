@@ -76,6 +76,7 @@ const defaultConfig: Config = {
     allowReauth: true,
     allowReconnect: true,
     allowReplay: true,
+    replayCRLF: false,
   },
   session: {
     secret: process.env['WEBSSH_SESSION_SECRET'] || generateSecureSecret(),

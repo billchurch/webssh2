@@ -9,7 +9,9 @@
  * Bill Church - https://github.com/billchurch/WebSSH2 - May 2017
  */
 
-import { initializeServerAsync } from './app/app.js'
+// Use the shim that re-exports the original JS implementation from dist
+// This keeps `node index.js` working after TS flips (requires `npm run build`).
+import { initializeServerAsync } from './app/app.impl.js'
 import { createNamespacedDebug } from './app/logger.js'
 import { handleError } from './app/errors.js'
 

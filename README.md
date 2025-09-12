@@ -138,6 +138,7 @@ Edit `config.json` to customize the following options:
 - `options.allowReauth` - _boolean_ - Allow reauthentication (default: `true`)
 - `options.allowReconnect` - _boolean_ - Allow reconnection (default: `true`)
 - `options.allowReplay` - _boolean_ - Allow credential replay (default: `true`)
+- `options.replayCRLF` - _boolean_ - When replaying credentials to the terminal, send CRLF instead of CR (default: `false`)
 
 For detailed SSH algorithm configurations, refer to the full config file.
 

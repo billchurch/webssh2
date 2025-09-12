@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../../app/socket.js'
+import socketHandler from '../../dist/app/socket.js'
 
 describe('Socket.IO Negative Paths', () => {
   let io, mockSocket, mockConfig, MockSSHConnection, lastShellOptions
@@ -101,4 +101,3 @@ describe('Socket.IO Negative Paths', () => {
     warn.mock.restore()
   })
 })
-
