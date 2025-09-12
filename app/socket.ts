@@ -248,14 +248,14 @@ class WebSSH2Socket extends EventEmitter {
     if (parsed.pty) {
       execOptions.pty = true
     }
-    execOptions.term = (parsed.term || this.sessionState.term || 'xterm-color') as string
-    execOptions.cols = (parsed.cols || this.sessionState.cols || 80) ?? undefined
-    execOptions.rows = (parsed.rows || this.sessionState.rows || 24) ?? undefined
-    const sessionEnv = ((this.socket.request as ExtendedRequest).session?.envVars || {}) as Record<
+    execOptions.term = (parsed.term ?? this.sessionState.term ?? 'xterm-color') as string
+    execOptions.cols = (parsed.cols ?? this.sessionState.cols ?? 80) ?? undefined
+    execOptions.rows = (parsed.rows ?? this.sessionState.rows ?? 24) ?? undefined
+    const sessionEnv = ((this.socket.request as ExtendedRequest).session?.envVars ?? {}) as Record<
       string,
       string
     >
-    const mergedEnv = { ...sessionEnv, ...(parsed.env || {}) }
+    const mergedEnv = { ...sessionEnv, ...(parsed.env ?? {}) }
 
     const stream = await this.ssh.exec(parsed.command, execOptions, mergedEnv)
 
@@ -326,8 +326,8 @@ class WebSSH2Socket extends EventEmitter {
         return
       }
       const password =
-        (creds?.password as string | undefined) ||
-        (this.sessionState.password as string | null) ||
+        (creds?.password as string | undefined) ??
+        (this.sessionState.password as string | null) ??
         undefined
       if (!password) {
         debug(`control: replayCredentials requested but no password stored for ${this.socket.id}`)
@@ -408,9 +408,9 @@ class WebSSH2Socket extends EventEmitter {
       return
     }
     const req = this.socket.request as ExtendedRequest
-    const sessionEnv = (req.session?.envVars || {}) as Record<string, string>
+    const sessionEnv = (req.session?.envVars ?? {}) as Record<string, string>
     const options = {
-      term: this.sessionState.term || (this.config.ssh.term as string) || 'xterm-color',
+      term: (this.sessionState.term ?? (this.config.ssh.term as string)) ?? 'xterm-color',
       rows: this.sessionState.rows ?? 24,
       cols: this.sessionState.cols ?? 80,
     }

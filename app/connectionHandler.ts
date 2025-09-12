@@ -41,7 +41,7 @@ export default async function handleConnection(
     autoConnect: (req as Request).path?.startsWith('/host/'),
   }
 
-  const s = (req.session || {}) as Sess
+  const s = (req.session ?? {}) as Sess
   if (s.usedBasicAuth && s.sshCredentials) {
     tempConfig['ssh'] = {
       host: s.sshCredentials.host,
