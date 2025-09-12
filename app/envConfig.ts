@@ -135,6 +135,8 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
   const keys = path.split('.')
   let current: Record<string, unknown> = obj
   for (let i = 0; i < keys.length - 1; i += 1) {
+    // Index based on known path segments
+    // eslint-disable-next-line security/detect-object-injection
     const key = keys[i]!
     // Keys originate from static mapping (ENV_VAR_MAPPING), not user input
     // eslint-disable-next-line security/detect-object-injection
@@ -148,6 +150,8 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
   }
 
   const last = keys[keys.length - 1]!
+  // Keys derive from static mapping, not user input
+  // eslint-disable-next-line security/detect-object-injection
   current[last] = value
 }
 
@@ -156,6 +160,8 @@ export function loadEnvironmentConfig(): Record<string, unknown> {
   const config: Record<string, unknown> = {}
   let envVarsFound = 0
   for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
+    // Access restricted to known keys from ENV_VAR_MAPPING
+    // eslint-disable-next-line security/detect-object-injection
     const envValue = process.env[envVar]
     if (envValue !== undefined) {
       envVarsFound += 1
@@ -196,6 +202,8 @@ export function getEnvironmentVariableMap(): Record<
     { path: string; type: EnvValueType; description: string }
   > = {}
   for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
+    // envVar comes from static mapping list
+    // eslint-disable-next-line security/detect-object-injection
     envMap[envVar] = {
       path: mapping.path,
       type: mapping.type,
@@ -230,6 +238,8 @@ function getEnvVarDescription(envVar: string, mapping: EnvVarMap): string {
     WEBSSH2_SSO_HEADER_PASSWORD: 'Header name for password mapping (e.g., x-apm-password)',
     WEBSSH2_SSO_HEADER_SESSION: 'Header name for session mapping (e.g., x-apm-session)',
   }
+  // envVar sourced from static mapping keys above
+  // eslint-disable-next-line security/detect-object-injection
   return descriptions[envVar] || `Configuration for ${mapping.path} (${mapping.type})`
 }
 

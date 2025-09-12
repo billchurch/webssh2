@@ -105,6 +105,7 @@ export async function loadConfigAsync(): Promise<Config> {
   let config: Config = JSON.parse(JSON.stringify(defaultConfig))
   try {
     await fs.access(configPath)
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is internal, not user input
     const data = await fs.readFile(configPath, 'utf8')
     const providedConfig = JSON.parse(data) as Partial<Config>
     config = deepMerge<Config>(config, providedConfig)
