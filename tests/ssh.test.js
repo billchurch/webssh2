@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import { strict as assert } from 'assert'
 const { Server } = ssh2
-import SSHConnection from '../app/ssh.js'
+import SSHConnection from '../dist/app/ssh.js'
 
 describe('SSHConnection', () => {
   let sshServer

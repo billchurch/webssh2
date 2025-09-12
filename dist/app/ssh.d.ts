@@ -1,23 +1,22 @@
+import { EventEmitter } from 'events';
 import type { Config } from './types/config.js';
-import type { Credentials } from './utils.js';
-export interface SSHStreamLike {
-    on(event: string, listener: (...args: unknown[]) => void): this;
-    end?: () => void;
-    setWindow?: (rows: number, cols: number) => void;
-    write?: (data: string | Uint8Array) => void;
-}
-export interface SSHConnectionLike {
+export default class SSHConnection extends EventEmitter {
+    private config;
+    private conn;
+    private stream;
+    private creds;
+    constructor(config: Config);
     validatePrivateKey(key: string): boolean;
     isEncryptedKey(key: string): boolean;
-    connect(creds: Credentials): Promise<unknown>;
-    setupConnectionHandlers?: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => void;
+    connect(creds: Record<string, unknown>): Promise<unknown>;
+    private setupConnectionHandlers;
     shell(options: {
         term?: string | null;
         rows?: number;
         cols?: number;
         width?: number;
         height?: number;
-    }, envVars?: Record<string, string> | null): Promise<SSHStreamLike>;
+    }, envVars?: Record<string, string> | null): Promise<unknown>;
     exec(command: string, options?: {
         pty?: boolean;
         term?: string;
@@ -25,11 +24,9 @@ export interface SSHConnectionLike {
         cols?: number;
         width?: number;
         height?: number;
-    }, envVars?: Record<string, string>): Promise<SSHStreamLike>;
+    }, envVars?: Record<string, string>): Promise<unknown>;
     resizeTerminal(rows: number, cols: number): void;
     end(): void;
+    private getEnvironment;
+    private getSSHConfig;
 }
-declare const SSHConnection: {
-    new (config: Config): SSHConnectionLike;
-};
-export default SSHConnection;
