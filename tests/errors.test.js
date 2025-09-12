@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../app/errors.js'
-import { logError } from '../app/logger.js'
-import { HTTP, MESSAGES } from '../app/constants.js'
+import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../dist/app/errors.js'
+import { logError } from '../dist/app/logger.js'
+import { HTTP, MESSAGES } from '../dist/app/constants.js'
 
 // Mock logger
 const mockLogError = () => {}

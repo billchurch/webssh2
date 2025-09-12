@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deepMerge, validateSshTerm } from '../app/utils.js'
-import { MESSAGES, DEFAULTS } from '../app/constants.js'
+import { deepMerge, validateSshTerm } from '../dist/app/utils.js'
+import { MESSAGES, DEFAULTS } from '../dist/app/constants.js'
 
 describe('smoke', () => {
   it('deepMerge merges nested objects', () => {
@@ -20,4 +20,3 @@ describe('smoke', () => {
     expect(DEFAULTS.SSH_PORT).toBe(22)
   })
 })
-

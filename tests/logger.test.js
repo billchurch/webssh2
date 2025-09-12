@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { createNamespacedDebug, logError } from '../app/logger.js'
+import { createNamespacedDebug, logError } from '../dist/app/logger.js'
 
 test('createNamespacedDebug creates debug function with correct namespace', (t) => {
   const debug = createNamespacedDebug('test')

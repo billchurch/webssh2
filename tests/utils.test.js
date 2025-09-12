@@ -12,7 +12,7 @@ import {
   modifyHtml,
   validateConfig,
   validateSshTerm,
-} from '../app/utils.js'
+} from '../dist/app/utils.js'
 
 describe('deepMerge', () => {
   test('merges nested objects correctly', () => {

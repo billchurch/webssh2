@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createNamespacedDebug, logError } from '../app/logger.js'
+import { createNamespacedDebug, logError } from '../dist/app/logger.js'
 
 describe('logger.ts', () => {
   it('creates namespaced debug', () => {

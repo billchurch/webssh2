@@ -3,7 +3,7 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../app/envConfig.js'
+import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 
 describe('Environment Configuration Tests', () => {

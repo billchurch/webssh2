@@ -33,8 +33,10 @@
   "include": [
     "index.ts",
     "app/**/*.ts",
-    "types/**/*.d.ts",
-    "scripts/**/*.ts",
-    "tests/**/*.ts"
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "dist/**",
+    "tests/**"
   ]
 }

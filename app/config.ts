@@ -3,6 +3,7 @@
 
 import path, { dirname } from 'path'
 import { promises as fs } from 'fs'
+import { existsSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { deepMerge, validateConfig } from './utils.js'
 import { generateSecureSecret } from './crypto-utils.js'
@@ -98,7 +99,16 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 function getConfigPath(): string {
-  return path.join(__dirname, '..', 'config.json')
+  // Prefer project root config.json regardless of running from src or dist
+  const candidateA = path.join(__dirname, '..', 'config.json')
+  if (existsSync(candidateA)) {
+    return candidateA
+  }
+  const candidateB = path.join(__dirname, '..', '..', 'config.json')
+  if (existsSync(candidateB)) {
+    return candidateB
+  }
+  return candidateA
 }
 
 export async function loadConfigAsync(): Promise<Config> {

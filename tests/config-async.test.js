@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import fs from 'fs'
-import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
+import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 
 // Ensure clean state at module load
