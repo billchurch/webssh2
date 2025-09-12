@@ -32,4 +32,3 @@ declare module './ssh.impl.js' {
     end(): void
   }
 }
-

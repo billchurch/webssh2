@@ -169,6 +169,33 @@ runtime behavior to the original JS via `*.impl.js -> *.impl.target.js`.
 
 ---
 
+## 2c) Flip ssh (PR23)
+
+Following the same shim pattern, we flipped `ssh` to a TS-built
+entrypoint while delegating runtime behavior to the original JS via
+`app/ssh.impl.js -> dist/app/ssh.impl.target.js`.
+
+- Updated `scripts/copy-js.mjs` to exclude `app/ssh.js` from straight copy
+  and copy the original under a special target consumed by the shim.
+- Kept imports in JS unchanged; TS consumers import `./ssh.js` which
+  resolves to the compiled TS wrapper.
+
+---
+
+## 2d) Flip validators (PR24)
+
+Added a TS mirror for the Socket.IO exec payload schema with a
+shim: `app/validators/execSchema.ts` and
+`app/validators/execSchema.impl.js` that re-exports the original as
+`execSchema.impl.target.js`.
+
+- Updated `scripts/copy-js.mjs` to exclude `app/validators/execSchema.js`
+  from 1:1 copy and emit the special target.
+- Exposed `ExecPayload` type for use across handlers while keeping
+  runtime validation in JS.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

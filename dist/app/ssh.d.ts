@@ -1,7 +1,7 @@
 import type { Config } from './types/config.js';
 import type { Credentials } from './utils.js';
 export interface SSHStreamLike {
-    on(event: string, listener: (...args: any[]) => void): this;
+    on(event: string, listener: (...args: unknown[]) => void): this;
     end?: () => void;
     setWindow?: (rows: number, cols: number) => void;
     write?: (data: string | Uint8Array) => void;

@@ -18,7 +18,13 @@ export interface SSHConnectionLike {
   connect(creds: Credentials): Promise<unknown>
   setupConnectionHandlers?: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => void
   shell(
-    options: { term?: string | null; rows?: number; cols?: number; width?: number; height?: number },
+    options: {
+      term?: string | null
+      rows?: number
+      cols?: number
+      width?: number
+      height?: number
+    },
     envVars?: Record<string, string> | null
   ): Promise<SSHStreamLike>
   exec(
