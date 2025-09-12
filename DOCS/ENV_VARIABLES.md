@@ -85,6 +85,7 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_ALLOWED_SUBNETS` | array | `[]` | Allowed subnets (comma-separated) |
 | `WEBSSH2_SSH_ALWAYS_SEND_KEYBOARD_INTERACTIVE` | boolean | `false` | Always send keyboard-interactive prompts to client |
 | `WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH` | boolean | `false` | Disable interactive authentication |
+| `WEBSSH2_SSH_ENV_ALLOWLIST` | array | `[]` | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Caps: max 50 pairs; key length ≤ 32; value length ≤ 512. |
 
 ### SSH Algorithms
 
@@ -127,6 +128,47 @@ WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
 |----------|------|---------|-------------|
 | `WEBSSH2_HEADER_TEXT` | string | `null` | Header text in web interface |
 | `WEBSSH2_HEADER_BACKGROUND` | string | `green` | Header background color |
+
+## Quick Start Examples
+
+Set common settings using environment variables (preferred):
+
+```bash
+# Listen on port 2222 and allow all origins during development
+WEBSSH2_LISTEN_PORT=2222 \
+WEBSSH2_HTTP_ORIGINS="*:*" \
+
+# Default SSH target
+WEBSSH2_SSH_HOST=ssh.example.com \
+WEBSSH2_SSH_PORT=22 \
+WEBSSH2_SSH_TERM=xterm-256color \
+
+# UI header
+WEBSSH2_HEADER_TEXT="WebSSH2" \
+WEBSSH2_HEADER_BACKGROUND=green \
+
+# Behavior options
+WEBSSH2_OPTIONS_ALLOW_RECONNECT=true \
+WEBSSH2_OPTIONS_ALLOW_REAUTH=true \
+WEBSSH2_OPTIONS_ALLOW_REPLAY=true \
+
+# Security: algorithms preset
+WEBSSH2_SSH_ALGORITHMS_PRESET=modern
+```
+
+Examples with Docker (inline `-e` flags):
+
+```bash
+docker run --name webssh2 --rm -it \
+  -p 2222:2222 \
+  -e WEBSSH2_LISTEN_PORT=2222 \
+  -e WEBSSH2_HTTP_ORIGINS="*:*" \
+  -e WEBSSH2_SSH_HOST=ssh.example.com \
+  -e WEBSSH2_SSH_PORT=22 \
+  -e WEBSSH2_HEADER_TEXT="WebSSH2" \
+  -e WEBSSH2_SSH_ALGORITHMS_PRESET=modern \
+  webssh2
+```
 
 ### Application Options
 

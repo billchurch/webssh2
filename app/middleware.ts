@@ -3,7 +3,7 @@ import session from 'express-session'
 import bodyParser from 'body-parser'
 import basicAuth from 'basic-auth'
 import validator from 'validator'
-import { HTTP } from './constants.js'
+import { HTTP, DEFAULTS } from './constants.js'
 import { createSecurityHeadersMiddleware } from './security-headers.js'
 import type { Config } from './types/config.js'
 
@@ -14,7 +14,6 @@ export function createAuthMiddleware(config: Config): RequestHandler {
     const r = req as Request & { session?: Record<string, unknown> }
     // Config-supplied credentials take precedence
     if (config.user.name && (config.user.password || config.user.privateKey)) {
-      r.session = r.session || {}
       const creds: Record<string, unknown> = { username: config.user.name }
       if (config.user.privateKey) {
         creds['privateKey'] = config.user.privateKey
@@ -32,7 +31,7 @@ export function createAuthMiddleware(config: Config): RequestHandler {
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
       return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
     }
-    r.session = r.session || {}
+    // session is expected to exist (session middleware precedes this)
     r.session['sshCredentials'] = {
       username: validator.escape(credentials.name ?? ''),
       password: credentials.pass,
@@ -58,16 +57,14 @@ export function createBodyParserMiddleware(): RequestHandler[] {
 export function createCookieMiddleware(): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const r = req as Request & { session?: Record<string, unknown> }
-    const s = r.session as Record<string, unknown> | undefined
-    if (s?.['sshCredentials']) {
-      const cookieData = {
-        host: (s['sshCredentials'] as { host?: string }).host,
-        port: (s['sshCredentials'] as { port?: number }).port,
-      }
+    const s = r.session as Record<string, unknown>
+    const creds = s['sshCredentials'] as { host?: string; port?: number } | undefined
+    if (creds) {
+      const cookieData = { host: creds.host, port: creds.port }
       res.cookie(HTTP.COOKIE, JSON.stringify(cookieData), {
         httpOnly: false,
         path: HTTP.PATH,
-        sameSite: HTTP.SAMESITE.toLowerCase() as 'strict',
+        sameSite: HTTP.SAMESITE_POLICY.toLowerCase() as 'strict',
       })
     }
     next()
@@ -80,7 +77,7 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
       return next()
     }
 
-    if (req.headers['x-apm-username'] && req.headers['x-apm-password']) {
+    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] && req.headers[DEFAULTS.SSO_HEADERS.PASSWORD]) {
       return next()
     }
 
@@ -89,9 +86,9 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
       return next()
     }
 
-    if (config.sso?.enabled && config.user?.name && config.user?.password) {
+    if (config.sso.enabled && config.user.name && config.user.password) {
       const r = req as Request & { body?: Record<string, unknown> }
-      r.body = r.body || {}
+      r.body ??= {}
       r.body.username = r.body.username ?? config.user.name
       r.body.password = r.body.password ?? config.user.password
       return next()
@@ -103,20 +100,20 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
 
 export function createCSRFMiddleware(config: Config): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!config.sso?.csrfProtection) {
+    if (!config.sso.csrfProtection) {
       return next()
     }
 
-    if ((config.sso?.trustedProxies?.length ?? 0) > 0) {
-      const clientIp = (req.ip || (req.connection as { remoteAddress?: string })?.remoteAddress) as
+    if (config.sso.trustedProxies.length > 0) {
+      const clientIp = (req.ip ?? (req.connection as { remoteAddress?: string }).remoteAddress) as
         | string
         | undefined
-      if (clientIp && config.sso!.trustedProxies!.includes(clientIp)) {
+      if (clientIp && config.sso.trustedProxies.includes(clientIp)) {
         return next()
       }
     }
 
-    if (req.headers['x-apm-username'] || req.headers['x-apm-session']) {
+    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] || req.headers[DEFAULTS.SSO_HEADERS.SESSION]) {
       return next()
     }
 
@@ -125,8 +122,8 @@ export function createCSRFMiddleware(config: Config): RequestHandler {
         session?: Record<string, unknown>
         body?: Record<string, unknown>
       }
-      const token = (r.body?._csrf as unknown) || req.headers['x-csrf-token']
-      const sessionToken = r.session?.['csrfToken'] as unknown
+      const token = (r.body?._csrf as unknown) ?? req.headers['x-csrf-token']
+      const sessionToken = (r.session as Record<string, unknown>)['csrfToken'] as unknown
       if (!sessionToken || token !== sessionToken) {
         return res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
       }
@@ -145,7 +142,7 @@ export function applyMiddleware(
   const sessionMiddleware = createSessionMiddleware(config)
   app.use(sessionMiddleware)
   app.use(createBodyParserMiddleware())
-  if (config.sso?.enabled) {
+  if (config.sso.enabled) {
     app.use(createCSRFMiddleware(config))
     app.use(createSSOAuthMiddleware(config))
   }

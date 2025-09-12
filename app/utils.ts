@@ -6,7 +6,7 @@ import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import maskObject from 'jsmasker'
 import { createNamespacedDebug } from './logger.js'
-import { DEFAULTS, MESSAGES } from './constants.js'
+import { DEFAULTS, MESSAGES, ENV_LIMITS } from './constants.js'
 import configSchema from './configSchema.js'
 
 const debug = createNamespacedDebug('utils')
@@ -21,7 +21,7 @@ export function deepMerge<T extends object>(target: T, source: unknown): T {
       const value = src[key]
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         // eslint-disable-next-line security/detect-object-injection
-        const prev = (output[key] as Record<string, unknown>) || {}
+        const prev = (output[key] as Record<string, unknown> | undefined) ?? {}
         // eslint-disable-next-line security/detect-object-injection
         output[key] = deepMerge(prev, value as Record<string, unknown>)
       } else {
@@ -139,6 +139,7 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
   }
   const envVars: Record<string, string> = {}
   const pairs = envString.split(',')
+  let added = 0
   for (const pairString of pairs) {
     const pair = pairString.split(':')
     if (pair.length !== 2) {
@@ -147,13 +148,46 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
     const [keyRaw, valueRaw] = pair as [string, string]
     const key = keyRaw.trim()
     const value = valueRaw.trim()
-    if (isValidEnvKey(key) && isValidEnvValue(value)) {
+    if (
+      isValidEnvKey(key) &&
+      key.length <= ENV_LIMITS.MAX_KEY_LENGTH &&
+      isValidEnvValue(value) &&
+      value.length <= ENV_LIMITS.MAX_VALUE_LENGTH
+    ) {
       // Key validated by isValidEnvKey
       // eslint-disable-next-line security/detect-object-injection
       envVars[key] = value
+      added += 1
+      if (added >= ENV_LIMITS.MAX_PAIRS) {
+        debug(
+          'parseEnvVars: reached max pair cap (%d), remaining pairs ignored',
+          ENV_LIMITS.MAX_PAIRS
+        )
+        break
+      }
     } else {
       debug('parseEnvVars: Invalid env var pair: %s:%s', key, value)
     }
   }
   return Object.keys(envVars).length ? envVars : null
+}
+
+// Treat empty string as missing and fall back when appropriate
+export function pickField(primary?: string | null, fallback?: string | null): string | undefined {
+  return primary != null && primary !== '' ? primary : (fallback ?? undefined)
+}
+
+function isFiniteNonZeroNumber(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n) && n !== 0
+}
+
+// Normalize terminal dimensions with explicit > 0 rule
+export function normalizeDim(primary: unknown, secondary: unknown, defaultValue: number): number {
+  if (isFiniteNonZeroNumber(primary)) {
+    return primary
+  }
+  if (isFiniteNonZeroNumber(secondary)) {
+    return secondary
+  }
+  return defaultValue
 }

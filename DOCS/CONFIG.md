@@ -181,7 +181,8 @@ These settings are now managed client-side.
         "ecdsa-sha2-nistp521",
         "ssh-rsa"
       ]
-    }
+    },
+    "envAllowlist": ["ONLY_THIS", "AND_THAT"]
   },
   "options": {
     "challengeButton": true,
@@ -195,17 +196,24 @@ These settings are now managed client-side.
 
 ## Security Headers & CSP (Reference)
 
-The default CSP and headers are defined in `app/security-headers.js`:
+The default CSP and headers are defined in `app/security-headers.ts`. Header names and common defaults are centralized in `app/constants.ts` (`HEADERS`, `DEFAULTS`).
 
-- Content-Security-Policy: restricts sources; allows WebSocket (`ws:`/`wss:`) connections and inline script/style needed by the terminal.
-- X-Content-Type-Options: `nosniff`
-- X-Frame-Options: `DENY`
-- X-XSS-Protection: `1; mode=block`
-- Referrer-Policy: `strict-origin-when-cross-origin`
-- Permissions-Policy: disables geolocation, microphone, camera
-- Strict-Transport-Security: 1 year (HTTPS requests only)
+- `Content-Security-Policy`: restricts sources; allows WebSocket (`ws:`/`wss:`) connections and inline script/style needed by the terminal.
+- `X-Content-Type-Options`: `nosniff`
+- `X-Frame-Options`: `DENY`
+- `X-XSS-Protection`: `1; mode=block`
+- `Referrer-Policy`: `strict-origin-when-cross-origin`
+- `Permissions-Policy`: disables geolocation, microphone, camera
+- `Strict-Transport-Security`: 1 year (HTTPS requests only); max-age is `DEFAULTS.HSTS_MAX_AGE_SECONDS`.
 
-To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-headers.js`. For per-route CSP, use `createCSPMiddleware(customCSP)` in your route setup.
+To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-headers.ts`. For per-route CSP, use `createCSPMiddleware(customCSP)` in your route setup.
+
+### Centralized Constants
+
+Common defaults live in `app/constants.ts`:
+- `DEFAULTS`: server defaults (e.g., `SSH_READY_TIMEOUT_MS`, `IO_PING_INTERVAL_MS`, `SESSION_COOKIE_NAME`, `HSTS_MAX_AGE_SECONDS`).
+- `ENV_LIMITS`: caps for environment variables forwarded to SSH.
+- `HEADERS`: canonical HTTP header names used by the server.
 ### Credential Replay Line Ending
 
 You can choose whether credential replay sends a carriage return (CR) or carriage return + line feed (CRLF).
@@ -213,3 +221,14 @@ You can choose whether credential replay sends a carriage return (CR) or carriag
 - `options.replayCRLF` (boolean, default `false`): When `true`, the server will send CRLF when replaying credentials (useful for some sudo/tty configurations). When `false` (default), it sends CR only.
 
 This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.
+
+### SSH Environment Variable Allowlist
+
+Control which environment variable names are forwarded to the SSH session. If unset or empty, WebSSH2 applies format/value filtering but does not restrict by name beyond that.
+
+- `ssh.envAllowlist` (array of strings): Only names in this list are forwarded, e.g. `['VIM_FILE','CUSTOM_ENV']`.
+- Env var: `WEBSSH2_SSH_ENV_ALLOWLIST` can be provided as comma-separated or JSON array.
+
+Notes:
+- Keys must still match `^[A-Z][A-Z0-9_]*$` and values must not contain `; & | \` $` characters.
+- A safety cap limits forwarding to the first 50 pairs.

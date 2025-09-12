@@ -23,9 +23,9 @@ const defaultConfig: Config = {
     host: null,
     port: DEFAULTS.SSH_PORT,
     term: DEFAULTS.SSH_TERM,
-    readyTimeout: 20000,
-    keepaliveInterval: 120000,
-    keepaliveCountMax: 10,
+    readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
+    keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
+    keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
     alwaysSendKeyboardInteractivePrompts: false,
     disableInteractiveAuth: false,
     algorithms: {
@@ -81,16 +81,16 @@ const defaultConfig: Config = {
   },
   session: {
     secret: process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret(),
-    name: 'webssh2.sid',
+    name: DEFAULTS.SESSION_COOKIE_NAME,
   },
   sso: {
     enabled: false,
     csrfProtection: false,
     trustedProxies: [],
     headerMapping: {
-      username: 'x-apm-username',
-      password: 'x-apm-password',
-      session: 'x-apm-session',
+      username: DEFAULTS.SSO_HEADERS.USERNAME,
+      password: DEFAULTS.SSO_HEADERS.PASSWORD,
+      session: DEFAULTS.SSO_HEADERS.SESSION,
     },
   },
 }
@@ -159,17 +159,15 @@ export function getConfig(): Promise<Config> {
   if (configInstance) {
     return Promise.resolve(configInstance)
   }
-  if (!configLoadPromise) {
-    configLoadPromise = loadConfigAsync().then((cfg) => {
-      configInstance = cfg
-      ;(
-        configInstance as Config & {
-          getCorsConfig?: () => { origin: string[]; methods: string[]; credentials: boolean }
-        }
-      ).getCorsConfig = getCorsConfig
-      return configInstance
-    })
-  }
+  configLoadPromise ??= loadConfigAsync().then((cfg) => {
+    configInstance = cfg
+    ;(
+      configInstance as Config & {
+        getCorsConfig?: () => { origin: string[]; methods: string[]; credentials: boolean }
+      }
+    ).getCorsConfig = getCorsConfig
+    return configInstance
+  })
   return configLoadPromise
 }
 

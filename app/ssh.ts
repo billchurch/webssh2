@@ -3,7 +3,8 @@ import type { ConnectConfig, ClientChannel } from 'ssh2'
 import { EventEmitter } from 'events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError } from './errors.js'
-import { maskSensitiveData } from './utils.js'
+import { maskSensitiveData, isValidEnvKey, isValidEnvValue } from './utils.js'
+import { ENV_LIMITS } from './constants.js'
 import type { Config } from './types/config.js'
 
 const debug = createNamespacedDebug('ssh')
@@ -91,6 +92,8 @@ export default class SSHConnection extends EventEmitter {
     })
     this.conn!.on('error', (err: unknown) => {
       const e = err as { message?: string; code?: string }
+      // Intentionally use `||` so empty strings fall back to meaningful alternatives
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       const errorMessage = e.message || e.code || String(err) || 'Unknown error'
       reject(new SSHConnectionError(errorMessage))
     })
@@ -193,14 +196,32 @@ export default class SSHConnection extends EventEmitter {
     }
   }
 
-  private getEnvironment(envVars?: Record<string, string>): Record<string, string> {
-    const env: Record<string, string> = { TERM: this.config.ssh.term as unknown as string }
-    if (envVars) {
-      for (const k of Object.keys(envVars)) {
-        env[k] = String(envVars[k]!)
-      }
+  private getEnvironment(envVars?: Record<string, unknown>): Record<string, string> {
+    const base: Record<string, string> = { TERM: String(this.config.ssh.term) }
+    if (!envVars || typeof envVars !== 'object') {
+      return base
     }
-    return env
+
+    const allow = Array.isArray(this.config.ssh.envAllowlist)
+      ? new Set(this.config.ssh.envAllowlist)
+      : null
+
+    // Transform safely: entries → filter → map → fromEntries
+    const entries = Object.entries(envVars)
+      .filter(
+        ([k, v]) =>
+          typeof k === 'string' &&
+          isValidEnvKey(k) &&
+          k.length <= ENV_LIMITS.MAX_KEY_LENGTH &&
+          (allow ? allow.has(k) : true) &&
+          v != null &&
+          isValidEnvValue(String(v)) &&
+          String(v).length <= ENV_LIMITS.MAX_VALUE_LENGTH
+      )
+      .slice(0, ENV_LIMITS.MAX_PAIRS)
+      .map(([k, v]) => [k, String(v)]) as [string, string][]
+
+    return Object.assign(base, Object.fromEntries(entries))
   }
 
   private getSSHConfig(

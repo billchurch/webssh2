@@ -55,6 +55,7 @@ const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_SSH_LOCAL_ADDRESS: { path: 'ssh.localAddress', type: 'string' },
   WEBSSH2_SSH_LOCAL_PORT: { path: 'ssh.localPort', type: 'number' },
   WEBSSH2_SSH_TERM: { path: 'ssh.term', type: 'string' },
+  WEBSSH2_SSH_ENV_ALLOWLIST: { path: 'ssh.envAllowlist', type: 'array' },
   WEBSSH2_SSH_READY_TIMEOUT: { path: 'ssh.readyTimeout', type: 'number' },
   WEBSSH2_SSH_KEEPALIVE_INTERVAL: { path: 'ssh.keepaliveInterval', type: 'number' },
   WEBSSH2_SSH_KEEPALIVE_COUNT_MAX: { path: 'ssh.keepaliveCountMax', type: 'number' },
@@ -111,9 +112,6 @@ function parseValue(
   value: string,
   type: EnvValueType
 ): string | number | boolean | string[] | null {
-  if (value === undefined || value === null) {
-    return null
-  }
   if (value === 'null') {
     return null
   }
@@ -127,7 +125,10 @@ function parseValue(
       return parseInt(value, 10)
     case 'array':
       return parseArrayValue(value)
-    default:
+    case 'string':
+      return value
+    case 'preset':
+      // Presets are handled upstream; fall back to raw value for completeness
       return value
   }
 }
@@ -142,7 +143,7 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
     // Keys originate from static mapping (ENV_VAR_MAPPING), not user input
     // eslint-disable-next-line security/detect-object-injection
     const next = current[key]
-    if (!next || typeof next !== 'object') {
+    if (next == null || typeof next !== 'object') {
       // eslint-disable-next-line security/detect-object-injection
       current[key] = {}
     }
@@ -241,7 +242,7 @@ function getEnvVarDescription(envVar: string, mapping: EnvVarMap): string {
   }
   // envVar sourced from static mapping keys above
   // eslint-disable-next-line security/detect-object-injection
-  return descriptions[envVar] || `Configuration for ${mapping.path} (${mapping.type})`
+  return descriptions[envVar] ?? `Configuration for ${mapping.path} (${mapping.type})`
 }
 
 export function getAlgorithmPresets(): Record<string, Algorithms> {

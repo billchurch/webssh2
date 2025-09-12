@@ -16,6 +16,7 @@ export interface SSHConfig {
   alwaysSendKeyboardInteractivePrompts: boolean
   disableInteractiveAuth: boolean
   algorithms: AlgorithmsConfig
+  envAllowlist?: string[]
 }
 
 export interface HeaderConfig {

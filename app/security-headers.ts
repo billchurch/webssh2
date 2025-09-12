@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import createDebug from 'debug'
 import type { Config } from './types/config.js'
+import { DEFAULTS, HEADERS } from './constants.js'
 
 const debug = createDebug('webssh2:security')
 
@@ -25,13 +26,13 @@ export function generateCSPHeader(): string {
 }
 
 export const SECURITY_HEADERS: Record<string, string> = {
-  'Content-Security-Policy': generateCSPHeader(),
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  [HEADERS.CONTENT_SECURITY_POLICY]: generateCSPHeader(),
+  [HEADERS.X_CONTENT_TYPE_OPTIONS]: 'nosniff',
+  [HEADERS.X_FRAME_OPTIONS]: 'DENY',
+  [HEADERS.X_XSS_PROTECTION]: '1; mode=block',
+  [HEADERS.REFERRER_POLICY]: 'strict-origin-when-cross-origin',
+  [HEADERS.PERMISSIONS_POLICY]: 'geolocation=(), microphone=(), camera=()',
+  [HEADERS.STRICT_TRANSPORT_SECURITY]: `max-age=${DEFAULTS.HSTS_MAX_AGE_SECONDS}; includeSubDomains`,
 }
 
 function generateCSPHeaderFromConfig(csp: Record<string, string[]>): string {
@@ -44,18 +45,19 @@ export function createSecurityHeadersMiddleware(config: Partial<Config> = {}): R
   return (req, res, next) => {
     const headers = { ...SECURITY_HEADERS }
 
-    if (config.sso?.enabled && (config.sso?.trustedProxies?.length ?? 0) > 0) {
+    const trusted = config.sso?.trustedProxies
+    if (config.sso?.enabled && Array.isArray(trusted) && trusted.length > 0) {
       const cspConfig: Record<string, string[]> = { ...CSP_CONFIG }
       const fa = cspConfig['form-action'] as string[]
       if (!fa.includes('https:')) {
         fa.push('https:')
       }
-      headers['Content-Security-Policy'] = generateCSPHeaderFromConfig(cspConfig)
+      headers[HEADERS.CONTENT_SECURITY_POLICY] = generateCSPHeaderFromConfig(cspConfig)
       debug('SSO mode: Adjusted CSP for trusted proxies')
     }
 
     for (const [header, value] of Object.entries(headers)) {
-      if (header === 'Strict-Transport-Security' && !req.secure) {
+      if (header === HEADERS.STRICT_TRANSPORT_SECURITY && !req.secure) {
         continue
       }
       res.setHeader(header, value)
@@ -73,10 +75,10 @@ export function createCSPMiddleware(
     ...(customCSP as Record<string, string[]>),
   }
   const header = Object.entries(merged)
-    .map(([d, v]) => (v && v.length ? `${d} ${v.join(' ')}` : d))
+    .map(([d, v]) => (v.length ? `${d} ${v.join(' ')}` : d))
     .join('; ')
   return (req, res, next) => {
-    res.setHeader('Content-Security-Policy', header)
+    res.setHeader(HEADERS.CONTENT_SECURITY_POLICY, header)
     debug('Custom CSP applied to %s %s', req.method, req.url)
     next()
   }

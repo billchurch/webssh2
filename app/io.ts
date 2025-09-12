@@ -14,8 +14,8 @@ export function configureSocketIO(
   const io = new SocketIOServer(server, {
     serveClient: false,
     path: DEFAULTS.IO_PATH,
-    pingTimeout: DEFAULTS.IO_PING_TIMEOUT,
-    pingInterval: DEFAULTS.IO_PING_INTERVAL,
+    pingTimeout: DEFAULTS.IO_PING_TIMEOUT_MS,
+    pingInterval: DEFAULTS.IO_PING_INTERVAL_MS,
     cors: config.getCorsConfig(),
   })
 

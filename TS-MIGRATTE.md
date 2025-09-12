@@ -543,24 +543,18 @@ Fail CI on unintended API changes.
 
 ---
 
-## 14) Migration tracking dashboard
+## 14) Migration tracking dashboard (deprecated)
 
-Add a living checklist to the repo root.
+The ad‑hoc migration dashboard and progress scripts have been removed to reduce repo noise.
 
-```markdown
-## Migration Progress
+- Removed: `scripts/migration-progress.mjs`, `scripts/phases-verify.mjs`
+- Use standard commands instead:
+  - Lint: `npm run lint`
+  - Build: `npm run build`
+  - Tests: `npm run test`
+  - Typecheck: `npm run typecheck`
 
-- [ ] Constants (0% → TS)
-- [ ] Utils (0% → TS)
-- [ ] Config (0% → TS)
-- [ ] Socket handlers (0% → TS)
-- [ ] Routes (0% → TS)
-
-Coverage
-- TypeScript files: X%
-- Strictly typed: Y%
-- Any count: Z (target 0)
-```
+For constants and defaults, see `DOCS/CONSTANTS.md`.
 
 ---
 

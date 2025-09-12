@@ -36,12 +36,12 @@ export default async function handleConnection(
   const tempConfig: Record<string, unknown> = {
     socket: {
       url: `${req.protocol}://${req.get('host')}`,
-      path: '/ssh/socket.io',
+      path: DEFAULTS.IO_PATH,
     },
-    autoConnect: (req as Request).path?.startsWith('/host/'),
+    autoConnect: (req as Request).path.startsWith('/host/'),
   }
 
-  const s = (req.session ?? {}) as Sess
+  const s = (req as Request & { session: Sess }).session
   if (s.usedBasicAuth && s.sshCredentials) {
     tempConfig['ssh'] = {
       host: s.sshCredentials.host,

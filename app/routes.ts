@@ -8,7 +8,9 @@ import {
   maskSensitiveData,
   validateSshTerm,
   parseEnvVars,
+  pickField,
 } from './utils.js'
+import { DEFAULTS } from './constants.js'
 import handleConnection from './connectionHandler.js'
 import { createNamespacedDebug } from './logger.js'
 import { createAuthMiddleware } from './middleware.js'
@@ -39,10 +41,11 @@ export function processHeaderParameters(
   source: Record<string, unknown> | undefined,
   session: Sess
 ): void {
+  const src = source ?? {}
   const isGet = !!(
-    Object.prototype.hasOwnProperty.call(source || {}, 'header') ||
-    Object.prototype.hasOwnProperty.call(source || {}, 'headerBackground') ||
-    Object.prototype.hasOwnProperty.call(source || {}, 'headerStyle')
+    Object.prototype.hasOwnProperty.call(src, 'header') ||
+    Object.prototype.hasOwnProperty.call(src, 'headerBackground') ||
+    Object.prototype.hasOwnProperty.call(src, 'headerStyle')
   )
 
   let headerVal: unknown
@@ -50,7 +53,7 @@ export function processHeaderParameters(
   let styleVal: unknown
 
   if (isGet) {
-    const { header, headerBackground, headerStyle } = (source || {}) as Record<string, unknown>
+    const { header, headerBackground, headerStyle } = src as Record<string, unknown>
     headerVal = header
     backgroundVal = headerBackground
     styleVal = headerStyle
@@ -62,7 +65,7 @@ export function processHeaderParameters(
   }
 
   if (headerVal || backgroundVal || styleVal) {
-    session.headerOverride = session.headerOverride || {}
+    session.headerOverride ??= {}
     if (headerVal) {
       session.headerOverride.text = headerVal
       debug('Header text from %s: %s', isGet ? 'URL parameter' : 'POST', headerVal)
@@ -80,7 +83,7 @@ export function processHeaderParameters(
 }
 
 export function processEnvironmentVariables(source: Record<string, unknown>, session: Sess): void {
-  const envVars = parseEnvVars((source as Record<string, unknown>)?.['env'] as string | undefined)
+  const envVars = parseEnvVars((source as Record<string, unknown>)['env'] as string | undefined)
   if (envVars) {
     ;(session as Record<string, unknown>)['envVars'] = envVars
     debug('routes: Parsed environment variables: %O', envVars)
@@ -91,7 +94,7 @@ export function setupSshCredentials(
   session: Sess,
   opts: { host: string; port: number; username?: string; password?: string; term?: string | null }
 ): unknown {
-  session.sshCredentials = session.sshCredentials || {}
+  session.sshCredentials ??= {}
   session.sshCredentials.host = opts.host
   session.sshCredentials.port = opts.port
   if (opts.username) {
@@ -151,12 +154,14 @@ function handlePostAuthentication(
   config: Config
 ): void {
   try {
-    const username =
-      (req.body['username'] as string | undefined) ||
-      (req.headers['x-apm-username'] as string | undefined)
-    const password =
-      (req.body['password'] as string | undefined) ||
-      (req.headers['x-apm-password'] as string | undefined)
+    const username = pickField(
+      req.body['username'] as string | undefined,
+      req.headers[DEFAULTS.SSO_HEADERS.USERNAME] as string | undefined
+    )
+    const password = pickField(
+      req.body['password'] as string | undefined,
+      req.headers[DEFAULTS.SSO_HEADERS.PASSWORD] as string | undefined
+    )
     if (!username || !password) {
       return void res.status(HTTP.UNAUTHORIZED).send('Username and password required')
     }
@@ -168,7 +173,7 @@ function handlePostAuthentication(
       if (!config.ssh.host) {
         throw new ConfigError('Host parameter required when default host not configured')
       }
-      host = (req.body['host'] as string | undefined) || config.ssh.host
+      host = pickField(req.body['host'] as string | undefined, config.ssh.host)!
     }
 
     const port = getValidatedPort(req.body['port'] as string | undefined)
@@ -203,6 +208,8 @@ export function createRoutes(config: Config): Router {
   router.get('/', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.get./: Accessed / route')
+    // Also allow env vars via /ssh?env=FOO:bar
+    processEnvironmentVariables(r.query, r.session)
     processHeaderParameters(r.query, r.session)
     void handleConnection(
       req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },

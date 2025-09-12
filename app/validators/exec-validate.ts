@@ -1,6 +1,7 @@
 // server
 // app/validators/exec-validate.ts
 // Lightweight runtime validation for exec payloads (no external deps)
+import { isValidEnvKey, isValidEnvValue } from '../utils.js'
 
 export interface ExecValidated {
   command: string
@@ -35,20 +36,19 @@ export function validateExecPayload(payload: unknown): ExecValidated {
   }
   if (p['env'] != null) {
     if (Array.isArray(p['env'])) {
-      const obj: Record<string, string> = {}
-      for (let i = 0; i < (p['env'] as unknown[]).length; i++) {
-        obj[String(i)] = String((p['env'] as unknown[])[i])
-      }
-      out.env = obj
+      const arr = p['env'] as unknown[]
+      const entries = arr.slice(0, 50).map((v, i) => [String(i), String(v)] as [string, string])
+      out.env = Object.fromEntries(entries)
     } else if (typeof p['env'] === 'object') {
       const src = p['env'] as Record<string, unknown>
-      const obj: Record<string, string> = {}
-      for (const k in src) {
-        if (Object.prototype.hasOwnProperty.call(src, k)) {
-          obj[String(k)] = String(src[k] as unknown)
-        }
-      }
-      out.env = obj
+      const entries = Object.entries(src)
+        .filter(
+          ([k, v]) =>
+            typeof k === 'string' && isValidEnvKey(k) && v != null && isValidEnvValue(String(v))
+        )
+        .slice(0, 50)
+        .map(([k, v]) => [k, String(v)] as [string, string])
+      out.env = Object.fromEntries(entries)
     } else {
       out.env = {}
     }
