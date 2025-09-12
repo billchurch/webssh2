@@ -58,6 +58,7 @@
     "progress": "echo 'Migration progress script removed; see DOCS/CONSTANTS.md and ts-migration-progress.md if present.'",
     "test:all": "npm run build && WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
     "test:e2e:ssh": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright-e2e-ssh.config.ts tests/playwright/e2e-ssh-acceptenv.spec.ts",
+    "e2e:setup": "playwright install --with-deps"
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
@@ -81,6 +82,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.2",
     "@vitest/coverage-v8": "^2.0.5",
     "tsx": "^4.19.1",
     "vitest": "^2.0.5",
