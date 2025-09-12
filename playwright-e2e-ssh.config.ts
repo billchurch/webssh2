@@ -25,5 +25,6 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120_000,
   },
+  globalSetup: './tests/playwright/global-setup.ts',
+  globalTeardown: './tests/playwright/global-teardown.ts',
 })
-
