@@ -145,7 +145,8 @@ test.describe('WebSocket Interactive Authentication', () => {
 test.describe('WebSocket Basic Authentication', () => {
   test('should connect automatically with valid Basic Auth credentials', async ({ page }) => {
     // Navigate with Basic Auth credentials
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
+    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Verify automatic connection
@@ -160,7 +161,8 @@ test.describe('WebSocket Basic Authentication', () => {
 
   test('should fail and show login form with invalid Basic Auth credentials', async ({ page }) => {
     // Navigate with invalid Basic Auth credentials
-    const url = `http://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const badAuth = `${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}`
+    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${badAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Wait for authentication to fail
@@ -177,7 +179,8 @@ test.describe('WebSocket Basic Authentication', () => {
 
   test('should handle Basic Auth with non-existent host', async ({ page }) => {
     // Navigate with Basic Auth to non-existent host
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
+    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Wait for connection attempt
@@ -189,7 +192,8 @@ test.describe('WebSocket Basic Authentication', () => {
 
   test('should execute multiple commands with Basic Auth session', async ({ page }) => {
     // Navigate with Basic Auth credentials
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
+    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Wait for connection
