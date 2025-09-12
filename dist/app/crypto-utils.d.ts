@@ -1,1 +1,1 @@
-export declare function generateSecureSecret(): string;
+export declare const generateSecureSecret: () => string;

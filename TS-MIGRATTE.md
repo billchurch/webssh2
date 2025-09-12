@@ -210,6 +210,17 @@ consumers and avoiding circular imports.
 
 ---
 
+## 2f) Flip small helpers (PR27)
+
+Migrated `client-path` and `crypto-utils` to TS-built wrappers with
+`*.impl.js` shims that delegate to `*.impl.target.js` copied from the
+original JS. This exposes types while keeping the runtime intact.
+
+- Updated copy script to exclude original helpers from 1:1 copy and add
+  special-target copies.
+
+---
+
 ## 3) Runtime validation is mandatory (PR1)
 
 Validate at boundaries only, then pass typed data inside.

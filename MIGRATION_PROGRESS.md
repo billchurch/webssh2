@@ -27,5 +27,6 @@
 - [x] PR23: flip ssh to TS runtime (impl shim + copy exclude)
 - [x] PR24: flip validators/execSchema to TS runtime (impl shim + copy exclude)
 - [x] PR25: flip middleware + security-headers to TS runtime (impl shims + copy exclude)
+- [x] PR27: flip client-path + crypto-utils to TS runtime (impl shims + copy exclude)
 
-_Last updated: 2025-09-12T00:20:45.000Z_
+_Last updated: 2025-09-12T00:33:10.000Z_
