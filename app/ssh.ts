@@ -207,7 +207,7 @@ export default class SSHConnection extends EventEmitter {
     creds: Record<string, unknown>,
     tryKeyboard: boolean
   ): Record<string, unknown> {
-    const cfg: Record<string, unknown> = {
+    const base: Record<string, unknown> = {
       host: String(creds['host'] ?? ''),
       port: Number(creds['port'] ?? 22),
       username: (creds['username'] as string | undefined) ?? undefined,
@@ -222,14 +222,14 @@ export default class SSHConnection extends EventEmitter {
     const passphrase = (creds['passphrase'] as string | undefined) ?? undefined
     const password = (creds['password'] as string | undefined) ?? undefined
     if (privateKey && this.validatePrivateKey(privateKey)) {
-      cfg['privateKey'] = privateKey
+      ;(base as { privateKey?: string }).privateKey = privateKey
       if (this.isEncryptedKey(privateKey) && passphrase) {
-        cfg['passphrase'] = passphrase
+        ;(base as { passphrase?: string }).passphrase = passphrase
       }
     }
     if (password) {
-      cfg['password'] = password
+      ;(base as { password?: string }).password = password
     }
-    return cfg
+    return base
   }
 }

@@ -1,6 +1,7 @@
-/**
- * Schema for validating the config
- */
+// server
+// app/configSchema.ts
+// JSON Schema for server config validation (used by AJV)
+
 const configSchema = {
   type: 'object',
   properties: {
@@ -44,26 +45,11 @@ const configSchema = {
         algorithms: {
           type: 'object',
           properties: {
-            kex: {
-              type: 'array',
-              items: { type: 'string' },
-            },
-            cipher: {
-              type: 'array',
-              items: { type: 'string' },
-            },
-            hmac: {
-              type: 'array',
-              items: { type: 'string' },
-            },
-            serverHostKey: {
-              type: 'array',
-              items: { type: 'string' },
-            },
-            compress: {
-              type: 'array',
-              items: { type: 'string' },
-            },
+            kex: { type: 'array', items: { type: 'string' } },
+            cipher: { type: 'array', items: { type: 'string' } },
+            hmac: { type: 'array', items: { type: 'string' } },
+            serverHostKey: { type: 'array', items: { type: 'string' } },
+            compress: { type: 'array', items: { type: 'string' } },
           },
           required: ['kex', 'cipher', 'hmac', 'serverHostKey', 'compress'],
         },
@@ -100,6 +86,6 @@ const configSchema = {
     },
   },
   required: ['listen', 'http', 'user', 'ssh', 'header', 'options'],
-}
+} as const
 
 export default configSchema
