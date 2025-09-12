@@ -17,6 +17,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Environment Variables via URL](#environment-variables-via-url)
+- [E2E SSH Test](./DOCS/E2E-SSH.md)
 - [Features](#features)
 - [Exec Channel](#exec-channel)
 - [Constants Overview](./DOCS/CONSTANTS.md)
