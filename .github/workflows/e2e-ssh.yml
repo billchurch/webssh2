@@ -1,0 +1,48 @@
+name: E2E SSH (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable_e2e:
+        type: boolean
+        description: 'Run E2E SSH tests (requires Docker)'
+        default: true
+
+jobs:
+  e2e:
+    if: ${{ inputs.enable_e2e }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npm run e2e:setup
+
+      - name: Build
+        run: npm run build
+
+      - name: Run E2E tests with containerized sshd
+        env:
+          ENABLE_E2E_SSH: '1'
+        run: npx playwright test -c playwright.config.ts tests/playwright/e2e-ssh-acceptenv.spec.ts
+
+      - name: Upload Playwright report (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: |
+            test-results
+            playwright-report
+
