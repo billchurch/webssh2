@@ -6,7 +6,7 @@ import Impl from './ssh.impl.js'
 // Strongly-typed mirror of the JS SSHConnection class.
 // Runtime behavior remains in JS; TS provides types to consumers.
 export interface SSHStreamLike {
-  on(event: string, listener: (...args: any[]) => void): this
+  on(event: string, listener: (...args: unknown[]) => void): this
   end?: () => void
   setWindow?: (rows: number, cols: number) => void
   write?: (data: string | Uint8Array) => void
@@ -42,4 +42,3 @@ const SSHConnection = Impl as unknown as {
 }
 
 export default SSHConnection
-

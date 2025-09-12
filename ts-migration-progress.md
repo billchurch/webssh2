@@ -1,8 +1,8 @@
 # Migration Progress
 
-- Total source files: 55
-- TypeScript files: 27 (49%)
-- JavaScript files: 28
+- Total source files: 58
+- TypeScript files: 29 (50%)
+- JavaScript files: 29
 - explicit 'any' uses (TS): 0
 
 ## Areas
