@@ -76,7 +76,7 @@ export default [
       ecmaVersion: 2024,
       sourceType: 'module',
       parserOptions: {
-        project: ['./tsconfig.build.json'],
+        project: ['./tsconfig.eslint.json'],
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
       },
     },

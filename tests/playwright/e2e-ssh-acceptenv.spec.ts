@@ -19,9 +19,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
 
     // Wait for terminal to render the value
     await page.waitForTimeout(800)
-    const content = await page.evaluate(() =>
-      document.querySelector('.xterm-screen')?.textContent || ''
-    )
+    const content = await page.$eval('.xterm-screen', (el) => el.textContent || '')
     expect(content).toContain('bar')
 
     // Capture a screenshot for artifacts/debugging
