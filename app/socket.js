@@ -9,6 +9,7 @@ import { SSHConnectionError, handleError } from './errors.js'
 
 import { isValidCredentials, maskSensitiveData, validateSshTerm } from './utils.js'
 import { MESSAGES } from './constants.js'
+import { validateExecPayload } from './validators/exec-validate.js'
 
 const debug = createNamespacedDebug('socket')
 
@@ -406,27 +407,33 @@ class WebSSH2Socket extends EventEmitter {
       return
     }
 
-    const command = payload && typeof payload.command === 'string' ? payload.command.trim() : ''
-    if (!command) {
-      this.socket.emit('ssherror', 'Invalid exec request: command is required')
+    // Validate and normalize payload
+    let parsed
+    try {
+      parsed = validateExecPayload(payload)
+    } catch (e) {
+      const msg =
+        e && typeof e === 'object' && 'message' in e
+          ? /** @type {any} */ (e).message
+          : 'Invalid exec request'
+      this.socket.emit('ssherror', `Invalid exec request: ${msg}`)
       return
     }
 
+    const command = parsed.command
+
     // Build options using provided dimensions or stored session defaults
-    const usePty = !!payload?.pty
+    const usePty = !!parsed.pty
     const execOptions = {
       pty: usePty,
-      term: payload?.term || this.sessionState.term || 'xterm-color',
-      cols: payload?.cols || this.sessionState.cols || 80,
-      rows: payload?.rows || this.sessionState.rows || 24,
+      term: parsed.term || this.sessionState.term || 'xterm-color',
+      cols: parsed.cols || this.sessionState.cols || 80,
+      rows: parsed.rows || this.sessionState.rows || 24,
     }
 
     // Environment variables: start from session env, then merge payload.env overrides
     const sessionEnvVars = this.socket.request.session.envVars || null
-    const mergedEnvVars = { ...(sessionEnvVars || {}) }
-    if (payload?.env && typeof payload.env === 'object') {
-      Object.assign(mergedEnvVars, payload.env)
-    }
+    const mergedEnvVars = { ...(sessionEnvVars || {}), ...(parsed.env || {}) }
 
     debug('handleExec: command=%o, options=%o, env=%o', command, execOptions, mergedEnvVars)
 
@@ -445,7 +452,7 @@ class WebSSH2Socket extends EventEmitter {
       const onClientResize = (data) => this.handleResize(data)
       this.socket.on('data', onClientData)
       this.socket.on('resize', onClientResize)
-      if (payload?.timeoutMs && Number.isInteger(payload.timeoutMs) && payload.timeoutMs > 0) {
+      if (parsed.timeoutMs && Number.isInteger(parsed.timeoutMs) && parsed.timeoutMs > 0) {
         timeout = setTimeout(() => {
           try {
             // Try to signal/close the stream on timeout
@@ -459,7 +466,7 @@ class WebSSH2Socket extends EventEmitter {
             debug('handleExec: error during timeout cleanup %O', e)
           }
           this.socket.emit('exec-exit', { code: null, signal: 'TIMEOUT' })
-        }, payload.timeoutMs)
+        }, parsed.timeoutMs)
       }
 
       stream.on('data', (data) => {
