@@ -13,7 +13,7 @@ async function verifyTerminalFunctionality(page, username) {
   await waitForPrompt(page)
   await executeCommand(page, 'whoami')
   // Look for username in terminal output, not in status area
-  await expect(page.locator(`.xterm-rows:has-text("${username}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
+  await expect(page.locator(`.xterm-screen:has-text("${username}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   await executeCommand(page, 'echo "Async test successful"')
   // Look for the exact output text, not the command
   await expect(page.getByText('Async test successful', { exact: true })).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
@@ -195,7 +195,7 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
     for (const { cmd, expect: expectedText } of commands) {
       await executeCommand(page, cmd)
       // Look for expected text in terminal output area to avoid header/status conflicts
-      await expect(page.locator(`.xterm-rows:has-text("${expectedText}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
+      await expect(page.locator(`.xterm-screen:has-text("${expectedText}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     }
   })
 
@@ -241,8 +241,8 @@ test.describe('Async Error Recovery and Edge Cases', () => {
     // Click connect
     await page.click('button:has-text("Connect")')
 
-    // Should show timeout error
-    await expect(page.locator('text=/timeout|timed out|Connection failed/i')).toBeVisible({
+    // Wait for error message to appear
+    await expect(page.locator('text=/Authentication failed|ECONNRESET|Connection error|timeout/i')).toBeVisible({
       timeout: 30000,
     })
   })

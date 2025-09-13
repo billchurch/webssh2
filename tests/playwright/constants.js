@@ -78,9 +78,9 @@ export async function waitForPrompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
 }
 
 export async function executeCommand(page, command) {
-  const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
-  await terminal.fill(command)
-  await terminal.press('Enter')
+  await page.locator('.xterm-helper-textarea').click()
+  await page.keyboard.type(command)
+  await page.keyboard.press('Enter')
   await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 }
 

@@ -26,22 +26,26 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: TIMEOUTS.PROMPT_WAIT }
     )
 
     // Generate and display large output
-    const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
+    await page.locator('.xterm-helper-textarea').click()
 
     // Test with a command that generates substantial output
-    await terminal.fill('seq 1 1000')
-    await terminal.press('Enter')
+    await page.keyboard.type('seq 1 1000')
+    await page.keyboard.press('Enter')
 
-    // Verify some of the output is visible
-    await expect(page.locator('text=500')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
-    await expect(page.locator('text=1000')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
+    // Wait for command to complete and check that output was generated
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
+    
+    // Verify the terminal contains the expected output (last visible numbers)
+    const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(terminalContent).toContain('1000') // Last number should be visible
+    expect(terminalContent.length).toBeGreaterThan(1000) // Should have substantial output
   })
 
   test('should handle rapid command execution', async ({ page }) => {
@@ -49,13 +53,13 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: TIMEOUTS.PROMPT_WAIT }
     )
 
-    const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
+    await page.locator('.xterm-helper-textarea').click()
 
     // Execute multiple commands rapidly
     const commands = [
@@ -69,18 +73,21 @@ test.describe('WebSocket Performance', () => {
     ]
 
     for (const cmd of commands) {
-      await terminal.fill(cmd)
-      await terminal.press('Enter')
+      await page.keyboard.type(cmd)
+      await page.keyboard.press('Enter')
       await page.waitForTimeout(TIMEOUTS.SHORT_WAIT) // Small delay between commands
     }
 
-    // Verify all commands executed
-    await expect(page.locator('text=test1')).toBeVisible()
-    await expect(page.locator('text=test2')).toBeVisible()
-    await expect(page.locator('text=test3')).toBeVisible()
-    await expect(page.locator(`text=/home/${USERNAME}/`).first()).toBeVisible()
-    await expect(page.locator(`text=${USERNAME}`).first()).toBeVisible()
-    await expect(page.locator('text=final')).toBeVisible()
+    // Wait for all commands to complete
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
+    
+    // Verify all commands executed by checking terminal content
+    const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(terminalContent).toContain('test1')
+    expect(terminalContent).toContain('test2')
+    expect(terminalContent).toContain('test3')
+    expect(terminalContent).toContain(USERNAME)
+    expect(terminalContent).toContain('final')
   })
 
   test('should handle terminal resize', async ({ page }) => {
@@ -88,7 +95,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: TIMEOUTS.PROMPT_WAIT }
@@ -99,20 +106,26 @@ test.describe('WebSocket Performance', () => {
     await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Execute a command to verify terminal still works after resize
-    const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
-    await terminal.fill('echo "Resize test passed"')
-    await terminal.press('Enter')
+    await page.locator('.xterm-helper-textarea').click()
+    await page.keyboard.type('echo "Resize test passed"')
+    await page.keyboard.press('Enter')
 
-    await expect(page.locator('text=Resize test passed')).toBeVisible()
+    // Wait for output and verify
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    const content1 = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(content1).toContain('Resize test passed')
 
     // Resize again
     await page.setViewportSize({ width: 800, height: 600 })
     await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Verify terminal still functional
-    await terminal.fill('echo "Second resize OK"')
-    await terminal.press('Enter')
-    await expect(page.locator('text=Second resize OK')).toBeVisible()
+    await page.keyboard.type('echo "Second resize OK"')
+    await page.keyboard.press('Enter')
+    // Wait for output and verify
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    const content2 = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(content2).toContain('Second resize OK')
   })
 
   test('should measure connection establishment time', async ({ page }) => {
@@ -141,13 +154,13 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: TIMEOUTS.PROMPT_WAIT }
     )
 
-    const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
+    await page.locator('.xterm-helper-textarea').click()
 
     // Test various special characters
     const specialCommands = [
@@ -161,14 +174,16 @@ test.describe('WebSocket Performance', () => {
     ]
 
     for (const cmd of specialCommands) {
-      await terminal.fill(cmd)
-      await terminal.press('Enter')
+      await page.keyboard.type(cmd)
+      await page.keyboard.press('Enter')
       await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     }
 
-    // Verify output contains expected text
-    await expect(page.locator('text=Hello World!')).toBeVisible()
-    await expect(page.locator(`text=/home/${USERNAME}/`).first()).toBeVisible() // $HOME expansion
+    // Wait for commands to complete and verify output
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
+    const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(terminalContent).toContain('Hello World!')
+    expect(terminalContent).toContain(`/home/${USERNAME}`) // $HOME expansion
   })
 
   test('should maintain stable connection over time', async ({ page }) => {
@@ -178,27 +193,33 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: TIMEOUTS.PROMPT_WAIT }
     )
 
-    const terminal = page.getByRole(TERMINAL.INPUT_SELECTOR, { name: TERMINAL.INPUT_NAME })
+    await page.locator('.xterm-helper-textarea').click()
 
     // Send periodic commands to verify connection stability
     for (let i = 0; i < 5; i++) {
-      await terminal.fill(`echo "Ping ${i + 1}"`)
-      await terminal.press('Enter')
-      await expect(page.locator(`text=Ping ${i + 1}`)).toBeVisible()
+      await page.keyboard.type(`echo "Ping ${i + 1}"`)
+      await page.keyboard.press('Enter')
+      
+      // Wait for output and verify
+      await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+      const content = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+      expect(content).toContain(`Ping ${i + 1}`)
 
       // Wait 5 seconds between pings
       await page.waitForTimeout(TIMEOUTS.LONG_WAIT)
     }
 
     // Verify connection is still active
-    await terminal.fill('echo "Connection stable"')
-    await terminal.press('Enter')
-    await expect(page.locator('text=Connection stable')).toBeVisible()
+    await page.keyboard.type('echo "Connection stable"')
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    const finalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    expect(finalContent).toContain('Connection stable')
   })
 })

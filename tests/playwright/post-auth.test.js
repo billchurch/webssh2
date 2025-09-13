@@ -1,11 +1,11 @@
 /**
  * HTTP POST Authentication Tests for WebSSH2
- * 
+ *
  * Tests the POST /ssh endpoint with flexible parameter passing
  * - Credentials in body, host/port in query params
  * - All parameters in body
  * - Mixed configurations
- * 
+ *
  * Requires Docker test SSH server to be running:
  * docker run -d --name webssh2-test-ssh -p 2244:22 \
  *   -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
@@ -13,23 +13,35 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, INVALID_USERNAME, INVALID_PASSWORD, NON_EXISTENT_HOST, INVALID_PORT } from './constants.js'
+import {
+  BASE_URL,
+  SSH_HOST,
+  SSH_PORT,
+  USERNAME,
+  PASSWORD,
+  INVALID_USERNAME,
+  INVALID_PASSWORD,
+  NON_EXISTENT_HOST,
+  INVALID_PORT,
+} from './constants.js'
 
 test.describe('HTTP POST Authentication', () => {
-  test('should connect with credentials in body and host/port in query params', async ({ request }) => {
+  test('should connect with credentials in body and host/port in query params', async ({
+    request,
+  }) => {
     // Make POST request with credentials in body, host/port in query
     const response = await request.post(
       `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
           username: USERNAME,
-          password: PASSWORD
-        }
+          password: PASSWORD,
+        },
       }
     )
-    
+
     expect(response.ok()).toBeTruthy()
-    
+
     // Verify response contains client HTML
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
@@ -43,12 +55,12 @@ test.describe('HTTP POST Authentication', () => {
         username: USERNAME,
         password: PASSWORD,
         host: SSH_HOST,
-        port: SSH_PORT
-      }
+        port: SSH_PORT,
+      },
     })
-    
+
     expect(response.ok()).toBeTruthy()
-    
+
     // Verify response contains client HTML
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
@@ -62,13 +74,13 @@ test.describe('HTTP POST Authentication', () => {
       {
         data: {
           username: USERNAME,
-          password: PASSWORD
-        }
+          password: PASSWORD,
+        },
       }
     )
-    
+
     expect(response.ok()).toBeTruthy()
-    
+
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
   })
@@ -82,14 +94,14 @@ test.describe('HTTP POST Authentication', () => {
           username: USERNAME,
           password: PASSWORD,
           host: SSH_HOST,
-          port: SSH_PORT
-        }
+          port: SSH_PORT,
+        },
       }
     )
-    
+
     // Should succeed because body parameters override query
     expect(response.ok()).toBeTruthy()
-    
+
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
   })
@@ -99,11 +111,11 @@ test.describe('HTTP POST Authentication', () => {
       `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          password: PASSWORD
-        }
+          password: PASSWORD,
+        },
       }
     )
-    
+
     expect(response.status()).toBe(400)
     const body = await response.text()
     expect(body).toContain('Missing required fields in body: username, password')
@@ -114,11 +126,11 @@ test.describe('HTTP POST Authentication', () => {
       `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          username: USERNAME
-        }
+          username: USERNAME,
+        },
       }
     )
-    
+
     expect(response.status()).toBe(400)
     const body = await response.text()
     expect(body).toContain('Missing required fields in body: username, password')
@@ -128,10 +140,10 @@ test.describe('HTTP POST Authentication', () => {
     const response = await request.post(`${BASE_URL}/ssh`, {
       data: {
         username: USERNAME,
-        password: PASSWORD
-      }
+        password: PASSWORD,
+      },
     })
-    
+
     expect(response.status()).toBe(400)
     const body = await response.text()
     expect(body).toContain('Missing required field: host (in body or query params)')
@@ -141,17 +153,14 @@ test.describe('HTTP POST Authentication', () => {
     // Create a POST request without specifying port (should default to 22)
     // Since our test SSH server is on port 2244, we'll just verify the request succeeds
     // and the server accepts the request (actual connection would fail on port 22)
-    const response = await request.post(
-      `${BASE_URL}/ssh?host=${SSH_HOST}`,
-      {
-        data: {
-          username: USERNAME,
-          password: PASSWORD,
-          port: SSH_PORT // Override default port in body
-        }
-      }
-    )
-    
+    const response = await request.post(`${BASE_URL}/ssh?host=${SSH_HOST}`, {
+      data: {
+        username: USERNAME,
+        password: PASSWORD,
+        port: SSH_PORT, // Override default port in body
+      },
+    })
+
     expect(response.ok()).toBeTruthy()
   })
 
@@ -161,13 +170,13 @@ test.describe('HTTP POST Authentication', () => {
       {
         data: {
           username: USERNAME,
-          password: PASSWORD
-        }
+          password: PASSWORD,
+        },
       }
     )
-    
+
     expect(response.ok()).toBeTruthy()
-    
+
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
   })
@@ -175,40 +184,37 @@ test.describe('HTTP POST Authentication', () => {
   test('should handle /ssh/reauth to clear stuck credentials', async ({ page }) => {
     // Navigate to /ssh/reauth to clear any session
     await page.goto(`${BASE_URL}/ssh/reauth`)
-    
+
     // Should redirect to /ssh
     expect(page.url()).toContain('/ssh')
-    
+
     // Verify we can now authenticate with correct credentials via POST
     const response = await page.request.post(
       `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
           username: USERNAME,
-          password: PASSWORD
-        }
+          password: PASSWORD,
+        },
       }
     )
-    
+
     expect(response.ok()).toBeTruthy()
   })
 
   test('should accept POST with JSON content type', async ({ request }) => {
-    const response = await request.post(
-      `${BASE_URL}/ssh`,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: {
-          username: USERNAME,
-          password: PASSWORD,
-          host: SSH_HOST,
-          port: SSH_PORT
-        }
-      }
-    )
-    
+    const response = await request.post(`${BASE_URL}/ssh`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: {
+        username: USERNAME,
+        password: PASSWORD,
+        host: SSH_HOST,
+        port: SSH_PORT,
+      },
+    })
+
     expect(response.ok()).toBeTruthy()
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')

@@ -10,6 +10,7 @@ const enableE2E = process.env.ENABLE_E2E_SSH === '1'
 
 export default defineConfig({
   testDir: './tests/playwright',
+  testIgnore: '**/debug/**',
   timeout: 60_000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

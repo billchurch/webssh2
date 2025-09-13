@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from '../constants.js'
 
 test.describe('HTTP POST Authentication Flow Analysis', () => {
   test('map HTTP POST form-based authentication flow', async ({ page }) => {

@@ -1,187 +1,252 @@
-# WebSSH2 WebSocket Playwright Tests
+# WebSSH2 Playwright Tests
 
-Comprehensive end-to-end tests for WebSSH2's WebSocket implementation, covering authentication scenarios, performance, and resilience.
+End-to-end tests for WebSSH2, covering authentication, WebSocket connections, terminal functionality, and performance.
 
 ## Prerequisites
 
-1. **Docker** - Required for the test SSH server
-2. **Node.js** - Version 18 or higher
-3. **Playwright** - Will be installed automatically
+1. **Node.js** - Version 22 or higher
+2. **Docker** - Required for the test SSH server (automatically managed)
+3. **Playwright** - Install with `npm run e2e:setup`
 
 ## Test Structure
 
-### Authentication Tests (`websocket-auth.test.js`)
-Tests various authentication scenarios:
-- ✅ Interactive authentication with valid credentials
-- ✅ Interactive authentication with invalid credentials
-- ✅ Connection errors (non-existent host, wrong port)
-- ✅ Page refresh handling
-- ✅ Basic Auth with valid credentials
-- ✅ Basic Auth with invalid credentials
-- ✅ Multiple command execution
-
-### Performance Tests (`websocket-performance.test.js`)
-Tests WebSocket performance and stability:
-- ✅ Large data transfer handling
-- ✅ Rapid command execution
-- ✅ Terminal resize handling
-- ✅ Connection establishment timing
-- ✅ Special characters in commands
-- ✅ Long-term connection stability
+```bash
+tests/playwright/
+├── constants.js                     # Shared test configuration
+├── debug/                           # Debug and diagnostic tests
+│   ├── debug-event-flow.spec.ts
+│   ├── debug-post-auth-flow.spec.ts
+│   └── debug-test.spec.js
+├── e2e-term-size-replay.spec.ts    # Terminal size and replay tests
+├── websocket-async-auth.test.js    # Async WebSocket authentication
+├── websocket-auth.test.js          # WebSocket authentication scenarios
+└── websocket-performance.test.js   # Performance and stability tests
+```
 
 ## Running Tests
 
 ### Quick Start
 
 ```bash
-# Run all tests with the helper script
-./run-tests.sh
+# Install Playwright and dependencies
+npm run e2e:setup
+
+# Run all E2E tests (starts SSH container automatically)
+npm run test:e2e
+
+# Run with debug output
+npm run test:e2e:debug
 
 # Run specific test file
-./run-tests.sh websocket-auth.test.js
+npx playwright test tests/playwright/websocket-auth.test.js
+
+# Run tests in UI mode
+npx playwright test --ui
+
+# Run tests in headed mode (see browser)
+npx playwright test --headed
 ```
 
-### Manual Setup
+### NPM Scripts
 
-1. **Start the test SSH server:**
-```bash
-docker run -d --name webssh2-test-ssh -p 2244:22 \
-  -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
-  ghcr.io/billchurch/ssh_test:alpine
-```
-
-2. **Build the client with WebSocket support:**
-```bash
-cd ../webssh2_client
-VITE_USE_WEBSOCKET=true npm run build
-cd ../webssh2
-npm link ../webssh2_client
-```
-
-3. **Install Playwright:**
-```bash
-npm install --save-dev @playwright/test
-npx playwright install
-```
-
-4. **Run tests:**
-```bash
-# All tests
-npm run test:playwright
-
-# Authentication tests only
-npm run test:playwright:auth
-
-# Performance tests only
-npm run test:playwright:perf
-
-# Interactive UI mode
-npm run test:playwright:ui
-
-# Debug mode
-npm run test:playwright:debug
-```
-
-## NPM Scripts
-
-The following scripts are available in package.json:
-
-- `npm run test:playwright` - Run all Playwright tests
-- `npm run test:playwright:auth` - Run authentication tests
-- `npm run test:playwright:perf` - Run performance tests
-- `npm run test:playwright:ui` - Open Playwright UI mode
-- `npm run test:playwright:debug` - Run tests in debug mode
-- `npm run test:all` - Run all tests (unit + Playwright)
+- `npm run test:e2e` - Run all Playwright tests with SSH server
+- `npm run test:e2e:debug` - Run tests with debug output
+- `npm run e2e:setup` - Install Playwright with dependencies
+- `npm run test` - Run unit tests
+- `npm run test:all` - Run all tests (unit + integration)
 
 ## Test Configuration
 
-Tests are configured in `playwright.config.js`:
-- **Timeout**: 30 seconds per test
-- **Workers**: 1 (to avoid SSH connection conflicts)
-- **Browsers**: Chromium, Firefox, WebKit
-- **Reports**: HTML report with screenshots/videos on failure
+Tests are configured in `playwright.config.ts`:
 
-## CI/CD Integration
+- **Test directory**: `./tests/playwright`
+- **Timeout**: 60 seconds per test
+- **Workers**: 1 (prevents SSH connection conflicts)
+- **Browser**: Chromium
+- **Base URL**: <http://localhost:2288>
+- **Auto-start**: WebSSH2 server on port 2288
+- **SSH container**: Automatically started when `ENABLE_E2E_SSH=1`
 
-Tests run automatically in GitHub Actions:
-- On push to `main` or `develop` branches
-- On pull requests to `main`
-- Tests multiple Node.js versions (18.x, 20.x, 22.x)
-- Uploads test reports and videos as artifacts
+## Environment Variables
+
+- `ENABLE_E2E_SSH=1` - Enables SSH container for E2E tests (automatically managed)
+- `DEBUG=webssh2:*` - Enable debug logging
+- `E2E_DEBUG=webssh2:*` - Enable debug logging for E2E tests
+
+## Test Categories
+
+### Authentication Tests
+
+- Interactive authentication (valid/invalid credentials)
+- Basic Auth scenarios
+- HTTP POST authentication flow
+- Connection error handling
+- Session management
+
+### WebSocket Tests
+
+- Async connection establishment
+- Auto-connect with Basic Auth
+- Connection resilience
+- Message flow validation
+
+### Terminal Tests
+
+- Terminal size and resize handling
+- TERM environment variable validation
+- Replay functionality
+- Command execution
+
+### Performance Tests
+
+- Large data transfer
+- Rapid command execution
+- Long-term connection stability
+- Special character handling
+
+### Debug Tests (in `debug/` directory)
+
+- Event flow analysis
+- HTTP POST authentication flow
+- Connection diagnostics
+
+## Test Credentials
+
+Default credentials for the test SSH server:
+
+- **Host**: localhost
+- **Port**: 2244 (SSH container) or 2289 (manual Docker)
+- **Username**: testuser
+- **Password**: testpassword
 
 ## Viewing Test Results
 
-After running tests:
-
 ```bash
-# View HTML report
+# View HTML report after test run
 npx playwright show-report
 
-# Reports are saved in:
-# - playwright-report/ (HTML report)
-# - test-results/ (screenshots/videos on failure)
+# View test traces for debugging
+npx playwright show-trace test-results/*/trace.zip
+
+# Test artifacts location:
+# - playwright-report/     # HTML report
+# - test-results/         # Screenshots, videos, traces
 ```
 
 ## Debugging Failed Tests
 
-1. **Run in debug mode:**
+### 1. Run in Debug Mode
+
 ```bash
-npm run test:playwright:debug
+# Debug specific test
+npx playwright test websocket-auth.test.js --debug
+
+# Run with verbose output
+npm run test:e2e:debug
 ```
 
-2. **Check test artifacts:**
+### 2. Check Test Artifacts
+
 - Screenshots: `test-results/*/screenshot.png`
 - Videos: `test-results/*/video.webm`
 - Traces: `test-results/*/trace.zip`
 
-3. **View traces:**
+### 3. Manual SSH Server (Optional)
+
+If you need to run tests with a manual SSH server:
+
 ```bash
-npx playwright show-trace test-results/*/trace.zip
+# Start test SSH container
+docker run --rm -d \
+  -p 2289:22 \
+  -e SSH_USER=testuser \
+  -e SSH_PASSWORD=testpassword \
+  ghcr.io/billchurch/ssh_test:alpine
+
+# Run tests against manual server
+SSH_PORT=2289 npx playwright test
 ```
 
-## Test Credentials
+## CI/CD Integration
 
-Default test credentials (for test SSH server):
-- **Host**: localhost
-- **Port**: 2244
-- **Username**: testuser
-- **Password**: testpassword
+Tests run automatically in CI:
+
+- On push to main branches
+- On pull requests
+- Multiple Node.js versions tested
+- Test reports uploaded as artifacts
 
 ## Troubleshooting
 
-### Docker not running
+### Port Already in Use
+
 ```bash
-# Start Docker Desktop or:
-sudo systemctl start docker
+# Check what's using the port
+lsof -i :2288
+
+# Kill the process if needed
+pkill -f "node.*webssh2"
 ```
 
-### Port 2244 already in use
+### SSH Container Issues
+
 ```bash
-# Stop existing container
-docker stop webssh2-test-ssh
-docker rm webssh2-test-ssh
+# Check if container is running
+docker ps | grep ssh
+
+# View container logs
+docker logs $(docker ps -q --filter ancestor=ghcr.io/billchurch/ssh_test:alpine)
+
+# Remove stale containers
+docker rm -f $(docker ps -aq --filter name=webssh2)
 ```
 
-### WebSocket connection fails
-```bash
-# Ensure server is running with WebSocket support
-USE_WEBSOCKET=true npm run dev
+### WebSocket Connection Fails
+
+- Ensure server starts with WebSocket support
+- Check browser console for errors
+- Verify firewall/proxy settings
+
+### Tests Timeout
+
+- Increase timeout in `playwright.config.ts`
+- Check server logs: `DEBUG=webssh2:* npm run test:e2e:debug`
+- Ensure Docker is running
+
+## Writing New Tests
+
+### Test Template
+
+```javascript
+import { test, expect } from '@playwright/test'
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
+
+test.describe('Feature Name', () => {
+  test('should do something', async ({ page }) => {
+    await page.goto(`${BASE_URL}/ssh`)
+    
+    // Your test logic here
+    
+    await expect(page.locator('text=Connected')).toBeVisible()
+  })
+})
 ```
 
-### Tests timeout
-- Increase timeout in `playwright.config.js`
-- Check if SSH server is healthy: `docker ps`
-- Check server logs: `docker logs webssh2-test-ssh`
+### Best Practices
+
+1. Use constants from `constants.js`
+2. Add appropriate timeouts for operations
+3. Include meaningful assertions
+4. Clean up resources in test teardown
+5. Use descriptive test names
+6. Group related tests with `test.describe`
 
 ## Contributing
 
 When adding new tests:
-1. Follow the existing test structure
-2. Use descriptive test names
-3. Add appropriate assertions
-4. Update this README if needed
-5. Ensure tests pass locally before pushing
 
-## License
-
-Same as WebSSH2 project - MIT License
+1. Follow existing test patterns
+2. Update this README if adding new test categories
+3. Ensure tests pass locally before pushing
+4. Add debug tests to `debug/` directory
+5. Use TypeScript for new test files when possible

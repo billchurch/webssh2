@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD } from './constants.js'
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD } from '../constants.js'
 
 test('Debug what text is on page after connection', async ({ page }) => {
   await page.goto(`${BASE_URL}/ssh`)
