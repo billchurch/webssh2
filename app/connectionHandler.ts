@@ -15,8 +15,8 @@ type Sess = AuthSession
  * Check if session has any type of credentials (Basic Auth or POST)
  */
 function hasSessionCredentials(session: Sess): boolean {
-  return !!(
-    session.sshCredentials &&
+  return Boolean(
+    session.sshCredentials != null &&
     (session.usedBasicAuth === true || session.authMethod === 'POST')
   )
 }
@@ -49,20 +49,21 @@ export default async function handleConnection(
   }
 
   const s = (req as Request & { session: Sess }).session
-  if (hasSessionCredentials(s)) {
+  if (hasSessionCredentials(s) && s.sshCredentials != null) {
+    const creds = s.sshCredentials
     tempConfig['ssh'] = {
-      host: s.sshCredentials!.host,
-      port: s.sshCredentials!.port,
-      ...(s.sshCredentials!.term && { sshterm: s.sshCredentials!.term }),
+      host: creds.host,
+      port: creds.port,
+      ...(creds.term != null && creds.term !== '' && { sshterm: creds.term }),
     }
     tempConfig['autoConnect'] = true
 
-    const authType = s.usedBasicAuth ? 'Basic Auth' : (s.authMethod ?? 'Unknown')
+    const authType = s.usedBasicAuth === true ? 'Basic Auth' : (s.authMethod ?? 'Unknown')
     debug('Session-only auth enabled - credentials remain server-side: %O', {
       authType,
-      host: s.sshCredentials!.host,
-      port: s.sshCredentials!.port,
-      term: s.sshCredentials!.term,
+      host: creds.host,
+      port: creds.port,
+      term: creds.term,
       sessionId: req.sessionID,
       hasCredentials: true,
     })

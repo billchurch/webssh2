@@ -27,19 +27,19 @@ export class SSHConnectionError extends WebSSH2Error {
   }
 }
 
-type ResponseLike = { status: (code: number) => { json: (body: unknown) => void } }
+interface ResponseLike { status: (code: number) => { json: (body: unknown) => void } }
 
 export function handleError(err: Error, res?: ResponseLike): void {
   if (err instanceof WebSSH2Error) {
     logError(err.message, err)
     debug(err.message)
-    if (res) {
+    if (res != null) {
       res.status(HTTP.INTERNAL_SERVER_ERROR).json({ error: err.message, code: err.code })
     }
   } else {
     logError(MESSAGES.UNEXPECTED_ERROR, err)
     debug(`handleError: ${MESSAGES.UNEXPECTED_ERROR}: %O`, err)
-    if (res) {
+    if (res != null) {
       res.status(HTTP.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.UNEXPECTED_ERROR })
     }
   }

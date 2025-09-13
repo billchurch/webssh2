@@ -10,7 +10,7 @@ import type { Config } from './types/config.js'
 const debug = createNamespacedDebug('ssh')
 
 export default class SSHConnection extends EventEmitter {
-  private config: Config
+  private readonly config: Config
   private conn: SSH | null
   private stream:
     | (EventEmitter & {
@@ -33,7 +33,7 @@ export default class SSHConnection extends EventEmitter {
   }
 
   validatePrivateKey(key: string): boolean {
-    if (!key || typeof key !== 'string') {
+    if (key === '' || typeof key !== 'string') {
       return false
     }
     const trimmedKey = key.trim()
@@ -49,7 +49,7 @@ export default class SSHConnection extends EventEmitter {
   }
 
   isEncryptedKey(key: string): boolean {
-    if (!key || typeof key !== 'string') {
+    if (key === '' || typeof key !== 'string') {
       return false
     }
     return (
@@ -63,7 +63,7 @@ export default class SSHConnection extends EventEmitter {
   connect(creds: Record<string, unknown>): Promise<unknown> {
     debug('connect: %O', maskSensitiveData(creds))
     this.creds = creds
-    if (this.conn) {
+    if (this.conn != null) {
       this.conn.end()
     }
     this.conn = new SSH()
@@ -72,7 +72,7 @@ export default class SSHConnection extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.setupConnectionHandlers(resolve, reject)
       try {
-        this.conn!.connect(sshConfig as unknown as ConnectConfig)
+        this.conn?.connect(sshConfig as unknown as ConnectConfig)
       } catch (err: unknown) {
         reject(
           new SSHConnectionError(`Connection failed: ${(err as { message?: string }).message}`)
@@ -87,18 +87,18 @@ export default class SSHConnection extends EventEmitter {
   ): void {
     let isResolved = false
 
-    this.conn!.on('ready', () => {
-      const host = String((this.creds as Record<string, unknown> | null)?.['host'] ?? '')
+    this.conn?.on('ready', () => {
+      const host = String((this.creds)?.['host'] ?? '')
       debug(`connect: ready: ${host}`)
       isResolved = true
       resolve(this.conn)
     })
-    this.conn!.on('error', (err: unknown) => {
+    this.conn?.on('error', (err: unknown) => {
       const e = err as { message?: string; code?: string; level?: string }
       // Intentionally use `||` so empty strings fall back to meaningful alternatives
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      const errorMessage = e.message || e.code || String(err) || 'Unknown error'
-      if (!isResolved) {
+       
+      const errorMessage = e.message ?? e.code ?? String(err)
+      if (isResolved === false) {
         isResolved = true
         const sshError = new SSHConnectionError(errorMessage)
         // Preserve original error properties for error type detection
@@ -106,14 +106,14 @@ export default class SSHConnection extends EventEmitter {
         reject(sshError)
       }
     })
-    this.conn!.on('close', (hadError?: boolean) => {
+    this.conn?.on('close', (hadError?: boolean) => {
       debug(`connect: close: hadError=${hadError}, isResolved=${isResolved}`)
-      if (!isResolved) {
+      if (isResolved === false) {
         isResolved = true
         reject(new SSHConnectionError('SSH authentication failed - connection closed'))
       }
     })
-    this.conn!.on('keyboard-interactive', (name, instructions, instructionsLang, prompts) => {
+    this.conn?.on('keyboard-interactive', (name, instructions, instructionsLang, prompts) => {
       this.emit('keyboard-interactive', { name, instructions, instructionsLang, prompts })
     })
   }
@@ -135,14 +135,14 @@ export default class SSHConnection extends EventEmitter {
       width: options.width,
       height: options.height,
     }
-    const envOptions = envVars ? { ['env']: this.getEnvironment(envVars) } : undefined
+    const envOptions = envVars != null ? { ['env']: this.getEnvironment(envVars) } : undefined
     debug(`shell: Creating shell with PTY options:`, ptyOptions, 'and env options:', envOptions)
     return new Promise((resolve, reject) => {
-      this.conn!.shell(
+      this.conn?.shell(
         ptyOptions as unknown as object,
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
-          if (err) {
+          if (err != null) {
             reject(err)
           } else {
             this.stream = stream as unknown as EventEmitter
@@ -166,10 +166,10 @@ export default class SSHConnection extends EventEmitter {
     envVars?: Record<string, string>
   ): Promise<unknown> {
     const execOptions: Record<string, unknown> = {}
-    if (envVars) {
+    if (envVars != null) {
       execOptions['env'] = this.getEnvironment(envVars)
     }
-    if (options.pty) {
+    if (options.pty === true) {
       execOptions['pty'] = {
         term: options.term,
         rows: options.rows,
@@ -180,11 +180,11 @@ export default class SSHConnection extends EventEmitter {
     }
     debug('exec: Executing command with options:', command, execOptions)
     return new Promise((resolve, reject) => {
-      this.conn!.exec(
+      this.conn?.exec(
         command,
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
-          if (err) {
+          if (err != null) {
             reject(err)
           } else {
             this.stream = stream as unknown as EventEmitter
@@ -196,17 +196,17 @@ export default class SSHConnection extends EventEmitter {
   }
 
   resizeTerminal(rows: number, cols: number): void {
-    if (this.stream && typeof this.stream.setWindow === 'function') {
+    if (this.stream != null && typeof this.stream.setWindow === 'function') {
       this.stream.setWindow(rows, cols)
     }
   }
 
   end(): void {
-    if (this.stream) {
-      this.stream.end && this.stream.end()
+    if (this.stream != null) {
+      this.stream.end?.()
       this.stream = null
     }
-    if (this.conn) {
+    if (this.conn != null) {
       this.conn.end()
       this.conn = null
     }
@@ -214,7 +214,7 @@ export default class SSHConnection extends EventEmitter {
 
   private getEnvironment(envVars?: Record<string, unknown>): Record<string, string> {
     const base: Record<string, string> = {}
-    if (!envVars || typeof envVars !== 'object') {
+    if (envVars == null || typeof envVars !== 'object') {
       return base
     }
 
@@ -229,15 +229,15 @@ export default class SSHConnection extends EventEmitter {
           typeof k === 'string' &&
           isValidEnvKey(k) &&
           k.length <= ENV_LIMITS.MAX_KEY_LENGTH &&
-          (allow ? allow.has(k) : true) &&
+          (allow != null ? allow.has(k) : true) &&
           v != null &&
           isValidEnvValue(String(v)) &&
           String(v).length <= ENV_LIMITS.MAX_VALUE_LENGTH
       )
       .slice(0, ENV_LIMITS.MAX_PAIRS)
-      .map(([k, v]) => [k, String(v)]) as [string, string][]
+      .map(([k, v]) => [k, String(v)])
 
-    return Object.assign(base, Object.fromEntries(entries))
+    return Object.assign(base, Object.fromEntries(entries) as Record<string, string>)
   }
 
   private getSSHConfig(
@@ -258,13 +258,13 @@ export default class SSHConnection extends EventEmitter {
     const privateKey = (creds['privateKey'] as string | undefined) ?? undefined
     const passphrase = (creds['passphrase'] as string | undefined) ?? undefined
     const password = (creds['password'] as string | undefined) ?? undefined
-    if (privateKey && this.validatePrivateKey(privateKey)) {
+    if (privateKey != null && privateKey !== '' && this.validatePrivateKey(privateKey)) {
       ;(base as { privateKey?: string }).privateKey = privateKey
-      if (this.isEncryptedKey(privateKey) && passphrase) {
+      if (this.isEncryptedKey(privateKey) && passphrase != null && passphrase !== '') {
         ;(base as { passphrase?: string }).passphrase = passphrase
       }
     }
-    if (password) {
+    if (password != null && password !== '') {
       ;(base as { password?: string }).password = password
     }
     return base

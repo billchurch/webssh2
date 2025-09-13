@@ -21,7 +21,7 @@ export function configureSocketIO(
 
   io.use((socket, next) => {
     // @ts-expect-error socket.request.res is optional; express-session expects a Response-like object
-    sessionMiddleware(socket.request, socket.request.res ?? {}, next)
+    sessionMiddleware(socket.request, (socket.request.res ?? {}) as Parameters<typeof sessionMiddleware>[1], next)
   })
 
   debug('IO configured')

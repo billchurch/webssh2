@@ -4,8 +4,8 @@
 import { fileURLToPath } from 'url'
 import * as path from 'path'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const FILENAME = fileURLToPath(import.meta.url)
+const DIRNAME = path.dirname(FILENAME)
 
 export const MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid credentials format',
@@ -29,7 +29,7 @@ export const DEFAULTS = {
   IO_PING_INTERVAL_MS: 25_000,
   IO_PATH: '/ssh/socket.io',
   WEBSSH2_CLIENT_PATH: path.resolve(
-    __dirname,
+    DIRNAME,
     '..',
     'node_modules',
     'webssh2_client',

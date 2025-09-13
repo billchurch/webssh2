@@ -9,7 +9,7 @@ export function createNamespacedDebug(namespace: string): Debugger {
 
 export function logError(message: string, error?: Error): void {
   console.error(message)
-  if (error) {
+  if (error != null) {
     console.error(`ERROR: ${String(error)}`)
   }
 }

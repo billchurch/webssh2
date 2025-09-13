@@ -32,7 +32,7 @@ export function createAppAsync(appConfig: Config): {
     return { app, sessionMiddleware }
   } catch (err) {
     const message =
-      err && typeof err === 'object' && 'message' in (err as { message?: unknown })
+      err !== null && err !== undefined && typeof err === 'object' && 'message' in (err as { message?: unknown })
         ? String((err as { message?: unknown }).message)
         : String(err)
     throw new ConfigError(`${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${message}`)
@@ -55,7 +55,7 @@ export async function initializeServerAsync(): Promise<{
       getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean }
     }
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
-    socketHandler(io, appConfig, SSHConnection as unknown as SSHCtor)
+    socketHandler(io as Parameters<typeof socketHandler>[0], appConfig, SSHConnection as SSHCtor)
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
     return { server, io, app, config: appConfig }

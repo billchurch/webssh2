@@ -27,11 +27,11 @@ type ExtendedRequest = IncomingMessage & {
  * Basic Auth Provider - extracts credentials from session (set by routes)
  */
 export class BasicAuthProvider implements AuthProvider {
-  constructor(private req: ExtendedRequest) {}
+  constructor(private readonly req: ExtendedRequest) {}
 
   getCredentials(): Credentials | null {
     const session = this.req.session
-    if (!session?.usedBasicAuth || !session.sshCredentials) {
+    if (session?.usedBasicAuth !== true || session.sshCredentials == null) {
       return null
     }
 
@@ -42,7 +42,7 @@ export class BasicAuthProvider implements AuthProvider {
       username: creds.username ?? '',
       password: creds.password ?? '',
     }
-    if (creds.term) {
+    if (creds.term != null && creds.term !== '') {
       result.term = creds.term
     }
     return result
@@ -55,9 +55,9 @@ export class BasicAuthProvider implements AuthProvider {
   isAuthenticated(): boolean {
     const session = this.req.session
     debug(
-      `BasicAuthProvider.isAuthenticated() check: usedBasicAuth=${session?.usedBasicAuth}, hasCredentials=${!!session?.sshCredentials}`
+      `BasicAuthProvider.isAuthenticated() check: usedBasicAuth=${session?.usedBasicAuth}, hasCredentials=${Boolean(session?.sshCredentials)}`
     )
-    const result = !!(session?.usedBasicAuth && session.sshCredentials)
+    const result = Boolean(session?.usedBasicAuth === true && session.sshCredentials != null)
     debug(`BasicAuthProvider.isAuthenticated() result: ${result}`)
     return result
   }
@@ -67,11 +67,11 @@ export class BasicAuthProvider implements AuthProvider {
  * POST Auth Provider - extracts credentials from session (set by routes)
  */
 export class PostAuthProvider implements AuthProvider {
-  constructor(private req: ExtendedRequest) {}
+  constructor(private readonly req: ExtendedRequest) {}
 
   getCredentials(): Credentials | null {
     const session = this.req.session
-    if (session?.authMethod !== 'POST' || !session.sshCredentials) {
+    if (session?.authMethod !== 'POST' || session.sshCredentials == null) {
       return null
     }
 
@@ -82,7 +82,7 @@ export class PostAuthProvider implements AuthProvider {
       username: creds.username ?? '',
       password: creds.password ?? '',
     }
-    if (creds.term) {
+    if (creds.term != null && creds.term !== '') {
       result.term = creds.term
     }
     return result
@@ -93,7 +93,7 @@ export class PostAuthProvider implements AuthProvider {
   }
 
   isAuthenticated(): boolean {
-    return !!(this.req.session?.authMethod === 'POST' && this.req.session.sshCredentials)
+    return Boolean(this.req.session?.authMethod === 'POST' && this.req.session.sshCredentials != null)
   }
 }
 
@@ -128,7 +128,7 @@ export class UnifiedAuthPipeline {
   private provider: AuthProvider | null = null
 
   constructor(
-    private req: ExtendedRequest,
+    private readonly req: ExtendedRequest,
     _config: Config
   ) {
     this.detectAuthProvider()
@@ -139,14 +139,14 @@ export class UnifiedAuthPipeline {
    */
   private detectAuthProvider(): void {
     // Check for Basic Auth first (session-based)
-    if (this.req.session?.usedBasicAuth && this.req.session.sshCredentials) {
+    if (this.req.session?.usedBasicAuth === true && this.req.session.sshCredentials != null) {
       debug('Detected Basic Auth provider')
       this.provider = new BasicAuthProvider(this.req)
       return
     }
 
     // Check for POST Auth (session-based)
-    if (this.req.session?.authMethod === 'POST' && this.req.session.sshCredentials) {
+    if (this.req.session?.authMethod === 'POST' && this.req.session.sshCredentials != null) {
       debug('Detected POST Auth provider')
       this.provider = new PostAuthProvider(this.req)
       return
@@ -206,7 +206,7 @@ export class UnifiedAuthPipeline {
    */
   getMaskedCredentials(): unknown {
     const creds = this.getCredentials()
-    return creds ? maskSensitiveData(creds) : null
+    return creds != null ? maskSensitiveData(creds) : null
   }
 
   /**

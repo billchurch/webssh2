@@ -157,7 +157,7 @@ export function createRoutes(config: Config): Router {
     processAuthParameters(r.query, r.session)
     void handleConnection(
       req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
-      res as Response
+      res
     )
   })
 
@@ -175,7 +175,7 @@ export function createRoutes(config: Config): Router {
 
       // Get credentials from session (set by auth middleware)
       const sshCredentials = r.session.sshCredentials
-      if (!sshCredentials || !sshCredentials.username || !sshCredentials.password) {
+      if (sshCredentials?.username == null || sshCredentials.username === '' || sshCredentials.password == null || sshCredentials.password === '') {
         debug('Missing SSH credentials in session')
         res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
         res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
@@ -186,12 +186,12 @@ export function createRoutes(config: Config): Router {
       const validationResult = await validateSshCredentials(
         host,
         port,
-        sshCredentials.username as string,
-        sshCredentials.password as string,
+        sshCredentials.username,
+        sshCredentials.password,
         config
       )
 
-      if (!validationResult.success) {
+      if (validationResult.success === false) {
         debug(
           `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
         )
@@ -236,7 +236,7 @@ export function createRoutes(config: Config): Router {
       debug('/ssh/host/ SSH validation passed - serving client: ', sanitizedCredentials)
       void handleConnection(
         req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
-        res as Response,
+        res,
         { host }
       )
     } catch (err) {
@@ -246,7 +246,7 @@ export function createRoutes(config: Config): Router {
 
   router.get('/host/:host', auth, async (req: Request, res: Response): Promise<void> => {
     const r = req as ReqWithSession
-    debug(`router.get.host: /ssh/host/${String((req as Request).params['host'])} route`)
+    debug(`router.get.host: /ssh/host/${String((req).params['host'])} route`)
     try {
       const { host, port, term } = validateConnectionParams({
         hostParam: r.params['host'] as string,
@@ -257,7 +257,7 @@ export function createRoutes(config: Config): Router {
 
       // Get credentials from session (set by auth middleware)
       const sshCredentials = r.session.sshCredentials
-      if (!sshCredentials || !sshCredentials.username || !sshCredentials.password) {
+      if (sshCredentials?.username == null || sshCredentials.username === '' || sshCredentials.password == null || sshCredentials.password === '') {
         debug('Missing SSH credentials in session')
         res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
         res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
@@ -268,12 +268,12 @@ export function createRoutes(config: Config): Router {
       const validationResult = await validateSshCredentials(
         host,
         port,
-        sshCredentials.username as string,
-        sshCredentials.password as string,
+        sshCredentials.username,
+        sshCredentials.password,
         config
       )
 
-      if (!validationResult.success) {
+      if (validationResult.success === false) {
         debug(
           `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
         )
@@ -318,7 +318,7 @@ export function createRoutes(config: Config): Router {
       debug('/ssh/host/:host SSH validation passed - serving client: ', sanitizedCredentials)
       void handleConnection(
         req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
-        res as Response,
+        res,
         { host }
       )
     } catch (err) {
@@ -338,13 +338,13 @@ export function createRoutes(config: Config): Router {
 
       // Username and password are required in body
       const { username, password } = body
-      if (!username || !password) {
+      if (username == null || username === '' || password == null || password === '') {
         return void res.status(400).send('Missing required fields in body: username, password')
       }
 
       // Host can come from body or query params (body takes precedence)
       const host = (body['host'] ?? query['host'] ?? query['hostname']) as string | undefined
-      if (!host) {
+      if (host == null || host === '') {
         return void res.status(400).send('Missing required field: host (in body or query params)')
       }
 
@@ -365,7 +365,7 @@ export function createRoutes(config: Config): Router {
         username: username as string,
         password: password as string,
       }
-      if (term) {
+      if (term != null && term !== '') {
         r.session.sshCredentials.term = term
       }
 
@@ -414,8 +414,8 @@ export function createRoutes(config: Config): Router {
     const session = r.session as Record<string, unknown>
     Object.keys(session).forEach((key) => {
       if (key.startsWith('ssh') || key.includes('auth') || key.includes('cred')) {
-        // Use bracket notation to avoid object injection detection
-        delete session[key as keyof typeof session]
+        // Use Reflect.deleteProperty to safely delete properties
+        Reflect.deleteProperty(session, key)
       }
     })
 

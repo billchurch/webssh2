@@ -13,12 +13,12 @@ export function createAuthMiddleware(config: Config): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const r = req as Request & { session?: Record<string, unknown> }
     // Config-supplied credentials take precedence
-    if (config.user.name && (config.user.password || config.user.privateKey)) {
+    if (config.user.name != null && config.user.name !== '' && (config.user.password != null && config.user.password !== '' || config.user.privateKey != null && config.user.privateKey !== '')) {
       const creds: Record<string, unknown> = { username: config.user.name }
-      if (config.user.privateKey) {
+      if (config.user.privateKey != null && config.user.privateKey !== '') {
         creds['privateKey'] = config.user.privateKey
       }
-      if (config.user.password) {
+      if (config.user.password != null && config.user.password !== '') {
         creds['password'] = config.user.password
       }
       r.session['sshCredentials'] = creds
@@ -26,15 +26,16 @@ export function createAuthMiddleware(config: Config): RequestHandler {
       return next()
     }
 
-    const credentials = basicAuth(req)
-    if (!credentials) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const credentials = basicAuth(req) as { name?: string; pass?: string } | undefined
+    if (credentials == null) {
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
       return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
     }
     // session is expected to exist (session middleware precedes this)
     r.session['sshCredentials'] = {
       username: validator.escape(credentials.name ?? ''),
-      password: credentials.pass,
+      password: credentials.pass ?? '',
     }
     r.session['usedBasicAuth'] = true
     next()
@@ -59,7 +60,7 @@ export function createCookieMiddleware(): RequestHandler {
     const r = req as Request & { session?: Record<string, unknown> }
     const s = r.session as Record<string, unknown>
     const creds = s['sshCredentials'] as { host?: string; port?: number } | undefined
-    if (creds) {
+    if (creds != null) {
       const cookieData = { host: creds.host, port: creds.port }
       res.cookie(HTTP.COOKIE, JSON.stringify(cookieData), {
         httpOnly: false,
@@ -77,20 +78,23 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
       return next()
     }
 
-    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] && req.headers[DEFAULTS.SSO_HEADERS.PASSWORD]) {
+    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] != null && req.headers[DEFAULTS.SSO_HEADERS.PASSWORD] != null) {
       return next()
     }
 
-    const body = (req as Request & { body?: Record<string, unknown> }).body
-    if (body?.username && body?.password) {
+    const body = (req as Request & { body?: Record<string, unknown> }).body as Record<string, unknown> | undefined
+    if (body != null && body['username'] != null && body['username'] !== '' && body['password'] != null && body['password'] !== '') {
       return next()
     }
 
-    if (config.sso.enabled && config.user.name && config.user.password) {
+    if (config.sso.enabled && config.user.name != null && config.user.password != null) {
       const r = req as Request & { body?: Record<string, unknown> }
       r.body ??= {}
-      r.body.username = r.body.username ?? config.user.name
-      r.body.password = r.body.password ?? config.user.password
+      if (r.body != null) {
+        const body = r.body as Record<string, unknown>
+        body['username'] = (body['username'] as string | undefined) ?? config.user.name
+        body['password'] = (body['password'] as string | undefined) ?? config.user.password
+      }
       return next()
     }
 
@@ -105,15 +109,13 @@ export function createCSRFMiddleware(config: Config): RequestHandler {
     }
 
     if (config.sso.trustedProxies.length > 0) {
-      const clientIp = (req.ip ?? (req.connection as { remoteAddress?: string }).remoteAddress) as
-        | string
-        | undefined
-      if (clientIp && config.sso.trustedProxies.includes(clientIp)) {
+      const clientIp = (req.ip ?? (req.connection as { remoteAddress?: string }).remoteAddress)
+      if (clientIp != null && config.sso.trustedProxies.includes(clientIp)) {
         return next()
       }
     }
 
-    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] || req.headers[DEFAULTS.SSO_HEADERS.SESSION]) {
+    if (req.headers[DEFAULTS.SSO_HEADERS.USERNAME] != null || req.headers[DEFAULTS.SSO_HEADERS.SESSION] != null) {
       return next()
     }
 
@@ -122,9 +124,9 @@ export function createCSRFMiddleware(config: Config): RequestHandler {
         session?: Record<string, unknown>
         body?: Record<string, unknown>
       }
-      const token = (r.body?._csrf as unknown) ?? req.headers['x-csrf-token']
-      const sessionToken = (r.session as Record<string, unknown>)['csrfToken'] as unknown
-      if (!sessionToken || token !== sessionToken) {
+      const token = (r.body != null ? ((r.body as Record<string, unknown>)['_csrf'] as string | undefined) : undefined) ?? req.headers['x-csrf-token']
+      const sessionToken = (r.session as Record<string, unknown>)['csrfToken'] as string | undefined
+      if (sessionToken == null || token !== sessionToken) {
         return res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
       }
     }

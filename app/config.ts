@@ -95,16 +95,16 @@ const defaultConfig: Config = {
   },
 }
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const FILENAME = fileURLToPath(import.meta.url)
+const DIRNAME = dirname(FILENAME)
 
 function getConfigPath(): string {
   // Prefer project root config.json regardless of running from src or dist
-  const candidateA = path.join(__dirname, '..', 'config.json')
+  const candidateA = path.join(DIRNAME, '..', 'config.json')
   if (existsSync(candidateA)) {
     return candidateA
   }
-  const candidateB = path.join(__dirname, '..', '..', 'config.json')
+  const candidateB = path.join(DIRNAME, '..', '..', 'config.json')
   if (existsSync(candidateB)) {
     return candidateB
   }
@@ -113,7 +113,7 @@ function getConfigPath(): string {
 
 export async function loadConfigAsync(): Promise<Config> {
   const configPath = getConfigPath()
-  let config: Config = JSON.parse(JSON.stringify(defaultConfig))
+  let config: Config = JSON.parse(JSON.stringify(defaultConfig)) as Config
   try {
     await fs.access(configPath)
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is internal, not user input
@@ -156,7 +156,7 @@ let configInstance: Config | null = null
 let configLoadPromise: Promise<Config> | null = null
 
 export function getConfig(): Promise<Config> {
-  if (configInstance) {
+  if (configInstance != null) {
     return Promise.resolve(configInstance)
   }
   configLoadPromise ??= loadConfigAsync().then((cfg) => {
@@ -171,15 +171,15 @@ export function getConfig(): Promise<Config> {
   return configLoadPromise
 }
 
-export function getCorsConfig() {
+export function getCorsConfig(): { origin: string[]; methods: string[]; credentials: boolean } {
   const currentConfig = configInstance
-  if (!currentConfig) {
+  if (currentConfig == null) {
     throw new ConfigError('Configuration not loaded. Call getConfig() first.')
   }
   return { origin: currentConfig.http.origins, methods: ['GET', 'POST'], credentials: true }
 }
 
-export function resetConfigForTesting() {
+export function resetConfigForTesting(): void {
   configInstance = null
   configLoadPromise = null
   debug('Config instance reset for testing')

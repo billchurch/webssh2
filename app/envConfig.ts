@@ -7,7 +7,7 @@ const debug = createNamespacedDebug('envConfig')
 
 export type EnvValueType = 'string' | 'number' | 'boolean' | 'array' | 'preset'
 
-type Algorithms = {
+interface Algorithms {
   cipher: string[]
   kex: string[]
   hmac: string[]
@@ -39,7 +39,7 @@ const ALGORITHM_PRESETS: Record<string, Algorithms> = {
   },
 }
 
-export type EnvVarMap = { path: string; type: EnvValueType }
+export interface EnvVarMap { path: string; type: EnvValueType }
 
 const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   PORT: { path: 'listen.port', type: 'number' },
@@ -90,16 +90,16 @@ const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
 }
 
 function parseArrayValue(value: string): string[] {
-  if (!value) {
+  if (value === '') {
     return []
   }
   if (value.trim().startsWith('[') && value.trim().endsWith(']')) {
     try {
-      const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? parsed : []
+      const parsed = JSON.parse(value) as unknown
+      return Array.isArray(parsed) ? (parsed as string[]) : []
     } catch (err: unknown) {
       const e = err as { message?: string }
-      debug('Failed to parse JSON array, falling back to comma-separated: %s', e.message)
+      debug('Failed to parse JSON array, falling back to comma-separated: %s', e.message ?? 'Unknown error')
     }
   }
   return value
@@ -139,7 +139,7 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
   for (let i = 0; i < keys.length - 1; i += 1) {
     // Index based on known path segments
     // eslint-disable-next-line security/detect-object-injection
-    const key = keys[i]!
+    const key = keys[i] as string
     // Keys originate from static mapping (ENV_VAR_MAPPING), not user input
     // eslint-disable-next-line security/detect-object-injection
     const next = current[key]
@@ -151,7 +151,7 @@ function setNestedProperty(obj: Record<string, unknown>, path: string, value: un
     current = current[key] as Record<string, unknown>
   }
 
-  const last = keys[keys.length - 1]!
+  const last = keys[keys.length - 1] as string
   // Keys derive from static mapping, not user input
   // eslint-disable-next-line security/detect-object-injection
   current[last] = value
@@ -174,7 +174,7 @@ export function loadEnvironmentConfig(): Record<string, unknown> {
       )
       if (mapping.type === 'preset') {
         const preset = ALGORITHM_PRESETS[envValue.toLowerCase()]
-        if (preset) {
+        if (preset != null) {
           debug('Using SSH algorithm preset: %s', envValue)
           setNestedProperty(config, mapping.path, preset)
         } else {

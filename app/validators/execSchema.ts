@@ -8,7 +8,7 @@ export interface ExecPayload {
   timeoutMs?: number
 }
 
-export type JSONSchema = {
+export interface JSONSchema {
   type: 'object'
   properties: Record<string, unknown>
   required: string[]

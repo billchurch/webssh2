@@ -21,7 +21,7 @@ export const CSP_CONFIG: Record<string, string[]> = {
 
 export function generateCSPHeader(): string {
   return Object.entries(CSP_CONFIG)
-    .map(([directive, values]) => (values.length ? `${directive} ${values.join(' ')}` : directive))
+    .map(([directive, values]) => (values.length > 0 ? `${directive} ${values.join(' ')}` : directive))
     .join('; ')
 }
 
@@ -37,7 +37,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
 
 function generateCSPHeaderFromConfig(csp: Record<string, string[]>): string {
   return Object.entries(csp)
-    .map(([directive, values]) => (values.length ? `${directive} ${values.join(' ')}` : directive))
+    .map(([directive, values]) => (values.length > 0 ? `${directive} ${values.join(' ')}` : directive))
     .join('; ')
 }
 
@@ -46,7 +46,7 @@ export function createSecurityHeadersMiddleware(config: Partial<Config> = {}): R
     const headers = { ...SECURITY_HEADERS }
 
     const trusted = config.sso?.trustedProxies
-    if (config.sso?.enabled && Array.isArray(trusted) && trusted.length > 0) {
+    if (config.sso?.enabled === true && Array.isArray(trusted) && trusted.length > 0) {
       const cspConfig: Record<string, string[]> = { ...CSP_CONFIG }
       const fa = cspConfig['form-action'] as string[]
       if (!fa.includes('https:')) {
@@ -75,7 +75,7 @@ export function createCSPMiddleware(
     ...(customCSP as Record<string, string[]>),
   }
   const header = Object.entries(merged)
-    .map(([d, v]) => (v.length ? `${d} ${v.join(' ')}` : d))
+    .map(([d, v]) => (v.length > 0 ? `${d} ${v.join(' ')}` : d))
     .join('; ')
   return (req, res, next) => {
     res.setHeader(HEADERS.CONTENT_SECURITY_POLICY, header)

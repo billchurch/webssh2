@@ -15,7 +15,7 @@ import type { Config } from '../types/config.js'
 
 const debug = createNamespacedDebug('auth-utils')
 
-export type AuthSession = {
+export interface AuthSession {
   headerOverride?: { text?: unknown; background?: unknown; style?: unknown }
   sshCredentials?: {
     host?: string
@@ -60,28 +60,28 @@ export function processHeaderParameters(
   let styleVal: unknown
 
   if (isGet) {
-    const { header, headerBackground, headerStyle } = src as Record<string, unknown>
+    const { header, headerBackground, headerStyle } = src
     headerVal = header
     backgroundVal = headerBackground
     styleVal = headerStyle
-  } else if (source) {
-    headerVal = (source as Record<string, unknown>)['header.name']
-    backgroundVal = (source as Record<string, unknown>)['header.background']
-    const colorVal = (source as Record<string, unknown>)['header.color'] as string | undefined
-    styleVal = colorVal ? `color: ${colorVal}` : undefined
+  } else if (source != null) {
+    headerVal = (source)['header.name']
+    backgroundVal = (source)['header.background']
+    const colorVal = (source)['header.color'] as string | undefined
+    styleVal = colorVal != null && colorVal !== '' ? `color: ${colorVal}` : undefined
   }
 
-  if (headerVal || backgroundVal || styleVal) {
+  if (headerVal !== null && headerVal !== undefined || backgroundVal !== null && backgroundVal !== undefined || styleVal !== null && styleVal !== undefined) {
     session.headerOverride ??= {}
-    if (headerVal) {
+    if (headerVal !== null && headerVal !== undefined) {
       session.headerOverride.text = headerVal
       debug('Header text from %s: %s', isGet ? 'URL parameter' : 'POST', headerVal)
     }
-    if (backgroundVal) {
+    if (backgroundVal !== null && backgroundVal !== undefined) {
       session.headerOverride.background = backgroundVal
       debug('Header background from %s: %s', isGet ? 'URL parameter' : 'POST', backgroundVal)
     }
-    if (styleVal) {
+    if (styleVal !== null && styleVal !== undefined) {
       session.headerOverride.style = styleVal
       debug('Header style from %s: %s', isGet ? 'URL parameter' : 'POST', styleVal)
     }
@@ -96,8 +96,8 @@ export function processEnvironmentVariables(
   source: Record<string, unknown>,
   session: AuthSession
 ): void {
-  const envVars = parseEnvVars((source as Record<string, unknown>)['env'] as string | undefined)
-  if (envVars) {
+  const envVars = parseEnvVars((source)['env'] as string | undefined)
+  if (envVars != null) {
     session.envVars = envVars
     debug('Parsed environment variables: %O', envVars)
   }
@@ -113,18 +113,18 @@ export function setupSshCredentials(
   session.sshCredentials ??= {}
   session.sshCredentials.host = opts.host
   session.sshCredentials.port = opts.port
-  if (opts.username) {
+  if (opts.username != null && opts.username !== '') {
     session.sshCredentials.username = opts.username
   }
-  if (opts.password) {
+  if (opts.password != null && opts.password !== '') {
     session.sshCredentials.password = opts.password
   }
-  if (opts.term) {
+  if (opts.term !== null && opts.term !== undefined && opts.term !== '') {
     session.sshCredentials.term = opts.term
   }
   session.usedBasicAuth = true
 
-  const sanitized = maskSensitiveData(JSON.parse(JSON.stringify(session.sshCredentials))) as unknown
+  const sanitized = maskSensitiveData(JSON.parse(JSON.stringify(session.sshCredentials)))
   return sanitized
 }
 
@@ -138,10 +138,10 @@ export function processSessionRecordingParams(
   if (body['allowreplay'] === 'true' || body['allowreplay'] === true) {
     session.allowReplay = true
   }
-  if (body['mrhsession']) {
+  if (body['mrhsession'] !== null && body['mrhsession'] !== undefined) {
     session.mrhSession = body['mrhsession']
   }
-  if (body['readyTimeout']) {
+  if (body['readyTimeout'] !== null && body['readyTimeout'] !== undefined) {
     session.readyTimeout = parseInt(body['readyTimeout'] as string, 10)
   }
 }
@@ -158,18 +158,18 @@ export function validateConnectionParams(params: {
 }): { host: string; port: number; term: string | null } {
   let host: string
 
-  if (params.hostParam) {
+  if (params.hostParam != null && params.hostParam !== '') {
     host = getValidatedHost(params.hostParam)
-  } else if (params.host) {
+  } else if (params.host != null && params.host !== '') {
     host = getValidatedHost(params.host)
-  } else if (params.config?.ssh.host) {
+  } else if (params.config?.ssh.host != null && params.config.ssh.host !== '') {
     host = params.config.ssh.host
   } else {
     throw new Error('Host parameter required when default host not configured')
   }
 
   const port = getValidatedPort(params.port as string | undefined)
-  const term = validateSshTerm(params.sshterm as string | undefined)
+  const term = validateSshTerm(params.sshterm)
 
   return { host, port, term }
 }
@@ -191,10 +191,10 @@ export function extractPostCredentials(
   )
 
   const result: { username?: string; password?: string } = {}
-  if (username) {
+  if (username != null && username !== '') {
     result.username = username
   }
-  if (password) {
+  if (password != null && password !== '') {
     result.password = password
   }
   return result

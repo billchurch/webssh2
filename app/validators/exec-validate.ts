@@ -14,11 +14,11 @@ export interface ExecValidated {
 }
 
 export function validateExecPayload(payload: unknown): ExecValidated {
-  if (!payload || typeof payload !== 'object') {
+  if (payload === null || payload === undefined || typeof payload !== 'object') {
     throw new Error('payload must be an object')
   }
   const p = payload as Record<string, unknown>
-  if (typeof p['command'] !== 'string' || !String(p['command']).trim()) {
+  if (typeof p['command'] !== 'string' || String(p['command']).trim() === '') {
     throw new Error('command must be a non-empty string')
   }
   const out: ExecValidated = { command: String(p['command']).trim() }
