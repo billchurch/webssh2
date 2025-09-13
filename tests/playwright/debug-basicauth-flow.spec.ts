@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS, WEB_PORT } from './constants.js'
 
 test.describe('Basic Auth Event Flow Analysis', () => {
   test('map Basic Auth auto-connect event flow', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Basic Auth Event Flow Analysis', () => {
     console.log('')
     
     // Navigate with Basic Auth credentials embedded in URL
-    const basicAuthUrl = `http://${USERNAME}:${PASSWORD}@localhost:2222/ssh/host/${SSH_HOST}?port=${SSH_PORT}`
+    const basicAuthUrl = `http://${USERNAME}:${PASSWORD}@localhost:${WEB_PORT}/ssh/host/${SSH_HOST}?port=${SSH_PORT}`
     console.log('🔗 Navigating to Basic Auth URL:', basicAuthUrl.replace(PASSWORD, '****'))
     
     // Set debug before navigation
@@ -104,7 +104,7 @@ test.describe('Basic Auth Event Flow Analysis', () => {
     })
     
     // Basic Auth URL with additional parameters
-    const paramUrl = `http://${USERNAME}:${PASSWORD}@localhost:2222/ssh/host/${SSH_HOST}?port=${SSH_PORT}&sshterm=xterm-256color&rows=50&cols=120`
+    const paramUrl = `http://${USERNAME}:${PASSWORD}@localhost:${WEB_PORT}/ssh/host/${SSH_HOST}?port=${SSH_PORT}&sshterm=xterm-256color&rows=50&cols=120`
     console.log('🔗 Basic Auth with params:', paramUrl.replace(PASSWORD, '****'))
     
     await page.goto(paramUrl)

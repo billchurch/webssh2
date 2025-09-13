@@ -4,8 +4,8 @@
  */
 
 // Port configuration
-export const WEB_PORT = Number(process.env.E2E_WEB_PORT || 2222)
-export const SSH_PORT = Number(process.env.E2E_SSH_PORT || 2244)
+export const WEB_PORT = Number(process.env.E2E_WEB_PORT || 4444)
+export const SSH_PORT = Number(process.env.E2E_SSH_PORT || 4422)
 export const CLIENT_DEV_PORT = 3000
 
 // URL configuration
