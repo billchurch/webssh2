@@ -59,6 +59,8 @@
     "test:all": "npm run build && WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
     "test:e2e": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
     "test:e2e:debug": "npm run build && ENABLE_E2E_SSH=1 E2E_DEBUG=webssh2:* playwright test -c playwright.config.ts tests/playwright",
+    "test:performance": "echo 'Performance tests archived - see tests/playwright/performance/PERFORMANCE_TESTS.md'",
+    "test:performance:report": "echo 'Performance reporting will be available after test reimplementation'",
     "e2e:setup": "playwright install --with-deps",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",

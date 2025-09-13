@@ -17,10 +17,14 @@ tests/playwright/
 │   ├── debug-event-flow.spec.ts
 │   ├── debug-post-auth-flow.spec.ts
 │   └── debug-test.spec.js
+├── performance/                     # Performance tests (archived for migration)
+│   ├── PERFORMANCE_TESTS.md        # Performance test specifications
+│   ├── websocket-latency.test.js.archived
+│   └── websocket-performance.test.js.archived
 ├── e2e-term-size-replay.spec.ts    # Terminal size and replay tests
 ├── websocket-async-auth.test.js    # Async WebSocket authentication
 ├── websocket-auth.test.js          # WebSocket authentication scenarios
-└── websocket-performance.test.js   # Performance and stability tests
+└── websocket-basic.test.js         # Basic WebSocket functionality
 ```
 
 ## Running Tests
@@ -97,12 +101,18 @@ Tests are configured in `playwright.config.ts`:
 - Replay functionality
 - Command execution
 
-### Performance Tests
+### Performance Tests (Archived)
 
-- Large data transfer
+Performance tests have been temporarily archived during the TypeScript migration.
+See `performance/PERFORMANCE_TESTS.md` for detailed specifications and future implementation plans.
+
+Key test categories:
+- Connection establishment latency
+- Large data transfer handling
 - Rapid command execution
 - Long-term connection stability
-- Special character handling
+- Terminal resize performance
+- Concurrent connection scaling
 
 ### Debug Tests (in `debug/` directory)
 

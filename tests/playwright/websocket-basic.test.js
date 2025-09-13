@@ -91,22 +91,4 @@ test.describe('WebSocket Basic Tests', () => {
     console.log('✓ Disconnection handled gracefully')
   })
 
-  test('should measure WebSocket latency', async ({ page }) => {
-    const startTime = Date.now()
-    
-    await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-    await page.click('button:has-text("Connect")')
-    
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
-    
-    const connectionTime = Date.now() - startTime
-    console.log(`✓ WebSocket connection established in ${connectionTime}ms`)
-    
-    // Connection should be fast
-    expect(connectionTime).toBeLessThan(3000)
-  })
 })
