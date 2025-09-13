@@ -3,6 +3,7 @@
 
 import type { EventEmitter } from 'events'
 import { createNamespacedDebug } from '../logger.js'
+import { extractErrorMessage } from '../utils/error-handling.js'
 import type SSHConnection from '../ssh.js'
 import { validateExecPayload } from '../validators/exec-validate.js'
 
@@ -48,7 +49,7 @@ export async function executeCommand(
       stream,
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = extractErrorMessage(error)
     debug('Command execution failed:', errorMessage)
     
     return {
@@ -75,7 +76,7 @@ export function parseExecPayload(payload: unknown): {
       data: validated,
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Invalid payload'
+    const errorMessage = extractErrorMessage(error, 'Invalid payload')
     return {
       valid: false,
       error: errorMessage,

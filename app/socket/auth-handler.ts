@@ -4,6 +4,7 @@
 import type { Socket } from 'socket.io'
 import { createNamespacedDebug } from '../logger.js'
 import { isValidCredentials, maskSensitiveData } from '../utils.js'
+import { extractErrorMessage } from '../utils/error-handling.js'
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'
 import SSHConnection from '../ssh.js'
@@ -49,7 +50,7 @@ export async function handleSocketAuth(
       ssh,
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = extractErrorMessage(error)
     debug('SSH connection failed:', errorMessage)
     
     return {

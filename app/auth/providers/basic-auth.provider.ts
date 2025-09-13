@@ -4,6 +4,7 @@
 import type { IncomingMessage } from 'node:http'
 import { createNamespacedDebug } from '../../logger.js'
 import type { Credentials } from '../../validation/credentials.js'
+import { buildCredentials } from '../../utils/credential-builder.js'
 import type { AuthSession } from '../auth-utils.js'
 import type { AuthProvider, AuthMethod } from './auth-provider.interface.js'
 
@@ -27,17 +28,7 @@ export class BasicAuthProvider implements AuthProvider {
       return null
     }
 
-    const creds = session.sshCredentials
-    const result: Credentials = {
-      host: creds.host ?? '',
-      port: creds.port ?? 22,
-      username: creds.username ?? '',
-      password: creds.password ?? '',
-    }
-    if (creds.term != null && creds.term !== '') {
-      result.term = creds.term
-    }
-    return result
+    return buildCredentials(session.sshCredentials)
   }
 
   getAuthMethod(): AuthMethod {
