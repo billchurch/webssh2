@@ -65,6 +65,8 @@ export function getStatusCodeForError(
       return 502 // Bad Gateway
     case 'timeout':
       return 504 // Gateway Timeout
+    case 'unknown':
+    case undefined:
     default:
       return 500 // Internal Server Error
   }
@@ -92,7 +94,7 @@ export function formatErrorResponse(
     error: baseMessages[errorType ?? 'unknown'],
   }
   
-  if (errorMessage) {
+  if (errorMessage != null && errorMessage !== '') {
     result.details = errorMessage
   }
   

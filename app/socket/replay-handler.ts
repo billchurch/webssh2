@@ -1,7 +1,6 @@
 // app/socket/replay-handler.ts
 // Credential replay handler for WebSocket connections
 
-import type { Socket } from 'socket.io'
 import { createNamespacedDebug } from '../logger.js'
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'
@@ -31,12 +30,12 @@ export function isReplayAllowed(
     return false
   }
   
-  if (!session.allowReplay) {
+  if (session.allowReplay !== true) {
     debug('Replay not allowed for session')
     return false
   }
   
-  if (!session.sshCredentials) {
+  if (session.sshCredentials == null) {
     debug('No credentials to replay')
     return false
   }
@@ -53,7 +52,7 @@ export function isReplayAllowed(
 export function getReplayCredentials(
   session: ReplaySession
 ): Partial<Credentials> | null {
-  if (!session.sshCredentials) {
+  if (session.sshCredentials == null) {
     return null
   }
   

@@ -36,7 +36,7 @@ export function validateRouteParams(params: RouteParams): ValidationResult {
   
   // Validate host
   const hostInput = params.hostParam ?? params.host
-  if (!hostInput) {
+  if (hostInput == null || hostInput === '') {
     errors.push('Host is required')
     return { valid: false, errors }
   }
@@ -53,11 +53,11 @@ export function validateRouteParams(params: RouteParams): ValidationResult {
   let username: string | undefined
   let password: string | undefined
   
-  if (params.username) {
+  if (params.username != null && params.username !== '') {
     username = validator.escape(params.username)
   }
   
-  if (params.password) {
+  if (params.password != null && params.password !== '') {
     password = params.password // Don't escape passwords
   }
   
@@ -73,10 +73,10 @@ export function validateRouteParams(params: RouteParams): ValidationResult {
     term,
   }
   
-  if (username) {
+  if (username != null && username !== '') {
     data.username = username
   }
-  if (password) {
+  if (password != null && password !== '') {
     data.password = password
   }
   
@@ -108,16 +108,16 @@ export function extractQueryParams(
     env?: string
   } = {}
   
-  if (query['port']) {
+  if (query['port'] != null) {
     result.port = query['port'] as string
   }
-  if (query['sshterm']) {
+  if (query['sshterm'] != null) {
     result.sshterm = query['sshterm'] as string
   }
-  if (query['readyTimeout']) {
+  if (query['readyTimeout'] != null) {
     result.readyTimeout = query['readyTimeout'] as string
   }
-  if (query['env']) {
+  if (query['env'] != null) {
     result.env = query['env'] as string
   }
   
@@ -151,25 +151,25 @@ export function extractBodyParams(
     sshterm?: string
   } = {}
   
-  if (body['username']) {
+  if (body['username'] != null) {
     result.username = body['username'] as string
   }
-  if (body['password']) {
+  if (body['password'] != null) {
     result.password = body['password'] as string
   }
-  if (body['privateKey']) {
+  if (body['privateKey'] != null) {
     result.privateKey = body['privateKey'] as string
   }
-  if (body['passphrase']) {
+  if (body['passphrase'] != null) {
     result.passphrase = body['passphrase'] as string
   }
-  if (body['host']) {
+  if (body['host'] != null) {
     result.host = body['host'] as string
   }
-  if (body['port']) {
+  if (body['port'] != null) {
     result.port = body['port'] as string
   }
-  if (body['sshterm']) {
+  if (body['sshterm'] != null) {
     result.sshterm = body['sshterm'] as string
   }
   

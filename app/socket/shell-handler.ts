@@ -3,7 +3,6 @@
 
 import type { EventEmitter } from 'events'
 import { createNamespacedDebug } from '../logger.js'
-import { normalizeDim } from '../utils.js'
 import type SSHConnection from '../ssh.js'
 import { DEFAULTS } from '../constants.js'
 
