@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { DEFAULTS } from '../../app/constants'
+import { DEFAULTS } from '../../app/constants.js'
 import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
