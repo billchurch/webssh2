@@ -40,9 +40,8 @@ test('router registers expected paths and methods', () => {
   assert.ok(byPath['/host/:host'].includes('get'))
 
   // POST endpoints
-  assert.ok(byPath['/host/'].includes('post'), 'POST /host/ present')
-
-  assert.ok(byPath['/host/:host'].includes('post'), 'POST /host/:host present')
+  assert.ok(byPath['/'], 'POST / present')
+  assert.ok(byPath['/'].includes('post'))
 
   // Utility endpoints
   assert.ok(byPath['/clear-credentials'], 'GET /clear-credentials present')
