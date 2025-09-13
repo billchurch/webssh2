@@ -4,6 +4,7 @@ import { EventEmitter } from 'events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError } from './errors.js'
 import { maskSensitiveData, isValidEnvKey, isValidEnvValue } from './utils.js'
+import { validatePrivateKey, isEncryptedKey } from './validation/ssh.js'
 import { ENV_LIMITS } from './constants.js'
 import type { Config } from './types/config.js'
 
@@ -32,33 +33,6 @@ export default class SSHConnection extends EventEmitter {
     this.creds = null
   }
 
-  validatePrivateKey(key: string): boolean {
-    if (key === '' || typeof key !== 'string') {
-      return false
-    }
-    const trimmedKey = key.trim()
-    const keyPatterns = [
-      /^-----BEGIN OPENSSH PRIVATE KEY-----[\s\S]*-----END OPENSSH PRIVATE KEY-----$/,
-      /^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]*-----END (?:RSA )?PRIVATE KEY-----$/,
-      /^-----BEGIN EC PRIVATE KEY-----[\s\S]*-----END EC PRIVATE KEY-----$/,
-      /^-----BEGIN DSA PRIVATE KEY-----[\s\S]*-----END DSA PRIVATE KEY-----$/,
-      /^-----BEGIN PRIVATE KEY-----[\s\S]*-----END PRIVATE KEY-----$/,
-      /^-----BEGIN ENCRYPTED PRIVATE KEY-----[\s\S]*-----END ENCRYPTED PRIVATE KEY-----$/,
-    ]
-    return keyPatterns.some((pattern) => pattern.test(trimmedKey))
-  }
-
-  isEncryptedKey(key: string): boolean {
-    if (key === '' || typeof key !== 'string') {
-      return false
-    }
-    return (
-      key.includes('Proc-Type: 4,ENCRYPTED') ||
-      key.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----') ||
-      (key.includes('-----BEGIN OPENSSH PRIVATE KEY-----') &&
-        (key.includes('bcrypt') || key.includes('aes') || key.includes('3des')))
-    )
-  }
 
   connect(creds: Record<string, unknown>): Promise<unknown> {
     debug('connect: %O', maskSensitiveData(creds))
@@ -258,9 +232,9 @@ export default class SSHConnection extends EventEmitter {
     const privateKey = (creds['privateKey'] as string | undefined) ?? undefined
     const passphrase = (creds['passphrase'] as string | undefined) ?? undefined
     const password = (creds['password'] as string | undefined) ?? undefined
-    if (privateKey != null && privateKey !== '' && this.validatePrivateKey(privateKey)) {
+    if (privateKey != null && privateKey !== '' && validatePrivateKey(privateKey)) {
       ;(base as { privateKey?: string }).privateKey = privateKey
-      if (this.isEncryptedKey(privateKey) && passphrase != null && passphrase !== '') {
+      if (isEncryptedKey(privateKey) && passphrase != null && passphrase !== '') {
         ;(base as { passphrase?: string }).passphrase = passphrase
       }
     }

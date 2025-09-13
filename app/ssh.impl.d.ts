@@ -3,8 +3,6 @@ import type { Config } from './types/config.js'
 declare module './ssh.impl.js' {
   export default class SSHConnection {
     constructor(config: Config)
-    validatePrivateKey(key: string): boolean
-    isEncryptedKey(key: string): boolean
     connect(creds: unknown): Promise<unknown>
     shell(
       options: {
