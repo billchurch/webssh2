@@ -3,9 +3,9 @@ import type { ConnectConfig, ClientChannel } from 'ssh2'
 import { EventEmitter } from 'events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError } from './errors.js'
-import { maskSensitiveData, isValidEnvKey, isValidEnvValue } from './utils.js'
+import { maskSensitiveData } from './utils.js'
 import { validatePrivateKey, isEncryptedKey } from './validation/ssh.js'
-import { ENV_LIMITS } from './constants.js'
+import { filterEnvironmentVariables } from './connection/environment-filter.js'
 import type { Config } from './types/config.js'
 
 const debug = createNamespacedDebug('ssh')
@@ -187,31 +187,7 @@ export default class SSHConnection extends EventEmitter {
   }
 
   private getEnvironment(envVars?: Record<string, unknown>): Record<string, string> {
-    const base: Record<string, string> = {}
-    if (envVars == null || typeof envVars !== 'object') {
-      return base
-    }
-
-    const allow = Array.isArray(this.config.ssh.envAllowlist)
-      ? new Set(this.config.ssh.envAllowlist)
-      : null
-
-    // Transform safely: entries → filter → map → fromEntries
-    const entries = Object.entries(envVars)
-      .filter(
-        ([k, v]) =>
-          typeof k === 'string' &&
-          isValidEnvKey(k) &&
-          k.length <= ENV_LIMITS.MAX_KEY_LENGTH &&
-          (allow != null ? allow.has(k) : true) &&
-          v != null &&
-          isValidEnvValue(String(v)) &&
-          String(v).length <= ENV_LIMITS.MAX_VALUE_LENGTH
-      )
-      .slice(0, ENV_LIMITS.MAX_PAIRS)
-      .map(([k, v]) => [k, String(v)])
-
-    return Object.assign(base, Object.fromEntries(entries) as Record<string, string>)
+    return filterEnvironmentVariables(envVars, this.config.ssh.envAllowlist)
   }
 
   private getSSHConfig(

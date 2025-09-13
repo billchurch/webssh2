@@ -14,8 +14,8 @@ import {
   validateConnectionParams,
   type AuthSession,
 } from './auth/auth-utils.js'
-import SSHConnection from './ssh.js'
 import { getValidatedPort, validateSshTerm, maskSensitiveData } from './utils.js'
+import { validateSshCredentials } from './connection/index.js'
 
 const debug = createNamespacedDebug('routes')
 
@@ -43,14 +43,6 @@ type ReqWithSession = Request & {
   headers: Record<string, unknown>
 }
 
-/**
- * Result of SSH credential validation
- */
-interface SshValidationResult {
-  success: boolean
-  errorType?: 'auth' | 'network' | 'timeout' | 'unknown'
-  errorMessage?: string
-}
 
 /**
  * Validate SSH credentials by attempting a connection
@@ -65,86 +57,6 @@ interface SshValidationResult {
  * This is standard HTTP Basic Auth behavior. URLs with embedded credentials take absolute precedence
  * over HTTP auth dialogs. Users must manually remove bad credentials from the URL to re-authenticate.
  */
-async function validateSshCredentials(
-  host: string,
-  port: number,
-  username: string,
-  password: string,
-  config: Config
-): Promise<SshValidationResult> {
-  debug(`Validating SSH credentials for ${username}@${host}:${port}`)
-
-  const ssh = new SSHConnection(config)
-  try {
-    await ssh.connect({
-      host,
-      port,
-      username,
-      password,
-    })
-
-    // If we get here, authentication succeeded
-    ssh.end() // Clean up the connection
-    debug(`SSH validation successful for ${username}@${host}:${port}`)
-    return { success: true }
-  } catch (error) {
-    const err = error as Error & { code?: string; level?: string }
-    debug(`SSH validation failed for ${username}@${host}:${port}:`, err.message)
-    debug(`Error details - code: ${err.code}, level: ${err.level}`)
-
-    // Analyze error type
-    let errorType: SshValidationResult['errorType'] = 'unknown'
-
-    // Network/connectivity errors
-    if (
-      err.code === 'ENOTFOUND' ||
-      err.message.includes('getaddrinfo') ||
-      err.message.includes('ENOTFOUND')
-    ) {
-      errorType = 'network' // DNS resolution failed
-    } else if (
-      err.code === 'ECONNREFUSED' ||
-      err.message.includes('Connection refused') ||
-      err.message.includes('ECONNREFUSED')
-    ) {
-      errorType = 'network' // Port closed or service not running
-    } else if (
-      err.code === 'ETIMEDOUT' ||
-      err.code === 'ECONNRESET' ||
-      err.message.includes('timeout') ||
-      err.message.includes('ETIMEDOUT')
-    ) {
-      errorType = 'timeout' // Connection timeout
-    } else if (
-      err.code === 'ENETUNREACH' ||
-      err.message.includes('Network is unreachable') ||
-      err.message.includes('ENETUNREACH')
-    ) {
-      errorType = 'network' // Network unreachable
-    }
-    // Authentication errors
-    else if (
-      err.level === 'client-authentication' ||
-      err.message.includes('Authentication failed') ||
-      err.message.includes('All configured authentication methods failed') ||
-      err.message.includes('permission denied') ||
-      err.message.toLowerCase().includes('password')
-    ) {
-      errorType = 'auth'
-    }
-
-    debug(`Determined error type: ${errorType}`)
-
-    return {
-      success: false,
-      errorType,
-      errorMessage: err.message,
-    }
-  } finally {
-    // Ensure connection is always cleaned up
-    ssh.end()
-  }
-}
 
 export function createRoutes(config: Config): Router {
   const router = express.Router()
