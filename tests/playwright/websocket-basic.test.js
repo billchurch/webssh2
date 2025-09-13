@@ -32,7 +32,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Wait for terminal to be ready
     await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('$') || terminalContent.includes('#')
     }, { timeout: 10000 })
     
@@ -52,7 +52,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Wait for prompt
     await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('$') || terminalContent.includes('#')
     }, { timeout: 10000 })
     
@@ -63,7 +63,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Wait for output
     await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('WebSocket Test OK')
     }, { timeout: 5000 })
     
@@ -83,7 +83,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Wait for prompt
     await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('$') || terminalContent.includes('#')
     }, { timeout: 10000 })
     
@@ -94,7 +94,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Should show disconnected state
     await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('DISCONNECTED') || 
              terminalContent.includes('Connection closed') ||
              terminalContent.includes('closed')

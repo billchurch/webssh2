@@ -5,13 +5,20 @@ import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
 import { modifyHtml } from './utils.js'
 import { getClientPublicPath } from './client-path.js'
+import type { AuthSession } from './auth/auth-utils.js'
 
 const debug = createNamespacedDebug('connectionHandler')
 
-type Sess = {
-  usedBasicAuth?: boolean
-  sshCredentials?: { host?: string; port?: number; term?: string | null }
-  [k: string]: unknown
+type Sess = AuthSession
+
+/**
+ * Check if session has any type of credentials (Basic Auth or POST)
+ */
+function hasSessionCredentials(session: Sess): boolean {
+  return !!(
+    session.sshCredentials &&
+    (session.usedBasicAuth === true || session.authMethod === 'POST')
+  )
 }
 
 async function sendClient(filePath: string, config: unknown, res: Response): Promise<void> {
@@ -42,20 +49,20 @@ export default async function handleConnection(
   }
 
   const s = (req as Request & { session: Sess }).session
-  if (s.usedBasicAuth && s.sshCredentials) {
+  if (hasSessionCredentials(s)) {
     tempConfig['ssh'] = {
-      host: s.sshCredentials.host,
-      port: s.sshCredentials.port,
-      ...(s.sshCredentials.term && { sshterm: s.sshCredentials.term }),
+      host: s.sshCredentials!.host,
+      port: s.sshCredentials!.port,
+      ...(s.sshCredentials!.term && { sshterm: s.sshCredentials!.term }),
     }
     tempConfig['autoConnect'] = true
-    const sshCfg = tempConfig['ssh'] as
-      | { host?: string; port?: number; sshterm?: string }
-      | undefined
+
+    const authType = s.usedBasicAuth ? 'Basic Auth' : (s.authMethod ?? 'Unknown')
     debug('Session-only auth enabled - credentials remain server-side: %O', {
-      host: sshCfg?.host,
-      port: sshCfg?.port,
-      term: sshCfg?.sshterm,
+      authType,
+      host: s.sshCredentials!.host,
+      port: s.sshCredentials!.port,
+      term: s.sshCredentials!.term,
       sessionId: req.sessionID,
       hasCredentials: true,
     })

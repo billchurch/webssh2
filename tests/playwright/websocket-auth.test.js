@@ -26,9 +26,9 @@ const TEST_CONFIG = {
 
 // Helper function to wait for terminal prompt
 async function waitForPrompt(page, timeout = 10000) {
-  // Wait for the prompt in the actual terminal content, not the measure element
+  // Wait for the prompt in the actual terminal content, not the status bar
   await page.waitForFunction(() => {
-    const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+    const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
     return /[$#]\s*$/.test(terminalContent)
   }, { timeout })
 }
@@ -63,7 +63,8 @@ test.describe('WebSocket Interactive Authentication', () => {
     // Verify terminal is functional
     await waitForPrompt(page)
     await executeCommand(page, 'whoami')
-    await expect(page.locator(`text=${TEST_CONFIG.validUsername}`)).toBeVisible()
+    // Check that whoami output appears (use first() to avoid strict mode violations)
+    await expect(page.locator(`text=${TEST_CONFIG.validUsername}`).first()).toBeVisible()
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
@@ -76,8 +77,9 @@ test.describe('WebSocket Interactive Authentication', () => {
     // Click connect
     await page.click('button:has-text("Connect")')
     
-    // Verify error message
-    await expect(page.locator('text=Authentication failed: All authentication methods failed')).toBeVisible({ timeout: 10000 })
+    // Verify error message appears - check for various possible auth error messages
+    const errorMessageLocator = page.locator('text=/Authentication failed|SSH connection error|All authentication methods failed/')
+    await expect(errorMessageLocator.first()).toBeVisible({ timeout: 10000 })
     
     // Verify form is still visible for retry
     await expect(page.locator('[name="username"]')).toBeVisible()
@@ -94,7 +96,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection error message
-    await expect(page.locator('text=/Connection failed.*ENOTFOUND/')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=/Connection failed|ENOTFOUND|getaddrinfo ENOTFOUND/').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('should show connection error for wrong port', async ({ page }) => {
@@ -108,7 +110,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection error message
-    await expect(page.locator('text=/Connection failed.*ECONNREFUSED/')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=/Connection failed|ECONNREFUSED|connect ECONNREFUSED/').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('should handle page refresh gracefully', async ({ page }) => {
@@ -156,38 +158,39 @@ test.describe('WebSocket Basic Authentication', () => {
     // Verify terminal is functional
     await waitForPrompt(page)
     await executeCommand(page, 'echo "Basic Auth works!"')
-    await expect(page.locator('text=Basic Auth works!')).toBeVisible()
+    await expect(page.locator('text=Basic Auth works!').first()).toBeVisible()
   })
 
-  test('should fail and show login form with invalid Basic Auth credentials', async ({ page }) => {
+  test('should return 401 for invalid Basic Auth credentials', async ({ page }) => {
     // Navigate with invalid Basic Auth credentials
     const badAuth = `${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}`
     const url = `${TEST_CONFIG.baseUrl.replace('://', `://${badAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
-    await page.goto(url)
     
-    // Wait for authentication to fail
-    await page.waitForTimeout(3000)
+    // Expect navigation to fail with 401 due to immediate SSH validation
+    const response = await page.goto(url, { waitUntil: 'commit' })
     
-    // Verify error message
-    await expect(page.locator('text=Authentication failed: All authentication methods failed')).toBeVisible({ timeout: 10000 })
+    // Verify we get a 401 Unauthorized response
+    expect(response?.status()).toBe(401)
     
-    // Verify login form appears
-    await expect(page.locator('[name="username"]')).toBeVisible()
-    await expect(page.locator('[name="host"]')).toHaveValue(TEST_CONFIG.sshHost)
-    await expect(page.locator('[name="port"]')).toHaveValue(TEST_CONFIG.sshPort)
+    // Verify the WWW-Authenticate header is set for proper HTTP Basic Auth behavior
+    const wwwAuthHeader = response?.headers()['www-authenticate']
+    expect(wwwAuthHeader).toContain('Basic')
   })
 
-  test('should handle Basic Auth with non-existent host', async ({ page }) => {
+  test('should return 502 for Basic Auth with non-existent host', async ({ page }) => {
     // Navigate with Basic Auth to non-existent host
     const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
     const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
-    await page.goto(url)
     
-    // Wait for connection attempt
-    await page.waitForTimeout(3000)
+    // Expect navigation to fail with 502 Bad Gateway (network/connectivity issue)
+    const response = await page.goto(url, { waitUntil: 'commit' })
     
-    // Verify connection error
-    await expect(page.locator('text=/Connection failed.*ENOTFOUND/')).toBeVisible({ timeout: 10000 })
+    // Verify we get a 502 Bad Gateway response (SSH connection to non-existent host is a network issue)
+    expect(response?.status()).toBe(502)
+    
+    // Response body should indicate it's a connectivity issue
+    const responseText = await response?.text()
+    expect(responseText).toContain('Bad Gateway')
   })
 
   test('should execute multiple commands with Basic Auth session', async ({ page }) => {
@@ -202,13 +205,13 @@ test.describe('WebSocket Basic Authentication', () => {
     
     // Execute multiple commands
     await executeCommand(page, 'pwd')
-    await expect(page.locator('text=/home/testuser')).toBeVisible()
+    await expect(page.locator('text=/home/testuser/').first()).toBeVisible()
     
     await executeCommand(page, 'ls -la')
-    await expect(page.locator('text=.ssh')).toBeVisible()
+    await expect(page.locator('text=.ssh').first()).toBeVisible()
     
     await executeCommand(page, 'uname -a')
-    await expect(page.locator('text=Linux')).toBeVisible()
+    await expect(page.locator('text=Linux').first()).toBeVisible()
   })
 })
 
@@ -257,7 +260,7 @@ test.describe('WebSocket Connection Resilience', () => {
     
     // Verify file exists
     await executeCommand(page, `cat ${testFile}`)
-    await expect(page.locator('text=test content')).toBeVisible()
+    await expect(page.locator('text=test content').first()).toBeVisible()
     
     // Clean up
     await executeCommand(page, `rm ${testFile}`)

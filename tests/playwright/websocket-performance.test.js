@@ -34,7 +34,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: 10000 }
@@ -57,7 +57,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: 10000 }
@@ -86,8 +86,8 @@ test.describe('WebSocket Performance', () => {
     await expect(page.locator('text=test1')).toBeVisible()
     await expect(page.locator('text=test2')).toBeVisible()
     await expect(page.locator('text=test3')).toBeVisible()
-    await expect(page.locator('text=/home/testuser')).toBeVisible()
-    await expect(page.locator('text=testuser')).toBeVisible()
+    await expect(page.locator('text=/home/testuser/').first()).toBeVisible()
+    await expect(page.locator('text=testuser').first()).toBeVisible()
     await expect(page.locator('text=final')).toBeVisible()
   })
 
@@ -96,7 +96,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: 10000 }
@@ -149,7 +149,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: 10000 }
@@ -176,7 +176,7 @@ test.describe('WebSocket Performance', () => {
 
     // Verify output contains expected text
     await expect(page.locator('text=Hello World!')).toBeVisible()
-    await expect(page.locator('text=/home/testuser')).toBeVisible() // $HOME expansion
+    await expect(page.locator('text=/home/testuser/').first()).toBeVisible() // $HOME expansion
   })
 
   test('should maintain stable connection over time', async ({ page }) => {
@@ -186,7 +186,7 @@ test.describe('WebSocket Performance', () => {
     // Wait for the prompt in the actual terminal content, not the measure element
     await page.waitForFunction(
       () => {
-        const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+        const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
         return /[$#]\s*$/.test(terminalContent)
       },
       { timeout: 10000 }

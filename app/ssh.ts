@@ -85,17 +85,33 @@ export default class SSHConnection extends EventEmitter {
     resolve: (v: unknown) => void,
     reject: (e: unknown) => void
   ): void {
+    let isResolved = false
+
     this.conn!.on('ready', () => {
       const host = String((this.creds as Record<string, unknown> | null)?.['host'] ?? '')
       debug(`connect: ready: ${host}`)
+      isResolved = true
       resolve(this.conn)
     })
     this.conn!.on('error', (err: unknown) => {
-      const e = err as { message?: string; code?: string }
+      const e = err as { message?: string; code?: string; level?: string }
       // Intentionally use `||` so empty strings fall back to meaningful alternatives
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       const errorMessage = e.message || e.code || String(err) || 'Unknown error'
-      reject(new SSHConnectionError(errorMessage))
+      if (!isResolved) {
+        isResolved = true
+        const sshError = new SSHConnectionError(errorMessage)
+        // Preserve original error properties for error type detection
+        Object.assign(sshError, { code: e.code, level: e.level })
+        reject(sshError)
+      }
+    })
+    this.conn!.on('close', (hadError?: boolean) => {
+      debug(`connect: close: hadError=${hadError}, isResolved=${isResolved}`)
+      if (!isResolved) {
+        isResolved = true
+        reject(new SSHConnectionError('SSH authentication failed - connection closed'))
+      }
     })
     this.conn!.on('keyboard-interactive', (name, instructions, instructionsLang, prompts) => {
       this.emit('keyboard-interactive', { name, instructions, instructionsLang, prompts })

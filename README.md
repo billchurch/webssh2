@@ -16,6 +16,7 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as 
 - [Docker Setup](#docker-setup)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Authentication](./DOCS/AUTHENTICATION.md)
 - [Environment Variables via URL](#environment-variables-via-url)
 - [E2E SSH Test](./DOCS/E2E-SSH.md)
 - [Features](#features)
@@ -523,13 +524,99 @@ WebSSH2 provides two main routes:
 
     <img width="341" alt="image" src="https://github.com/user-attachments/assets/bf60f5ba-7221-4177-8d64-946907aed5ff">
 
-### 2. `/ssh/host/:host`
+### 2. `/ssh/host/:host` - HTTP Basic Auth ⚠️ **DEPRECATED**
+
+> **⚠️ DEPRECATION NOTICE:** HTTP Basic Authentication is deprecated and may be removed in a future version. We strongly recommend using **HTTP POST Authentication** for SSO integration and modern authentication workflows.
 
 - **URL:** `http(s)://your-webssh2-server/ssh/host/:host`
-- **Authentication:** HTTP Basic Auth
+- **Authentication:** HTTP Basic Auth (deprecated)
+- **Status:** Still functional but deprecated
 - **Features:**
   - Quick connections to specific hosts
   - Optional `port` parameter (e.g., `?port=2222`)
+- **Migration:** Use POST authentication for new implementations
+
+#### HTTP Basic Auth Behavior
+
+WebSSH2 validates SSH credentials immediately upon receiving HTTP Basic Auth credentials. This ensures only valid SSH credentials proceed to the terminal interface.
+
+**Expected Behavior:**
+
+1. **URL without embedded credentials** (`http://localhost:2222/ssh/host/example.com`):
+   - Invalid credentials → 401 Unauthorized → Browser shows auth dialog → User can enter correct credentials → Success
+
+2. **URL with embedded credentials** (`http://user:pass@localhost:2222/ssh/host/example.com`):
+   - Browser always uses URL credentials, never prompts for new ones
+   - Invalid credentials → 401 Unauthorized → No re-authentication possible
+   - User must manually remove bad credentials from URL to retry
+
+**Important:** This is standard HTTP Basic Auth behavior. URLs with embedded credentials take absolute precedence over HTTP auth dialogs. For interactive re-authentication on failure, use URLs without embedded credentials.
+
+### 3. `/ssh` - HTTP POST Auth ✅ **RECOMMENDED**
+
+- **URL:** `http(s)://your-webssh2-server/ssh`
+- **Method:** HTTP POST with credentials in request body
+- **Status:** Recommended for SSO and modern authentication
+- **Features:**
+  - Clean separation from Basic Auth routes
+  - Better integration with SSO systems (SAML, OAuth)
+  - More secure credential handling
+  - Compatible with CSRF protection
+  - Supports complex authentication flows
+  - Better suited for programmatic access
+  - No session credential conflicts
+
+**Example POST Request:**
+```bash
+curl -X POST "http://localhost:2222/ssh" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "myuser",
+    "password": "mypass",
+    "host": "example.com",
+    "port": 22,
+    "sshterm": "xterm-256color"
+  }'
+```
+
+**SSO Integration Example:**
+```javascript
+// SAML/OAuth → WebSSH2 integration
+const response = await fetch('/ssh', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${ssoToken}`
+  },
+  body: JSON.stringify({
+    username: await getSSOUsername(ssoToken),
+    password: await getSSOPassword(ssoToken),
+    host: targetHost,
+    port: 22
+  })
+});
+```
+
+### 4. Utility Routes
+
+#### `/ssh/reauth` - Clear Session and Re-authenticate
+- **URL:** `http(s)://your-webssh2-server/ssh/reauth`
+- **Method:** GET
+- **Purpose:** Clears all stored session credentials and redirects to fresh login
+- **Use Case:** When credentials are stuck or you need to force re-authentication
+- **Behavior:** Clears session and redirects to `/ssh`
+
+#### `/ssh/clear-credentials` - Clear Credentials Only
+- **URL:** `http(s)://your-webssh2-server/ssh/clear-credentials`
+- **Method:** GET
+- **Purpose:** Clears stored SSH credentials from session
+- **Response:** 200 OK with "Credentials cleared"
+
+#### `/ssh/force-reconnect` - Force Re-authentication
+- **URL:** `http(s)://your-webssh2-server/ssh/force-reconnect`
+- **Method:** GET
+- **Purpose:** Clears credentials and returns 401 Unauthorized
+- **Response:** 401 Unauthorized with "Authentication required"
 
 ## Client-Side Module
 

@@ -194,20 +194,21 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
     await expect(page.locator('text=/Authentication.*required|401|Unauthorized|Authentication.*failed|Invalid.*credentials/i')).toBeVisible({ timeout: 10000 })
   })
 
-  test('should handle async connection error with Basic Auth to non-existent host', async ({
+  test('should return 502 for async connection with Basic Auth to non-existent host', async ({
     page,
   }) => {
     // Navigate with Basic Auth to non-existent host
     const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
-    await page.goto(url)
+    
+    // Expect immediate 502 due to network connectivity failure (non-existent host)
+    const response = await page.goto(url, { waitUntil: 'commit' })
 
-    // Wait for async connection attempt
-    await page.waitForTimeout(2000)
-
-    // Verify async error handling
-    await expect(page.locator('text=/Connection failed|Error|ENOTFOUND/')).toBeVisible({
-      timeout: 15000,
-    })
+    // Verify we get a 502 Bad Gateway response
+    expect(response?.status()).toBe(502)
+    
+    // Response body should indicate it's a connectivity issue
+    const responseText = await response?.text()
+    expect(responseText).toContain('Bad Gateway')
   })
 
   test('should handle multiple async commands with Basic Auth session', async ({ page }) => {
