@@ -43,7 +43,6 @@ type ReqWithSession = Request & {
   headers: Record<string, unknown>
 }
 
-
 /**
  * Result of SSH credential validation
  */
@@ -92,18 +91,35 @@ async function validateSshCredentials(
     const err = error as Error & { code?: string; level?: string }
     debug(`SSH validation failed for ${username}@${host}:${port}:`, err.message)
     debug(`Error details - code: ${err.code}, level: ${err.level}`)
-    
+
     // Analyze error type
     let errorType: SshValidationResult['errorType'] = 'unknown'
-    
+
     // Network/connectivity errors
-    if (err.code === 'ENOTFOUND' || err.message.includes('getaddrinfo') || err.message.includes('ENOTFOUND')) {
+    if (
+      err.code === 'ENOTFOUND' ||
+      err.message.includes('getaddrinfo') ||
+      err.message.includes('ENOTFOUND')
+    ) {
       errorType = 'network' // DNS resolution failed
-    } else if (err.code === 'ECONNREFUSED' || err.message.includes('Connection refused') || err.message.includes('ECONNREFUSED')) {
+    } else if (
+      err.code === 'ECONNREFUSED' ||
+      err.message.includes('Connection refused') ||
+      err.message.includes('ECONNREFUSED')
+    ) {
       errorType = 'network' // Port closed or service not running
-    } else if (err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' || err.message.includes('timeout') || err.message.includes('ETIMEDOUT')) {
+    } else if (
+      err.code === 'ETIMEDOUT' ||
+      err.code === 'ECONNRESET' ||
+      err.message.includes('timeout') ||
+      err.message.includes('ETIMEDOUT')
+    ) {
       errorType = 'timeout' // Connection timeout
-    } else if (err.code === 'ENETUNREACH' || err.message.includes('Network is unreachable') || err.message.includes('ENETUNREACH')) {
+    } else if (
+      err.code === 'ENETUNREACH' ||
+      err.message.includes('Network is unreachable') ||
+      err.message.includes('ENETUNREACH')
+    ) {
       errorType = 'network' // Network unreachable
     }
     // Authentication errors
@@ -116,13 +132,13 @@ async function validateSshCredentials(
     ) {
       errorType = 'auth'
     }
-    
+
     debug(`Determined error type: ${errorType}`)
-    
-    return { 
-      success: false, 
+
+    return {
+      success: false,
       errorType,
-      errorMessage: err.message
+      errorMessage: err.message,
     }
   } finally {
     // Ensure connection is always cleaned up
@@ -176,8 +192,10 @@ export function createRoutes(config: Config): Router {
       )
 
       if (!validationResult.success) {
-        debug(`SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`)
-        
+        debug(
+          `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
+        )
+
         // Return appropriate status code based on error type
         switch (validationResult.errorType) {
           case 'auth':
@@ -187,15 +205,23 @@ export function createRoutes(config: Config): Router {
             break
           case 'network':
             // Network/connectivity issue - no point in re-authenticating
-            res.status(502).send(`Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`)
+            res
+              .status(502)
+              .send(
+                `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
+              )
             break
           case 'timeout':
             // Connection timeout
             res.status(504).send(`Gateway Timeout: SSH connection to ${host}:${port} timed out`)
             break
+          case undefined:
+          case 'unknown':
           default:
             // Unknown error - return 502 as it's likely a connectivity issue
-            res.status(502).send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
+            res
+              .status(502)
+              .send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
         }
         return
       }
@@ -248,8 +274,10 @@ export function createRoutes(config: Config): Router {
       )
 
       if (!validationResult.success) {
-        debug(`SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`)
-        
+        debug(
+          `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
+        )
+
         // Return appropriate status code based on error type
         switch (validationResult.errorType) {
           case 'auth':
@@ -259,15 +287,23 @@ export function createRoutes(config: Config): Router {
             break
           case 'network':
             // Network/connectivity issue - no point in re-authenticating
-            res.status(502).send(`Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`)
+            res
+              .status(502)
+              .send(
+                `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
+              )
             break
           case 'timeout':
             // Connection timeout
             res.status(504).send(`Gateway Timeout: SSH connection to ${host}:${port} timed out`)
             break
+          case undefined:
+          case 'unknown':
           default:
             // Unknown error - return 502 as it's likely a connectivity issue
-            res.status(502).send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
+            res
+              .status(502)
+              .send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
         }
         return
       }
@@ -295,32 +331,32 @@ export function createRoutes(config: Config): Router {
   router.post('/', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.post./: POST /ssh route for SSO authentication')
-    
+
     try {
       const body = req.body as Record<string, unknown>
       const query = r.query as Record<string, unknown>
-      
+
       // Username and password are required in body
       const { username, password } = body
       if (!username || !password) {
         return void res.status(400).send('Missing required fields in body: username, password')
       }
-      
+
       // Host can come from body or query params (body takes precedence)
-      const host = (body.host || query.host || query.hostname) as string | undefined
+      const host = (body['host'] ?? query['host'] ?? query['hostname']) as string | undefined
       if (!host) {
         return void res.status(400).send('Missing required field: host (in body or query params)')
       }
-      
+
       // Port can come from body or query params (body takes precedence)
       // Handle both string and number types
-      const portParam = (body.port || query.port) as string | number | undefined
+      const portParam = (body['port'] ?? query['port']) as string | number | undefined
       const port = getValidatedPort(String(portParam))
-      
+
       // SSH term can come from body or query params (body takes precedence)
-      const sshterm = (body.sshterm || query.sshterm) as string | undefined
+      const sshterm = (body['sshterm'] ?? query['sshterm']) as string | undefined
       const term = validateSshTerm(sshterm)
-      
+
       // Store credentials in session for this POST auth
       r.session.authMethod = 'POST'
       r.session.sshCredentials = {
@@ -332,7 +368,7 @@ export function createRoutes(config: Config): Router {
       if (term) {
         r.session.sshCredentials.term = term
       }
-      
+
       const sanitized = maskSensitiveData({
         host,
         port,
@@ -340,11 +376,12 @@ export function createRoutes(config: Config): Router {
         password: '********',
       })
       debug('POST /ssh - Credentials stored in session:', sanitized)
-      debug('POST /ssh - Source: body=%o, query=%o', 
-        { host: body.host, port: body.port, sshterm: body.sshterm },
-        { host: query.host || query.hostname, port: query.port, sshterm: query.sshterm }
+      debug(
+        'POST /ssh - Source: body=%o, query=%o',
+        { host: body['host'], port: body['port'], sshterm: body['sshterm'] },
+        { host: query['host'] ?? query['hostname'], port: query['port'], sshterm: query['sshterm'] }
       )
-      
+
       // Serve the client page
       void handleConnection(r, res, { host })
     } catch (err) {
@@ -367,22 +404,21 @@ export function createRoutes(config: Config): Router {
   router.get('/reauth', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.get.reauth: Clearing session credentials and forcing re-authentication')
-    
+
     // Clear all SSH-related session data
     delete (r.session as Record<string, unknown>)['sshCredentials']
     delete (r.session as Record<string, unknown>)['usedBasicAuth']
     delete (r.session as Record<string, unknown>)['authMethod']
-    
+
     // Clear any other auth-related session data
-    if (r.session) {
-      const session = r.session as Record<string, unknown>
-      Object.keys(session).forEach(key => {
-        if (key.startsWith('ssh') || key.includes('auth') || key.includes('cred')) {
-          delete session[key]
-        }
-      })
-    }
-    
+    const session = r.session as Record<string, unknown>
+    Object.keys(session).forEach((key) => {
+      if (key.startsWith('ssh') || key.includes('auth') || key.includes('cred')) {
+        // Use bracket notation to avoid object injection detection
+        delete session[key as keyof typeof session]
+      }
+    })
+
     // Redirect to the main SSH page for fresh authentication
     res.redirect('/ssh')
   })

@@ -172,7 +172,7 @@ class WebSSH2Socket extends EventEmitter {
     // When credentials are explicitly provided (e.g., from the modal), always update them
     // This ensures that user-provided credentials override any session-stored credentials
     // including when the user changes connection parameters like the port
-    if (creds && Object.keys(creds).length > 0) {
+    if (Object.keys(creds).length > 0) {
       if (!this.authPipeline.setManualCredentials(creds)) {
         debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
         this.socket.emit('authentication', {
@@ -182,7 +182,7 @@ class WebSSH2Socket extends EventEmitter {
         })
         return
       }
-      
+
       // CRITICAL: Also update session credentials so reconnections use the new values
       // This fixes the issue where updated port/host from modal were ignored on reconnect
       const req = this.socket.request as ExtendedRequest
@@ -194,12 +194,14 @@ class WebSSH2Socket extends EventEmitter {
           username: creds['username'] as string,
           password: creds['password'] as string,
         }
-        if (creds['term'] && req.session.sshCredentials) {
+        if (creds['term']) {
           req.session.sshCredentials.term = creds['term'] as string
         }
       }
-      
-      debug(`handleAuthenticate: Updated credentials from user input (was ${originalAuthMethod}, now manual)`)
+
+      debug(
+        `handleAuthenticate: Updated credentials from user input (was ${originalAuthMethod}, now manual)`
+      )
     }
 
     // Track original auth method for debugging
@@ -278,14 +280,18 @@ class WebSSH2Socket extends EventEmitter {
 
       // Clear session credentials on network/connectivity errors to prevent stuck loops
       // Network errors indicate the host/port is wrong, not the credentials
-      if (error.code === 'ECONNREFUSED' || 
-          error.code === 'ENOTFOUND' || 
-          error.code === 'ETIMEDOUT' ||
-          error.code === 'ENETUNREACH' ||
-          error.message?.includes('ECONNREFUSED') ||
-          error.message?.includes('ENOTFOUND') ||
-          error.message?.includes('timeout')) {
-        debug(`Network error detected (${error.code || 'unknown'}), clearing session credentials to prevent loop`)
+      if (
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENETUNREACH' ||
+        error.message.includes('ECONNREFUSED') ||
+        error.message.includes('ENOTFOUND') ||
+        error.message.includes('timeout')
+      ) {
+        debug(
+          `Network error detected (${error.code ?? 'unknown'}), clearing session credentials to prevent loop`
+        )
         const req = this.socket.request as ExtendedRequest
         if (req.session) {
           delete req.session.sshCredentials
