@@ -51,21 +51,3 @@ export function getAlgorithmPreset(presetName: string): Algorithms | undefined {
   return ALGORITHM_PRESETS[presetName.toLowerCase()]
 }
 
-/**
- * Get all available preset names
- * @returns Array of preset names
- * @pure
- */
-export function getPresetNames(): string[] {
-  return Object.keys(ALGORITHM_PRESETS)
-}
-
-/**
- * Validate if a preset name exists
- * @param presetName - Name to validate
- * @returns true if preset exists
- * @pure
- */
-export function isValidPreset(presetName: string): boolean {
-  return presetName.toLowerCase() in ALGORITHM_PRESETS
-}

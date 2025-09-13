@@ -4,8 +4,6 @@
 export {
   ALGORITHM_PRESETS,
   getAlgorithmPreset,
-  getPresetNames,
-  isValidPreset,
   type Algorithms,
 } from './algorithm-presets.js'
 
