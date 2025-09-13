@@ -7,94 +7,22 @@ import { isValidCredentials, maskSensitiveData } from '../utils.js'
 import type { Credentials } from '../utils.js'
 import type { Config } from '../types/config.js'
 import type { AuthSession } from './auth-utils.js'
+import {
+  type AuthProvider,
+  type AuthMethod,
+  BasicAuthProvider,
+  PostAuthProvider,
+} from './providers/index.js'
 
 const debug = createNamespacedDebug('auth-pipeline')
 
-export type AuthMethod = 'manual' | 'basicAuth' | 'post'
-
-export interface AuthProvider {
-  getCredentials(): Credentials | null
-  getAuthMethod(): AuthMethod
-  isAuthenticated(): boolean
-}
+// Re-export types for backward compatibility
+export type { AuthMethod, AuthProvider } from './providers/index.js'
+export { BasicAuthProvider, PostAuthProvider } from './providers/index.js'
 
 type ExtendedRequest = IncomingMessage & {
   session?: AuthSession
   res?: unknown
-}
-
-/**
- * Basic Auth Provider - extracts credentials from session (set by routes)
- */
-export class BasicAuthProvider implements AuthProvider {
-  constructor(private readonly req: ExtendedRequest) {}
-
-  getCredentials(): Credentials | null {
-    const session = this.req.session
-    if (session?.usedBasicAuth !== true || session.sshCredentials == null) {
-      return null
-    }
-
-    const creds = session.sshCredentials
-    const result: Credentials = {
-      host: creds.host ?? '',
-      port: creds.port ?? 22,
-      username: creds.username ?? '',
-      password: creds.password ?? '',
-    }
-    if (creds.term != null && creds.term !== '') {
-      result.term = creds.term
-    }
-    return result
-  }
-
-  getAuthMethod(): AuthMethod {
-    return 'basicAuth'
-  }
-
-  isAuthenticated(): boolean {
-    const session = this.req.session
-    debug(
-      `BasicAuthProvider.isAuthenticated() check: usedBasicAuth=${session?.usedBasicAuth}, hasCredentials=${Boolean(session?.sshCredentials)}`
-    )
-    const result = Boolean(session?.usedBasicAuth === true && session.sshCredentials != null)
-    debug(`BasicAuthProvider.isAuthenticated() result: ${result}`)
-    return result
-  }
-}
-
-/**
- * POST Auth Provider - extracts credentials from session (set by routes)
- */
-export class PostAuthProvider implements AuthProvider {
-  constructor(private readonly req: ExtendedRequest) {}
-
-  getCredentials(): Credentials | null {
-    const session = this.req.session
-    if (session?.authMethod !== 'POST' || session.sshCredentials == null) {
-      return null
-    }
-
-    const creds = session.sshCredentials
-    const result: Credentials = {
-      host: creds.host ?? '',
-      port: creds.port ?? 22,
-      username: creds.username ?? '',
-      password: creds.password ?? '',
-    }
-    if (creds.term != null && creds.term !== '') {
-      result.term = creds.term
-    }
-    return result
-  }
-
-  getAuthMethod(): AuthMethod {
-    return 'post'
-  }
-
-  isAuthenticated(): boolean {
-    return Boolean(this.req.session?.authMethod === 'POST' && this.req.session.sshCredentials != null)
-  }
 }
 
 /**
