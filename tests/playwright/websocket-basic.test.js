@@ -5,14 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-
-const TEST_CONFIG = {
-  baseUrl: 'http://localhost:2222',
-  sshHost: 'localhost',
-  sshPort: '2244',
-  validUsername: 'testuser',
-  validPassword: 'testpassword'
-}
+import { TEST_CONFIG, TIMEOUTS, TERMINAL, waitForPrompt, executeCommand } from './constants.js'
 
 test.describe('WebSocket Basic Tests', () => {
   test('should establish WebSocket connection', async ({ page }) => {
@@ -28,13 +21,10 @@ test.describe('WebSocket Basic Tests', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection status
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     
     // Wait for terminal to be ready
-    await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
-      return terminalContent.includes('$') || terminalContent.includes('#')
-    }, { timeout: 10000 })
+    await waitForPrompt(page)
     
     console.log('✓ WebSocket connection established successfully')
   })
@@ -48,24 +38,19 @@ test.describe('WebSocket Basic Tests', () => {
     await page.fill('[name="username"]', TEST_CONFIG.validUsername)
     await page.fill('[name="password"]', TEST_CONFIG.validPassword)
     await page.click('button:has-text("Connect")')
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     
     // Wait for prompt
-    await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
-      return terminalContent.includes('$') || terminalContent.includes('#')
-    }, { timeout: 10000 })
+    await waitForPrompt(page)
     
     // Execute a simple command
-    const terminal = page.getByRole('textbox', { name: 'Terminal input' })
-    await terminal.fill('echo "WebSocket Test OK"')
-    await terminal.press('Enter')
+    await executeCommand(page, 'echo "WebSocket Test OK"')
     
     // Wait for output
     await page.waitForFunction(() => {
       const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('WebSocket Test OK')
-    }, { timeout: 5000 })
+    }, { timeout: TIMEOUTS.CONNECTION })
     
     console.log('✓ Command execution over WebSocket successful')
   })
@@ -79,18 +64,13 @@ test.describe('WebSocket Basic Tests', () => {
     await page.fill('[name="username"]', TEST_CONFIG.validUsername)
     await page.fill('[name="password"]', TEST_CONFIG.validPassword)
     await page.click('button:has-text("Connect")')
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     
     // Wait for prompt
-    await page.waitForFunction(() => {
-      const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
-      return terminalContent.includes('$') || terminalContent.includes('#')
-    }, { timeout: 10000 })
+    await waitForPrompt(page)
     
     // Type exit command
-    const terminal = page.getByRole('textbox', { name: 'Terminal input' })
-    await terminal.fill('exit')
-    await terminal.press('Enter')
+    await executeCommand(page, 'exit')
     
     // Should show disconnected state
     await page.waitForFunction(() => {
@@ -98,7 +78,7 @@ test.describe('WebSocket Basic Tests', () => {
       return terminalContent.includes('DISCONNECTED') || 
              terminalContent.includes('Connection closed') ||
              terminalContent.includes('closed')
-    }, { timeout: 5000 })
+    }, { timeout: TIMEOUTS.CONNECTION })
     
     console.log('✓ Disconnection handled gracefully')
   })
@@ -113,7 +93,7 @@ test.describe('WebSocket Basic Tests', () => {
     await page.fill('[name="password"]', TEST_CONFIG.validPassword)
     await page.click('button:has-text("Connect")')
     
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     
     const connectionTime = Date.now() - startTime
     console.log(`✓ WebSocket connection established in ${connectionTime}ms`)

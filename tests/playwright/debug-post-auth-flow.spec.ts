@@ -6,14 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-
-const TEST_CONFIG = {
-  baseUrl: 'http://localhost:2222',
-  sshHost: 'localhost',
-  sshPort: '2244',
-  validUsername: 'testuser',
-  validPassword: 'testpassword',
-}
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
 test.describe('HTTP POST Authentication Flow Analysis', () => {
   test('map HTTP POST form-based authentication flow', async ({ page }) => {
@@ -31,12 +24,12 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     })
     
     console.log('=== STARTING HTTP POST AUTH FLOW CAPTURE ===')
-    console.log('Server URL:', TEST_CONFIG.baseUrl)
+    console.log('Server URL:', BASE_URL)
     console.log('Testing HTTP POST to /ssh/host/:host')
     console.log('')
     
     // First navigate to set up debug logging
-    await page.goto(TEST_CONFIG.baseUrl + '/ssh')
+    await page.goto(BASE_URL + '/ssh')
     await page.evaluate(() => {
       localStorage.debug = '*'
       localStorage.setItem('debug', 'webssh2*,socket.io*')
@@ -49,11 +42,11 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
       <head><title>WebSSH2 POST Auth Test</title></head>
       <body>
         <h2>WebSSH2 HTTP POST Authentication Test</h2>
-        <form id="postAuthForm" method="POST" action="${TEST_CONFIG.baseUrl}/ssh/host/${TEST_CONFIG.sshHost}">
-          <input type="text" name="username" value="${TEST_CONFIG.validUsername}">
-          <input type="password" name="password" value="${TEST_CONFIG.validPassword}">
-          <input type="hidden" name="host" value="${TEST_CONFIG.sshHost}">
-          <input type="hidden" name="port" value="${TEST_CONFIG.sshPort}">
+        <form id="postAuthForm" method="POST" action="${BASE_URL}/ssh/host/${SSH_HOST}">
+          <input type="text" name="username" value="${USERNAME}">
+          <input type="password" name="password" value="${PASSWORD}">
+          <input type="hidden" name="host" value="${SSH_HOST}">
+          <input type="hidden" name="port" value="${SSH_PORT}">
           <input type="hidden" name="header.name" value="HTTP POST Test Server">
           <input type="hidden" name="header.background" value="blue">
           <input type="hidden" name="sshterm" value="xterm-256color">
@@ -81,15 +74,15 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     
     // Wait for form to auto-submit and redirect
     console.log('⏳ Waiting for form submission and redirect...')
-    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: 10000 })
+    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: TIMEOUTS.DEFAULT })
     console.log('✅ Redirected to WebSSH2 after POST')
     
     // Wait for connection to establish  
-    await page.waitForTimeout(3000)
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
     
     // Check for connection status
     try {
-      await page.waitForSelector('text=Connected', { timeout: 8000 })
+      await page.waitForSelector('text=Connected', { timeout: TIMEOUTS.ACTION })
       console.log('✅ HTTP POST authentication successful')
     } catch (e) {
       console.log('❌ HTTP POST authentication may have failed')
@@ -98,17 +91,17 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     // Execute a test command to verify functionality
     try {
       const terminal = page.locator('.xterm-helper-textarea')
-      if (await terminal.isVisible({ timeout: 3000 })) {
+      if (await terminal.isVisible({ timeout: TIMEOUTS.MEDIUM_WAIT })) {
         console.log('💻 Executing test command: echo "HTTP POST test successful"')
         await terminal.click()
         await page.keyboard.type('echo "HTTP POST test successful"')
         await page.keyboard.press('Enter')
-        await page.waitForTimeout(2000)
+        await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
         
         console.log('💻 Executing second command: whoami')
         await page.keyboard.type('whoami')
         await page.keyboard.press('Enter')
-        await page.waitForTimeout(2000)
+        await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
       console.log('⚠️ Terminal interaction failed:', e.message)
@@ -140,7 +133,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     console.log('=== HTTP POST WITH ADVANCED PARAMETERS ===')
     
     // Set up debug logging first
-    await page.goto(TEST_CONFIG.baseUrl + '/ssh')
+    await page.goto(BASE_URL + '/ssh')
     await page.evaluate(() => {
       localStorage.debug = 'webssh2*,socket.io*'
     })
@@ -152,11 +145,11 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
       <head><title>WebSSH2 Advanced POST Test</title></head>
       <body>
         <h2>WebSSH2 HTTP POST - Advanced Parameters</h2>
-        <form id="advancedPostForm" method="POST" action="${TEST_CONFIG.baseUrl}/ssh/host/${TEST_CONFIG.sshHost}">
-          <input type="text" name="username" value="${TEST_CONFIG.validUsername}">
-          <input type="password" name="password" value="${TEST_CONFIG.validPassword}">
-          <input type="hidden" name="host" value="${TEST_CONFIG.sshHost}">
-          <input type="hidden" name="port" value="${TEST_CONFIG.sshPort}">
+        <form id="advancedPostForm" method="POST" action="${BASE_URL}/ssh/host/${SSH_HOST}">
+          <input type="text" name="username" value="${USERNAME}">
+          <input type="password" name="password" value="${PASSWORD}">
+          <input type="hidden" name="host" value="${SSH_HOST}">
+          <input type="hidden" name="port" value="${SSH_PORT}">
           <input type="hidden" name="header.name" value="🏢 Production Database Server">
           <input type="hidden" name="header.background" value="red">
           <input type="hidden" name="header.color" value="white">
@@ -181,11 +174,11 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     console.log('📝 Created advanced HTTP POST form')
     
     // Wait for redirect and connection
-    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: 10000 })
-    await page.waitForTimeout(3000)
+    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: TIMEOUTS.DEFAULT })
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
     
     try {
-      await page.waitForSelector('text=Connected', { timeout: 8000 })
+      await page.waitForSelector('text=Connected', { timeout: TIMEOUTS.ACTION })
       console.log('✅ Advanced POST authentication successful')
       
       // Check if custom header is visible
@@ -196,12 +189,12 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
       
       // Test terminal with environment check
       const terminal = page.locator('.xterm-helper-textarea')
-      if (await terminal.isVisible({ timeout: 2000 })) {
+      if (await terminal.isVisible({ timeout: TIMEOUTS.MEDIUM_WAIT })) {
         console.log('💻 Testing TERM environment: echo $TERM')
         await terminal.click()
         await page.keyboard.type('echo $TERM')
         await page.keyboard.press('Enter')
-        await page.waitForTimeout(2000)
+        await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
       console.log('❌ Advanced POST authentication failed')

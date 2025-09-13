@@ -8,7 +8,7 @@ Using billchurch/ssh_test (alpine):
 
 ```bash
 docker run --rm -d \
-  -p 2244:22 \
+  -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \
   -e SSH_AUTHORIZED_KEYS="$(cat ./test-keys/*.pub 2>/dev/null || true)" \

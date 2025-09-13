@@ -6,20 +6,12 @@
  */
 
 import { test, expect } from '@playwright/test'
-
-const TEST_CONFIG = {
-  baseUrl: 'http://localhost:2222',
-  clientUrl: 'http://localhost:3000', // webssh2_client dev server
-  sshHost: 'localhost',
-  sshPort: '2244',
-  validUsername: 'testuser',
-  validPassword: 'testpassword',
-}
+import { BASE_URL, CLIENT_DEV_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
 test.describe('Event Flow Analysis', () => {
   test('map client-server event flow during authentication', async ({ page }) => {
     // Go directly to webssh2 server and enable debug logging there
-    await page.goto(TEST_CONFIG.baseUrl + '/ssh')
+    await page.goto(BASE_URL + '/ssh')
     
     // Set localStorage.debug to capture all debug messages on the webssh2 client
     await page.evaluate(() => {
@@ -43,29 +35,29 @@ test.describe('Event Flow Analysis', () => {
     
     // Reload to apply debug settings
     await page.reload()
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     
     console.log('=== STARTING EVENT FLOW CAPTURE ===')
-    console.log('Server URL:', TEST_CONFIG.baseUrl)
+    console.log('Server URL:', BASE_URL)
     console.log('Note: Server debug logs available in background process')
     console.log('')
     
     // Fill in SSH connection form
     console.log('🔧 Filling SSH connection form...')
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
+    await page.fill('[name="host"]', SSH_HOST)
+    await page.fill('[name="port"]', String(SSH_PORT))
+    await page.fill('[name="username"]', USERNAME)
+    await page.fill('[name="password"]', PASSWORD)
     
     console.log('🔘 Clicking Connect button')
     await page.click('button:has-text("Connect")')
     
     // Wait for connection to complete
-    await page.waitForTimeout(5000)
+    await page.waitForTimeout(TIMEOUTS.LONG_WAIT)
     
     // Check for connection status
     try {
-      await page.waitForSelector('text=Connected', { timeout: 8000 })
+      await page.waitForSelector('text=Connected', { timeout: TIMEOUTS.ACTION })
       console.log('✅ Connection established')
     } catch (e) {
       console.log('❌ Connection may have failed or timed out')
@@ -74,17 +66,17 @@ test.describe('Event Flow Analysis', () => {
     // Execute a simple command to see data flow
     try {
       const terminal = page.locator('.xterm-helper-textarea')
-      if (await terminal.isVisible({ timeout: 3000 })) {
+      if (await terminal.isVisible({ timeout: TIMEOUTS.MEDIUM_WAIT })) {
         console.log('💻 Executing test command: whoami')
         await terminal.click()
         await page.keyboard.type('whoami')
         await page.keyboard.press('Enter')
-        await page.waitForTimeout(2000)
+        await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
         
         console.log('💻 Executing second command: echo "Event flow test"')
         await page.keyboard.type('echo "Event flow test"')
         await page.keyboard.press('Enter')
-        await page.waitForTimeout(2000)
+        await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
       console.log('⚠️ Terminal interaction failed:', e.message)
@@ -108,23 +100,23 @@ test.describe('Event Flow Analysis', () => {
     console.log('Note: Run webssh2 server with DEBUG=webssh2:* for full server logs')
     
     // Connect to webssh2 server directly
-    await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
+    await page.goto(`${BASE_URL}/ssh`)
     
     // Fill form and connect
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
+    await page.fill('[name="host"]', SSH_HOST)
+    await page.fill('[name="port"]', String(SSH_PORT))
+    await page.fill('[name="username"]', USERNAME)
+    await page.fill('[name="password"]', PASSWORD)
     
     console.log('🔘 Initiating server connection')
     await page.click('button:has-text("Connect")')
     
     // Wait for connection
-    await page.waitForTimeout(3000)
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
     
     // Check for connection status
     try {
-      await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
       console.log('✅ Server connection established')
     } catch (e) {
       console.log('❌ Server connection failed')

@@ -1,20 +1,14 @@
 import { test, expect } from '@playwright/test'
-
-const TEST_CONFIG = {
-  sshHost: 'localhost',
-  sshPort: '2244',
-  validUsername: 'testuser',
-  validPassword: 'testpassword'
-}
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD } from './constants.js'
 
 test('Debug what text is on page after connection', async ({ page }) => {
-  await page.goto('http://localhost:2222/ssh')
+  await page.goto(`${BASE_URL}/ssh`)
   
   // Fill in the form
-  await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-  await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-  await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-  await page.fill('[name="password"]', TEST_CONFIG.validPassword)
+  await page.fill('[name="host"]', SSH_HOST)
+  await page.fill('[name="port"]', String(SSH_PORT))
+  await page.fill('[name="username"]', USERNAME)
+  await page.fill('[name="password"]', PASSWORD)
 
   // Click connect
   await page.click('button:has-text("Connect")')
@@ -31,6 +25,6 @@ test('Debug what text is on page after connection', async ({ page }) => {
   console.log('Page contains "ssh://":', hasSSHUrl)
   
   // Check if any text contains localhost:2244
-  const hasHostPort = allText.includes('localhost:2244')
-  console.log('Page contains "localhost:2244":', hasHostPort)
+  const hasHostPort = allText.includes(`${SSH_HOST}:${SSH_PORT}`)
+  console.log(`Page contains "${SSH_HOST}:${SSH_PORT}":`, hasHostPort)
 })

@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test'
 import { DEFAULTS } from '../../app/constants'
-import { SSH_PORT } from './test-config'
+import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 async function openWithBasicAuth(page, baseURL: string, params: string) {
   const context = await page.context().browser()?.newContext({
-    httpCredentials: { username: 'testuser', password: 'testpassword' },
+    httpCredentials: { username: USERNAME, password: PASSWORD },
   })
   const p = await (context ?? page.context()).newPage()
-  await p.goto(`${baseURL}/ssh/host/localhost?port=2244&${params}`)
+  await p.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}&${params}`)
   return p
 }
 
@@ -17,28 +17,28 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run these tests')
 
   test('sets TERM from sshterm', async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
+    const context = await browser.newContext({ httpCredentials: { username: USERNAME, password: PASSWORD } })
     const page = await context.newPage()
 
     await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}&sshterm=xterm-256color`)
     await page.locator('.xterm-helper-textarea').click()
     await page.keyboard.type('printenv TERM')
     await page.keyboard.press('Enter')
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     const content = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
     expect(content).toContain('xterm-256color')
     await context.close()
   })
 
   test('terminal rows/cols are not default', async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
+    const context = await browser.newContext({ httpCredentials: { username: USERNAME, password: PASSWORD } })
     const page = await context.newPage()
 
     await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}`)
     await page.locator('.xterm-helper-textarea').click()
     await page.keyboard.type('stty size')
     await page.keyboard.press('Enter')
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     const out = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
     const match = out.match(/\b(\d+)\s+(\d+)\b/)
     expect(match).toBeTruthy()
@@ -49,7 +49,7 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
   })
 
   test('replays credentials to shell on control:replayCredentials', async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ httpCredentials: { username: 'testuser', password: 'testpassword' } })
+    const context = await browser.newContext({ httpCredentials: { username: USERNAME, password: PASSWORD } })
     const page = await context.newPage()
     await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}`)
     await page.locator('.xterm-helper-textarea').click()
@@ -72,13 +72,13 @@ test.describe('E2E: TERM, size, and replay credentials', () => {
 
     if (!emitted) {
       // Fallback: type the password to avoid flakiness if UI hook not exposed
-      await page.keyboard.type('testpassword')
+      await page.keyboard.type(PASSWORD)
       await page.keyboard.press('Enter')
     }
 
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     const content = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
-    expect(content).toContain('testpassword')
+    expect(content).toContain(PASSWORD)
     await context.close()
   })
 })

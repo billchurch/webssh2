@@ -4,8 +4,7 @@
  * - If ENABLE_E2E_SSH=1, starts containerized sshd in global setup and stops in teardown
  */
 import { defineConfig, devices } from '@playwright/test'
-
-const WEB_PORT = process.env.E2E_WEB_PORT || '2222'
+import { WEB_PORT, BASE_URL, TIMEOUTS } from './tests/playwright/constants.js'
 
 const enableE2E = process.env.ENABLE_E2E_SSH === '1'
 
@@ -18,12 +17,12 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: `http://localhost:${WEB_PORT}`,
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    actionTimeout: TIMEOUTS.ACTION,
+    navigationTimeout: TIMEOUTS.NAVIGATION,
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
@@ -31,9 +30,9 @@ export default defineConfig({
   webServer: {
     // Keep server logs quiet by default; opt-in with E2E_DEBUG
     command: `WEBSSH2_LISTEN_PORT=${WEB_PORT} node dist/index.js`,
-    url: `http://localhost:${WEB_PORT}/ssh`,
+    url: `${BASE_URL}/ssh`,
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: TIMEOUTS.WEB_SERVER,
     env: { DEBUG: process.env.E2E_DEBUG ?? '' },
   },
   ...(enableE2E

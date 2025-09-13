@@ -13,30 +13,17 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_PORT, SSH_HOST, USERNAME, PASSWORD } from './test-config.js'
-
-// Test configuration
-const TEST_CONFIG = {
-  baseUrl: BASE_URL,
-  sshHost: SSH_HOST,
-  sshPort: String(SSH_PORT),
-  validUsername: USERNAME,
-  validPassword: PASSWORD,
-  invalidUsername: 'wronguser',
-  invalidPassword: 'wrongpass',
-  nonExistentHost: 'nonexistent.invalid.host',
-  invalidPort: '9999'
-}
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, INVALID_USERNAME, INVALID_PASSWORD, NON_EXISTENT_HOST, INVALID_PORT } from './constants.js'
 
 test.describe('HTTP POST Authentication', () => {
   test('should connect with credentials in body and host/port in query params', async ({ request }) => {
     // Make POST request with credentials in body, host/port in query
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword
+          username: USERNAME,
+          password: PASSWORD
         }
       }
     )
@@ -51,12 +38,12 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should connect with all parameters in body', async ({ request }) => {
     // Make POST request with all parameters in body
-    const response = await request.post(`${TEST_CONFIG.baseUrl}/ssh`, {
+    const response = await request.post(`${BASE_URL}/ssh`, {
       data: {
-        username: TEST_CONFIG.validUsername,
-        password: TEST_CONFIG.validPassword,
-        host: TEST_CONFIG.sshHost,
-        port: parseInt(TEST_CONFIG.sshPort)
+        username: USERNAME,
+        password: PASSWORD,
+        host: SSH_HOST,
+        port: SSH_PORT
       }
     })
     
@@ -71,11 +58,11 @@ test.describe('HTTP POST Authentication', () => {
   test('should connect with hostname alias in query params', async ({ request }) => {
     // Test using 'hostname' instead of 'host' in query params
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?hostname=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}`,
+      `${BASE_URL}/ssh?hostname=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword
+          username: USERNAME,
+          password: PASSWORD
         }
       }
     )
@@ -89,13 +76,13 @@ test.describe('HTTP POST Authentication', () => {
   test('should prefer body parameters over query parameters', async ({ request }) => {
     // Send different values in body and query - body should win
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.nonExistentHost}&port=${TEST_CONFIG.invalidPort}`,
+      `${BASE_URL}/ssh?host=${NON_EXISTENT_HOST}&port=${INVALID_PORT}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword,
-          host: TEST_CONFIG.sshHost,
-          port: parseInt(TEST_CONFIG.sshPort)
+          username: USERNAME,
+          password: PASSWORD,
+          host: SSH_HOST,
+          port: SSH_PORT
         }
       }
     )
@@ -109,10 +96,10 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should fail with missing username', async ({ request }) => {
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          password: TEST_CONFIG.validPassword
+          password: PASSWORD
         }
       }
     )
@@ -124,10 +111,10 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should fail with missing password', async ({ request }) => {
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername
+          username: USERNAME
         }
       }
     )
@@ -138,10 +125,10 @@ test.describe('HTTP POST Authentication', () => {
   })
 
   test('should fail with missing host (not in body or query)', async ({ request }) => {
-    const response = await request.post(`${TEST_CONFIG.baseUrl}/ssh`, {
+    const response = await request.post(`${BASE_URL}/ssh`, {
       data: {
-        username: TEST_CONFIG.validUsername,
-        password: TEST_CONFIG.validPassword
+        username: USERNAME,
+        password: PASSWORD
       }
     })
     
@@ -155,12 +142,12 @@ test.describe('HTTP POST Authentication', () => {
     // Since our test SSH server is on port 2244, we'll just verify the request succeeds
     // and the server accepts the request (actual connection would fail on port 22)
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword,
-          port: parseInt(TEST_CONFIG.sshPort) // Override default port in body
+          username: USERNAME,
+          password: PASSWORD,
+          port: SSH_PORT // Override default port in body
         }
       }
     )
@@ -170,11 +157,11 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should handle sshterm parameter from query', async ({ request }) => {
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}&sshterm=xterm-256color`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}&sshterm=xterm-256color`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword
+          username: USERNAME,
+          password: PASSWORD
         }
       }
     )
@@ -187,18 +174,18 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should handle /ssh/reauth to clear stuck credentials', async ({ page }) => {
     // Navigate to /ssh/reauth to clear any session
-    await page.goto(`${TEST_CONFIG.baseUrl}/ssh/reauth`)
+    await page.goto(`${BASE_URL}/ssh/reauth`)
     
     // Should redirect to /ssh
     expect(page.url()).toContain('/ssh')
     
     // Verify we can now authenticate with correct credentials via POST
     const response = await page.request.post(
-      `${TEST_CONFIG.baseUrl}/ssh?host=${TEST_CONFIG.sshHost}&port=${TEST_CONFIG.sshPort}`,
+      `${BASE_URL}/ssh?host=${SSH_HOST}&port=${String(SSH_PORT)}`,
       {
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword
+          username: USERNAME,
+          password: PASSWORD
         }
       }
     )
@@ -208,16 +195,16 @@ test.describe('HTTP POST Authentication', () => {
 
   test('should accept POST with JSON content type', async ({ request }) => {
     const response = await request.post(
-      `${TEST_CONFIG.baseUrl}/ssh`,
+      `${BASE_URL}/ssh`,
       {
         headers: {
           'Content-Type': 'application/json'
         },
         data: {
-          username: TEST_CONFIG.validUsername,
-          password: TEST_CONFIG.validPassword,
-          host: TEST_CONFIG.sshHost,
-          port: parseInt(TEST_CONFIG.sshPort)
+          username: USERNAME,
+          password: PASSWORD,
+          host: SSH_HOST,
+          port: SSH_PORT
         }
       }
     )

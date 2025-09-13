@@ -3,56 +3,20 @@
  *
  * Tests both modal login and HTTP Basic Auth with the newly refactored async/await patterns
  * Ensures proper error handling and session management with async operations
- *
- * Requires Docker test SSH server to be running:
- * docker run -d --name webssh2-test-ssh -p 2244:22 \
- *   -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
- *   ghcr.io/billchurch/ssh_test:alpine
  */
 
 import { test, expect } from '@playwright/test'
-
-// Test configuration
-const TEST_CONFIG = {
-  baseUrl: 'http://localhost:2222',
-  sshHost: 'localhost',
-  sshPort: '2244',
-  validUsername: 'testuser',
-  validPassword: 'testpassword',
-  invalidUsername: 'wronguser',
-  invalidPassword: 'wrongpass',
-  nonExistentHost: 'nonexistent.invalid.host',
-  invalidPort: '9999',
-}
-
-// Helper function to wait for terminal prompt
-async function waitForPrompt(page, timeout = 10000) {
-  await page.waitForFunction(
-    () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
-      return /[$#]\s*$/.test(terminalContent)
-    },
-    { timeout }
-  )
-}
-
-// Helper function to execute command in terminal
-async function executeCommand(page, command) {
-  const terminal = page.getByRole('textbox', { name: 'Terminal input' })
-  await terminal.fill(command)
-  await terminal.press('Enter')
-  await page.waitForTimeout(500)
-}
+import { TEST_CONFIG, TIMEOUTS, WEB_PORT, waitForPrompt, executeCommand } from './constants.js'
 
 // Helper to check if terminal is functional
 async function verifyTerminalFunctionality(page, username) {
   await waitForPrompt(page)
   await executeCommand(page, 'whoami')
   // Look for username in terminal output, not in status area
-  await expect(page.locator(`.xterm-rows:has-text("${username}")`)).toBeVisible({ timeout: 5000 })
+  await expect(page.locator(`.xterm-rows:has-text("${username}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   await executeCommand(page, 'echo "Async test successful"')
   // Look for the exact output text, not the command
-  await expect(page.getByText('Async test successful', { exact: true })).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText('Async test successful', { exact: true })).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
 }
 
 test.describe('Async/Await Modal Login Authentication', () => {
@@ -71,7 +35,7 @@ test.describe('Async/Await Modal Login Authentication', () => {
     await page.click('button:has-text("Connect")')
 
     // Verify successful async connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await expect(
       page.locator(`text=ssh://${TEST_CONFIG.sshHost}:${TEST_CONFIG.sshPort}`)
     ).toBeVisible()
@@ -125,7 +89,7 @@ test.describe('Async/Await Modal Login Authentication', () => {
     await page.click('button:has-text("Connect")')
 
     // Wait for async shell creation
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
 
     // Test multiple async terminal operations
@@ -148,12 +112,12 @@ test.describe('Async/Await Modal Login Authentication', () => {
     await page.click('button:has-text("Connect")')
 
     // Wait for connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
 
     // Resize the window and verify terminal adapts
     await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Execute command to verify terminal still works after resize
     await executeCommand(page, 'echo "Resize test"')
@@ -164,11 +128,11 @@ test.describe('Async/Await Modal Login Authentication', () => {
 test.describe('Async/Await HTTP Basic Authentication', () => {
   test('should handle async auto-connect with valid Basic Auth', async ({ page }) => {
     // Navigate with Basic Auth credentials
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:${WEB_PORT}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
 
     // Verify async auto-connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await expect(
       page.locator(`text=ssh://${TEST_CONFIG.sshHost}:${TEST_CONFIG.sshPort}`)
     ).toBeVisible()
@@ -179,7 +143,7 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
 
   test('should handle async auth failure with invalid Basic Auth', async ({ page }) => {
     // Navigate with invalid Basic Auth credentials
-    const url = `http://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const url = `http://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@localhost:${WEB_PORT}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
 
     // Handle the auth challenge
     page.on('response', (response) => {
@@ -191,14 +155,14 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
     await page.goto(url)
 
     // Should receive authentication challenge or error
-    await expect(page.locator('text=/Authentication.*required|401|Unauthorized|Authentication.*failed|Invalid.*credentials/i')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=/Authentication.*required|401|Unauthorized|Authentication.*failed|Invalid.*credentials/i')).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
   })
 
   test('should return 502 for async connection with Basic Auth to non-existent host', async ({
     page,
   }) => {
     // Navigate with Basic Auth to non-existent host
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:${WEB_PORT}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
     
     // Expect immediate 502 due to network connectivity failure (non-existent host)
     const response = await page.goto(url, { waitUntil: 'commit' })
@@ -213,11 +177,11 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
 
   test('should handle multiple async commands with Basic Auth session', async ({ page }) => {
     // Navigate with Basic Auth
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:${WEB_PORT}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
 
     // Wait for async connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
 
     // Execute multiple async commands
@@ -231,17 +195,17 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
     for (const { cmd, expect: expectedText } of commands) {
       await executeCommand(page, cmd)
       // Look for expected text in terminal output area to avoid header/status conflicts
-      await expect(page.locator(`.xterm-rows:has-text("${expectedText}")`)).toBeVisible({ timeout: 5000 })
+      await expect(page.locator(`.xterm-rows:has-text("${expectedText}")`)).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     }
   })
 
   test('should handle async session persistence with Basic Auth', async ({ page }) => {
     // First connection with Basic Auth
-    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:2222/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const url = `http://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@localhost:${WEB_PORT}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
 
     // Wait for async connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
 
     // Create a file to verify session persistence
@@ -253,7 +217,7 @@ test.describe('Async/Await HTTP Basic Authentication', () => {
     await page.reload()
 
     // Should auto-reconnect with stored session
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
 
     // Verify file still exists (same session)

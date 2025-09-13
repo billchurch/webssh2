@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { SSH_PORT } from './test-config'
+import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 test.describe('E2E: AcceptEnv via containerized SSHD', () => {
@@ -7,7 +7,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
 
   test('forwards FOO=bar to SSH session', async ({ browser, baseURL }) => {
     const context = await browser.newContext({
-      httpCredentials: { username: 'testuser', password: 'testpassword' },
+      httpCredentials: { username: USERNAME, password: PASSWORD },
     })
     const page = await context.newPage()
 
@@ -19,7 +19,7 @@ test.describe('E2E: AcceptEnv via containerized SSHD', () => {
     await page.keyboard.press('Enter')
 
     // Wait for terminal to render the value
-    await page.waitForTimeout(800)
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     const content = await page.$eval('.xterm-screen', (el) => el.textContent || '')
     expect(content).toContain('bar')
 

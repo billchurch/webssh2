@@ -2,44 +2,10 @@
  * WebSocket Authentication Tests for WebSSH2
  * 
  * Tests both interactive authentication and Basic Auth scenarios
- * Requires Docker test SSH server to be running:
- * docker run -d --name webssh2-test-ssh -p 2244:22 \
- *   -e SSH_USER=testuser -e SSH_PASSWORD=testpassword \
- *   ghcr.io/billchurch/ssh_test:alpine
  */
 
 import { test, expect } from '@playwright/test'
-import { BASE_URL, SSH_PORT, SSH_HOST, USERNAME, PASSWORD } from './test-config.js'
-
-// Test configuration
-const TEST_CONFIG = {
-  baseUrl: BASE_URL,
-  sshHost: SSH_HOST,
-  sshPort: String(SSH_PORT),
-  validUsername: USERNAME,
-  validPassword: PASSWORD,
-  invalidUsername: 'wronguser',
-  invalidPassword: 'wrongpass',
-  nonExistentHost: 'nonexistent.invalid.host',
-  invalidPort: '9999'
-}
-
-// Helper function to wait for terminal prompt
-async function waitForPrompt(page, timeout = 10000) {
-  // Wait for the prompt in the actual terminal content, not the status bar
-  await page.waitForFunction(() => {
-    const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
-    return /[$#]\s*$/.test(terminalContent)
-  }, { timeout })
-}
-
-// Helper function to execute command in terminal
-async function executeCommand(page, command) {
-  const terminal = page.getByRole('textbox', { name: 'Terminal input' })
-  await terminal.fill(command)
-  await terminal.press('Enter')
-  await page.waitForTimeout(500) // Wait for command execution
-}
+import { TEST_CONFIG, TIMEOUTS, waitForPrompt, executeCommand } from './constants.js'
 
 test.describe('WebSocket Interactive Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -57,7 +23,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await expect(page.locator(`text=ssh://${TEST_CONFIG.sshHost}:${TEST_CONFIG.sshPort}`)).toBeVisible()
     
     // Verify terminal is functional
@@ -79,7 +45,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     
     // Verify error message appears - check for various possible auth error messages
     const errorMessageLocator = page.locator('text=/Authentication failed|SSH connection error|All authentication methods failed/')
-    await expect(errorMessageLocator.first()).toBeVisible({ timeout: 10000 })
+    await expect(errorMessageLocator.first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
     
     // Verify form is still visible for retry
     await expect(page.locator('[name="username"]')).toBeVisible()
@@ -96,7 +62,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection error message
-    await expect(page.locator('text=/Connection failed|ENOTFOUND|getaddrinfo ENOTFOUND/').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=/Connection failed|ENOTFOUND|getaddrinfo ENOTFOUND/').first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
   })
 
   test('should show connection error for wrong port', async ({ page }) => {
@@ -110,7 +76,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify connection error message
-    await expect(page.locator('text=/Connection failed|ECONNREFUSED|connect ECONNREFUSED/').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=/Connection failed|ECONNREFUSED|connect ECONNREFUSED/').first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
   })
 
   test('should handle page refresh gracefully', async ({ page }) => {
@@ -120,7 +86,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.fill('[name="username"]', TEST_CONFIG.validUsername)
     await page.fill('[name="password"]', TEST_CONFIG.validPassword)
     await page.click('button:has-text("Connect")')
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     
     // Disable beforeunload handler and refresh
     await page.evaluate(() => {
@@ -139,7 +105,7 @@ test.describe('WebSocket Interactive Authentication', () => {
     await page.click('button:has-text("Connect")')
     
     // Verify reconnection works
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
   })
 })
@@ -152,7 +118,7 @@ test.describe('WebSocket Basic Authentication', () => {
     await page.goto(url)
     
     // Verify automatic connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await expect(page.locator(`text=ssh://${TEST_CONFIG.sshHost}:${TEST_CONFIG.sshPort}`)).toBeVisible()
     
     // Verify terminal is functional
@@ -200,7 +166,7 @@ test.describe('WebSocket Basic Authentication', () => {
     await page.goto(url)
     
     // Wait for connection
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
     
     // Execute multiple commands
@@ -229,7 +195,7 @@ test.describe('WebSocket Connection Resilience', () => {
       await page.click('button:has-text("Connect")')
       
       // Verify connection
-      await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
       
       // Refresh to disconnect
       await page.evaluate(() => {
@@ -251,7 +217,7 @@ test.describe('WebSocket Connection Resilience', () => {
     await page.fill('[name="username"]', TEST_CONFIG.validUsername)
     await page.fill('[name="password"]', TEST_CONFIG.validPassword)
     await page.click('button:has-text("Connect")')
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
     await waitForPrompt(page)
     
     // Create a file

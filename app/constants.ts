@@ -2,10 +2,10 @@
 // app/constants.ts
 
 import { fileURLToPath } from 'url'
-import path, { dirname } from 'path'
+import * as path from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __dirname = path.dirname(__filename)
 
 export const MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid credentials format',
