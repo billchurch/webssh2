@@ -15,8 +15,29 @@ import type { Config } from '../types/config.js'
 
 const debug = createNamespacedDebug('auth-utils')
 
+// Type-safe header interfaces
+export interface HeaderOverride {
+  text?: string
+  background?: string
+  style?: string
+}
+
+export interface HeaderValues {
+  header?: unknown
+  background?: unknown
+  color?: unknown
+}
+
+export enum SourceType {
+  GET = 'GET',
+  POST = 'POST',
+  NONE = 'NONE'
+}
+
+export type HeaderSource = Record<string, unknown>
+
 export interface AuthSession {
-  headerOverride?: { text?: unknown; background?: unknown; style?: unknown }
+  headerOverride?: HeaderOverride
   sshCredentials?: {
     host?: string
     port?: number
@@ -42,50 +63,164 @@ export interface AuthCredentials {
 }
 
 /**
- * Process header customization parameters from URL query or POST body
+ * Detect the source type based on property names
+ * @pure
  */
-export function processHeaderParameters(
-  source: Record<string, unknown> | undefined,
-  session: AuthSession
-): void {
-  const src = source ?? {}
-  const isGet = !!(
-    Object.prototype.hasOwnProperty.call(src, 'header') ||
-    Object.prototype.hasOwnProperty.call(src, 'headerBackground') ||
-    Object.prototype.hasOwnProperty.call(src, 'headerStyle')
-  )
+function detectSourceType(source: HeaderSource | undefined): SourceType {
+  if (source == null) {return SourceType.NONE}
+  
+  const hasGetParams = 
+    Object.prototype.hasOwnProperty.call(source, 'header') ||
+    Object.prototype.hasOwnProperty.call(source, 'headerBackground') ||
+    Object.prototype.hasOwnProperty.call(source, 'headerStyle')
+  
+  if (hasGetParams) {return SourceType.GET}
+  
+  const hasPostParams = 
+    Object.prototype.hasOwnProperty.call(source, 'header.name') ||
+    Object.prototype.hasOwnProperty.call(source, 'header.background') ||
+    Object.prototype.hasOwnProperty.call(source, 'header.color')
+  
+  return hasPostParams ? SourceType.POST : SourceType.NONE
+}
 
-  let headerVal: unknown
-  let backgroundVal: unknown
-  let styleVal: unknown
-
-  if (isGet) {
-    const { header, headerBackground, headerStyle } = src
-    headerVal = header
-    backgroundVal = headerBackground
-    styleVal = headerStyle
-  } else if (source != null) {
-    headerVal = (source)['header.name']
-    backgroundVal = (source)['header.background']
-    const colorVal = (source)['header.color'] as string | undefined
-    styleVal = colorVal != null && colorVal !== '' ? `color: ${colorVal}` : undefined
+/**
+ * Extract header values based on source type
+ * @pure
+ */
+function extractHeaderValues(
+  source: HeaderSource | undefined,
+  sourceType: SourceType
+): HeaderValues {
+  if (source == null || sourceType === SourceType.NONE) {
+    return {}
   }
 
-  if (headerVal !== null && headerVal !== undefined || backgroundVal !== null && backgroundVal !== undefined || styleVal !== null && styleVal !== undefined) {
-    session.headerOverride ??= {}
-    if (headerVal !== null && headerVal !== undefined) {
-      session.headerOverride.text = headerVal
-      debug('Header text from %s: %s', isGet ? 'URL parameter' : 'POST', headerVal)
+  if (sourceType === SourceType.GET) {
+    return {
+      header: source['header'],
+      background: source['headerBackground'],
+      color: source['headerStyle']
     }
-    if (backgroundVal !== null && backgroundVal !== undefined) {
-      session.headerOverride.background = backgroundVal
-      debug('Header background from %s: %s', isGet ? 'URL parameter' : 'POST', backgroundVal)
+  }
+
+  // POST format
+  return {
+    header: source['header.name'],
+    background: source['header.background'],
+    color: source['header.color']
+  }
+}
+
+/**
+ * Validate and transform a header value
+ * @pure
+ */
+function validateHeaderValue(value: unknown): string | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined
+  }
+  return String(value)
+}
+
+/**
+ * Transform color value to CSS style
+ * @pure
+ */
+function colorToStyle(color: unknown): string | undefined {
+  const validated = validateHeaderValue(color)
+  if (validated == null) {return undefined}
+  
+  // If it already looks like a style, return as-is
+  if (validated.includes(':')) {return validated}
+  
+  // Otherwise, treat as color value
+  return `color: ${validated}`
+}
+
+/**
+ * Create a header override object from raw values
+ * @pure
+ */
+function createHeaderOverride(
+  values: HeaderValues,
+  sourceType: SourceType
+): HeaderOverride | null {
+  const text = validateHeaderValue(values.header)
+  const background = validateHeaderValue(values.background)
+  const style = sourceType === SourceType.GET 
+    ? validateHeaderValue(values.color)
+    : colorToStyle(values.color)
+
+  if (text == null && background == null && style == null) {
+    return null
+  }
+
+  const override: HeaderOverride = {}
+  if (text != null) {override.text = text}
+  if (background != null) {override.background = background}
+  if (style != null) {override.style = style}
+  
+  return override
+}
+
+/**
+ * Apply header override to session (creates new session)
+ * @pure
+ */
+function applyHeaderOverride(
+  session: AuthSession,
+  override: HeaderOverride
+): AuthSession {
+  return {
+    ...session,
+    headerOverride: {
+      ...session.headerOverride,
+      ...override
     }
-    if (styleVal !== null && styleVal !== undefined) {
-      session.headerOverride.style = styleVal
-      debug('Header style from %s: %s', isGet ? 'URL parameter' : 'POST', styleVal)
-    }
-    debug('Header override set in session: %O', session.headerOverride)
+  }
+}
+
+/**
+ * Log header debug information
+ */
+function logHeaderDebug(
+  override: HeaderOverride,
+  sourceType: SourceType
+): void {
+  const sourceLabel = sourceType === SourceType.GET ? 'URL parameter' : 'POST'
+  
+  if (override.text != null) {
+    debug('Header text from %s: %s', sourceLabel, override.text)
+  }
+  if (override.background != null) {
+    debug('Header background from %s: %s', sourceLabel, override.background)
+  }
+  if (override.style != null) {
+    debug('Header style from %s: %s', sourceLabel, override.style)
+  }
+  debug('Header override set in session: %O', override)
+}
+
+/**
+ * Process header customization parameters from URL query or POST body
+ * Orchestrates pure functions to extract, validate, and apply header overrides
+ */
+export function processHeaderParameters(
+  source: HeaderSource | undefined,
+  session: AuthSession
+): void {
+  const sourceType = detectSourceType(source)
+  if (sourceType === SourceType.NONE) {return}
+  
+  const values = extractHeaderValues(source, sourceType)
+  const override = createHeaderOverride(values, sourceType)
+  
+  if (override != null) {
+    logHeaderDebug(override, sourceType)
+    // Mutation required for backward compatibility
+    // Consider returning new session in future refactor
+    Object.assign(session, applyHeaderOverride(session, override))
   }
 }
 
