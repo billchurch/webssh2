@@ -6,15 +6,31 @@ import { EventEmitter } from 'events'
 import type { IncomingMessage } from 'node:http'
 import type { Server as IOServer, Socket as IOSocket } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
-import { SSHConnectionError } from './errors.js'
-import { maskSensitiveData, validateSshTerm, normalizeDim } from './utils.js'
+import { maskSensitiveData } from './utils.js'
 import { UnifiedAuthPipeline } from './auth/auth-pipeline.js'
-import { DEFAULTS } from './constants.js'
-import { validateExecPayload } from './validators/exec-validate.js'
-import { hasCompleteSessionCredentials, extractSessionCredentials, isNetworkError } from './validation/session.js'
+import { DEFAULTS, MESSAGES } from './constants.js'
+import {
+  prepareCredentials,
+  handleConnectionSuccess,
+  handleConnectionFailure,
+  createAuthFailurePayload,
+  type ConnectionCredentials,
+} from './socket/connection-handler.js'
+import {
+  handleControlMessage,
+} from './socket/control-handler.js'
+import {
+  configureTerminal,
+  validateAndUpdateCredentials,
+  createSessionStateFromCredentials,
+} from './socket/credential-manager.js'
+import {
+  parseExecPayload,
+  createExecOptions,
+  mergeEnvironmentVariables,
+} from './socket/exec-handler.js'
 // Type stub for validate module (JS)
 
-type ExecParsed = ReturnType<typeof validateExecPayload>
 import type { Config } from './types/config.js'
 import type {
   ClientToServerEvents,
@@ -173,7 +189,16 @@ class WebSSH2Socket extends EventEmitter {
 
     // When credentials are explicitly provided, update them
     if (Object.keys(creds).length > 0) {
-      if (!this.updateCredentials(creds, originalAuthMethod)) {
+      const updateResult = validateAndUpdateCredentials(this.socket, creds, originalAuthMethod)
+      if (!updateResult.success) {
+        this.socket.emit('authentication', createAuthFailurePayload(updateResult.error ?? 'Unknown error'))
+        return
+      }
+      
+      // Update pipeline with manual credentials
+      if (!this.authPipeline.setManualCredentials(creds)) {
+        debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
+        this.socket.emit('authentication', createAuthFailurePayload(MESSAGES.INVALID_CREDENTIALS))
         return
       }
     }
@@ -181,12 +206,19 @@ class WebSSH2Socket extends EventEmitter {
     // Get validated credentials
     const validCreds = this.authPipeline.getCredentials()
     if (validCreds == null) {
-      this.emitAuthFailure('No credentials available')
+      this.socket.emit('authentication', createAuthFailurePayload('No credentials available'))
       return
     }
 
-    // Set terminal and dimensions
-    this.configureTerminal(validCreds, creds)
+    // Configure terminal and dimensions
+    const terminalConfig = configureTerminal(validCreds, creds, this.config)
+    this.sessionState.term = terminalConfig.term
+    if (terminalConfig.cols != null) {
+      this.sessionState.cols = terminalConfig.cols
+    }
+    if (terminalConfig.rows != null) {
+      this.sessionState.rows = terminalConfig.rows
+    }
 
     // Initialize connection
     this.initializeConnection(validCreds as Record<string, unknown>).catch((err) =>
@@ -194,173 +226,59 @@ class WebSSH2Socket extends EventEmitter {
     )
   }
 
-  private updateCredentials(creds: Record<string, unknown>, originalAuthMethod: string | null): boolean {
-    if (!this.authPipeline.setManualCredentials(creds)) {
-      debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
-      this.emitAuthFailure('Invalid credentials format')
-      return false
-    }
 
-    // Update session credentials for reconnections
-    const req = this.socket.request as ExtendedRequest
-    if (req.session != null && hasCompleteSessionCredentials(creds)) {
-      const sessionCreds = extractSessionCredentials(creds)
-      if (sessionCreds != null) {
-        debug(`handleAuthenticate: Updating session credentials with new user input`)
-        req.session.sshCredentials = sessionCreds
-      }
-    }
 
-    debug(
-      `handleAuthenticate: Updated credentials from user input (was ${originalAuthMethod}, now manual)`
-    )
-    return true
-  }
-
-  private configureTerminal(validCreds: Credentials, creds: Record<string, unknown>): void {
-    const validatedTerm = validateSshTerm(validCreds.term)
-    this.sessionState.term = validatedTerm ?? this.config.ssh.term
-    debug(
-      `handleAuthenticate: creds.term='${validCreds.term}', validatedTerm='${validatedTerm}', sessionState.term='${this.sessionState.term}'`
-    )
-
-    // Handle dimension parameters from manual auth
-    if ('cols' in creds && validator.isInt(String(creds['cols']))) {
-      this.sessionState.cols = parseInt(String(creds['cols']), 10)
-    }
-    if ('rows' in creds && validator.isInt(String(creds['rows']))) {
-      this.sessionState.rows = parseInt(String(creds['rows']), 10)
-    }
-  }
-
-  private emitAuthFailure(message: string): void {
-    debug(`handleAuthenticate: ${this.socket.id}, ${message.toUpperCase().replace(/ /g, '_')}`)
-    this.socket.emit('authentication', {
-      action: 'auth_result',
-      success: false,
-      message,
-    })
-  }
 
   private async initializeConnection(creds: Record<string, unknown>): Promise<void> {
-    const c = this.prepareCredentials(creds)
+    const preparedCreds = prepareCredentials(creds as Credentials, this.config)
     this.ssh = new this.SSHConnectionClass(this.config)
 
     try {
-      await this.ssh.connect(c as Record<string, unknown>)
-      this.handleConnectionSuccess(c as Record<string, unknown>)
+      await this.ssh.connect(preparedCreds as Record<string, unknown>)
+      this.handleSSHConnectionSuccess(preparedCreds)
     } catch (err) {
-      this.handleConnectionError(err as Error & { code?: string })
+      handleConnectionFailure(this.socket, err as Error & { code?: string })
     }
   }
 
-  private prepareCredentials(creds: Record<string, unknown>): Credentials {
-    const c = { ...(creds as Credentials) }
-    if (this.config.user.privateKey != null && 
-        this.config.user.privateKey !== '' && 
-        (c.privateKey == null || c.privateKey === '')) {
-      c.privateKey = this.config.user.privateKey
-    }
-    return c
-  }
 
-  private handleConnectionSuccess(c: Record<string, unknown>): void {
-    // Clear auth failed flag on successful authentication
-    const req = this.socket.request as ExtendedRequest
-    if (req.session != null) {
-      delete req.session.authFailed
-    }
-
+  private handleSSHConnectionSuccess(credentials: ConnectionCredentials): void {
     // Update session state
-    this.sessionState = Object.assign({}, this.sessionState, {
-      authenticated: true,
-      username: c['username'] as string | null,
-      password: c['password'] as string | null,
-      privateKey: c['privateKey'] as string | null,
-      passphrase: c['passphrase'] as string | null,
-      host: c['host'] as string | null,
-      port: c['port'] as number | null,
-    })
+    const newSessionState = createSessionStateFromCredentials(credentials as Record<string, unknown>)
+    this.sessionState = Object.assign({}, this.sessionState, newSessionState)
 
-    // Emit success events
-    this.socket.emit('authentication', { action: 'auth_result', success: true })
-    this.socket.emit('permissions', {
-      autoLog: !!this.config.options.autoLog,
-      allowReplay: !!this.config.options.allowReplay,
-      allowReconnect: !!this.config.options.allowReconnect,
-      allowReauth: !!this.config.options.allowReauth,
-    })
-    this.socket.emit('getTerminal', true)
-
-    // Update footer with connection status
-    const connectionString = `ssh://${this.sessionState.host}:${this.sessionState.port}`
-    this.socket.emit('updateUI', { element: 'footer', value: connectionString })
+    // Handle success using the extracted handler
+    handleConnectionSuccess(this.socket, this.config, credentials)
   }
 
-  private handleConnectionError(error: Error & { code?: string }): void {
-    const authMethod = this.authPipeline.getAuthMethod()
-    debug(`Authentication failed, authMethod: ${authMethod}, error: ${error.message}`)
 
-    // Clear session credentials on network errors to prevent stuck loops
-    if (isNetworkError(error)) {
-      this.clearSessionOnNetworkError(error)
-    }
-
-    const errorMessage = error instanceof SSHConnectionError ? error.message : 'SSH connection failed'
-    this.socket.emit('authentication', {
-      action: 'auth_result',
-      success: false,
-      message: errorMessage,
-    })
-  }
-
-  private clearSessionOnNetworkError(error: Error & { code?: string }): void {
-    debug(
-      `Network error detected (${error.code ?? 'unknown'}), clearing session credentials to prevent loop`
-    )
-    const req = this.socket.request as ExtendedRequest
-    if (req.session != null) {
-      delete req.session.sshCredentials
-      delete req.session.usedBasicAuth
-      delete req.session.authMethod
-      debug('Session credentials cleared due to network error')
-    }
-  }
 
   private async handleExec(payload: unknown): Promise<void> {
     if (this.ssh == null) {
       this.socket.emit('ssherror', 'SSH not initialized')
       return
     }
-    let parsed: ExecParsed
-    try {
-      parsed = validateExecPayload(payload)
-    } catch (e) {
-      const msg =
-        (e != null && typeof e === 'object' && 'message' in e)
-          ? String((e as { message?: unknown }).message)
-          : 'Invalid exec request'
-      this.socket.emit('ssherror', `Invalid exec request: ${msg}`)
+    
+    // Parse and validate payload
+    const parseResult = parseExecPayload(payload)
+    if (!parseResult.valid || parseResult.data == null) {
+      this.socket.emit('ssherror', `Invalid exec request: ${parseResult.error}`)
       return
     }
-
-    const execOptions: {
-      pty?: boolean
-      term?: string
-      cols?: number
-      rows?: number
-      width?: number
-      height?: number
-    } = {}
-    if (parsed.pty === true) {
-      execOptions.pty = true
-    }
-    execOptions.term = (parsed.term ?? this.sessionState.term ?? DEFAULTS.SSH_TERM)
-    // Keep legacy falsy semantics: 0 should fallback to default (tests rely on this)
-    execOptions.cols = normalizeDim(parsed.cols, this.sessionState.cols, DEFAULTS.TERM_COLS)
-    execOptions.rows = normalizeDim(parsed.rows, this.sessionState.rows, DEFAULTS.TERM_ROWS)
+    
+    const parsed = parseResult.data
+    
+    // Create execution options
+    const execOptions = createExecOptions(
+      parsed,
+      this.sessionState.term,
+      this.sessionState.cols,
+      this.sessionState.rows
+    )
+    
+    // Merge environment variables
     const sessionEnv = ((this.socket.request as ExtendedRequest).session?.envVars ?? {})
-    const mergedEnv = { ...sessionEnv, ...(parsed.env ?? {}) }
+    const mergedEnv = mergeEnvironmentVariables(sessionEnv, parsed.env)
 
     const stream = await this.ssh.exec(parsed.command, execOptions, mergedEnv)
 
@@ -406,63 +324,20 @@ class WebSSH2Socket extends EventEmitter {
     const s = (size ?? {}) as { cols?: unknown; rows?: unknown }
     const cols = typeof s.cols === 'number' && Number.isFinite(s.cols) ? s.cols : null
     const rows = typeof s.rows === 'number' && Number.isFinite(s.rows) ? s.rows : null
+    
     if (cols !== null && rows !== null && this.ssh != null && this.ssh.resizeTerminal != null) {
       this.ssh.resizeTerminal(rows, cols)
     }
   }
 
   private handleControl(msg: unknown): void {
-    debug(`control received from ${this.socket.id}: %o`, msg)
-    if (msg === 'reauth') {
-      debug(`control: reauth requested for socket ${this.socket.id}`)
-      this.socket.emit('authentication', { action: 'reauth' })
-      return
-    }
-    if (msg === 'replayCredentials') {
-      // Operator-visible audit log without secrets
-
-      console.info(
-        `[replayCredentials] socket=${this.socket.id} crlf=${this.config.options.replayCRLF === true ? '1' : '0'}`
-      )
-      const req = this.socket.request as ExtendedRequest
-      const creds = req.session?.sshCredentials
-      if (this.config.options.allowReplay !== true) {
-        debug(`control: replayCredentials denied by config for ${this.socket.id}`)
-        this.socket.emit('ssherror', 'Replay disabled by server configuration')
-        return
-      }
-      const password =
-        (creds?.password) ??
-        (this.sessionState.password) ??
-        undefined
-      if (password == null || password === '') {
-        debug(`control: replayCredentials requested but no password stored for ${this.socket.id}`)
-        this.socket.emit('ssherror', 'No password available to replay')
-        return
-      }
-      if (this.shellStream == null || typeof this.shellStream.write !== 'function') {
-        debug(`control: replayCredentials but no active shell stream for ${this.socket.id}`)
-        this.socket.emit('ssherror', 'No active terminal to receive replayed credentials')
-        return
-      }
-      try {
-        const lineEnd = this.config.options.replayCRLF === true ? '\r\n' : '\r'
-        this.shellStream.write(`${password}${lineEnd}`)
-        debug(
-          `control: replayCredentials wrote ${password.length} chars + <${
-            this.config.options.replayCRLF === true ? 'CRLF' : 'CR'
-          }> to shell`
-        )
-      } catch (e) {
-        this.socket.emit('ssherror', 'Failed to replay credentials')
-        const msg = (e as { message?: string }).message ?? e
-        debug(`control: replayCredentials write error for ${this.socket.id}: ${msg}`)
-      }
-      return
-    }
-    // Warn on invalid control commands to match legacy behavior
-
-    console.warn('Invalid control message:', msg)
+    handleControlMessage(
+      this.socket,
+      this.config,
+      { password: this.sessionState.password },
+      this.shellStream,
+      msg
+    )
   }
 
   private handleError(context: string, err?: Error): void {
@@ -510,17 +385,20 @@ class WebSSH2Socket extends EventEmitter {
       this.shellStarted = false
       return
     }
+    
     const req = this.socket.request as ExtendedRequest
     const sessionEnv = (req.session?.envVars ?? {})
-    const options = {
-      term: this.sessionState.term ?? (this.config.ssh.term),
+    const shellOptions = {
+      term: this.sessionState.term ?? this.config.ssh.term,
       rows: this.sessionState.rows ?? DEFAULTS.TERM_ROWS,
       cols: this.sessionState.cols ?? DEFAULTS.TERM_COLS,
     }
+    
     debug(
-      `createShell: sessionState.term=${this.sessionState.term}, config.ssh.term=${this.config.ssh.term}, final options.term=${options.term}`
+      `createShell: sessionState.term=${this.sessionState.term}, config.ssh.term=${this.config.ssh.term}, final options.term=${shellOptions.term}`
     )
-    const stream = await this.ssh.shell(options, sessionEnv)
+    
+    const stream = await this.ssh.shell(shellOptions, sessionEnv) as EventEmitter
     this.shellStream = stream
 
     // Forward client keystrokes to SSH
