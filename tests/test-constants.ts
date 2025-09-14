@@ -42,7 +42,7 @@ export const TEST_PASSPHRASE = 'test-passphrase' //NOSONAR
 // SSO header names (not actual passwords, but often flagged)
 export const SSO_HEADERS = {
   username: 'x-apm-username',
-  password: 'x-apm-password',
+  password: 'x-apm-password', //NOSONAR
   session: 'x-apm-session',
 } as const
 
