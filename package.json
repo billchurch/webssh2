@@ -1,6 +1,6 @@
 {
   "name": "webssh2-server",
-  "version": "2.0.0-alpha",
+  "version": "2.0.0-alpha.11",
   "ignore": [
     ".gitignore"
   ],
@@ -27,6 +27,7 @@
   "engines": {
     "node": ">= 22"
   },
+  "packageManager": "npm@10.9.2",
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
@@ -114,6 +115,13 @@
     "vitest": "^3.2.4"
   },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "directories": {
     "test": "tests"
   },
