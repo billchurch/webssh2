@@ -31,6 +31,12 @@
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "ChangeLog.md"
+  ],
   "dependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
