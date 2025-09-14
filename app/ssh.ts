@@ -79,8 +79,16 @@ export default class SSHConnection extends EventEmitter {
       const e = err as { message?: string; code?: string; level?: string }
       // Intentionally use `||` so empty strings fall back to meaningful alternatives
        
-      const errorMessage = e.message ?? e.code ?? 
-        (err instanceof Error ? err.toString() : '[Unknown error]')
+      let errorMessage: string
+      if (e.message != null) {
+        errorMessage = e.message
+      } else if (e.code != null) {
+        errorMessage = e.code
+      } else if (err instanceof Error) {
+        errorMessage = err.toString()
+      } else {
+        errorMessage = '[Unknown error]'
+      }
       if (isResolved === false) {
         isResolved = true
         const sshError = new SSHConnectionError(errorMessage)

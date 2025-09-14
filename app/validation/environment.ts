@@ -66,6 +66,88 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
 }
 
 /**
+ * Check if a key is valid for environment variables
+ * @param key - Key to validate
+ * @param allowSet - Optional allowlist set
+ * @returns true if key passes all validations
+ * @pure
+ */
+function isKeyValid(
+  key: unknown,
+  allowSet: Set<string> | null
+): key is string {
+  if (typeof key !== 'string') {
+    return false
+  }
+  if (!isValidEnvKey(key)) {
+    return false
+  }
+  if (key.length > ENV_LIMITS.MAX_KEY_LENGTH) {
+    return false
+  }
+  if (allowSet != null && !allowSet.has(key)) {
+    return false
+  }
+  return true
+}
+
+/**
+ * Convert and validate a value for environment variables
+ * @param value - Value to validate
+ * @returns Validated string value or null if invalid
+ * @pure
+ */
+function validateEnvValue(value: unknown): string | null {
+  if (value == null) {
+    return null
+  }
+  
+  // Only allow string, number, or boolean values
+  if (typeof value === 'string') {
+    const stringValue = value
+    if (!isValidEnvValue(stringValue) || stringValue.length > ENV_LIMITS.MAX_VALUE_LENGTH) {
+      return null
+    }
+    return stringValue
+  }
+  
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    const stringValue = String(value)
+    if (!isValidEnvValue(stringValue) || stringValue.length > ENV_LIMITS.MAX_VALUE_LENGTH) {
+      return null
+    }
+    return stringValue
+  }
+  
+  return null
+}
+
+/**
+ * Process a single environment variable entry
+ * @param key - Environment variable key
+ * @param value - Environment variable value
+ * @param allowSet - Optional allowlist set
+ * @returns Validated key-value pair or null if invalid
+ * @pure
+ */
+function processEnvEntry(
+  key: unknown,
+  value: unknown,
+  allowSet: Set<string> | null
+): { key: string; value: string } | null {
+  if (!isKeyValid(key, allowSet)) {
+    return null
+  }
+  
+  const validatedValue = validateEnvValue(value)
+  if (validatedValue == null) {
+    return null
+  }
+  
+  return { key, value: validatedValue }
+}
+
+/**
  * Filters environment variables based on allowlist and safety rules
  * @param envVars - Raw environment variables
  * @param allowlist - Optional list of allowed keys
@@ -76,49 +158,25 @@ export function filterEnvironmentVariables(
   envVars: Record<string, unknown> | undefined,
   allowlist?: string[] | null
 ): Record<string, string> {
-  const result: Record<string, string> = {}
-
   if (envVars == null || typeof envVars !== 'object') {
-    return result
+    return {}
   }
 
   const allowSet = allowlist != null ? new Set(allowlist) : null
+  const result: Record<string, string> = {}
   let count = 0
 
   for (const [key, value] of Object.entries(envVars)) {
-    // Skip if we've hit the limit
     if (count >= ENV_LIMITS.MAX_PAIRS) {
       break
     }
 
-    // Validate key
-    if (typeof key !== 'string' || !isValidEnvKey(key) || key.length > ENV_LIMITS.MAX_KEY_LENGTH) {
-      continue
+    const processed = processEnvEntry(key, value, allowSet)
+    if (processed != null) {
+      // Key is validated above via isKeyValid -> isValidEnvKey
+      result[processed.key] = processed.value
+      count++
     }
-
-    // Check allowlist if provided
-    if (allowSet != null && !allowSet.has(key)) {
-      continue
-    }
-
-    // Validate value
-    if (value == null) {
-      continue
-    }
-
-    // Only allow string, number, or boolean values
-    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
-      continue
-    }
-    const stringValue = String(value)
-    if (!isValidEnvValue(stringValue) || stringValue.length > ENV_LIMITS.MAX_VALUE_LENGTH) {
-      continue
-    }
-
-    // Key is validated above via isValidEnvKey
-    // eslint-disable-next-line security/detect-object-injection
-    result[key] = stringValue
-    count++
   }
 
   return result
