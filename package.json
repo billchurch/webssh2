@@ -41,7 +41,8 @@
     "jsmasker": "^2.0.0",
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
-    "validator": "^13.15.15"
+    "validator": "^13.15.15",
+    "webssh2_client": "^2.0.0-alpha.11"
   },
   "scripts": {
     "prestart": "npm run build",
