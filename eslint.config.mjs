@@ -61,6 +61,7 @@ export default [
       eqeqeq: ['error', 'always', { null: 'ignore' }],
       'no-return-await': 'off',
       'require-await': 'off',
+      'prefer-object-has-own': 'error',
     },
   },
   {

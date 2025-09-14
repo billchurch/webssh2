@@ -70,16 +70,16 @@ function detectSourceType(source: HeaderSource | undefined): SourceType {
   if (source == null) {return SourceType.NONE}
   
   const hasGetParams = 
-    Object.prototype.hasOwnProperty.call(source, 'header') ||
-    Object.prototype.hasOwnProperty.call(source, 'headerBackground') ||
-    Object.prototype.hasOwnProperty.call(source, 'headerStyle')
+    Object.hasOwn(source, 'header') ||
+    Object.hasOwn(source, 'headerBackground') ||
+    Object.hasOwn(source, 'headerStyle')
   
   if (hasGetParams) {return SourceType.GET}
   
   const hasPostParams = 
-    Object.prototype.hasOwnProperty.call(source, 'header.name') ||
-    Object.prototype.hasOwnProperty.call(source, 'header.background') ||
-    Object.prototype.hasOwnProperty.call(source, 'header.color')
+    Object.hasOwn(source, 'header.name') ||
+    Object.hasOwn(source, 'header.background') ||
+    Object.hasOwn(source, 'header.color')
   
   return hasPostParams ? SourceType.POST : SourceType.NONE
 }
