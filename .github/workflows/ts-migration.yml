@@ -13,10 +13,14 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - name: Phase verify (lint + strict typecheck + tests)
-        run: ENABLE_TYPECHECK=1 node scripts/phases-verify.mjs
+      - name: Lint code
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Run tests
+        run: npm test
       - name: Generate migration progress
-        run: node scripts/migration-progress.mjs
+        run: npm run progress
       - uses: actions/upload-artifact@v4
         with:
           name: migration-progress
