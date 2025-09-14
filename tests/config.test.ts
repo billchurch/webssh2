@@ -2,58 +2,34 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
 import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
-import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
-import type { TestEnvironment } from './types/index.js'
+import { setupTestEnvironment, type ConfigFileManager } from './test-helpers.js'
 import type { Config } from '../app/config.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
 describe('Config Module - Baseline Sync Tests', () => {
-  const configPath = join(__dirname, '..', 'config.json')
-  const backupPath = join(__dirname, '..', 'config.json.backup')
-  let originalEnv: TestEnvironment = {}
+  let testEnv: ReturnType<typeof setupTestEnvironment>
+  let configManager: ConfigFileManager
 
   beforeEach(() => {
-    // Store original environment variables
-    originalEnv = storeEnvironmentVariables()
-    
-    // Clean up all environment variables  
-    cleanupEnvironmentVariables()
-    
-    // Backup existing config if it exists
-    if (fs.existsSync(configPath)) {
-      fs.copyFileSync(configPath, backupPath)
-    }
+    testEnv = setupTestEnvironment({ withConfigFile: true })
+    configManager = testEnv.configManager!
     
     // Reset config instance for fresh testing
     resetConfigForTesting()
   })
 
   afterEach(() => {
-    // Restore original environment variables
-    restoreEnvironmentVariables(originalEnv)
-    
-    // Restore original config
-    if (fs.existsSync(backupPath)) {
-      fs.copyFileSync(backupPath, configPath)
-      fs.unlinkSync(backupPath)
-    } else if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath)
-    }
+    testEnv.cleanup()
   })
 
   test('loads default config when config.json is missing', async () => {
     // Ensure config.json doesn't exist
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath)
+    if (configManager.configExists()) {
+      fs.unlinkSync(configManager.configPath)
     }
 
     // Get fresh config
@@ -80,7 +56,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
 
     // Get fresh config
     const config = await getConfig()
@@ -103,7 +79,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
     process.env.PORT = '4444'
 
     // Re-import with cache bust
@@ -114,7 +90,7 @@ describe('Config Module - Baseline Sync Tests', () => {
 
   test('handles malformed JSON gracefully', async () => {
     // Write invalid JSON
-    fs.writeFileSync(configPath, '{ invalid json }')
+    fs.writeFileSync(configManager.configPath, '{ invalid json }')
 
     // Re-import with cache bust
     const config = await getConfig()
@@ -134,7 +110,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
 
     // Re-import with cache bust
     const config = await getConfig()
@@ -156,7 +132,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
 
     // Re-import with cache bust
     const config = await getConfig()
@@ -171,8 +147,8 @@ describe('Config Module - Baseline Sync Tests', () => {
 
   test('generates secure session secret when not provided', async () => {
     // Ensure config.json doesn't exist
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath)
+    if (fs.existsSync(configManager.configPath)) {
+      fs.unlinkSync(configManager.configPath)
     }
 
     // Re-import with cache bust
@@ -189,7 +165,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
 
     // Re-import with cache bust
     const config = await getConfig()
@@ -204,7 +180,7 @@ describe('Config Module - Baseline Sync Tests', () => {
       }
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
+    configManager.writeConfig(customConfig)
 
     // Re-import with cache bust
     const config = await getConfig()

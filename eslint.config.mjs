@@ -84,7 +84,6 @@ export default [
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       'no-unused-vars': 'off',
-      'require-await': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -163,7 +162,6 @@ export default [
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
         },
       ],
-      'node/file-extension-in-import': ['error', 'always'],
     },
   },
   {

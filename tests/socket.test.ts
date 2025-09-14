@@ -1,71 +1,23 @@
-import { describe, it, beforeEach, mock } from 'node:test'
+import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../dist/app/socket.js'
-import type { Socket } from 'socket.io'
+import { 
+  createMockIO, 
+  createMockSocket, 
+  createMockSSHConnection, 
+  createMockSocketConfig 
+} from './test-helpers.js'
 
 describe('Socket Handler', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
 
   beforeEach(() => {
-    // Mock Socket.IO instance
-    io = new EventEmitter()
-    io.on = mock.fn(io.on)
-
-    // Mock socket instance
-    mockSocket = new EventEmitter()
-    mockSocket.id = 'test-socket-id'
-    mockSocket.request = {
-      session: {
-        save: mock.fn((cb: () => void) => cb()),
-        sshCredentials: null,
-        usedBasicAuth: false
-      },
-    }
-    mockSocket.emit = mock.fn()
-    mockSocket.disconnect = mock.fn()
-
-    // Mock config
-    mockConfig = {
-      ssh: {
-        term: 'xterm-color',
-        readyTimeout: 20000,
-        keepaliveInterval: 120000,
-        keepaliveCountMax: 10,
-        disableInteractiveAuth: false,
-      },
-      options: {
-        allowReauth: true,
-        allowReplay: true,
-        allowReconnect: true,
-      },
-      user: {},
-      header: null,
-    }
-
-    // Mock SSH Connection class
-    MockSSHConnection = class extends EventEmitter {
-      connect() {
-        return Promise.resolve()
-      }
-      shell() {
-        return Promise.resolve(new EventEmitter())
-      }
-      exec(command: string, options: any, envVars: any) {
-        const stream: any = new EventEmitter()
-        // rudimentary stderr emitter
-        stream.stderr = new EventEmitter()
-        // simulate async behavior
-        process.nextTick(() => {
-          stream.emit('data', Buffer.from(`OUT:${command}`))
-          stream.stderr.emit('data', Buffer.from('ERR:warn'))
-          stream.emit('close', 0, null)
-        })
-        return Promise.resolve(stream)
-      }
-      end() {}
-    }
-
+    io = createMockIO()
+    mockSocket = createMockSocket()
+    mockConfig = createMockSocketConfig()
+    MockSSHConnection = createMockSSHConnection({ withExecMethods: true })
+    
     // Initialize socket handler
     socketHandler(io, mockConfig, MockSSHConnection)
   })
@@ -91,13 +43,15 @@ describe('Socket Handler', () => {
     const connectionHandler = (io.on as any).mock.calls[0].arguments[1]
 
     // Configure session to auto-authenticate on connect
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = {
-      host: 'localhost',
-      port: 22,
-      username: 'user',
-      password: 'pass',
-    }
+    mockSocket = createMockSocket({
+      usedBasicAuth: true,
+      sessionCredentials: {
+        host: 'localhost',
+        port: 22,
+        username: 'user',
+        password: 'pass',
+      }
+    })
 
     connectionHandler(mockSocket)
 
@@ -137,13 +91,15 @@ describe('Socket Handler', () => {
   it('should emit error when exec payload is invalid', async () => {
     const connectionHandler = (io.on as any).mock.calls[0].arguments[1]
 
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = {
-      host: 'localhost',
-      port: 22,
-      username: 'user',
-      password: 'pass',
-    }
+    mockSocket = createMockSocket({
+      usedBasicAuth: true,
+      sessionCredentials: {
+        host: 'localhost',
+        port: 22,
+        username: 'user',
+        password: 'pass',
+      }
+    })
 
     connectionHandler(mockSocket)
     await new Promise((resolve) => setImmediate(resolve))
@@ -158,45 +114,14 @@ describe('Socket Handler', () => {
 })
 
 describe('Authentication Flow', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
+  let io: any, mockSocket: any
 
   beforeEach(() => {
-    // Mock Socket.IO instance
-    io = new EventEmitter()
-    io.on = mock.fn(io.on)
-
-    // Mock socket instance
-    mockSocket = new EventEmitter()
-    mockSocket.id = 'test-socket-id'
-    mockSocket.request = {
-      session: {
-        save: mock.fn((cb: () => void) => cb()),
-        sshCredentials: null,
-        usedBasicAuth: false
-      },
-    }
-    mockSocket.emit = mock.fn()
-    mockSocket.disconnect = mock.fn()
-
-    // Mock config
-    mockConfig = {
-      ssh: {
-        term: 'xterm-color',
-        readyTimeout: 20000,
-        keepaliveInterval: 120000,
-        keepaliveCountMax: 10,
-        disableInteractiveAuth: false,
-      },
-      options: {
-        allowReauth: true,
-      },
-      user: {},
-      header: null,
-    }
-
-    // Mock SSH Connection class
-    MockSSHConnection = class extends EventEmitter {}
-
+    io = createMockIO()
+    mockSocket = createMockSocket()
+    const mockConfig = createMockSocketConfig()
+    const MockSSHConnection = createMockSSHConnection({ withExecMethods: false })
+    
     // Initialize socket handler
     socketHandler(io, mockConfig, MockSSHConnection)
   })

@@ -2,35 +2,21 @@ import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../../dist/app/socket.js'
+import { 
+  createMockIO, 
+  createMockSocket, 
+  createMockSSHConnection, 
+  createMockSocketConfig 
+} from '../test-helpers.js'
 
 describe('Socket.IO Contracts', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
 
   beforeEach(() => {
-    io = new EventEmitter()
-    io.on = mock.fn(io.on)
-
-    mockSocket = new EventEmitter()
-    mockSocket.id = 'test-socket-id'
-    mockSocket.request = {
-      session: { save: mock.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false },
-    }
-    mockSocket.emit = mock.fn()
-    mockSocket.disconnect = mock.fn()
-
-    mockConfig = {
-      ssh: { term: 'xterm-color', disableInteractiveAuth: false },
-      options: { allowReauth: true, allowReplay: true, allowReconnect: true },
-      user: {},
-      header: null,
-    }
-
-    MockSSHConnection = class extends EventEmitter {
-      connect() { return Promise.resolve() }
-      shell() { return Promise.resolve(new EventEmitter()) }
-      exec() { return Promise.resolve(new EventEmitter()) }
-      end() {}
-    }
+    io = createMockIO()
+    mockSocket = createMockSocket()
+    mockConfig = createMockSocketConfig()
+    MockSSHConnection = createMockSSHConnection({ withExecMethods: true })
 
     socketHandler(io, mockConfig, MockSSHConnection)
   })

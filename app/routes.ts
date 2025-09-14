@@ -43,6 +43,116 @@ type ReqWithSession = Request & {
   headers: Record<string, unknown>
 }
 
+/**
+ * Handles SSH validation failure responses based on error type
+ * Pure function that returns response data without side effects
+ */
+function createSshValidationErrorResponse(validationResult: {
+  errorType?: string
+  errorMessage?: string
+}, host: string, port: number): {
+  status: number
+  headers?: Record<string, string>
+  message: string
+} {
+  switch (validationResult.errorType) {
+    case 'auth':
+      // Authentication failed - allow re-authentication
+      return {
+        status: HTTP.UNAUTHORIZED,
+        headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
+        message: 'SSH authentication failed'
+      }
+    case 'network':
+      // Network/connectivity issue - no point in re-authenticating
+      return {
+        status: 502,
+        message: `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
+      }
+    case 'timeout':
+      // Connection timeout
+      return {
+        status: 504,
+        message: `Gateway Timeout: SSH connection to ${host}:${port} timed out`
+      }
+    case undefined:
+    case 'unknown':
+    default:
+      // Unknown error - return 502 as it's likely a connectivity issue
+      return {
+        status: 502,
+        message: `Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`
+      }
+  }
+}
+
+/**
+ * Common SSH route handler logic
+ * Handles validation, authentication, and connection setup
+ */
+async function handleSshRoute(
+  req: ReqWithSession,
+  res: Response,
+  connectionParams: {
+    host: string
+    port: number
+    term: string | null
+  },
+  config: Config
+): Promise<void> {
+  // Get credentials from session (set by auth middleware)
+  const sshCredentials = req.session.sshCredentials
+  if (sshCredentials?.username == null || sshCredentials.username === '' || 
+      sshCredentials.password == null || sshCredentials.password === '') {
+    debug('Missing SSH credentials in session')
+    res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
+    res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
+    return
+  }
+
+  // Validate SSH credentials immediately
+  const validationResult = await validateSshCredentials(
+    connectionParams.host,
+    connectionParams.port,
+    sshCredentials.username,
+    sshCredentials.password,
+    config
+  )
+
+  if (validationResult.success === false) {
+    debug(
+      `SSH validation failed for ${sshCredentials.username}@${connectionParams.host}:${connectionParams.port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
+    )
+
+    // Get error response data
+    const errorResponse = createSshValidationErrorResponse(
+      validationResult,
+      connectionParams.host,
+      connectionParams.port
+    )
+
+    // Set headers if provided
+    if (errorResponse.headers != null) {
+      Object.entries(errorResponse.headers).forEach(([key, value]) => {
+        res.setHeader(key, value)
+      })
+    }
+
+    res.status(errorResponse.status).send(errorResponse.message)
+    return
+  }
+
+  // SSH validation succeeded - proceed with normal flow
+  processAuthParameters(req.query, req.session)
+  const sanitizedCredentials = setupSshCredentials(req.session, connectionParams)
+  debug('SSH validation passed - serving client: ', sanitizedCredentials)
+  void handleConnection(
+    req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
+    res,
+    { host: connectionParams.host }
+  )
+}
+
 
 /**
  * Validate SSH credentials by attempting a connection
@@ -89,72 +199,7 @@ export function createRoutes(config: Config): Router {
         config,
       })
 
-      // Get credentials from session (set by auth middleware)
-      const sshCredentials = r.session.sshCredentials
-      if (sshCredentials?.username == null || sshCredentials.username === '' || sshCredentials.password == null || sshCredentials.password === '') {
-        debug('Missing SSH credentials in session')
-        res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-        res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
-        return
-      }
-
-      // Validate SSH credentials immediately
-      const validationResult = await validateSshCredentials(
-        host,
-        port,
-        sshCredentials.username,
-        sshCredentials.password,
-        config
-      )
-
-      if (validationResult.success === false) {
-        debug(
-          `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
-        )
-
-        // Return appropriate status code based on error type
-        switch (validationResult.errorType) {
-          case 'auth':
-            // Authentication failed - allow re-authentication
-            res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-            res.status(HTTP.UNAUTHORIZED).send('SSH authentication failed')
-            break
-          case 'network':
-            // Network/connectivity issue - no point in re-authenticating
-            res
-              .status(502)
-              .send(
-                `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
-              )
-            break
-          case 'timeout':
-            // Connection timeout
-            res.status(504).send(`Gateway Timeout: SSH connection to ${host}:${port} timed out`)
-            break
-          case undefined:
-          case 'unknown':
-          default:
-            // Unknown error - return 502 as it's likely a connectivity issue
-            res
-              .status(502)
-              .send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
-        }
-        return
-      }
-
-      // SSH validation succeeded - proceed with normal flow
-      processAuthParameters(r.query, r.session)
-      const sanitizedCredentials = setupSshCredentials(r.session, {
-        host,
-        port,
-        term,
-      })
-      debug('/ssh/host/ SSH validation passed - serving client: ', sanitizedCredentials)
-      void handleConnection(
-        req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
-        res,
-        { host }
-      )
+      await handleSshRoute(r, res, { host, port, term }, config)
     } catch (err) {
       handleRouteError(err as Error, res)
     }
@@ -175,72 +220,7 @@ export function createRoutes(config: Config): Router {
         config,
       })
 
-      // Get credentials from session (set by auth middleware)
-      const sshCredentials = r.session.sshCredentials
-      if (sshCredentials?.username == null || sshCredentials.username === '' || sshCredentials.password == null || sshCredentials.password === '') {
-        debug('Missing SSH credentials in session')
-        res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-        res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
-        return
-      }
-
-      // Validate SSH credentials immediately
-      const validationResult = await validateSshCredentials(
-        host,
-        port,
-        sshCredentials.username,
-        sshCredentials.password,
-        config
-      )
-
-      if (validationResult.success === false) {
-        debug(
-          `SSH validation failed for ${sshCredentials.username}@${host}:${port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
-        )
-
-        // Return appropriate status code based on error type
-        switch (validationResult.errorType) {
-          case 'auth':
-            // Authentication failed - allow re-authentication
-            res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-            res.status(HTTP.UNAUTHORIZED).send('SSH authentication failed')
-            break
-          case 'network':
-            // Network/connectivity issue - no point in re-authenticating
-            res
-              .status(502)
-              .send(
-                `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
-              )
-            break
-          case 'timeout':
-            // Connection timeout
-            res.status(504).send(`Gateway Timeout: SSH connection to ${host}:${port} timed out`)
-            break
-          case undefined:
-          case 'unknown':
-          default:
-            // Unknown error - return 502 as it's likely a connectivity issue
-            res
-              .status(502)
-              .send(`Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`)
-        }
-        return
-      }
-
-      // SSH validation succeeded - proceed with normal flow
-      processAuthParameters(r.query, r.session)
-      const sanitizedCredentials = setupSshCredentials(r.session, {
-        host,
-        port,
-        term,
-      })
-      debug('/ssh/host/:host SSH validation passed - serving client: ', sanitizedCredentials)
-      void handleConnection(
-        req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
-        res,
-        { host }
-      )
+      await handleSshRoute(r, res, { host, port, term }, config)
     } catch (err) {
       handleRouteError(err as Error, res)
     }

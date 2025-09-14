@@ -14,7 +14,7 @@ import {
 const debug = createNamespacedDebug('envConfig')
 
 // Re-export types for backward compatibility
-export type { EnvValueType, EnvVarMap } from './config/index.js'
+export type { EnvValueType, EnvVarMap }
 
 
 export function loadEnvironmentConfig(): Record<string, unknown> {
