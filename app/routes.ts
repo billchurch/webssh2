@@ -146,11 +146,14 @@ async function handleSshRoute(
   processAuthParameters(req.query, req.session)
   const sanitizedCredentials = setupSshCredentials(req.session, connectionParams)
   debug('SSH validation passed - serving client: ', sanitizedCredentials)
-  void handleConnection(
+  handleConnection(
     req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
     res,
     { host: connectionParams.host }
-  )
+  ).catch((error) => {
+    debug('Error handling connection:', error)
+    handleRouteError(error as Error, res)
+  })
 }
 
 
@@ -177,10 +180,13 @@ export function createRoutes(config: Config): Router {
     debug('router.get./: Accessed / route')
     // Also allow env vars via /ssh?env=FOO:bar
     processAuthParameters(r.query, r.session)
-    void handleConnection(
+    handleConnection(
       req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
       res
-    )
+    ).catch((error) => {
+      debug('Error handling connection:', error)
+      handleRouteError(error as Error, res)
+    })
   })
 
   router.get('/host/', auth, async (req: Request, res: Response): Promise<void> => {
@@ -239,13 +245,15 @@ export function createRoutes(config: Config): Router {
       // Username and password are required in body
       const { username, password } = body
       if (username == null || username === '' || password == null || password === '') {
-        return void res.status(400).send('Missing required fields in body: username, password')
+        res.status(400).send('Missing required fields in body: username, password')
+        return
       }
 
       // Host can come from body or query params (body takes precedence)
       const host = (body['host'] ?? query['host'] ?? query['hostname']) as string | undefined
       if (host == null || host === '') {
-        return void res.status(400).send('Missing required field: host (in body or query params)')
+        res.status(400).send('Missing required field: host (in body or query params)')
+        return
       }
 
       // Port can come from body or query params (body takes precedence)
@@ -286,7 +294,10 @@ export function createRoutes(config: Config): Router {
       )
 
       // Serve the client page
-      void handleConnection(r, res, { host })
+      handleConnection(r, res, { host }).catch((error) => {
+        debug('Error handling connection:', error)
+        handleRouteError(error as Error, res)
+      })
     } catch (err) {
       handleRouteError(err as Error, res)
     }
