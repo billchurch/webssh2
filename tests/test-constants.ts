@@ -9,31 +9,35 @@
 
 // Basic test credentials
 export const TEST_USERNAME = 'testuser'
-export const TEST_PASSWORD = 'testpass'
-export const TEST_PASSWORD_ALT = 'testpassword'
+export const TEST_PASSWORD = 'testpass' //NOSONAR
+export const TEST_PASSWORD_ALT = 'testpassword' //NOSONAR
 export const INVALID_USERNAME = 'wronguser'
-export const INVALID_PASSWORD = 'wrongpass'
+export const INVALID_PASSWORD = 'wrongpass' //NOSONAR
 
 // SSH test credentials
 export const SSH_TEST_CREDENTIALS = {
   host: 'localhost',
   port: 22,
   username: TEST_USERNAME,
-  password: TEST_PASSWORD,
+  password: TEST_PASSWORD, //NOSONAR
 } as const
 
 export const SSH_INVALID_CREDENTIALS = {
   host: 'localhost',
   port: 22,
   username: TEST_USERNAME,
-  password: INVALID_PASSWORD,
+  password: INVALID_PASSWORD, //NOSONAR
 } as const
 
 // Session and secrets
-export const TEST_SECRET = 'test-secret'
-export const TEST_SECRET_KEY = 'test-secret-key'
-export const TEST_SECRET_LONG = 'test-secret-key-12345'
-export const MY_SECRET = 'mysecret'
+export const TEST_SECRET = 'test-secret' //NOSONAR
+export const TEST_SECRET_KEY = 'test-secret-key' //NOSONAR
+export const TEST_SECRET_LONG = 'test-secret-key-12345' //NOSONAR
+export const MY_SECRET = 'mysecret' //NOSONAR
+
+// Keys and passphrases
+export const TEST_PRIVATE_KEY = 'test-key' //NOSONAR
+export const TEST_PASSPHRASE = 'test-passphrase' //NOSONAR
 
 // SSO header names (not actual passwords, but often flagged)
 export const SSO_HEADERS = {
@@ -45,17 +49,17 @@ export const SSO_HEADERS = {
 // SSO test values
 export const SSO_TEST_VALUES = {
   username: 'apmuser',
-  password: 'apmpass',
+  password: 'apmpass', //NOSONAR
 } as const
 
 // Various test passwords used in different contexts
 export const TEST_PASSWORDS = {
-  basic: 'pass',
-  basic123: 'pass123',
-  session: 'session-password',
-  state: 'state-password',
-  test: 'test-password',
-  secret: 'secret',
+  basic: 'pass', //NOSONAR
+  basic123: 'pass123', //NOSONAR
+  session: 'session-password', //NOSONAR
+  state: 'state-password', //NOSONAR
+  test: 'test-password', //NOSONAR
+  secret: 'secret', //NOSONAR
 } as const
 
 // Test credentials objects for different scenarios
@@ -64,7 +68,7 @@ export const MOCK_CREDENTIALS = {
     host: 'h',
     port: 22,
     username: 'u',
-    password: 'p',
+    password: 'p', //NOSONAR
   },
   full: {
     host: 'example.com',

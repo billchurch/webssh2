@@ -11,7 +11,7 @@ import {
   createSessionStateFromCredentials,
 } from '../../../app/socket/credential-manager.js'
 import type { Config } from '../../../app/types/config.js'
-import { TEST_USERNAME, TEST_PASSWORD } from '../../test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD, TEST_PRIVATE_KEY, TEST_PASSPHRASE } from '../../test-constants.js'
 
 describe('Credential Manager Pure Functions', () => {
   it('isValidCredentialFormat accepts empty credentials', () => {
@@ -112,8 +112,8 @@ describe('Credential Manager Pure Functions', () => {
       password: TEST_PASSWORD,
       host: 'example.com',
       port: 2222,
-      privateKey: 'test-key',
-      passphrase: 'test-passphrase'
+      privateKey: TEST_PRIVATE_KEY,
+      passphrase: TEST_PASSPHRASE
     }
     
     const result = createSessionStateFromCredentials(credentials)
@@ -122,8 +122,8 @@ describe('Credential Manager Pure Functions', () => {
       authenticated: true,
       username: TEST_USERNAME,
       password: TEST_PASSWORD,
-      privateKey: 'test-key',
-      passphrase: 'test-passphrase',
+      privateKey: TEST_PRIVATE_KEY,
+      passphrase: TEST_PASSPHRASE,
       host: 'example.com',
       port: 2222,
     })
