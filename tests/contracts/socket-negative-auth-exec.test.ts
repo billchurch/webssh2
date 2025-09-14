@@ -2,6 +2,7 @@ import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../../dist/app/socket.js'
+import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative: authenticate + exec env', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, capturedEnv: any, capturedOptions: any
@@ -68,7 +69,7 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
   it('exec: env passes session.envVars for AcceptEnv support', async () => {
     const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
+    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     mockSocket.request.session.envVars = { FOO: 'bar' }
     onConn(mockSocket)
 

@@ -7,6 +7,7 @@ import {
   validateCredentialFormat,
   type Credentials
 } from '../../app/validation/credentials.js'
+import { TEST_PASSWORDS } from '../test-constants.js'
 
 describe('Credential Validation Functions', () => {
   describe('isValidCredentials', () => {
@@ -15,7 +16,7 @@ describe('Credential Validation Functions', () => {
         username: 'user',
         host: 'example.com',
         port: 22,
-        password: 'pass123'
+        password: TEST_PASSWORDS.basic123
       }
       assert.equal(isValidCredentials(creds), true)
     })
@@ -35,7 +36,7 @@ describe('Credential Validation Functions', () => {
         username: 'user',
         host: 'host.local',
         port: 22,
-        password: 'pass',
+        password: TEST_PASSWORDS.basic,
         privateKey: 'key',
         passphrase: 'phrase'
       }
@@ -59,14 +60,14 @@ describe('Credential Validation Functions', () => {
         username: 123 as any,
         host: 'host',
         port: 22,
-        password: 'pass'
+        password: TEST_PASSWORDS.basic
       }), false)
 
       assert.equal(isValidCredentials({
         username: 'user',
         host: 'host',
         port: '22' as any,
-        password: 'pass'
+        password: TEST_PASSWORDS.basic
       }), false)
     })
   })
@@ -77,7 +78,7 @@ describe('Credential Validation Functions', () => {
         username: 'user',
         host: 'example.com',
         port: 22,
-        password: 'secret'
+        password: TEST_PASSWORDS.secret
       })
       assert.equal(result.valid, true)
       assert.equal(result.errors.length, 0)
@@ -87,7 +88,7 @@ describe('Credential Validation Functions', () => {
       const result = validateCredentialFormat({
         host: 'example.com',
         port: 22,
-        password: 'secret'
+        password: TEST_PASSWORDS.secret
       })
       assert.equal(result.valid, false)
       assert.ok(result.errors.some(e => e.includes('Username')))
@@ -98,7 +99,7 @@ describe('Credential Validation Functions', () => {
         username: '',
         host: 'example.com',
         port: 22,
-        password: 'secret'
+        password: TEST_PASSWORDS.secret
       })
       assert.equal(result.valid, false)
       assert.ok(result.errors.some(e => e.includes('empty')))
@@ -108,7 +109,7 @@ describe('Credential Validation Functions', () => {
       const result = validateCredentialFormat({
         username: 'user',
         port: 22,
-        password: 'secret'
+        password: TEST_PASSWORDS.secret
       })
       assert.equal(result.valid, false)
       assert.ok(result.errors.some(e => e.includes('Host')))
@@ -119,7 +120,7 @@ describe('Credential Validation Functions', () => {
         username: 'user',
         host: 'example.com',
         port: 99999,
-        password: 'secret'
+        password: TEST_PASSWORDS.secret
       })
       assert.equal(result.valid, false)
       assert.ok(result.errors.some(e => e.includes('Port')))

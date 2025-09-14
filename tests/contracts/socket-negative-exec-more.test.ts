@@ -2,6 +2,7 @@ import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../../dist/app/socket.js'
+import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative: exec edge cases', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, capturedOptions: any
@@ -50,7 +51,7 @@ describe('Socket.IO Negative: exec edge cases', () => {
   it('exec: non-string command → ssherror', async () => {
     const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
+    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     onConn(mockSocket)
 
     await new Promise((r) => setImmediate(r))
@@ -66,7 +67,7 @@ describe('Socket.IO Negative: exec edge cases', () => {
   it('exec: exit payload contains code and signal', async () => {
     const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
+    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     onConn(mockSocket)
 
     await new Promise((r) => setImmediate(r))

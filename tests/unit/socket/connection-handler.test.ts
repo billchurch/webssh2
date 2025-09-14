@@ -14,6 +14,7 @@ import {
 } from '../../../app/socket/connection-handler.js'
 import { SSHConnectionError } from '../../../app/errors.js'
 import type { Config } from '../../../app/types/config.js'
+import { TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('Connection Handler Pure Functions', () => {
   it('prepareCredentials merges server private key when none provided', () => {
@@ -21,7 +22,7 @@ describe('Connection Handler Pure Functions', () => {
       host: 'example.com',
       port: 22,
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
     }
     const config = {
       user: {
@@ -41,7 +42,7 @@ describe('Connection Handler Pure Functions', () => {
       host: 'example.com',
       port: 22,
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       privateKey: 'user-key-content',
     }
     const config = {

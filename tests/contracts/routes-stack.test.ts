@@ -2,12 +2,13 @@
 import test from 'node:test'
 import assert from 'node:assert'
 import { createRoutes } from '../../dist/app/routes.js'
+import { TEST_SECRET } from '../test-constants.js'
 
 const minimalConfig = {
   ssh: { host: 'example.com', port: 22, term: 'xterm-256color' },
   http: { origins: ['*:*'] },
   user: { name: null, password: null },
-  session: { secret: 'x', name: 'y' },
+  session: { secret: TEST_SECRET, name: 'y' },
   sso: { enabled: false, csrfProtection: false, trustedProxies: [], headerMapping: {} },
   options: { challengeButton: true, autoLog: false, allowReplay: true, allowReconnect: true, allowReauth: true },
 }

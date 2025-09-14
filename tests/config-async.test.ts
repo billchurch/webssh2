@@ -8,6 +8,7 @@ import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
+import { ENV_TEST_VALUES, TEST_SECRET_LONG } from './test-constants.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -156,11 +157,11 @@ describe('Config Module - Async Tests', () => {
   test('async config loading uses literal JSON values (no env var substitution)', async () => {
     // Native JSON parsing doesn't support environment variable substitution
     // This tests that literal values are preserved
-    process.env.TEST_SECRET = 'test-secret-12345'
+    process.env.TEST_SECRET = TEST_SECRET_LONG
     
     const customConfig = {
       session: {
-        secret: '%TEST_SECRET%'
+        secret: ENV_TEST_VALUES.secret
       }
     }
 
@@ -170,7 +171,7 @@ describe('Config Module - Async Tests', () => {
       const config = await loadConfigAsync()
       
       // Native JSON parsing should preserve the literal string
-      assert.equal(config.session.secret, '%TEST_SECRET%')
+      assert.equal(config.session.secret, ENV_TEST_VALUES.secret)
     } finally {
       delete process.env.TEST_SECRET
     }

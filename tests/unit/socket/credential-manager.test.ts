@@ -11,6 +11,7 @@ import {
   createSessionStateFromCredentials,
 } from '../../../app/socket/credential-manager.js'
 import type { Config } from '../../../app/types/config.js'
+import { TEST_USERNAME, TEST_PASSWORD } from '../../test-constants.js'
 
 describe('Credential Manager Pure Functions', () => {
   it('isValidCredentialFormat accepts empty credentials', () => {
@@ -107,8 +108,8 @@ describe('Credential Manager Pure Functions', () => {
 
   it('createSessionStateFromCredentials extracts session state', () => {
     const credentials = {
-      username: 'testuser',
-      password: 'testpass',
+      username: TEST_USERNAME,
+      password: TEST_PASSWORD,
       host: 'example.com',
       port: 2222,
       privateKey: 'test-key',
@@ -119,8 +120,8 @@ describe('Credential Manager Pure Functions', () => {
     
     assert.deepStrictEqual(result, {
       authenticated: true,
-      username: 'testuser',
-      password: 'testpass',
+      username: TEST_USERNAME,
+      password: TEST_PASSWORD,
       privateKey: 'test-key',
       passphrase: 'test-passphrase',
       host: 'example.com',
@@ -130,13 +131,13 @@ describe('Credential Manager Pure Functions', () => {
 
   it('createSessionStateFromCredentials handles null values', () => {
     const credentials = {
-      username: 'testuser'
+      username: TEST_USERNAME
     }
     
     const result = createSessionStateFromCredentials(credentials)
     
     assert.strictEqual(result.authenticated, true)
-    assert.strictEqual(result.username, 'testuser')
+    assert.strictEqual(result.username, TEST_USERNAME)
     assert.strictEqual(result.password, null)
     assert.strictEqual(result.privateKey, null)
     assert.strictEqual(result.passphrase, null)

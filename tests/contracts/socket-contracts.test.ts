@@ -8,6 +8,7 @@ import {
   createMockSSHConnection, 
   createMockSocketConfig 
 } from '../test-helpers.js'
+import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Contracts', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
@@ -45,7 +46,7 @@ describe('Socket.IO Contracts', () => {
   it('emits permissions after successful connection with expected flags', async () => {
     const connectionHandler = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
+    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     connectionHandler(mockSocket)
     await new Promise((r) => setImmediate(r))
     const permEvent = (mockSocket.emit as any).mock.calls.find((c: any) => c.arguments[0] === 'permissions')

@@ -7,6 +7,7 @@ import {
   setupSshCredentials,
   processSessionRecordingParams,
 } from '../dist/app/auth/auth-utils.js'
+import { TEST_PASSWORDS } from './test-constants.js'
 
 test('processHeaderParameters sets session overrides from GET-like source', () => {
   const session: any = {}
@@ -33,7 +34,7 @@ test('setupSshCredentials sets and masks credentials', () => {
     host: 'example.com',
     port: 22,
     username: 'user',
-    password: 'secret',
+    password: TEST_PASSWORDS.secret,
     term: 'xterm-256color',
   })
   assert.strictEqual(session.usedBasicAuth, true)
@@ -41,7 +42,7 @@ test('setupSshCredentials sets and masks credentials', () => {
   assert.strictEqual(session.sshCredentials.port, 22)
   assert.strictEqual(session.sshCredentials.username, 'user')
   // sanitized should not expose raw password value
-  assert.notStrictEqual(JSON.stringify(sanitized).includes('secret'), true)
+  assert.notStrictEqual(JSON.stringify(sanitized).includes(TEST_PASSWORDS.secret), true)
 })
 
 test('processSessionRecordingParams toggles replay and sets extras', () => {

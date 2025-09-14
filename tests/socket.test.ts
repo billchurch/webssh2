@@ -8,6 +8,7 @@ import {
   createMockSSHConnection, 
   createMockSocketConfig 
 } from './test-helpers.js'
+import { TEST_PASSWORDS } from './test-constants.js'
 
 describe('Socket Handler', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
@@ -49,7 +50,7 @@ describe('Socket Handler', () => {
         host: 'localhost',
         port: 22,
         username: 'user',
-        password: 'pass',
+        password: TEST_PASSWORDS.basic,
       }
     })
 
@@ -97,7 +98,7 @@ describe('Socket Handler', () => {
         host: 'localhost',
         port: 22,
         username: 'user',
-        password: 'pass',
+        password: TEST_PASSWORDS.basic,
       }
     })
 

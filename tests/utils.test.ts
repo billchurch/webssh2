@@ -12,6 +12,7 @@ import {
   validateConfig,
   validateSshTerm,
 } from '../dist/app/utils.js'
+import { TEST_PASSWORDS, TEST_USERNAME, TEST_PASSWORD, MY_SECRET } from './test-constants.js'
 
 describe('deepMerge', () => {
   test('merges nested objects correctly', () => {
@@ -55,7 +56,7 @@ describe('isValidCredentials', () => {
   test('validates complete credentials', () => {
     const validCreds = {
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       host: 'localhost',
       port: 22,
     }
@@ -73,7 +74,7 @@ describe('isValidCredentials', () => {
 
 describe('maskSensitiveData', () => {
   test('masks password in object', () => {
-    const input = { username: 'user', password: 'secret' }
+    const input = { username: 'user', password: TEST_PASSWORDS.secret }
     const masked = maskSensitiveData(input)
     assert.equal(masked.password?.includes('*'), true)
     assert.equal(masked.username, 'user')
@@ -83,7 +84,7 @@ describe('maskSensitiveData', () => {
     const input = {
       user: {
         credentials: {
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
         },
       },
     }
@@ -116,8 +117,8 @@ describe('validateConfig', () => {
         origins: ['http://localhost:2222'],
       },
       user: {
-        name: 'testuser',
-        password: 'testpass',
+        name: TEST_USERNAME,
+        password: TEST_PASSWORD,
         privateKey: null,
       },
       ssh: {
@@ -145,7 +146,7 @@ describe('validateConfig', () => {
         allowReplay: true,
       },
       session: {
-        secret: 'mysecret',
+        secret: MY_SECRET,
         name: 'webssh2',
       },
     }

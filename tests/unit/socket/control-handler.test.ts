@@ -12,6 +12,7 @@ import {
   type ControlSession,
 } from '../../../app/socket/control-handler.js'
 import type { Config } from '../../../app/types/config.js'
+import { TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('Control Handler Pure Functions', () => {
   it('isReplayAllowedByConfig returns true when replay allowed', () => {
@@ -41,13 +42,13 @@ describe('Control Handler Pure Functions', () => {
       sshCredentials: {
         host: 'example.com',
         username: 'user',
-        password: 'session-password'
+        password: TEST_PASSWORDS.session
       }
     }
-    const sessionState = { password: 'state-password' }
+    const sessionState = { password: TEST_PASSWORDS.state }
     
     const result = getReplayPassword(session, sessionState)
-    assert.strictEqual(result, 'session-password')
+    assert.strictEqual(result, TEST_PASSWORDS.session)
   })
 
   it('getReplayPassword falls back to session state', () => {
@@ -57,10 +58,10 @@ describe('Control Handler Pure Functions', () => {
         username: 'user'
       }
     }
-    const sessionState = { password: 'state-password' }
+    const sessionState = { password: TEST_PASSWORDS.state }
     
     const result = getReplayPassword(session, sessionState)
-    assert.strictEqual(result, 'state-password')
+    assert.strictEqual(result, TEST_PASSWORDS.state)
   })
 
   it('getReplayPassword returns null when no password available', () => {
@@ -77,7 +78,7 @@ describe('Control Handler Pure Functions', () => {
         allowReplay: true
       }
     } as Config
-    const password = 'test-password'
+    const password = TEST_PASSWORDS.test
     const mockShell = { write: () => {} } as any
     
     const result = validateReplayRequest(config, password, mockShell)
@@ -90,7 +91,7 @@ describe('Control Handler Pure Functions', () => {
         allowReplay: false
       }
     } as Config
-    const password = 'test-password'
+    const password = TEST_PASSWORDS.test
     const mockShell = { write: () => {} } as any
     
     const result = validateReplayRequest(config, password, mockShell)
@@ -122,7 +123,7 @@ describe('Control Handler Pure Functions', () => {
         allowReplay: true
       }
     } as Config
-    const password = 'test-password'
+    const password = TEST_PASSWORDS.test
     const mockShell = null
     
     const result = validateReplayRequest(config, password, mockShell)
@@ -133,13 +134,13 @@ describe('Control Handler Pure Functions', () => {
   })
 
   it('formatReplayData uses CR by default', () => {
-    const result = formatReplayData('password123', false)
-    assert.strictEqual(result, 'password123\\r')
+    const result = formatReplayData(TEST_PASSWORDS.basic123, false)
+    assert.strictEqual(result, `${TEST_PASSWORDS.basic123}\\r`)
   })
 
   it('formatReplayData uses CRLF when requested', () => {
-    const result = formatReplayData('password123', true)
-    assert.strictEqual(result, 'password123\\r\\n')
+    const result = formatReplayData(TEST_PASSWORDS.basic123, true)
+    assert.strictEqual(result, `${TEST_PASSWORDS.basic123}\\r\\n`)
   })
 
   it('shouldUseCRLF returns config setting', () => {

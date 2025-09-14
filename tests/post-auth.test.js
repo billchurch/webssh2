@@ -7,6 +7,7 @@ import request from 'supertest'
 import session from 'express-session'
 import { createRoutes } from '../dist/app/routes.js'
 import { createBodyParserMiddleware } from '../dist/app/middleware.js'
+import { TEST_SECRET, SSO_HEADERS, TEST_USERNAME, TEST_PASSWORD, SSO_TEST_VALUES, TEST_FORM_DATA } from './test-constants.js'
 
 // Mock configuration for testing
 const mockConfig = {
@@ -20,17 +21,14 @@ const mockConfig = {
     password: null,
   },
   session: {
-    secret: 'test-secret',
+    secret: TEST_SECRET,
     name: 'test.sid',
   },
   sso: {
     enabled: true,
     csrfProtection: false,
     trustedProxies: ['127.0.0.1'],
-    headerMapping: {
-      username: 'x-apm-username',
-      password: 'x-apm-password',
-    },
+    headerMapping: SSO_HEADERS,
   },
 }
 
@@ -77,12 +75,12 @@ function createAuthenticatedPOST(app, endpoint, formData, headers = {}) {
 
 // Test data fixtures
 const testCredentials = {
-  form: 'username=testuser&password=testpass',
+  form: TEST_FORM_DATA.basic,
   apmHeaders: {
-    'x-apm-username': 'apmuser',
-    'x-apm-password': 'apmpass',
+    [SSO_HEADERS.username]: SSO_TEST_VALUES.username,
+    [SSO_HEADERS.password]: SSO_TEST_VALUES.password,
   },
-  basicAuth: Buffer.from('testuser:testpass').toString('base64'),
+  basicAuth: Buffer.from(`${TEST_USERNAME}:${TEST_PASSWORD}`).toString('base64'),
 }
 
 const testHosts = {

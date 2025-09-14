@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-helpers.js'
+import { TEST_SECRET_LONG } from './test-constants.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -160,7 +161,7 @@ describe('Config Module - Baseline Sync Tests', () => {
   test('uses provided session secret from config', async () => {
     const customConfig = {
       session: {
-        secret: 'test-secret-key-12345'
+        secret: TEST_SECRET_LONG
       }
     }
 
@@ -169,7 +170,7 @@ describe('Config Module - Baseline Sync Tests', () => {
     // Re-import with cache bust
     const config = await getConfig()
 
-    assert.equal(config.session.secret, 'test-secret-key-12345')
+    assert.equal(config.session.secret, TEST_SECRET_LONG)
   })
 
   test('preserves default options when not overridden', async () => {
