@@ -62,6 +62,9 @@ export default [
       'no-return-await': 'off',
       'require-await': 'off',
       'prefer-object-has-own': 'error',
+      'prefer-object-spread': 'error',
+      'no-nested-ternary': 'error',
+      'no-template-curly-in-string': 'error',
     },
   },
   {
@@ -169,6 +172,7 @@ export default [
           allow: ['constructors'],
         },
       ],
+      '@typescript-eslint/prefer-optional-chain': 'error',
     },
   },
   {
