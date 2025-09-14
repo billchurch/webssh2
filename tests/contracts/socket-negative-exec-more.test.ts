@@ -28,8 +28,7 @@ describe('Socket.IO Negative: exec edge cases', () => {
     class SSH extends EventEmitter {
       async connect() { return }
       async shell() { const s: any = new EventEmitter(); s.write = () => {}; return s }
-      async exec(_cmd: string, options: any) {
-        capturedOptions = options
+      async exec(_cmd: string, _options: any) {
         const s: any = new EventEmitter()
         s.stderr = new EventEmitter()
         process.nextTick(() => {

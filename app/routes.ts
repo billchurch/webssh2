@@ -259,9 +259,12 @@ export function createRoutes(config: Config): Router {
       // Port can come from body or query params (body takes precedence)
       // Convert to number early if it exists
       const portParam = (body['port'] ?? query['port']) as string | number | undefined
-      const portNumber = portParam != null ? 
-        (typeof portParam === 'number' ? portParam : parseInt(portParam, 10)) : 
-        undefined
+      let portNumber: number | undefined
+      if (portParam != null) {
+        portNumber = typeof portParam === 'number' ? portParam : parseInt(portParam, 10)
+      } else {
+        portNumber = undefined
+      }
       const port = getValidatedPort(portNumber)
 
       // SSH term can come from body or query params (body takes precedence)

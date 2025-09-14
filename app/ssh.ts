@@ -117,7 +117,7 @@ export default class SSHConnection extends EventEmitter {
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            reject(err)
+            reject(err instanceof Error ? err : new Error(String(err)))
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)
@@ -159,7 +159,7 @@ export default class SSHConnection extends EventEmitter {
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            reject(err)
+            reject(err instanceof Error ? err : new Error(String(err)))
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)

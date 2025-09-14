@@ -245,7 +245,7 @@ class WebSSH2Socket extends EventEmitter {
   private handleSSHConnectionSuccess(credentials: ConnectionCredentials): void {
     // Update session state
     const newSessionState = createSessionStateFromCredentials(credentials as Record<string, unknown>)
-    this.sessionState = Object.assign({}, this.sessionState, newSessionState)
+    this.sessionState = { ...this.sessionState, ...newSessionState }
 
     // Handle success using the extracted handler
     handleConnectionSuccess(this.socket, this.config, credentials)
@@ -325,7 +325,7 @@ class WebSSH2Socket extends EventEmitter {
     const cols = typeof s.cols === 'number' && Number.isFinite(s.cols) ? s.cols : null
     const rows = typeof s.rows === 'number' && Number.isFinite(s.rows) ? s.rows : null
     
-    if (cols !== null && rows !== null && this.ssh != null && this.ssh.resizeTerminal != null) {
+    if (cols !== null && rows !== null && this.ssh?.resizeTerminal != null) {
       this.ssh.resizeTerminal(rows, cols)
     }
   }

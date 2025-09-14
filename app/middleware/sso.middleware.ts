@@ -28,8 +28,7 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
     const body = (req as Request & { body?: Record<string, unknown> }).body as 
       Record<string, unknown> | undefined
     if (
-      body != null && 
-      body['username'] != null && 
+      body?.['username'] != null && 
       body['username'] !== '' && 
       body['password'] != null && 
       body['password'] !== ''

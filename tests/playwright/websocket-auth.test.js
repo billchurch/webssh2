@@ -114,7 +114,8 @@ test.describe('WebSocket Basic Authentication', () => {
   test('should connect automatically with valid Basic Auth credentials', async ({ page }) => {
     // Navigate with Basic Auth credentials
     const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Verify automatic connection
@@ -130,7 +131,8 @@ test.describe('WebSocket Basic Authentication', () => {
   test('should return 401 for invalid Basic Auth credentials', async ({ page }) => {
     // Navigate with invalid Basic Auth credentials
     const badAuth = `${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}`
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${badAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${badAuth}@`)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     
     // Expect navigation to fail with 401 due to immediate SSH validation
     const response = await page.goto(url, { waitUntil: 'commit' })
@@ -146,7 +148,8 @@ test.describe('WebSocket Basic Authentication', () => {
   test('should return 502 for Basic Auth with non-existent host', async ({ page }) => {
     // Navigate with Basic Auth to non-existent host
     const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
     
     // Expect navigation to fail with 502 Bad Gateway (network/connectivity issue)
     const response = await page.goto(url, { waitUntil: 'commit' })
@@ -162,7 +165,8 @@ test.describe('WebSocket Basic Authentication', () => {
   test('should execute multiple commands with Basic Auth session', async ({ page }) => {
     // Navigate with Basic Auth credentials
     const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
     
     // Wait for connection

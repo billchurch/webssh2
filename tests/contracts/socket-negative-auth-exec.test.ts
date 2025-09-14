@@ -29,7 +29,6 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
       async connect() { return }
       async shell() { const s: any = new EventEmitter(); s.write = () => {}; return s }
       async exec(_cmd: string, options: any, env: any) {
-        capturedOptions = options
         capturedEnv = env
         const s: any = new EventEmitter()
         s.stderr = new EventEmitter()
