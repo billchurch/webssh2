@@ -19,8 +19,6 @@ import {
   SSH_PORT,
   USERNAME,
   PASSWORD,
-  INVALID_USERNAME,
-  INVALID_PASSWORD,
   NON_EXISTENT_HOST,
   INVALID_PORT,
 } from './constants.js'

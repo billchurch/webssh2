@@ -177,13 +177,19 @@ export function handleReplayCredentials(
     return
   }
   
-  // Perform replay (password and shellStream are guaranteed to be non-null here)
+  // Perform replay (password and shellStream are guaranteed to be non-null here by validation)
+  // Type narrowing: after validation, we know these are not null
+  if (password == null || shellStream == null) {
+    // This should never happen due to validation above, but TypeScript needs the check
+    return
+  }
+  
   const replayOptions: ReplayOptions = {
-    password: password as string,
+    password: password,
     useCRLF: shouldUseCRLF(config)
   }
   
-  const result = writeCredentialsToShell(shellStream as EventEmitter & { write?: (data: string) => void }, replayOptions)
+  const result = writeCredentialsToShell(shellStream, replayOptions)
   if (!result.success) {
     socket.emit('ssherror', result.error)
   }

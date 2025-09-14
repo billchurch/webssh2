@@ -18,15 +18,24 @@ export function buildCredentials(rawCreds: Record<string, unknown>): Credentials
   
   // Conditionally add optional fields
   if (rawCreds['term'] != null && rawCreds['term'] !== '') {
-    result.term = String(rawCreds['term'])
+    const term = rawCreds['term']
+    if (typeof term === 'string' || typeof term === 'number') {
+      result.term = String(term)
+    }
   }
   
   if (rawCreds['privateKey'] != null && rawCreds['privateKey'] !== '') {
-    result.privateKey = String(rawCreds['privateKey'])
+    const key = rawCreds['privateKey']
+    if (typeof key === 'string') {
+      result.privateKey = key
+    }
   }
   
   if (rawCreds['passphrase'] != null && rawCreds['passphrase'] !== '') {
-    result.passphrase = String(rawCreds['passphrase'])
+    const pass = rawCreds['passphrase']
+    if (typeof pass === 'string') {
+      result.passphrase = pass
+    }
   }
   
   return result

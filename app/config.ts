@@ -2,8 +2,7 @@
 // app/config.ts
 
 import path, { dirname } from 'path'
-import { promises as fs } from 'fs'
-import { existsSync } from 'fs'
+import { promises as fs, existsSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { deepMerge, validateConfig } from './utils.js'
 import { generateSecureSecret } from './crypto-utils.js'

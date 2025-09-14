@@ -5,7 +5,7 @@
  * similar to how the SSO BIG-IP APM example works
  */
 
-import { test, expect } from '@playwright/test'
+import { test } from '@playwright/test'
 import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from '../constants.js'
 
 test.describe('HTTP POST Authentication Flow Analysis', () => {
@@ -74,7 +74,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     
     // Wait for form to auto-submit and redirect
     console.log('⏳ Waiting for form submission and redirect...')
-    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: TIMEOUTS.DEFAULT })
+    await page.waitForURL(/\/ssh\/host\//, { timeout: TIMEOUTS.DEFAULT })
     console.log('✅ Redirected to WebSSH2 after POST')
     
     // Wait for connection to establish  
@@ -85,7 +85,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
       await page.waitForSelector('text=Connected', { timeout: TIMEOUTS.ACTION })
       console.log('✅ HTTP POST authentication successful')
     } catch (e) {
-      console.log('❌ HTTP POST authentication may have failed')
+      console.error('❌ HTTP POST authentication may have failed:', e)
     }
     
     // Execute a test command to verify functionality
@@ -104,7 +104,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
         await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
-      console.log('⚠️ Terminal interaction failed:', e.message)
+      console.error('⚠️ Terminal interaction failed:', e instanceof Error ? e.message : e)
     }
     
     // Output captured client logs
@@ -174,7 +174,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
     console.log('📝 Created advanced HTTP POST form')
     
     // Wait for redirect and connection
-    await page.waitForURL(new RegExp('/ssh/host/'), { timeout: TIMEOUTS.DEFAULT })
+    await page.waitForURL(/\/ssh\/host\//, { timeout: TIMEOUTS.DEFAULT })
     await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
     
     try {
@@ -197,7 +197,7 @@ test.describe('HTTP POST Authentication Flow Analysis', () => {
         await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
-      console.log('❌ Advanced POST authentication failed')
+      console.error('❌ Advanced POST authentication failed:', e)
     }
     
     console.log('\n=== ADVANCED POST CLIENT LOGS ===')

@@ -106,6 +106,10 @@ export function filterEnvironmentVariables(
       continue
     }
 
+    // Only allow string, number, or boolean values
+    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+      continue
+    }
     const stringValue = String(value)
     if (!isValidEnvValue(stringValue) || stringValue.length > ENV_LIMITS.MAX_VALUE_LENGTH) {
       continue

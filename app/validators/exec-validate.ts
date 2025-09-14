@@ -26,7 +26,10 @@ export function validateExecPayload(payload: unknown): ExecValidated {
     out.pty = Boolean(p['pty'])
   }
   if (p['term'] != null) {
-    out.term = String(p['term'])
+    const term = p['term']
+    if (typeof term === 'string' || typeof term === 'number') {
+      out.term = String(term)
+    }
   }
   if (p['cols'] != null) {
     out.cols = Number(p['cols'])
@@ -44,7 +47,9 @@ export function validateExecPayload(payload: unknown): ExecValidated {
       const entries = Object.entries(src)
         .filter(
           ([k, v]) =>
-            typeof k === 'string' && isValidEnvKey(k) && v != null && isValidEnvValue(String(v))
+            typeof k === 'string' && isValidEnvKey(k) && v != null && 
+            (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') &&
+            isValidEnvValue(String(v))
         )
         .slice(0, 50)
         .map(([k, v]) => [k, String(v)] as [string, string])

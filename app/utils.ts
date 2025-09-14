@@ -54,7 +54,8 @@ export function validateConfig(config: unknown): unknown {
     compile: (schema: unknown) => ValidateFn
     errorsText: (errors?: unknown) => string
   }
-  const AjvCtor = Ajv as unknown as { new (): AjvLike }
+  type AjvConstructor = new () => AjvLike
+  const AjvCtor = Ajv as unknown as AjvConstructor
   const ajv: AjvLike = new AjvCtor()
   ;(addFormats as unknown as (a: unknown) => void)(ajv)
   const validate = ajv.compile(configSchema as unknown as object)

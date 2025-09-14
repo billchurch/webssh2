@@ -11,7 +11,6 @@ import {
   buildConnectionString,
   createUIUpdatePayload,
   getConnectionErrorMessage,
-  type ConnectionCredentials,
 } from '../../../app/socket/connection-handler.js'
 import { SSHConnectionError } from '../../../app/errors.js'
 import type { Config } from '../../../app/types/config.js'

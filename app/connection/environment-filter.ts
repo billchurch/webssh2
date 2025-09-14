@@ -26,17 +26,32 @@ export function filterEnvironmentVariables(
   // Transform safely: entries → filter → map → fromEntries
   const entries = Object.entries(envVars)
     .filter(
-      ([k, v]) =>
-        typeof k === 'string' &&
-        isValidEnvKey(k) &&
-        k.length <= ENV_LIMITS.MAX_KEY_LENGTH &&
-        (allow != null ? allow.has(k) : true) &&
-        v != null &&
-        isValidEnvValue(String(v)) &&
-        String(v).length <= ENV_LIMITS.MAX_VALUE_LENGTH
+      ([k, v]) => {
+        if (typeof k !== 'string' || !isValidEnvKey(k) || k.length > ENV_LIMITS.MAX_KEY_LENGTH) {
+          return false
+        }
+        if (allow != null && !allow.has(k)) {
+          return false
+        }
+        if (v == null) {
+          return false
+        }
+        // Only process string, number, or boolean values
+        const valueType = typeof v
+        if (valueType !== 'string' && valueType !== 'number' && valueType !== 'boolean') {
+          return false
+        }
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        const strValue = String(v)
+        return isValidEnvValue(strValue) && strValue.length <= ENV_LIMITS.MAX_VALUE_LENGTH
+      }
     )
     .slice(0, ENV_LIMITS.MAX_PAIRS)
-    .map(([k, v]) => [k, String(v)])
+    .map(([k, v]) => {
+      // At this point, v is guaranteed to be string, number, or boolean by the filter above
+      // TypeScript doesn't narrow the type through the filter, so we cast
+      return [k, String(v as string | number | boolean)]
+    })
   
   return Object.fromEntries(entries) as Record<string, string>
 }

@@ -3,7 +3,6 @@
 
 import validator from 'validator'
 import { EventEmitter } from 'events'
-import type { IncomingMessage } from 'node:http'
 import type { Server as IOServer, Socket as IOSocket } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import { maskSensitiveData } from './utils.js'
@@ -53,7 +52,10 @@ interface SessionData {
   [key: string]: unknown
 }
 
-type ExtendedRequest = IncomingMessage & { session?: SessionData; res?: unknown }
+interface ExtendedRequest {
+  session?: SessionData
+  [key: string]: unknown
+}
 
 export type SSHCtor = new (config: Config) => {
   connect: (creds: Record<string, unknown>) => Promise<unknown>
@@ -125,7 +127,7 @@ class WebSSH2Socket extends EventEmitter {
     this.shellStream = null
     this.shellStarted = false
     this.onClientData = null
-    this.authPipeline = new UnifiedAuthPipeline(socket.request as ExtendedRequest, config)
+    this.authPipeline = new UnifiedAuthPipeline(socket.request, config)
     this.sessionState = {
       authenticated: false,
       username: null,
@@ -277,7 +279,9 @@ class WebSSH2Socket extends EventEmitter {
     )
     
     // Merge environment variables
-    const sessionEnv = ((this.socket.request as ExtendedRequest).session?.envVars ?? {})
+    const req = this.socket.request as unknown as ExtendedRequest
+    const sessionData = req.session
+    const sessionEnv = (sessionData?.envVars ?? {})
     const mergedEnv = mergeEnvironmentVariables(sessionEnv, parsed.env)
 
     const stream = await this.ssh.exec(parsed.command, execOptions, mergedEnv)
@@ -312,10 +316,14 @@ class WebSSH2Socket extends EventEmitter {
       `handleTerminal: received dimensions rows='${rows}' cols='${cols}', using server sessionState.term='${this.sessionState.term}'`
     )
     // Server is now the sole source of truth for term - ignore any term from client
-    if (rows != null && validator.isInt(String(rows))) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    if (rows != null && typeof rows !== 'object' && validator.isInt(String(rows))) {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       this.sessionState.rows = parseInt(String(rows), 10)
     }
-    if (cols != null && validator.isInt(String(cols))) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    if (cols != null && typeof cols !== 'object' && validator.isInt(String(cols))) {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       this.sessionState.cols = parseInt(String(cols), 10)
     }
   }
@@ -386,8 +394,9 @@ class WebSSH2Socket extends EventEmitter {
       return
     }
     
-    const req = this.socket.request as ExtendedRequest
-    const sessionEnv = (req.session?.envVars ?? {})
+    const req = this.socket.request as unknown as ExtendedRequest
+    const sessionData = req.session
+    const sessionEnv = (sessionData?.envVars ?? {})
     const shellOptions = {
       term: this.sessionState.term ?? this.config.ssh.term,
       rows: this.sessionState.rows ?? DEFAULTS.TERM_ROWS,
@@ -404,7 +413,12 @@ class WebSSH2Socket extends EventEmitter {
     // Forward client keystrokes to SSH
     this.onClientData = (chunk: unknown) => {
       try {
-        const data = typeof chunk === 'string' ? chunk : String(chunk ?? '')
+        let data = ''
+        if (typeof chunk === 'string') {
+          data = chunk
+        } else if (chunk != null && (typeof chunk === 'number' || typeof chunk === 'boolean')) {
+          data = String(chunk)
+        }
         this.shellStream?.write?.(data)
       } catch (e) {
         const msg = (e as { message?: string }).message ?? e

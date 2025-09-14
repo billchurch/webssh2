@@ -8,7 +8,6 @@
 import { test, expect } from '@playwright/test'
 import {
   BASE_URL,
-  CLIENT_DEV_URL,
   SSH_HOST,
   SSH_PORT,
   USERNAME,
@@ -68,7 +67,7 @@ test.describe('Event Flow Analysis', () => {
       await page.waitForSelector('text=Connected', { timeout: TIMEOUTS.ACTION })
       console.log('✅ Connection established')
     } catch (e) {
-      console.log('❌ Connection may have failed or timed out')
+      console.error('❌ Connection may have failed or timed out:', e)
     }
 
     // Execute a simple command to see data flow
@@ -87,7 +86,7 @@ test.describe('Event Flow Analysis', () => {
         await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
       }
     } catch (e) {
-      console.log('⚠️ Terminal interaction failed:', e.message)
+      console.error('⚠️ Terminal interaction failed:', e instanceof Error ? e.message : e)
     }
 
     // Output captured client logs
@@ -127,7 +126,7 @@ test.describe('Event Flow Analysis', () => {
       await expect(page.locator('text=Connected')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
       console.log('✅ Server connection established')
     } catch (e) {
-      console.log('❌ Server connection failed')
+      console.error('❌ Server connection failed:', e)
     }
 
     console.log('=== SERVER EVENT CAPTURE COMPLETE ===')

@@ -120,7 +120,14 @@ function validateHeaderValue(value: unknown): string | undefined {
   if (value === null || value === undefined || value === '') {
     return undefined
   }
-  return String(value)
+  // Only convert primitives to string, not objects
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+  return undefined
 }
 
 /**

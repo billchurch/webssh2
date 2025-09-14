@@ -62,7 +62,15 @@ export default class SSHConnection extends EventEmitter {
     let isResolved = false
 
     this.conn?.on('ready', () => {
-      const host = String((this.creds)?.['host'] ?? '')
+      let host = ''
+      const hostValue = (this.creds)?.['host']
+      if (hostValue != null) {
+        if (typeof hostValue === 'string' || typeof hostValue === 'number') {
+          host = String(hostValue)
+        } else {
+          host = '[object]'
+        }
+      }
       debug(`connect: ready: ${host}`)
       isResolved = true
       resolve(this.conn)
@@ -71,7 +79,8 @@ export default class SSHConnection extends EventEmitter {
       const e = err as { message?: string; code?: string; level?: string }
       // Intentionally use `||` so empty strings fall back to meaningful alternatives
        
-      const errorMessage = e.message ?? e.code ?? String(err)
+      const errorMessage = e.message ?? e.code ?? 
+        (err instanceof Error ? err.toString() : '[Unknown error]')
       if (isResolved === false) {
         isResolved = true
         const sshError = new SSHConnectionError(errorMessage)
@@ -117,7 +126,9 @@ export default class SSHConnection extends EventEmitter {
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            reject(err instanceof Error ? err : new Error(String(err)))
+            const error = err instanceof Error ? err : 
+              new Error(typeof err === 'string' ? err : '[SSH error]')
+            reject(error)
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)
@@ -159,7 +170,9 @@ export default class SSHConnection extends EventEmitter {
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            reject(err instanceof Error ? err : new Error(String(err)))
+            const error = err instanceof Error ? err : 
+              new Error(typeof err === 'string' ? err : '[SSH error]')
+            reject(error)
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)
@@ -195,7 +208,16 @@ export default class SSHConnection extends EventEmitter {
     tryKeyboard: boolean
   ): Record<string, unknown> {
     const base: Record<string, unknown> = {
-      host: String(creds['host'] ?? ''),
+      host: (() => {
+        const hostValue = creds['host']
+        if (hostValue == null) {
+          return ''
+        }
+        if (typeof hostValue === 'string' || typeof hostValue === 'number') {
+          return String(hostValue)
+        }
+        return ''
+      })(),
       port: Number(creds['port'] ?? 22),
       username: (creds['username'] as string | undefined) ?? undefined,
       tryKeyboard,

@@ -5,7 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { TEST_CONFIG, TIMEOUTS, TERMINAL, waitForPrompt, executeCommand } from './constants.js'
+import { TEST_CONFIG, TIMEOUTS, waitForPrompt, executeCommand } from './constants.js'
 
 test.describe('WebSocket Basic Tests', () => {
   test('should establish WebSocket connection', async ({ page }) => {

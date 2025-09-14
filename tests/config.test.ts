@@ -5,7 +5,6 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-helpers.js'
-import type { Config } from '../app/config.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
