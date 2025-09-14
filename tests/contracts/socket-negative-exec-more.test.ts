@@ -39,7 +39,9 @@ describe('Socket.IO Negative: exec edge cases', () => {
         })
         return s
       }
-      end() {}
+      end(): void {
+        // no-op - mock connection cleanup
+      }
     }
     MockSSHConnection = SSH
 

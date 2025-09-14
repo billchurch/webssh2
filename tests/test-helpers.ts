@@ -132,7 +132,9 @@ export function createMockSSHConnection(options: MockSSHConnectionOptions = {}):
         })
         return Promise.resolve(stream)
       }
-      end() {}
+      end(): void {
+        // no-op - mock connection cleanup
+      }
     }
   }
   return class extends EventEmitter {}

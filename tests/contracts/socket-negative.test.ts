@@ -39,7 +39,9 @@ describe('Socket.IO Negative Paths', () => {
         return stream
       }
       async exec() { return new EventEmitter() }
-      end() {}
+      end(): void {
+        // no-op - mock connection cleanup
+      }
     }
     MockSSHConnection = SSH
 

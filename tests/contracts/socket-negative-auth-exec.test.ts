@@ -40,7 +40,9 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
         })
         return s
       }
-      end() {}
+      end(): void {
+        // no-op - mock connection cleanup
+      }
     }
     MockSSHConnection = SSH
 

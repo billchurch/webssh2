@@ -163,6 +163,12 @@ export default [
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
         },
       ],
+      '@typescript-eslint/no-empty-function': [
+        'error',
+        {
+          allow: ['constructors'],
+        },
+      ],
     },
   },
   {
@@ -174,6 +180,12 @@ export default [
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/unbound-method': 'off',
       'security/detect-object-injection': 'warn',
+      '@typescript-eslint/no-empty-function': [
+        'error',
+        {
+          allow: ['constructors', 'methods'],
+        },
+      ],
     },
   },
   {

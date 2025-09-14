@@ -8,12 +8,18 @@ const instances: MockSSH[] = []
 class MockSSH {
   public lastShellEnv?: Record<string, string> | null
   constructor(public config: Config) {}
-  async connect() {}
+  async connect(): Promise<void> {
+    // no-op - mock connection
+  }
   async shell(_opts: any, env: Record<string, string> | null) {
     this.lastShellEnv = env
     const stream = new EventEmitter() as any
-    stream.write = () => {}
-    stream.end = () => {}
+    stream.write = () => {
+      // no-op - mock stream write
+    }
+    stream.end = () => {
+      // no-op - mock stream end
+    }
     return stream
   }
   async exec() { throw new Error('not used') }
