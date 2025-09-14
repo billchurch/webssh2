@@ -11,6 +11,7 @@ import { maskSensitiveData, validateSshTerm, normalizeDim } from './utils.js'
 import { UnifiedAuthPipeline } from './auth/auth-pipeline.js'
 import { DEFAULTS } from './constants.js'
 import { validateExecPayload } from './validators/exec-validate.js'
+import { hasCompleteSessionCredentials, extractSessionCredentials, isNetworkError } from './validation/session.js'
 // Type stub for validate module (JS)
 
 type ExecParsed = ReturnType<typeof validateExecPayload>
@@ -170,57 +171,55 @@ class WebSSH2Socket extends EventEmitter {
     // Track original auth method before switching to manual
     const originalAuthMethod = this.authPipeline.getAuthMethod()
 
-    // When credentials are explicitly provided (e.g., from the modal), always update them
-    // This ensures that user-provided credentials override any session-stored credentials
-    // including when the user changes connection parameters like the port
+    // When credentials are explicitly provided, update them
     if (Object.keys(creds).length > 0) {
-      if (!this.authPipeline.setManualCredentials(creds)) {
-        debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
-        this.socket.emit('authentication', {
-          action: 'auth_result',
-          success: false,
-          message: 'Invalid credentials format',
-        })
+      if (!this.updateCredentials(creds, originalAuthMethod)) {
         return
       }
-
-      // CRITICAL: Also update session credentials so reconnections use the new values
-      // This fixes the issue where updated port/host from modal were ignored on reconnect
-      const req = this.socket.request as ExtendedRequest
-      if (req.session != null && creds['host'] != null && creds['host'] !== '' && creds['port'] != null && creds['username'] != null && creds['username'] !== '' && creds['password'] != null && creds['password'] !== '') {
-        debug(`handleAuthenticate: Updating session credentials with new user input`)
-        req.session.sshCredentials = {
-          host: creds['host'] as string,
-          port: creds['port'] as number,
-          username: creds['username'] as string,
-          password: creds['password'] as string,
-        }
-        if (creds['term'] != null && creds['term'] !== '') {
-          req.session.sshCredentials.term = creds['term'] as string
-        }
-      }
-
-      debug(
-        `handleAuthenticate: Updated credentials from user input (was ${originalAuthMethod}, now manual)`
-      )
     }
 
-    // Track original auth method for debugging
-    debug(`handleAuthenticate: originalAuthMethod=${originalAuthMethod}`)
-
+    // Get validated credentials
     const validCreds = this.authPipeline.getCredentials()
     if (validCreds == null) {
-      debug(`handleAuthenticate: ${this.socket.id}, NO CREDENTIALS AVAILABLE`)
-      this.socket.emit('authentication', {
-        action: 'auth_result',
-        success: false,
-        message: 'No credentials available',
-      })
+      this.emitAuthFailure('No credentials available')
       return
     }
 
+    // Set terminal and dimensions
+    this.configureTerminal(validCreds, creds)
+
+    // Initialize connection
+    this.initializeConnection(validCreds as Record<string, unknown>).catch((err) =>
+      this.handleError('connect', err as Error)
+    )
+  }
+
+  private updateCredentials(creds: Record<string, unknown>, originalAuthMethod: string | null): boolean {
+    if (!this.authPipeline.setManualCredentials(creds)) {
+      debug(`handleAuthenticate: ${this.socket.id}, CREDENTIALS INVALID`)
+      this.emitAuthFailure('Invalid credentials format')
+      return false
+    }
+
+    // Update session credentials for reconnections
+    const req = this.socket.request as ExtendedRequest
+    if (req.session != null && hasCompleteSessionCredentials(creds)) {
+      const sessionCreds = extractSessionCredentials(creds)
+      if (sessionCreds != null) {
+        debug(`handleAuthenticate: Updating session credentials with new user input`)
+        req.session.sshCredentials = sessionCreds
+      }
+    }
+
+    debug(
+      `handleAuthenticate: Updated credentials from user input (was ${originalAuthMethod}, now manual)`
+    )
+    return true
+  }
+
+  private configureTerminal(validCreds: Credentials, creds: Record<string, unknown>): void {
     const validatedTerm = validateSshTerm(validCreds.term)
-    this.sessionState.term = validatedTerm ?? (this.config.ssh.term)
+    this.sessionState.term = validatedTerm ?? this.config.ssh.term
     debug(
       `handleAuthenticate: creds.term='${validCreds.term}', validatedTerm='${validatedTerm}', sessionState.term='${this.sessionState.term}'`
     )
@@ -232,82 +231,99 @@ class WebSSH2Socket extends EventEmitter {
     if ('rows' in creds && validator.isInt(String(creds['rows']))) {
       this.sessionState.rows = parseInt(String(creds['rows']), 10)
     }
+  }
 
-    this.initializeConnection(validCreds as Record<string, unknown>).catch((err) =>
-      this.handleError('connect', err as Error)
-    )
+  private emitAuthFailure(message: string): void {
+    debug(`handleAuthenticate: ${this.socket.id}, ${message.toUpperCase().replace(/ /g, '_')}`)
+    this.socket.emit('authentication', {
+      action: 'auth_result',
+      success: false,
+      message,
+    })
   }
 
   private async initializeConnection(creds: Record<string, unknown>): Promise<void> {
-    const c = { ...(creds as Credentials) }
-    if (this.config.user.privateKey != null && this.config.user.privateKey !== '' && (c.privateKey == null || c.privateKey === '')) {
-      c.privateKey = this.config.user.privateKey
-    }
+    const c = this.prepareCredentials(creds)
     this.ssh = new this.SSHConnectionClass(this.config)
 
     try {
-      await this.ssh.connect(c)
-      // Clear auth failed flag on successful authentication
-      const req = this.socket.request as ExtendedRequest
-      if (req.session != null) {
-        delete req.session.authFailed
-      }
-
-      this.sessionState = Object.assign({}, this.sessionState, {
-        authenticated: true,
-        username: c.username ?? null,
-        password: c.password ?? null,
-        privateKey: c.privateKey ?? null,
-        passphrase: c.passphrase ?? null,
-        host: c.host ?? null,
-        port: c.port ?? null,
-      })
-      this.socket.emit('authentication', { action: 'auth_result', success: true })
-      this.socket.emit('permissions', {
-        autoLog: !!this.config.options.autoLog,
-        allowReplay: !!this.config.options.allowReplay,
-        allowReconnect: !!this.config.options.allowReconnect,
-        allowReauth: !!this.config.options.allowReauth,
-      })
-      this.socket.emit('getTerminal', true)
-
-      // Update footer with connection status
-      const connectionString = `ssh://${this.sessionState.host}:${this.sessionState.port}`
-      this.socket.emit('updateUI', { element: 'footer', value: connectionString })
+      await this.ssh.connect(c as Record<string, unknown>)
+      this.handleConnectionSuccess(c as Record<string, unknown>)
     } catch (err) {
-      const authMethod = this.authPipeline.getAuthMethod()
-      const error = err as Error & { code?: string }
-      debug(`Authentication failed, authMethod: ${authMethod}, error: ${error.message}`)
+      this.handleConnectionError(err as Error & { code?: string })
+    }
+  }
 
-      // Clear session credentials on network/connectivity errors to prevent stuck loops
-      // Network errors indicate the host/port is wrong, not the credentials
-      if (
-        error.code === 'ECONNREFUSED' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'ENETUNREACH' ||
-        error.message.includes('ECONNREFUSED') ||
-        error.message.includes('ENOTFOUND') ||
-        error.message.includes('timeout')
-      ) {
-        debug(
-          `Network error detected (${error.code ?? 'unknown'}), clearing session credentials to prevent loop`
-        )
-        const req = this.socket.request as ExtendedRequest
-        if (req.session != null) {
-          delete req.session.sshCredentials
-          delete req.session.usedBasicAuth
-          delete req.session.authMethod
-          debug('Session credentials cleared due to network error')
-        }
-      }
+  private prepareCredentials(creds: Record<string, unknown>): Credentials {
+    const c = { ...(creds as Credentials) }
+    if (this.config.user.privateKey != null && 
+        this.config.user.privateKey !== '' && 
+        (c.privateKey == null || c.privateKey === '')) {
+      c.privateKey = this.config.user.privateKey
+    }
+    return c
+  }
 
-      const errorMessage = err instanceof SSHConnectionError ? err.message : 'SSH connection failed'
-      this.socket.emit('authentication', {
-        action: 'auth_result',
-        success: false,
-        message: errorMessage,
-      })
+  private handleConnectionSuccess(c: Record<string, unknown>): void {
+    // Clear auth failed flag on successful authentication
+    const req = this.socket.request as ExtendedRequest
+    if (req.session != null) {
+      delete req.session.authFailed
+    }
+
+    // Update session state
+    this.sessionState = Object.assign({}, this.sessionState, {
+      authenticated: true,
+      username: c['username'] as string | null,
+      password: c['password'] as string | null,
+      privateKey: c['privateKey'] as string | null,
+      passphrase: c['passphrase'] as string | null,
+      host: c['host'] as string | null,
+      port: c['port'] as number | null,
+    })
+
+    // Emit success events
+    this.socket.emit('authentication', { action: 'auth_result', success: true })
+    this.socket.emit('permissions', {
+      autoLog: !!this.config.options.autoLog,
+      allowReplay: !!this.config.options.allowReplay,
+      allowReconnect: !!this.config.options.allowReconnect,
+      allowReauth: !!this.config.options.allowReauth,
+    })
+    this.socket.emit('getTerminal', true)
+
+    // Update footer with connection status
+    const connectionString = `ssh://${this.sessionState.host}:${this.sessionState.port}`
+    this.socket.emit('updateUI', { element: 'footer', value: connectionString })
+  }
+
+  private handleConnectionError(error: Error & { code?: string }): void {
+    const authMethod = this.authPipeline.getAuthMethod()
+    debug(`Authentication failed, authMethod: ${authMethod}, error: ${error.message}`)
+
+    // Clear session credentials on network errors to prevent stuck loops
+    if (isNetworkError(error)) {
+      this.clearSessionOnNetworkError(error)
+    }
+
+    const errorMessage = error instanceof SSHConnectionError ? error.message : 'SSH connection failed'
+    this.socket.emit('authentication', {
+      action: 'auth_result',
+      success: false,
+      message: errorMessage,
+    })
+  }
+
+  private clearSessionOnNetworkError(error: Error & { code?: string }): void {
+    debug(
+      `Network error detected (${error.code ?? 'unknown'}), clearing session credentials to prevent loop`
+    )
+    const req = this.socket.request as ExtendedRequest
+    if (req.session != null) {
+      delete req.session.sshCredentials
+      delete req.session.usedBasicAuth
+      delete req.session.authMethod
+      debug('Session credentials cleared due to network error')
     }
   }
 
