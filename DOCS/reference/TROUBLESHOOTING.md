@@ -282,13 +282,44 @@ WEBSSH2_HTTP_ORIGINS="https://yourdomain.com"
 
 **Causes:**
 - Browser security restrictions
-- Clipboard API permissions
+- Clipboard API permissions not granted
+- Non-secure context (HTTP instead of HTTPS)
+- Browser compatibility issues
 
 **Solutions:**
-1. Use keyboard shortcuts: `Ctrl+Shift+C/V`
-2. Enable clipboard permissions in browser
-3. Use right-click context menu
-4. Check browser compatibility
+
+#### Enable Auto-copy Feature
+WebSSH2 supports automatic copy on text selection (similar to PuTTY/tmux):
+1. Open Terminal Settings from the menu
+2. Enable "Auto-copy on selection"
+3. Select text with mouse - it's automatically copied
+
+#### Use Keyboard Shortcuts
+- **Copy**: `Ctrl+Shift+C` (Windows/Linux) or `⌘+Shift+C` (macOS)
+- **Paste**: `Ctrl+Shift+V` (Windows/Linux) or `⌘+Shift+V` (macOS)
+
+#### Enable Middle-click Paste
+1. Open Terminal Settings
+2. Enable "Middle-click paste"
+3. Use middle mouse button to paste
+
+#### Browser Permissions
+1. Check for clipboard permission prompts
+2. Ensure site is accessed via HTTPS or localhost
+3. Grant clipboard access when prompted
+
+#### Alternative Methods
+1. Use right-click context menu
+2. Browser's Edit menu (if available)
+3. Terminal Settings to toggle clipboard features
+
+#### Browser Compatibility
+Minimum versions for full clipboard support:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+
+**Note:** All clipboard features can be configured in Terminal Settings or via localStorage under `webssh2.settings.global`
 
 ## Getting Help
 
