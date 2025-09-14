@@ -134,8 +134,13 @@ export default class SSHConnection extends EventEmitter {
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            const error = err instanceof Error ? err : 
-              new Error(typeof err === 'string' ? err : '[SSH error]')
+            let error: Error
+            if (err instanceof Error) {
+              error = err
+            } else {
+              const message = typeof err === 'string' ? err : '[SSH error]'
+              error = new Error(message)
+            }
             reject(error)
           } else {
             this.stream = stream as unknown as EventEmitter
@@ -178,8 +183,13 @@ export default class SSHConnection extends EventEmitter {
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            const error = err instanceof Error ? err : 
-              new Error(typeof err === 'string' ? err : '[SSH error]')
+            let error: Error
+            if (err instanceof Error) {
+              error = err
+            } else {
+              const message = typeof err === 'string' ? err : '[SSH error]'
+              error = new Error(message)
+            }
             reject(error)
           } else {
             this.stream = stream as unknown as EventEmitter
