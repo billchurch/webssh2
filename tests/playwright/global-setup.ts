@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { spawnSync } from 'node:child_process'
 import * as net from 'node:net'
 import { DOCKER_CONTAINER, DOCKER_IMAGE, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
@@ -8,7 +9,7 @@ function docker(...args: string[]) {
 
 function dockerOutput(...args: string[]): string | null {
   const res = spawnSync('docker', args, { encoding: 'utf8' })
-  if (res.status === 0) return res.stdout.trim()
+  if (res.status === 0) { return res.stdout.trim() }
   return null
 }
 
@@ -20,17 +21,17 @@ async function waitForPort(host: string, port: number, timeoutMs = TIMEOUTS.DOCK
       s.once('connect', () => { s.end(); resolve(true) })
       s.once('error', () => resolve(false))
     })
-    if (ok) return
+    if (ok) {return}
     await new Promise((r) => setTimeout(r, TIMEOUTS.DOCKER_RETRY))
   }
   throw new Error(`Timeout waiting for ${host}:${port}`)
 }
 
 export default async function globalSetup() {
-  if (process.env.ENABLE_E2E_SSH !== '1') return
+  if (process.env.ENABLE_E2E_SSH !== '1') {return}
   // Check docker availability
   const hasDocker = spawnSync('docker', ['version'], { stdio: 'ignore' }).status === 0
-  if (!hasDocker) throw new Error('Docker is required for E2E SSH tests')
+  if (!hasDocker) {throw new Error('Docker is required for E2E SSH tests')}
 
   const running = dockerOutput('inspect', '-f', '{{.State.Running}}', DOCKER_CONTAINER)
   if (running === 'true') {
@@ -51,7 +52,7 @@ export default async function globalSetup() {
     DOCKER_IMAGE,
   ]
   const res = docker(...args)
-  if (res.status !== 0) throw new Error('Failed to start SSH test container')
+  if (res.status !== 0) {throw new Error('Failed to start SSH test container')}
   await waitForPort('127.0.0.1', SSH_PORT)
 }
 
