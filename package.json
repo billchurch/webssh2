@@ -1,11 +1,11 @@
 {
   "name": "webssh2-server",
-  "version": "2.0.0-alpha",
+  "version": "2.0.0-alpha.11",
   "ignore": [
     ".gitignore"
   ],
   "bin": {
-    "webssh2-server": "./index.js"
+    "webssh2-server": "./dist/index.js"
   },
   "description": "A Websocket to SSH2 gateway using xterm.js, socket.io, ssh2",
   "homepage": "https://github.com/billchurch/WebSSH2",
@@ -27,31 +27,55 @@
   "engines": {
     "node": ">= 22"
   },
+  "packageManager": "npm@10.9.2",
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "ChangeLog.md"
+  ],
   "dependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-auth": "^2.0.1",
     "body-parser": "^2.2.0",
-    "debug": "^4.4.1",
+    "debug": "^4.4.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "jsmasker": "^2.0.0",
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.15",
-    "webssh2_client": "^2.0.0-alpha.6"
+    "webssh2_client": "^2.0.0-alpha.11"
   },
   "scripts": {
-    "start": "node index.js",
+    "prestart": "npm run build",
+    "start": "node dist/index.js",
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
-    "dev": "NODE_ENV=development DEBUG=webssh2:* node --watch index.js",
+    "lint:fix:strict": "eslint 'app/**/*.ts' --fix --rule '@typescript-eslint/prefer-nullish-coalescing:warn' --rule '@typescript-eslint/no-unnecessary-condition:warn'",
+    "dev": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
+    "dev:ts": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "watch": "npm run dev",
-    "test": "WEBSSH2_SKIP_NETWORK=1 node scripts/run-node-tests.mjs",
-    "test:all": "WEBSSH2_SKIP_NETWORK=0 node scripts/run-node-tests.mjs",
+    "test": "npm run build && WEBSSH2_SKIP_NETWORK=1 npx tsx scripts/run-node-tests.mts",
+    "test:js": "npm run build && WEBSSH2_SKIP_NETWORK=1 node scripts/run-node-tests.mjs",
+    "test:ts": "npm run build && WEBSSH2_SKIP_NETWORK=1 npx tsx scripts/run-node-tests.mts",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "check:fix": "npm run lint:fix && npm run typecheck && npm run test",
+    "verify": "npm run check",
+    "progress": "echo 'Migration progress script removed; see DOCS/CONSTANTS.md and ts-migration-progress.md if present.'",
+    "test:all": "npm run build && WEBSSH2_SKIP_NETWORK=0 npx tsx scripts/run-node-tests.mts",
+    "test:e2e": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
+    "test:e2e:debug": "npm run build && ENABLE_E2E_SSH=1 E2E_DEBUG=webssh2:* playwright test -c playwright.config.ts tests/playwright",
+    "test:performance": "echo 'Performance tests archived - see tests/playwright/performance/PERFORMANCE_TESTS.md'",
+    "test:performance:report": "echo 'Performance reporting will be available after test reimplementation'",
+    "e2e:setup": "playwright install --with-deps",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "release": "npm run lint:fix && npm run test && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
     "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
@@ -61,7 +85,7 @@
     "release:major": "npm run release -- --release-as major",
     "release:minor": "npm run release -- --release-as minor",
     "release:patch": "npm run release -- --release-as patch",
-    "security:check": "./scripts/check-compromised.sh",
+    "security:check": "npm run security:audit",
     "security:audit": "npm audit && echo 'Consider running: trivy fs .'",
     "security:socket": "echo 'Install socket.dev CLI and run: socket.dev cli scan'"
   },
@@ -72,26 +96,38 @@
     ]
   },
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
+    "@eslint/js": "^9.35.0",
+    "@playwright/test": "^1.55.0",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
-    "@types/node": "^24.3.1",
+    "@types/node": "^24.3.3",
     "@types/ssh2": "^1.15.5",
     "@types/validator": "^13.15.3",
-    "@typescript-eslint/eslint-plugin": "^8.42.0",
-    "@typescript-eslint/parser": "^8.42.0",
-    "eslint": "^9.34.0",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
+    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "directories": {
     "test": "tests"
   },

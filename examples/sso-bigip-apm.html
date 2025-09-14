@@ -197,9 +197,17 @@
             via WebSSO or passed through custom headers.
         </div>
 
+        <!-- Server Configuration -->
+        <h2>WebSSH2 Server Configuration</h2>
+        <div class="form-group">
+            <label for="webssh2Server">WebSSH2 Server URL:</label>
+            <input type="text" id="webssh2Server" value="http://localhost:2222" placeholder="e.g., http://localhost:2222">
+            <small style="color: #666; display: block; margin-top: 5px;">Enter the full URL of your WebSSH2 server (including protocol and port)</small>
+        </div>
+
         <!-- Manual Authentication Form -->
         <h2>Manual SSH Authentication</h2>
-        <form id="manualAuthForm" action="http://localhost:2222/ssh/host/localhost" method="POST">
+        <form id="manualAuthForm" action="http://localhost:2222/ssh" method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -378,7 +386,23 @@ when HTTP_REQUEST {
         window.addEventListener('DOMContentLoaded', function() {
             checkAPMCredentials();
             renderServerList();
+            updateFormActions();
+            
+            // Update form actions when server URL changes
+            document.getElementById('webssh2Server').addEventListener('input', updateFormActions);
         });
+
+        function updateFormActions() {
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            if (!serverUrl) return;
+            
+            // Update manual form action
+            const manualForm = document.getElementById('manualAuthForm');
+            manualForm.action = `${serverUrl}/ssh`;
+            
+            // Update APM form action (will be updated dynamically based on host)
+            // This is a placeholder that gets updated when actually used
+        }
 
         function checkAPMCredentials() {
             // In a real APM scenario, these would be populated by WebSSO
@@ -391,6 +415,10 @@ when HTTP_REQUEST {
                 document.getElementById('apmUsername').value = 'apm_user';
                 document.getElementById('apmPassword').value = 'apm_pass';
                 document.getElementById('apmHost').value = 'localhost';
+                
+                // Update APM form action with current server URL
+                const serverUrl = document.getElementById('webssh2Server').value.trim();
+                apmForm.action = `${serverUrl}/ssh/host/localhost`;
                 
                 // Auto-submit if credentials are present
                 console.log('APM credentials detected, auto-submitting...');
@@ -420,6 +448,13 @@ when HTTP_REQUEST {
 
         function connectToServer(server) {
             const form = document.getElementById('manualAuthForm');
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            
+            if (!serverUrl) {
+                alert('Please configure the WebSSH2 server URL first!');
+                document.getElementById('webssh2Server').focus();
+                return;
+            }
             
             // Check if credentials are entered
             const username = document.getElementById('username').value;
@@ -432,7 +467,7 @@ when HTTP_REQUEST {
             }
             
             // Update form action and hidden fields
-            form.action = `/ssh/host/${server.host}`;
+            form.action = `${serverUrl}/ssh/host/${server.host}`;
             document.getElementById('host').value = server.host;
             document.getElementById('port').value = server.port;
             document.getElementById('headerName').value = server.name;
@@ -450,11 +485,19 @@ when HTTP_REQUEST {
 
         // Function to test POST authentication via AJAX
         async function testConnection() {
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            
+            if (!serverUrl) {
+                alert('Please configure the WebSSH2 server URL first!');
+                document.getElementById('webssh2Server').focus();
+                return;
+            }
+            
             const formData = new FormData(document.getElementById('manualAuthForm'));
             const params = new URLSearchParams(formData);
             
             try {
-                const response = await fetch('/ssh/host/' + formData.get('host'), {
+                const response = await fetch(`${serverUrl}/ssh/host/${formData.get('host')}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',

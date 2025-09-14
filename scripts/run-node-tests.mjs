@@ -30,6 +30,8 @@ const skipNetwork = ['1', 'true', 'yes'].includes(
 )
 if (skipNetwork) {
   files = files.filter((f) => !/\/ssh\.test\.js$/.test(f))
+  // Also skip HTTP route tests that bind/listen via supertest in restricted envs
+  files = files.filter((f) => !/\/post-auth\.test\.js$/.test(f))
 }
 
 if (files.length === 0) {
@@ -50,4 +52,3 @@ child.on('exit', (code, signal) => {
   }
   process.exit(code ?? 1)
 })
-

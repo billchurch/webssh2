@@ -3,15 +3,16 @@ import crypto from 'crypto'
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import { strict as assert } from 'assert'
 const { Server } = ssh2
-import SSHConnection from '../app/ssh.js'
+import SSHConnection from '../dist/app/ssh.js'
+import { TEST_USERNAME, TEST_PASSWORD, INVALID_USERNAME, INVALID_PASSWORD } from './test-constants.js'
 
 describe('SSHConnection', () => {
   let sshServer
   let sshConnection
   const TEST_PORT = 2222
   const TEST_CREDENTIALS = {
-    username: 'testuser',
-    password: 'testpass',
+    username: TEST_USERNAME,
+    password: TEST_PASSWORD,
   }
 
   const { privateKey } = crypto.generateKeyPairSync('rsa', {
@@ -102,8 +103,8 @@ describe('SSHConnection', () => {
     const invalidCredentials = {
       host: 'localhost',
       port: TEST_PORT,
-      username: 'wronguser',
-      password: 'wrongpass',
+      username: INVALID_USERNAME,
+      password: INVALID_PASSWORD,
     }
 
     try {
