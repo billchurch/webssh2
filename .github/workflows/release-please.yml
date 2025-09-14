@@ -1,0 +1,45 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          
+      # Checkout code if release was created
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+        
+      # Setup Node.js for npm publishing
+      - uses: actions/setup-node@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          
+      # Install dependencies
+      - run: npm ci
+        if: ${{ steps.release.outputs.release_created }}
+        
+      # Build the project
+      - run: npm run build
+        if: ${{ steps.release.outputs.release_created }}
+        
+      # Publish to npm
+      - run: npm publish
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

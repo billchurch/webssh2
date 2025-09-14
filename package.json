@@ -76,24 +76,13 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "typecheck:js": "tsc -p tsconfig.js-check.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "release": "npm run lint:fix && npm run test && standard-version -a -s --release-as patch --commit-all --infile ChangeLog.md",
-    "release:dry-run": "standard-version -a -s --release-as patch --dry-run",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish",
     "pretest": "npm run lint:fix",
     "ci": "npm run test",
-    "release:major": "npm run release -- --release-as major",
-    "release:minor": "npm run release -- --release-as minor",
-    "release:patch": "npm run release -- --release-as patch",
     "security:check": "npm run security:audit",
     "security:audit": "npm audit && echo 'Consider running: trivy fs .'",
     "security:socket": "echo 'Install socket.dev CLI and run: socket.dev cli scan'"
-  },
-  "standard": {
-    "ignore": [
-      "bin/*",
-      "build/*"
-    ]
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

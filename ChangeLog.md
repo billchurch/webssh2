@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. This changelog is now managed by [release-please](https://github.com/googleapis/release-please).
 
 <a name="0.2.24"></a>
 ## [0.2.24](https://github.com/billchurch/WebSSH2/compare/v0.2.23...v0.2.24) (2024-12-04)
