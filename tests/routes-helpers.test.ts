@@ -1,4 +1,4 @@
-// tests/routes-helpers.test.js
+// tests/routes-helpers.test.ts
 import test from 'node:test'
 import assert from 'node:assert'
 import {
@@ -9,7 +9,7 @@ import {
 } from '../dist/app/auth/auth-utils.js'
 
 test('processHeaderParameters sets session overrides from GET-like source', () => {
-  const session = {}
+  const session: any = {}
   processHeaderParameters(
     { header: 'Hello', headerBackground: 'blue', headerStyle: 'color: white' },
     session
@@ -22,13 +22,13 @@ test('processHeaderParameters sets session overrides from GET-like source', () =
 })
 
 test('processEnvironmentVariables parses env var string into session.envVars', () => {
-  const session = {}
+  const session: any = {}
   processEnvironmentVariables({ env: 'FOO:bar,BAZ:qux' }, session)
   assert.deepStrictEqual(session.envVars, { FOO: 'bar', BAZ: 'qux' })
 })
 
 test('setupSshCredentials sets and masks credentials', () => {
-  const session = {}
+  const session: any = {}
   const sanitized = setupSshCredentials(session, {
     host: 'example.com',
     port: 22,
@@ -45,7 +45,7 @@ test('setupSshCredentials sets and masks credentials', () => {
 })
 
 test('processSessionRecordingParams toggles replay and sets extras', () => {
-  const session = {}
+  const session: any = {}
   processSessionRecordingParams(
     { allowreplay: 'true', mrhsession: 'abc', readyTimeout: '3000' },
     session

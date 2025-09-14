@@ -3,6 +3,8 @@
  * All test configuration should be defined here
  */
 
+import type { Page } from '@playwright/test'
+
 // Port configuration
 export const WEB_PORT = Number(process.env.E2E_WEB_PORT || 4444)
 export const SSH_PORT = Number(process.env.E2E_SSH_PORT || 4422)
@@ -39,7 +41,7 @@ export const TIMEOUTS = {
   DOCKER_WAIT: 20000,
   DOCKER_RETRY: 250,
   WEB_SERVER: 120000,
-}
+} as const
 
 // Terminal configuration
 export const TERMINAL = {
@@ -50,7 +52,7 @@ export const TERMINAL = {
   TEST_COLS: 120,
   INPUT_SELECTOR: 'textbox',
   INPUT_NAME: 'Terminal input',
-}
+} as const
 
 // Test configuration object (for backward compatibility)
 export const TEST_CONFIG = {
@@ -64,10 +66,10 @@ export const TEST_CONFIG = {
   invalidPassword: INVALID_PASSWORD,
   nonExistentHost: NON_EXISTENT_HOST,
   invalidPort: INVALID_PORT,
-}
+} as const
 
 // Helper functions
-export async function waitForPrompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
+export async function waitForPrompt(page: Page, timeout: number = TIMEOUTS.PROMPT_WAIT): Promise<void> {
   await page.waitForFunction(
     () => {
       const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
@@ -77,18 +79,18 @@ export async function waitForPrompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
   )
 }
 
-export async function executeCommand(page, command) {
+export async function executeCommand(page: Page, command: string): Promise<void> {
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
   await page.keyboard.press('Enter')
   await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 }
 
-export async function verifyTerminalFunctionality(page, username) {
+export async function verifyTerminalFunctionality(page: Page, username: string): Promise<void> {
   await waitForPrompt(page)
   await executeCommand(page, 'whoami')
   await page.waitForFunction(
-    (expectedUser) => {
+    (expectedUser: string) => {
       const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
       return terminalContent.includes(expectedUser)
     },

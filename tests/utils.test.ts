@@ -1,5 +1,4 @@
-// server
-// tests/utils.test.js
+// tests/utils.test.ts
 
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
@@ -72,7 +71,7 @@ describe('maskSensitiveData', () => {
   test('masks password in object', () => {
     const input = { username: 'user', password: 'secret' }
     const masked = maskSensitiveData(input)
-    assert.equal(masked.password.includes('*'), true)
+    assert.equal(masked.password?.includes('*'), true)
     assert.equal(masked.username, 'user')
   })
 
@@ -85,7 +84,7 @@ describe('maskSensitiveData', () => {
       },
     }
     const masked = maskSensitiveData(input)
-    assert.equal(masked.user.credentials.password.includes('*'), true)
+    assert.equal(masked.user?.credentials?.password?.includes('*'), true)
   })
 })
 
@@ -214,7 +213,7 @@ describe('validateConfig', () => {
         name: [], // should be string
       },
     }
-    assert.throws(() => validateConfig(invalidTypeConfig))
+    assert.throws(() => validateConfig(invalidTypeConfig as any))
   })
 })
 

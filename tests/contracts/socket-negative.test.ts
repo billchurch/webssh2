@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events'
 import socketHandler from '../../dist/app/socket.js'
 
 describe('Socket.IO Negative Paths', () => {
-  let io, mockSocket, mockConfig, MockSSHConnection, lastShellOptions
+  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, lastShellOptions: any
 
   beforeEach(() => {
     io = new EventEmitter()
@@ -13,7 +13,7 @@ describe('Socket.IO Negative Paths', () => {
     mockSocket = new EventEmitter()
     mockSocket.id = 'neg-socket-id'
     mockSocket.request = {
-      session: { save: mock.fn((cb) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },
+      session: { save: mock.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },
     }
     mockSocket.emit = mock.fn()
     mockSocket.disconnect = mock.fn()
@@ -26,14 +26,15 @@ describe('Socket.IO Negative Paths', () => {
     }
 
     class SSH extends EventEmitter {
+      resizeTerminal: any
       constructor() {
         super()
         this.resizeTerminal = mock.fn()
       }
       async connect() { return }
-      async shell(options) {
+      async shell(options: any) {
         lastShellOptions = options
-        const stream = new EventEmitter()
+        const stream: any = new EventEmitter()
         stream.write = () => {}
         return stream
       }
@@ -46,7 +47,7 @@ describe('Socket.IO Negative Paths', () => {
   })
 
   it('terminal: ignores invalid term and keeps default', async () => {
-    const onConn = io.on.mock.calls[0].arguments[1]
+    const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
     onConn(mockSocket)
@@ -62,7 +63,7 @@ describe('Socket.IO Negative Paths', () => {
   })
 
   it('resize: ignores invalid sizes and does not call resizeTerminal', async () => {
-    const onConn = io.on.mock.calls[0].arguments[1]
+    const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
     onConn(mockSocket)
@@ -78,14 +79,14 @@ describe('Socket.IO Negative Paths', () => {
 
     // ssh instance stored inside handler has resizeTerminal mocked; ensure not called with invalid
     // We can't access instance directly; instead, assert no permissions or error side-effects
-    const resizeCalls = [].concat(
-      mockSocket.emit.mock.calls.filter((c) => c.arguments[0] === 'ssherror')
+    const resizeCalls = ([] as any[]).concat(
+      (mockSocket.emit as any).mock.calls.filter((c: any) => c.arguments[0] === 'ssherror')
     )
     assert.equal(resizeCalls.length, 0, 'no ssherror emitted on bad resize')
   })
 
   it('control: warns on invalid control command', async () => {
-    const onConn = io.on.mock.calls[0].arguments[1]
+    const onConn = (io.on as any).mock.calls[0].arguments[1]
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = { host: 'h', port: 22, username: 'u', password: 'p' }
     onConn(mockSocket)

@@ -1,4 +1,4 @@
-// tests/exec-schema.test.js
+// tests/exec-schema.test.ts
 import test from 'node:test'
 import assert from 'node:assert'
 import Ajv from 'ajv'

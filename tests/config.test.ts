@@ -1,13 +1,14 @@
-// server
-// tests/config.test.js
+// tests/config.test.ts
 
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
-import fs from 'fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
+import type { TestEnvironment } from './types/index.js'
+import type { Config } from '../app/config.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -18,7 +19,7 @@ const __dirname = dirname(__filename)
 describe('Config Module - Baseline Sync Tests', () => {
   const configPath = join(__dirname, '..', 'config.json')
   const backupPath = join(__dirname, '..', 'config.json.backup')
-  let originalEnv = {}
+  let originalEnv: TestEnvironment = {}
 
   beforeEach(() => {
     // Store original environment variables
@@ -139,13 +140,13 @@ describe('Config Module - Baseline Sync Tests', () => {
     const config = await getConfig()
 
     // Custom algorithms should be present
-    assert.ok(config.ssh.algorithms.cipher.includes('aes256-gcm@openssh.com'))
-    assert.ok(config.ssh.algorithms.cipher.includes('aes256-cbc'))
-    assert.ok(config.ssh.algorithms.kex.includes('ecdh-sha2-nistp256'))
+    assert.ok(config.ssh.algorithms?.cipher?.includes('aes256-gcm@openssh.com'))
+    assert.ok(config.ssh.algorithms?.cipher?.includes('aes256-cbc'))
+    assert.ok(config.ssh.algorithms?.kex?.includes('ecdh-sha2-nistp256'))
     
     // Other algorithm categories should have defaults
-    assert.ok(config.ssh.algorithms.hmac.length > 0)
-    assert.ok(config.ssh.algorithms.serverHostKey.length > 0)
+    assert.ok(config.ssh.algorithms?.hmac && config.ssh.algorithms.hmac.length > 0)
+    assert.ok(config.ssh.algorithms?.serverHostKey && config.ssh.algorithms.serverHostKey.length > 0)
   })
 
   test('exports getCorsConfig function', async () => {

@@ -1,15 +1,12 @@
-// server
-// tests/test-helpers.js
+// tests/test-helpers.ts
 
-/**
- * Global test helper utilities for environment cleanup
- */
+import type { TestEnvironment } from './types/index.js'
 
 /**
  * Clean up all WEBSSH2_ and PORT environment variables
  * Should be called in beforeEach/afterEach hooks across all test files
  */
-export function cleanupEnvironmentVariables() {
+export function cleanupEnvironmentVariables(): void {
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('WEBSSH2_') || key === 'PORT') {
       delete process.env[key]
@@ -20,7 +17,7 @@ export function cleanupEnvironmentVariables() {
 /**
  * Global cleanup function for test file module imports
  */
-function cleanupEnvironmentVariablesGlobal() {
+function cleanupEnvironmentVariablesGlobal(): void {
   cleanupEnvironmentVariables()
 }
 
@@ -29,10 +26,10 @@ cleanupEnvironmentVariablesGlobal()
 
 /**
  * Store current environment variables for later restoration
- * @returns {Object} Map of environment variables to restore
+ * @returns Map of environment variables to restore
  */
-export function storeEnvironmentVariables() {
-  const originalEnv = {}
+export function storeEnvironmentVariables(): TestEnvironment {
+  const originalEnv: TestEnvironment = {}
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('WEBSSH2_') || key === 'PORT') {
       originalEnv[key] = process.env[key]
@@ -43,16 +40,17 @@ export function storeEnvironmentVariables() {
 
 /**
  * Restore environment variables from stored state
- * @param {Object} originalEnv - Map of environment variables to restore
+ * @param originalEnv - Map of environment variables to restore
  */
-export function restoreEnvironmentVariables(originalEnv) {
+export function restoreEnvironmentVariables(originalEnv: TestEnvironment): void {
   // First clean up current env vars
   cleanupEnvironmentVariables()
   
   // Then restore original values
   Object.keys(originalEnv).forEach(key => {
-    if (originalEnv[key] !== undefined) {
-      process.env[key] = originalEnv[key]
+    const value = originalEnv[key]
+    if (value !== undefined) {
+      process.env[key] = value
     }
   })
 }

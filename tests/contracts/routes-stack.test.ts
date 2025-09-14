@@ -12,10 +12,9 @@ const minimalConfig = {
   options: { challengeButton: true, autoLog: false, allowReplay: true, allowReconnect: true, allowReauth: true },
 }
 
-function getRouteMap(router) {
+function getRouteMap(router: any) {
   const layers = router.stack || []
-  /** @type {Record<string, Set<string>>} */
-  const byPath = {}
+  const byPath: Record<string, Set<string>> = {}
   for (const l of layers) {
     if (!l.route) continue
     const p = l.route.path
