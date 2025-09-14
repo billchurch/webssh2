@@ -151,7 +151,7 @@ export function processSessionRecordingParams(
  */
 export function validateConnectionParams(params: {
   host?: string | undefined
-  port?: string | number | undefined
+  port?: number | undefined
   sshterm?: string | undefined
   hostParam?: string | undefined
   config?: Config | undefined
@@ -168,7 +168,7 @@ export function validateConnectionParams(params: {
     throw new Error('Host parameter required when default host not configured')
   }
 
-  const port = getValidatedPort(params.port as string | undefined)
+  const port = getValidatedPort(params.port)
   const term = validateSshTerm(params.sshterm)
 
   return { host, port, term }

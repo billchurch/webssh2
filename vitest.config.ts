@@ -8,6 +8,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       all: false,
+      include: ['dist/**/*.js'],
+      exclude: ['**/node_modules/**', '**/test/**'],
     },
   },
 })

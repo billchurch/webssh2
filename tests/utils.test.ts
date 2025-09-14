@@ -37,13 +37,17 @@ describe('getValidatedHost', () => {
 
 describe('getValidatedPort', () => {
   test('returns valid port number', () => {
-    assert.equal(getValidatedPort('22'), 22)
+    assert.equal(getValidatedPort(22), 22)
+    assert.equal(getValidatedPort(2222), 2222)
+    assert.equal(getValidatedPort(65535), 65535)
   })
 
   test('returns default port for invalid input', () => {
-    assert.equal(getValidatedPort('0'), 22)
-    assert.equal(getValidatedPort('65536'), 22)
-    assert.equal(getValidatedPort('invalid'), 22)
+    assert.equal(getValidatedPort(0), 22)
+    assert.equal(getValidatedPort(65536), 22)
+    assert.equal(getValidatedPort(-1), 22)
+    assert.equal(getValidatedPort(undefined), 22)
+    assert.equal(getValidatedPort(NaN), 22)
   })
 })
 

@@ -78,9 +78,13 @@ export function createRoutes(config: Config): Router {
     debug(`router.get.host: /ssh/host/ route`)
     processAuthParameters(r.query, r.session)
     try {
+      // Convert port to number early if it exists
+      const portParam = r.query['port'] as string | undefined
+      const portNumber = portParam != null && portParam !== '' ? parseInt(portParam, 10) : undefined
+      
       const { host, port, term } = validateConnectionParams({
         host: config.ssh.host ?? undefined,
-        port: r.query['port'] as string | undefined,
+        port: portNumber,
         sshterm: r.query['sshterm'] as string | undefined,
         config,
       })
@@ -160,9 +164,13 @@ export function createRoutes(config: Config): Router {
     const r = req as ReqWithSession
     debug(`router.get.host: /ssh/host/${String((req).params['host'])} route`)
     try {
+      // Convert port to number early if it exists
+      const portParam = r.query['port'] as string | undefined
+      const portNumber = portParam != null && portParam !== '' ? parseInt(portParam, 10) : undefined
+      
       const { host, port, term } = validateConnectionParams({
         hostParam: r.params['host'] as string,
-        port: r.query['port'] as string | undefined,
+        port: portNumber,
         sshterm: r.query['sshterm'] as string | undefined,
         config,
       })
@@ -261,9 +269,12 @@ export function createRoutes(config: Config): Router {
       }
 
       // Port can come from body or query params (body takes precedence)
-      // Handle both string and number types
+      // Convert to number early if it exists
       const portParam = (body['port'] ?? query['port']) as string | number | undefined
-      const port = getValidatedPort(String(portParam))
+      const portNumber = portParam != null ? 
+        (typeof portParam === 'number' ? portParam : parseInt(portParam, 10)) : 
+        undefined
+      const port = getValidatedPort(portNumber)
 
       // SSH term can come from body or query params (body takes precedence)
       const sshterm = (body['sshterm'] ?? query['sshterm']) as string | undefined

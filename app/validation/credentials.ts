@@ -9,8 +9,8 @@ export interface Credentials {
   privateKey?: string
   passphrase?: string
   term?: string
-  cols?: number | string
-  rows?: number | string
+  cols?: number
+  rows?: number
 }
 
 /**

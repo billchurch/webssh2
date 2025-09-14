@@ -19,14 +19,13 @@ export function validateHost(host: string): string {
 
 /**
  * Validates a port number
- * @param portInput - Port as string or number
+ * @param portInput - Port as number
  * @returns Valid port number or default
  * @pure
  */
-export function validatePort(portInput?: string | number): number {
-  const portStr = String(portInput ?? '')
-  if (portStr !== '' && validator.isInt(portStr, { min: 1, max: 65535 })) {
-    return parseInt(portStr, 10)
+export function validatePort(portInput?: number): number {
+  if (portInput != null && portInput >= 1 && portInput <= 65535) {
+    return portInput
   }
   return DEFAULTS.SSH_PORT
 }
