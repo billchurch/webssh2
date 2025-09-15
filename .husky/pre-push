@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Abort on errors
+set -e
+
+echo "Running phase verification before push..."
+# node scripts/phases-verify.mjs
+

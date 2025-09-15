@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist/
+build/
+coverage/
+*.min.js
+*.min.css
+
+# Generated files
+*.d.ts
+tsconfig.tsbuildinfo
+
+# Config files that should not be formatted
+.env*
+.git/
+
+# Any legacy JavaScript files (if they exist)
+*.js
+*.mjs
+!eslint.config.mjs
+!*.config.mjs

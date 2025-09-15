@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSSH2 SSO - BIG-IP APM Integration Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button.secondary {
+            background: #6c757d;
+        }
+        
+        button.secondary:hover {
+            background: #545b62;
+        }
+        
+        .server-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .server-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .server-card:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .server-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .server-card p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .env-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .env-production {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .env-staging {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .env-development {
+            background: #28a745;
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .advanced-options {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSSH2 SSO Authentication - BIG-IP APM Integration</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ BIG-IP APM Integration:</strong> This form demonstrates how WebSSH2 integrates with F5 BIG-IP APM 
+            for Single Sign-On (SSO). When deployed behind BIG-IP APM, credentials can be automatically injected 
+            via WebSSO or passed through custom headers.
+        </div>
+
+        <!-- Server Configuration -->
+        <h2>WebSSH2 Server Configuration</h2>
+        <div class="form-group">
+            <label for="webssh2Server">WebSSH2 Server URL:</label>
+            <input type="text" id="webssh2Server" value="http://localhost:2222" placeholder="e.g., http://localhost:2222">
+            <small style="color: #666; display: block; margin-top: 5px;">Enter the full URL of your WebSSH2 server (including protocol and port)</small>
+        </div>
+
+        <!-- Manual Authentication Form -->
+        <h2>Manual SSH Authentication</h2>
+        <form id="manualAuthForm" action="http://localhost:2222/ssh" method="POST">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="host">SSH Host:</label>
+                <input type="text" id="host" name="host" value="localhost" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="port">SSH Port:</label>
+                <input type="number" id="port" name="port" value="22" min="1" max="65535">
+            </div>
+            
+            <div class="advanced-options">
+                <h3>Advanced Options</h3>
+                
+                <div class="form-group">
+                    <label for="headerName">Header Text:</label>
+                    <input type="text" id="headerName" name="header.name" placeholder="e.g., Production Server">
+                </div>
+                
+                <div class="form-group">
+                    <label for="headerBg">Header Background:</label>
+                    <select id="headerBg" name="header.background">
+                        <option value="">Default</option>
+                        <option value="green">Green</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="purple">Purple</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="headerColor">Header Text Color:</label>
+                    <input type="text" id="headerColor" name="header.color" placeholder="e.g., white">
+                </div>
+                
+                <div class="form-group">
+                    <label for="sshterm">Terminal Type:</label>
+                    <select id="sshterm" name="sshterm">
+                        <option value="">Default</option>
+                        <option value="xterm-256color">xterm-256color</option>
+                        <option value="xterm">xterm</option>
+                        <option value="vt100">vt100</option>
+                        <option value="linux">linux</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="allowreplay" name="allowreplay" value="true">
+                    <label for="allowreplay">Allow Session Replay</label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="readyTimeout">Connection Timeout (ms):</label>
+                    <input type="number" id="readyTimeout" name="readyTimeout" value="20000" min="1000" max="60000">
+                </div>
+            </div>
+            
+            <button type="submit">Connect via SSH</button>
+            <button type="button" class="secondary" onclick="resetForm()">Reset</button>
+        </form>
+
+        <!-- Hidden APM Auto-Submit Form -->
+        <form id="apmAutoForm" method="POST" action="/ssh/host/localhost" style="display:none;">
+            <input type="text" name="username" id="apmUsername">
+            <input type="password" name="password" id="apmPassword">
+            <input type="hidden" name="host" id="apmHost">
+            <input type="hidden" name="port" id="apmPort" value="22">
+            <input type="hidden" name="header.name" id="apmHeaderName">
+            <input type="hidden" name="header.background" id="apmHeaderBg">
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Quick Connect - Predefined Servers</h2>
+        <div class="warning-box">
+            <strong>⚠️ Note:</strong> These quick connect buttons will use the credentials from the form above.
+            Make sure to enter your credentials first!
+        </div>
+        
+        <div class="server-list" id="serverList">
+            <!-- Server cards will be populated here -->
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>BIG-IP APM Configuration Example</h2>
+        <div class="info-box">
+            <p><strong>For F5 Administrators:</strong></p>
+            <p>To configure BIG-IP APM for WebSSH2 SSO:</p>
+            <ol>
+                <li>Create a WebSSO configuration with form-based authentication</li>
+                <li>Map APM session variables:
+                    <ul>
+                        <li><code>session.logon.last.username</code> → <code>username</code> field</li>
+                        <li><code>session.logon.last.password</code> → <code>password</code> field</li>
+                    </ul>
+                </li>
+                <li>Configure form detection:
+                    <ul>
+                        <li>Form action: <code>/ssh/host/*</code></li>
+                        <li>Username field: <code>username</code></li>
+                        <li>Password field: <code>password</code></li>
+                    </ul>
+                </li>
+                <li>Optional: Use custom headers (<code>X-APM-Username</code>, <code>X-APM-Password</code>) for header-based injection</li>
+            </ol>
+        </div>
+        
+        <h3>Example iRule for Header Injection</h3>
+        <pre style="background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto;">
+when HTTP_REQUEST {
+    if { [HTTP::uri] starts_with "/ssh/host/" } {
+        if { [ACCESS::session exists] } {
+            # Inject credentials as headers
+            HTTP::header insert "X-APM-Username" \
+                [ACCESS::session data get session.logon.last.username]
+            # Note: Handle password securely in production
+            HTTP::header insert "X-APM-Password" \
+                [ACCESS::session data get session.custom.ssh_password]
+        }
+    }
+}</pre>
+    </div>
+
+    <script>
+        // Predefined server configurations
+        const servers = [
+            { 
+                name: 'Production Web Server', 
+                host: 'prod-web-01.example.com', 
+                port: 22, 
+                env: 'production',
+                headerBg: 'red'
+            },
+            { 
+                name: 'Production Database', 
+                host: 'prod-db-01.example.com', 
+                port: 22, 
+                env: 'production',
+                headerBg: 'red'
+            },
+            { 
+                name: 'Staging Server', 
+                host: 'staging.example.com', 
+                port: 22, 
+                env: 'staging',
+                headerBg: 'yellow'
+            },
+            { 
+                name: 'Development Server', 
+                host: 'dev.example.com', 
+                port: 2222, 
+                env: 'development',
+                headerBg: 'green'
+            },
+            { 
+                name: 'Local Test Server', 
+                host: 'localhost', 
+                port: 22, 
+                env: 'development',
+                headerBg: 'blue'
+            }
+        ];
+
+        // Check for APM-injected credentials on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            checkAPMCredentials();
+            renderServerList();
+            updateFormActions();
+            
+            // Update form actions when server URL changes
+            document.getElementById('webssh2Server').addEventListener('input', updateFormActions);
+        });
+
+        function updateFormActions() {
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            if (!serverUrl) return;
+            
+            // Update manual form action
+            const manualForm = document.getElementById('manualAuthForm');
+            manualForm.action = `${serverUrl}/ssh`;
+            
+            // Update APM form action (will be updated dynamically based on host)
+            // This is a placeholder that gets updated when actually used
+        }
+
+        function checkAPMCredentials() {
+            // In a real APM scenario, these would be populated by WebSSO
+            const apmForm = document.getElementById('apmAutoForm');
+            
+            // Check if APM has injected values (simulated here)
+            // In production, APM would populate these fields
+            if (window.location.search.includes('apm=true')) {
+                // Simulate APM credential injection
+                document.getElementById('apmUsername').value = 'apm_user';
+                document.getElementById('apmPassword').value = 'apm_pass';
+                document.getElementById('apmHost').value = 'localhost';
+                
+                // Update APM form action with current server URL
+                const serverUrl = document.getElementById('webssh2Server').value.trim();
+                apmForm.action = `${serverUrl}/ssh/host/localhost`;
+                
+                // Auto-submit if credentials are present
+                console.log('APM credentials detected, auto-submitting...');
+                // Uncomment to enable auto-submit:
+                // apmForm.submit();
+            }
+        }
+
+        function renderServerList() {
+            const container = document.getElementById('serverList');
+            
+            servers.forEach(server => {
+                const card = document.createElement('div');
+                card.className = 'server-card';
+                card.onclick = () => connectToServer(server);
+                
+                card.innerHTML = `
+                    <h3>${server.name}</h3>
+                    <p><strong>Host:</strong> ${server.host}</p>
+                    <p><strong>Port:</strong> ${server.port}</p>
+                    <p><span class="env-badge env-${server.env}">${server.env}</span></p>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function connectToServer(server) {
+            const form = document.getElementById('manualAuthForm');
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            
+            if (!serverUrl) {
+                alert('Please configure the WebSSH2 server URL first!');
+                document.getElementById('webssh2Server').focus();
+                return;
+            }
+            
+            // Check if credentials are entered
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Please enter your username and password first!');
+                document.getElementById('username').focus();
+                return;
+            }
+            
+            // Update form action and hidden fields
+            form.action = `${serverUrl}/ssh/host/${server.host}`;
+            document.getElementById('host').value = server.host;
+            document.getElementById('port').value = server.port;
+            document.getElementById('headerName').value = server.name;
+            document.getElementById('headerBg').value = server.headerBg;
+            
+            // Submit the form
+            form.submit();
+        }
+
+        function resetForm() {
+            document.getElementById('manualAuthForm').reset();
+            document.getElementById('host').value = 'localhost';
+            document.getElementById('port').value = '22';
+        }
+
+        // Function to test POST authentication via AJAX
+        async function testConnection() {
+            const serverUrl = document.getElementById('webssh2Server').value.trim();
+            
+            if (!serverUrl) {
+                alert('Please configure the WebSSH2 server URL first!');
+                document.getElementById('webssh2Server').focus();
+                return;
+            }
+            
+            const formData = new FormData(document.getElementById('manualAuthForm'));
+            const params = new URLSearchParams(formData);
+            
+            try {
+                const response = await fetch(`${serverUrl}/ssh/host/${formData.get('host')}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    console.log('Connection successful');
+                    window.location.href = response.url;
+                } else {
+                    console.error('Connection failed:', response.status);
+                    alert('Connection failed. Please check your credentials.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Connection error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

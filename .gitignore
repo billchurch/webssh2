@@ -1,6 +1,3 @@
-#Docs
-docs
-
 ssl/*
 
 bigip/*
@@ -49,4 +46,11 @@ jspm_packages
 .DS_Store
 
 Build/Release
-app/bob_rsa
+app/todo.md
+test-results/
+
+client/public
+.sonarlint/connectedMode.json
+.vscode/settings.json
+
+dist/
