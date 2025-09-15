@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  # Basic WebSSH2 service with environment variables
+  webssh2:
+    build: .
+    ports:
+      - "2222:2222"
+    environment:
+      # Server Configuration
+      WEBSSH2_LISTEN_IP: "0.0.0.0"
+      WEBSSH2_LISTEN_PORT: 2222
+      
+      # Default SSH Connection
+      WEBSSH2_SSH_HOST: "ssh.example.com"
+      WEBSSH2_SSH_PORT: 22
+      WEBSSH2_SSH_TERM: "xterm-256color"
+      
+      # Security - Use modern algorithms
+      WEBSSH2_SSH_ALGORITHMS_PRESET: "modern"
+      
+      # Web Interface Customization
+      WEBSSH2_HEADER_TEXT: "Development SSH Gateway"
+      WEBSSH2_HEADER_BACKGROUND: "blue"
+      
+      # CORS Configuration for development
+      WEBSSH2_HTTP_ORIGINS: "http://localhost:*,https://localhost:*"
+      
+      # Session Configuration
+      WEBSSH2_SESSION_SECRET: "development-secret-change-in-production"
+      WEBSSH2_SESSION_NAME: "webssh2_dev"
+      
+      # UI Options
+      WEBSSH2_OPTIONS_CHALLENGE_BUTTON: true
+      WEBSSH2_OPTIONS_ALLOW_REAUTH: true
+      WEBSSH2_OPTIONS_ALLOW_RECONNECT: true
+      WEBSSH2_OPTIONS_ALLOW_REPLAY: true
+      WEBSSH2_OPTIONS_AUTO_LOG: false
+      
+      # Debug output (optional)
+      DEBUG: "webssh2:config,webssh2:envConfig"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2222/ssh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Production-like configuration with strict security
+  webssh2-production:
+    build: .
+    ports:
+      - "2223:2222"
+    environment:
+      # Server Configuration
+      WEBSSH2_LISTEN_IP: "0.0.0.0"
+      WEBSSH2_LISTEN_PORT: 2222
+      
+      # SSH Configuration - No defaults for security
+      WEBSSH2_SSH_PORT: 22
+      WEBSSH2_SSH_TERM: "xterm-256color"
+      
+      # Strict security algorithms
+      WEBSSH2_SSH_ALGORITHMS_PRESET: "strict"
+      
+      # Production web interface
+      WEBSSH2_HEADER_TEXT: "Production SSH Gateway"
+      WEBSSH2_HEADER_BACKGROUND: "red"
+      
+      # Restricted CORS for production
+      WEBSSH2_HTTP_ORIGINS: "https://ssh.example.com,https://admin.example.com"
+      
+      # Session security
+      WEBSSH2_SESSION_NAME: "webssh2_prod"
+      # SESSION_SECRET should be loaded from external secret management
+      
+      # Disable some features for security
+      WEBSSH2_OPTIONS_CHALLENGE_BUTTON: false
+      WEBSSH2_OPTIONS_AUTO_LOG: true
+      WEBSSH2_OPTIONS_ALLOW_REPLAY: false
+      
+      # SSH Security
+      WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH: false
+      WEBSSH2_SSH_READY_TIMEOUT: 10000
+      WEBSSH2_SSH_KEEPALIVE_INTERVAL: 60000
+    
+    # Use secrets for production
+    secrets:
+      - webssh2_session_secret
+    
+    # Production health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2222/ssh"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    restart: unless-stopped
+
+  # Custom algorithm configuration example
+  webssh2-custom:
+    build: .
+    ports:
+      - "2224:2222"
+    environment:
+      # Server Configuration
+      WEBSSH2_LISTEN_PORT: 2222
+      
+      # Custom SSH algorithms (individual configuration)
+      WEBSSH2_SSH_ALGORITHMS_CIPHER: "aes256-gcm@openssh.com,aes128-gcm@openssh.com"
+      WEBSSH2_SSH_ALGORITHMS_KEX: "ecdh-sha2-nistp256,ecdh-sha2-nistp384"
+      WEBSSH2_SSH_ALGORITHMS_HMAC: "hmac-sha2-256,hmac-sha2-512"
+      WEBSSH2_SSH_ALGORITHMS_COMPRESS: "none"
+      WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY: "ecdsa-sha2-nistp256,ssh-rsa"
+      
+      # Header customization
+      WEBSSH2_HEADER_TEXT: "Custom Configuration"
+      WEBSSH2_HEADER_BACKGROUND: "purple"
+      
+      # Session configuration
+      WEBSSH2_SESSION_SECRET: "custom-secret-key"
+    
+    restart: unless-stopped
+
+  # Legacy system support example
+  webssh2-legacy:
+    build: .
+    ports:
+      - "2225:2222"
+    environment:
+      # Server Configuration
+      WEBSSH2_LISTEN_PORT: 2222
+      
+      # Legacy SSH systems support
+      WEBSSH2_SSH_ALGORITHMS_PRESET: "legacy"
+      WEBSSH2_SSH_TERM: "vt100"
+      WEBSSH2_SSH_READY_TIMEOUT: 30000
+      
+      # Header for legacy systems
+      WEBSSH2_HEADER_TEXT: "Legacy System Gateway"
+      WEBSSH2_HEADER_BACKGROUND: "orange"
+      
+      # Allow older authentication methods
+      WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH: false
+      WEBSSH2_SSH_ALWAYS_SEND_KEYBOARD_INTERACTIVE: true
+    
+    restart: unless-stopped
+
+  # Multi-environment with external config
+  webssh2-configmap:
+    build: .
+    ports:
+      - "2226:2222"
+    env_file:
+      - .env.webssh2
+    environment:
+      # Override specific values
+      WEBSSH2_HEADER_TEXT: "ConfigMap Environment"
+      WEBSSH2_HEADER_BACKGROUND: "teal"
+    
+    restart: unless-stopped
+
+# External secrets (for production use)
+secrets:
+  webssh2_session_secret:
+    external: true
+
+# Networks (optional)
+networks:
+  default:
+    driver: bridge
+
+# Volumes (optional - for persistent session storage)
+volumes:
+  webssh2_sessions:
+    driver: local

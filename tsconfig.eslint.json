@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "app/**/*.ts",
+    "*.config.mjs",
+    "tests/**/*.ts",
+    "eslint.config.mjs",
+    "playwright.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage"
+  ]
+}

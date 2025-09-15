@@ -1,14 +1,13 @@
 {
-  "changelogPath": "CHANGELOG.md",
-  "include-v-in-tags": false,
-  "prerelease": true,
   "packages": {
-    "app": {
-      "releaseType": "node",
-      "draft": false,
-      "bumpMinorPreMajor": false,
-      "bumpPatchForMinorPreMajor": false,
-      "versioning": "default"
+    ".": {
+      "release-type": "node",
+      "package-name": "webssh2-server",
+      "changelog-sections": [
+        {"type": "feat", "section": "Features", "hidden": false},
+        {"type": "fix", "section": "Bug Fixes", "hidden": false}
+      ],
+      "bootstrap-sha": "cf4d8c3"
     }
   }
 }

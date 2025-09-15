@@ -1,0 +1,37 @@
+name: TS Migration CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Lint code
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Run tests
+        run: npm test
+      - name: Generate migration progress
+        run: npm run progress
+      - uses: actions/upload-artifact@v4
+        with:
+          name: migration-progress
+          path: MIGRATION_PROGRESS.md
+
+  checkpoint:
+    if: contains(github.event.pull_request.title, '[checkpoint]')
+    runs-on: ubuntu-latest
+    needs: build-test
+    environment: ts-migration-checkpoint
+    steps:
+      - run: |
+          echo "Checkpoint gate active."
+          echo "A maintainer must approve the 'ts-migration-checkpoint' environment to proceed."

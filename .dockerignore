@@ -1,9 +1,0 @@
-.git
-.cache
-app/node_modules
-app/client/src
-app/scripts
-app/.*
-app/*.sample
-app/client/tsconfig.json
-app/CHANGELOG.md
