@@ -123,7 +123,7 @@ export async function loadConfigAsync(): Promise<Config> {
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string }
     if (e.code === 'ENOENT') {
-      debug('Missing config.json for webssh. Using default config')
+      debug('No config.json found, using environment variables and defaults')
     } else {
       debug('Error loading config.json: %s', e.message)
       const error = new ConfigError(
