@@ -37,7 +37,7 @@ export function createAuthMiddleware(config: Config): RequestHandler {
       return next()
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+     
     const credentials = basicAuth(req) as { name?: string; pass?: string } | undefined
     if (credentials == null) {
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
