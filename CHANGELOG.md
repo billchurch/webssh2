@@ -2,18 +2,16 @@
 
 ## [2.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.0.0...webssh2-server-v2.0.0) (2025-09-15)
 
-
 ### ⚠ BREAKING CHANGES
 
 * validate referer to /reauth is valid
-* bump xterm to 4.18.0
 * consistent logging messages see #286
 * config system changes #284 ([#285](https://github.com/billchurch/webssh2/issues/285))
-
-### package
-
-* bump xterm to 4.18.0 ([84c09ec](https://github.com/billchurch/webssh2/commit/84c09ec8a1909e4bbd0051debdbb905276a4245e))
-
+* bump express to 5.1.0
+* bump socket.io to 4.8.1
+* bump ssh2 to 1.17
+* bump webssh2_client to 2.0.0
+* bump xterm to 5.5.0
 
 ### Features
 
@@ -32,7 +30,6 @@
 * reorder viewport setup at ssh handshake [#292](https://github.com/billchurch/webssh2/issues/292) ([140e1e2](https://github.com/billchurch/webssh2/commit/140e1e24b14d6b74848e9d250c2b44f806ad627d))
 * test change for release ([476b566](https://github.com/billchurch/webssh2/commit/476b566c08a84bd35aaccf847253875b2c3afb10))
 * validate referer to /reauth is valid ([0dcaa6e](https://github.com/billchurch/webssh2/commit/0dcaa6e15062cdc3252ce52abd9057caf4c00a30))
-
 
 ### Bug Fixes
 
@@ -56,13 +53,3 @@
 * update config.json.sample ([#177](https://github.com/billchurch/webssh2/issues/177)) ([42f973b](https://github.com/billchurch/webssh2/commit/42f973b4796f7f50237dc8ce613e477aa89352ca))
 * update read-config-ng to 3.0.5, fixes [#277](https://github.com/billchurch/webssh2/issues/277) ([3e82c0d](https://github.com/billchurch/webssh2/commit/3e82c0dc4d31d1c97a7cf98139ef8e6dc0213b22))
 * update xterm.js fixes [#261](https://github.com/billchurch/webssh2/issues/261) ([c801ef9](https://github.com/billchurch/webssh2/commit/c801ef9e5826e13a403a6462241cf8a4ff456d45))
-
-
-### Chores
-
-* force release v2.0.0 ([9fee124](https://github.com/billchurch/webssh2/commit/9fee124f82ea12d5fe6292ece771d7ab0dbc82b1))
-* release 0.4.7-pre-3 ([0c78c1f](https://github.com/billchurch/webssh2/commit/0c78c1f31cc6380b7f0706822fc418cfede11413))
-* release 0.4.7-pre-3 ([b29242d](https://github.com/billchurch/webssh2/commit/b29242dfd4e1498a6ac862e85eabd349e11dea73))
-* release 0.4.7-pre-3 ([6c7d242](https://github.com/billchurch/webssh2/commit/6c7d242679d55b2b28a2497d69b43a7e8439c4ca))
-* release 0.4.7-pre-4 ([7d4ba87](https://github.com/billchurch/webssh2/commit/7d4ba87bc1c198600ea33ee220553ef46ea2a103))
-* release 0.4.7-pre-5 ([8b56826](https://github.com/billchurch/webssh2/commit/8b56826363565610eda9fe8733107280b4c8a4bd))
