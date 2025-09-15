@@ -2,7 +2,7 @@ ssl/*
 
 bigip/*
 
-# config.json
+config.json
 
 # Logs
 logs
