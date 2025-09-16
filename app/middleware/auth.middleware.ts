@@ -3,9 +3,10 @@
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import basicAuth from 'basic-auth'
-import validator from 'validator'
 import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
+import { processAuthentication, createSessionData } from './auth-processor.js'
+import { isErr } from '../types/result.js'
 
 /**
  * Create authentication middleware that handles basic auth
@@ -13,43 +14,28 @@ import type { Config } from '../types/config.js'
  * @returns Express middleware handler
  */
 export function createAuthMiddleware(config: Config): RequestHandler {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const r = req as Request & { session?: Record<string, unknown> }
     
-    // Config-supplied credentials take precedence
-    if (
-      config.user.name != null && 
-      config.user.name !== '' && 
-      (
-        (config.user.password != null && config.user.password !== '') || 
-        (config.user.privateKey != null && config.user.privateKey !== '')
-      )
-    ) {
-      const creds: Record<string, unknown> = { username: config.user.name }
-      if (config.user.privateKey != null && config.user.privateKey !== '') {
-        creds['privateKey'] = config.user.privateKey
-      }
-      if (config.user.password != null && config.user.password !== '') {
-        creds['password'] = config.user.password
-      }
-      r.session['sshCredentials'] = creds
-      r.session['usedBasicAuth'] = true
-      return next()
-    }
-
-     
+    // Extract basic auth credentials from request
     const credentials = basicAuth(req) as { name?: string; pass?: string } | undefined
-    if (credentials == null) {
+    
+    // Process authentication using pure function
+    const authResult = processAuthentication(config, credentials)
+    
+    if (isErr(authResult)) {
+      // Authentication failed
       res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
-      return res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
+      res.status(authResult.error.code).send(authResult.error.message)
+      return
     }
     
-    // session is expected to exist (session middleware precedes this)
-    r.session['sshCredentials'] = {
-      username: validator.escape(credentials.name ?? ''),
-      password: credentials.pass ?? '',
-    }
-    r.session['usedBasicAuth'] = true
+    // Create session data from auth result
+    const sessionData = createSessionData(authResult.value)
+    
+    // Apply session data
+    Object.assign(r.session, sessionData)
+    
     next()
   }
 }
