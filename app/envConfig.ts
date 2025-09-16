@@ -10,6 +10,7 @@ import {
   type EnvValueType,
   type EnvVarMap,
 } from './config/index.js'
+import { createSafeKey, safeGet, safeSet } from './utils/safe-property-access.js'
 
 const debug = createNamespacedDebug('envConfig')
 
@@ -21,9 +22,8 @@ export function loadEnvironmentConfig(): Record<string, unknown> {
   debug('Loading configuration from environment variables')
   const config = mapEnvironmentVariables(process.env)
   const envVarsFound = Object.keys(ENV_VAR_MAPPING).filter(
-    // Key comes from static mapping
-    // eslint-disable-next-line security/detect-object-injection
-    (key) => process.env[key] !== undefined
+    // Key comes from static mapping, safe to use
+    (key) => safeGet(process.env, createSafeKey(key)) !== undefined
   ).length
   debug('Loaded %d environment variables into configuration', envVarsFound)
   return config
@@ -40,13 +40,12 @@ export function getEnvironmentVariableMap(): Record<
     { path: string; type: EnvValueType; description: string }
   > = {}
   for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
-    // envVar comes from static mapping list
-    // eslint-disable-next-line security/detect-object-injection
-    envMap[envVar] = {
+    // envVar comes from static mapping list, safe to use
+    safeSet(envMap, createSafeKey(envVar), {
       path: mapping.path,
       type: mapping.type,
       description: getEnvVarDescription(envVar, mapping),
-    }
+    })
   }
   return envMap
 }
@@ -76,9 +75,9 @@ function getEnvVarDescription(envVar: string, mapping: EnvVarMap): string {
     WEBSSH2_SSO_HEADER_PASSWORD: 'Header name for password mapping (e.g., x-apm-password)',
     WEBSSH2_SSO_HEADER_SESSION: 'Header name for session mapping (e.g., x-apm-session)',
   }
-  // envVar sourced from static mapping keys above
-  // eslint-disable-next-line security/detect-object-injection
-  return descriptions[envVar] ?? `Configuration for ${mapping.path} (${mapping.type})`
+  // envVar sourced from static mapping keys above, safe to use
+  const description = safeGet(descriptions, createSafeKey(envVar))
+  return typeof description === 'string' ? description : `Configuration for ${mapping.path} (${mapping.type})`
 }
 
 export function getAlgorithmPresets(): Record<string, Algorithms> {

@@ -6,6 +6,7 @@ import { EventEmitter } from 'events'
 import type { Server as IOServer, Socket as IOSocket } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import { maskSensitiveData } from './utils.js'
+import { safeToString, safeParseInt } from './utils/type-coercion.js'
 import { UnifiedAuthPipeline } from './auth/auth-pipeline.js'
 import { DEFAULTS, MESSAGES } from './constants.js'
 import {
@@ -316,15 +317,19 @@ class WebSSH2Socket extends EventEmitter {
       `handleTerminal: received dimensions rows='${rows}' cols='${cols}', using server sessionState.term='${this.sessionState.term}'`
     )
     // Server is now the sole source of truth for term - ignore any term from client
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    if (rows != null && typeof rows !== 'object' && validator.isInt(String(rows))) {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      this.sessionState.rows = parseInt(String(rows), 10)
+    const rowsStr = safeToString(rows)
+    if (rowsStr !== undefined && validator.isInt(rowsStr)) {
+      const parsedRows = safeParseInt(rowsStr, 10)
+      if (parsedRows !== undefined) {
+        this.sessionState.rows = parsedRows
+      }
     }
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    if (cols != null && typeof cols !== 'object' && validator.isInt(String(cols))) {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      this.sessionState.cols = parseInt(String(cols), 10)
+    const colsStr = safeToString(cols)
+    if (colsStr !== undefined && validator.isInt(colsStr)) {
+      const parsedCols = safeParseInt(colsStr, 10)
+      if (parsedCols !== undefined) {
+        this.sessionState.cols = parsedCols
+      }
     }
   }
 
