@@ -1,12 +1,30 @@
+// app/ssh.ts
+// SSH connection orchestration layer
+
 import { Client as SSH } from 'ssh2'
 import type { ConnectConfig, ClientChannel } from 'ssh2'
 import { EventEmitter } from 'events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError } from './errors.js'
 import { maskSensitiveData } from './utils.js'
-import { validatePrivateKey, isEncryptedKey } from './validation/ssh.js'
 import { filterEnvironmentVariables } from './connection/environment-filter.js'
 import type { Config } from './types/config.js'
+
+// Import pure functions from decomposed modules
+import {
+  buildSshConfig,
+  createPtyOptions,
+  createExecOptions,
+  extractHost,
+  type SshCredentials,
+  type PtyOptions
+} from './ssh/config-builder.js'
+
+import {
+  extractErrorMessage,
+  createErrorInfo,
+  formatErrorForLog
+} from './ssh/error-handler.js'
 
 const debug = createNamespacedDebug('ssh')
 
@@ -23,7 +41,7 @@ export default class SSHConnection extends EventEmitter {
         close?: () => void
       })
     | null
-  private creds: Record<string, unknown> | null
+  private creds: SshCredentials | null
 
   constructor(config: Config) {
     super()
@@ -33,24 +51,33 @@ export default class SSHConnection extends EventEmitter {
     this.creds = null
   }
 
-
-  connect(creds: Record<string, unknown>): Promise<unknown> {
+  connect(creds: SshCredentials): Promise<unknown> {
     debug('connect: %O', maskSensitiveData(creds))
     this.creds = creds
+    
     if (this.conn != null) {
       this.conn.end()
     }
+    
     this.conn = new SSH()
-    const sshConfig = this.getSSHConfig(creds, true)
+    
+    // Build SSH config using pure function
+    const sshConfig = buildSshConfig(
+      creds, 
+      this.config, 
+      true,
+      (msg: string) => debug(msg)
+    )
+    
     debug('Initial connection config: %O', maskSensitiveData(sshConfig))
+    
     return new Promise((resolve, reject) => {
       this.setupConnectionHandlers(resolve, reject)
       try {
         this.conn?.connect(sshConfig as unknown as ConnectConfig)
       } catch (err: unknown) {
-        reject(
-          new SSHConnectionError(`Connection failed: ${(err as { message?: string }).message}`)
-        )
+        const errorMessage = extractErrorMessage(err)
+        reject(new SSHConnectionError(`Connection failed: ${errorMessage}`))
       }
     })
   }
@@ -62,41 +89,31 @@ export default class SSHConnection extends EventEmitter {
     let isResolved = false
 
     this.conn?.on('ready', () => {
-      let host = ''
-      const hostValue = (this.creds)?.['host']
-      if (hostValue != null) {
-        if (typeof hostValue === 'string' || typeof hostValue === 'number') {
-          host = String(hostValue)
-        } else {
-          host = '[object]'
-        }
-      }
-      debug(`connect: ready: ${host}`)
+      // Extract host using pure function
+      const host = this.creds != null ? extractHost(this.creds) : ''
+      debug(`connect: ready: ${host !== '' ? host : '[no host]'}`)
       isResolved = true
       resolve(this.conn)
     })
+    
     this.conn?.on('error', (err: unknown) => {
-      const e = err as { message?: string; code?: string; level?: string }
-      // Intentionally use `||` so empty strings fall back to meaningful alternatives
-       
-      let errorMessage: string
-      if (e.message != null) {
-        errorMessage = e.message
-      } else if (e.code != null) {
-        errorMessage = e.code
-      } else if (err instanceof Error) {
-        errorMessage = err.toString()
-      } else {
-        errorMessage = '[Unknown error]'
-      }
+      // Create error info using pure function
+      const errorInfo = createErrorInfo(err)
+      const logMessage = formatErrorForLog(err)
+      debug(`connect: error: ${logMessage}`)
+      
       if (isResolved === false) {
         isResolved = true
-        const sshError = new SSHConnectionError(errorMessage)
+        const sshError = new SSHConnectionError(errorInfo.message)
         // Preserve original error properties for error type detection
-        Object.assign(sshError, { code: e.code, level: e.level })
+        Object.assign(sshError, { 
+          code: errorInfo.code, 
+          level: errorInfo.level 
+        })
         reject(sshError)
       }
     })
+    
     this.conn?.on('close', (hadError?: boolean) => {
       debug(`connect: close: hadError=${hadError}, isResolved=${isResolved}`)
       if (isResolved === false) {
@@ -104,44 +121,34 @@ export default class SSHConnection extends EventEmitter {
         reject(new SSHConnectionError('SSH authentication failed - connection closed'))
       }
     })
+    
     this.conn?.on('keyboard-interactive', (name, instructions, instructionsLang, prompts) => {
       this.emit('keyboard-interactive', { name, instructions, instructionsLang, prompts })
     })
   }
 
   shell(
-    options: {
-      term?: string | null
-      rows?: number
-      cols?: number
-      width?: number
-      height?: number
-    },
+    options: PtyOptions,
     envVars?: Record<string, string> | null
   ): Promise<unknown> {
-    const ptyOptions = {
-      term: options.term,
-      rows: options.rows,
-      cols: options.cols,
-      width: options.width,
-      height: options.height,
-    }
-    const envOptions = envVars != null ? { ['env']: this.getEnvironment(envVars) } : undefined
+    // Create PTY options using pure function
+    const ptyOptions = createPtyOptions(options)
+    
+    // Filter environment variables
+    const envOptions = envVars != null 
+      ? { env: this.getEnvironment(envVars) } 
+      : undefined
+    
     debug(`shell: Creating shell with PTY options:`, ptyOptions, 'and env options:', envOptions)
+    
     return new Promise((resolve, reject) => {
       this.conn?.shell(
-        ptyOptions as unknown as object,
+        ptyOptions,
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            let error: Error
-            if (err instanceof Error) {
-              error = err
-            } else {
-              const message = typeof err === 'string' ? err : '[SSH error]'
-              error = new Error(message)
-            }
-            reject(error)
+            const errorMessage = extractErrorMessage(err)
+            reject(new Error(errorMessage))
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)
@@ -163,34 +170,21 @@ export default class SSHConnection extends EventEmitter {
     } = {},
     envVars?: Record<string, string>
   ): Promise<unknown> {
-    const execOptions: Record<string, unknown> = {}
-    if (envVars != null) {
-      execOptions['env'] = this.getEnvironment(envVars)
-    }
-    if (options.pty === true) {
-      execOptions['pty'] = {
-        term: options.term,
-        rows: options.rows,
-        cols: options.cols,
-        width: options.width,
-        height: options.height,
-      }
-    }
+    // Create exec options using pure functions
+    const ptyOptions = options.pty === true ? options : undefined
+    const filteredEnv = envVars != null ? this.getEnvironment(envVars) : undefined
+    const execOptions = createExecOptions(ptyOptions, filteredEnv)
+    
     debug('exec: Executing command with options:', command, execOptions)
+    
     return new Promise((resolve, reject) => {
       this.conn?.exec(
         command,
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
           if (err != null) {
-            let error: Error
-            if (err instanceof Error) {
-              error = err
-            } else {
-              const message = typeof err === 'string' ? err : '[SSH error]'
-              error = new Error(message)
-            }
-            reject(error)
+            const errorMessage = extractErrorMessage(err)
+            reject(new Error(errorMessage))
           } else {
             this.stream = stream as unknown as EventEmitter
             resolve(stream)
@@ -219,44 +213,5 @@ export default class SSHConnection extends EventEmitter {
 
   private getEnvironment(envVars?: Record<string, unknown>): Record<string, string> {
     return filterEnvironmentVariables(envVars, this.config.ssh.envAllowlist)
-  }
-
-  private getSSHConfig(
-    creds: Record<string, unknown>,
-    tryKeyboard: boolean
-  ): Record<string, unknown> {
-    const base: Record<string, unknown> = {
-      host: (() => {
-        const hostValue = creds['host']
-        if (hostValue == null) {
-          return ''
-        }
-        if (typeof hostValue === 'string' || typeof hostValue === 'number') {
-          return String(hostValue)
-        }
-        return ''
-      })(),
-      port: Number(creds['port'] ?? 22),
-      username: (creds['username'] as string | undefined) ?? undefined,
-      tryKeyboard,
-      algorithms: this.config.ssh.algorithms as unknown,
-      readyTimeout: this.config.ssh.readyTimeout,
-      keepaliveInterval: this.config.ssh.keepaliveInterval,
-      keepaliveCountMax: this.config.ssh.keepaliveCountMax,
-      debug: (msg: string) => debug(msg),
-    }
-    const privateKey = (creds['privateKey'] as string | undefined) ?? undefined
-    const passphrase = (creds['passphrase'] as string | undefined) ?? undefined
-    const password = (creds['password'] as string | undefined) ?? undefined
-    if (privateKey != null && privateKey !== '' && validatePrivateKey(privateKey)) {
-      ;(base as { privateKey?: string }).privateKey = privateKey
-      if (isEncryptedKey(privateKey) && passphrase != null && passphrase !== '') {
-        ;(base as { passphrase?: string }).passphrase = passphrase
-      }
-    }
-    if (password != null && password !== '') {
-      ;(base as { password?: string }).password = password
-    }
-    return base
   }
 }
