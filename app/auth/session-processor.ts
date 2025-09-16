@@ -46,69 +46,103 @@ export function extractEnvironmentVars(params: Record<string, unknown>): Record<
 }
 
 /**
+ * Parse boolean values from various input formats
+ * Pure function - no side effects
+ */
+function parseBoolean(value: unknown): boolean | undefined {
+  if (value === true || value === 'true' || value === '1') {
+    return true
+  }
+  if (value === false || value === 'false' || value === '0') {
+    return false
+  }
+  return undefined
+}
+
+/**
+ * Parse date from string input
+ * Pure function - no side effects
+ */
+function parseDate(value: unknown): Date | undefined {
+  if (typeof value !== 'string' || value === '') {
+    return undefined
+  }
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? undefined : date
+}
+
+/**
+ * Parse number from various input formats
+ * Pure function - no side effects
+ */
+function parseNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10)
+    return isNaN(parsed) ? undefined : parsed
+  }
+  return undefined
+}
+
+/**
+ * Parse string values, filtering empty strings
+ * Pure function - no side effects
+ */
+function parseString(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+/**
  * Process session recording parameters
  * Pure function - no side effects
  */
 export function extractRecordingParams(params: Record<string, unknown>): RecordingParams {
   const recording: RecordingParams = {}
   
-  // Allow replay parameter
-  const allowreplay = params['allowreplay']
-  if (allowreplay === 'true' || allowreplay === true || allowreplay === '1') {
-    recording.allowReplay = true
-  } else if (allowreplay === 'false' || allowreplay === false || allowreplay === '0') {
-    recording.allowReplay = false
+  // Process each parameter with its parser
+  const allowReplay = parseBoolean(params['allowreplay'])
+  if (allowReplay !== undefined) {
+    recording.allowReplay = allowReplay
   }
   
-  // MRH session
   if (params['mrhsession'] != null) {
     recording.mrhSession = params['mrhsession']
   }
   
-  // Replay date parameters
-  const replayDateStart = params['replaydatestart']
-  if (typeof replayDateStart === 'string' && replayDateStart !== '') {
-    const date = new Date(replayDateStart)
-    if (!isNaN(date.getTime())) {
-      recording.replayDateStart = date
-    }
+  const replayDateStart = parseDate(params['replaydatestart'])
+  if (replayDateStart !== undefined) {
+    recording.replayDateStart = replayDateStart
   }
   
-  const replayDateEnd = params['replaydateend']
-  if (typeof replayDateEnd === 'string' && replayDateEnd !== '') {
-    const date = new Date(replayDateEnd)
-    if (!isNaN(date.getTime())) {
-      recording.replayDateEnd = date
-    }
+  const replayDateEnd = parseDate(params['replaydateend'])
+  if (replayDateEnd !== undefined) {
+    recording.replayDateEnd = replayDateEnd
   }
   
-  // Exit code and signal
-  const exitCode = params['replayexitcode']
-  if (typeof exitCode === 'number' || typeof exitCode === 'string') {
-    const code = typeof exitCode === 'number' ? exitCode : parseInt(exitCode, 10)
-    if (!isNaN(code)) {
-      recording.replayExitCode = code
-    }
+  const replayExitCode = parseNumber(params['replayexitcode'])
+  if (replayExitCode !== undefined) {
+    recording.replayExitCode = replayExitCode
   }
   
-  const exitSignal = params['replayexitsignal']
-  if (typeof exitSignal === 'string' && exitSignal !== '') {
-    recording.replayExitSignal = exitSignal
+  const replayExitSignal = parseString(params['replayexitsignal'])
+  if (replayExitSignal !== undefined) {
+    recording.replayExitSignal = replayExitSignal
   }
   
-  // Session metadata
-  const sessionId = params['sessionid']
-  if (typeof sessionId === 'string' && sessionId !== '') {
+  const sessionId = parseString(params['sessionid'])
+  if (sessionId !== undefined) {
     recording.sessionId = sessionId
   }
   
-  const sessionUsername = params['sessionusername']
-  if (typeof sessionUsername === 'string' && sessionUsername !== '') {
+  const sessionUsername = parseString(params['sessionusername'])
+  if (sessionUsername !== undefined) {
     recording.sessionUsername = sessionUsername
   }
   
-  const userHash = params['userhash']
-  if (typeof userHash === 'string' && userHash !== '') {
+  const userHash = parseString(params['userhash'])
+  if (userHash !== undefined) {
     recording.userHash = userHash
   }
   
