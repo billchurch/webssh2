@@ -13,6 +13,7 @@ import {
   type SessionState
 } from '../../../app/socket/socket-helpers.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
+import { TEST_USERNAME, TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('createInitialSessionState', () => {
   it('should create state with all null/false values', () => {
@@ -85,14 +86,14 @@ describe('mergeSessionState', () => {
     const initial = createInitialSessionState()
     const updates: Partial<SessionState> = {
       authenticated: true,
-      username: 'testuser',
+      username: TEST_USERNAME,
       host: 'example.com'
     }
     
     const merged = mergeSessionState(initial, updates)
     
     expect(merged.authenticated).toBe(true)
-    expect(merged.username).toBe('testuser')
+    expect(merged.username).toBe(TEST_USERNAME)
     expect(merged.host).toBe('example.com')
     expect(merged.password).toBe(null) // Unchanged
   })
@@ -154,7 +155,7 @@ describe('hasValidSshCredentials', () => {
       ...createInitialSessionState(),
       host: 'example.com',
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     expect(hasValidSshCredentials(state)).toBe(true)
@@ -172,8 +173,8 @@ describe('hasValidSshCredentials', () => {
   })
   
   it('should reject incomplete credentials', () => {
-    const noHost = { ...createInitialSessionState(), username: 'user', password: 'pass' }
-    const noUser = { ...createInitialSessionState(), host: 'example.com', password: 'pass' }
+    const noHost = { ...createInitialSessionState(), username: 'user', password: TEST_PASSWORDS.basic }
+    const noUser = { ...createInitialSessionState(), host: 'example.com', password: TEST_PASSWORDS.basic }
     const noAuth = { ...createInitialSessionState(), host: 'example.com', username: 'user' }
     
     expect(hasValidSshCredentials(noHost)).toBe(false)
@@ -186,7 +187,7 @@ describe('hasValidSshCredentials', () => {
       ...createInitialSessionState(),
       host: '',
       username: '',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     expect(hasValidSshCredentials(state)).toBe(false)

@@ -14,6 +14,11 @@ export const TEST_PASSWORD_ALT = 'testpassword' //NOSONAR
 export const INVALID_USERNAME = 'wronguser'
 export const INVALID_PASSWORD = 'wrongpass' //NOSONAR
 
+// Additional test usernames
+export const CONFIG_USERNAME = 'configuser'
+export const BASIC_USERNAME = 'basicuser'
+export const SSH_USERNAME = 'sshuser'
+
 // SSH test credentials
 export const SSH_TEST_CREDENTIALS = {
   host: 'localhost',
@@ -60,6 +65,10 @@ export const TEST_PASSWORDS = {
   state: 'state-password', //NOSONAR
   test: 'test-password', //NOSONAR
   secret: 'secret', //NOSONAR
+  secret123: 'secret123', //NOSONAR
+  adminPass: 'admin-pass', //NOSONAR
+  configPass: 'configpass', //NOSONAR
+  basicPass: 'basicpass', //NOSONAR
 } as const
 
 // Test credentials objects for different scenarios

@@ -10,12 +10,13 @@ import {
   extractReadyTimeout
 } from '../../../app/auth/credential-processor.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
+import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('extractPostCredentials', () => {
   it('should extract valid credentials', () => {
     const body = {
-      username: 'testuser',
-      password: 'testpass',
+      username: TEST_USERNAME,
+      password: TEST_PASSWORD,
       host: 'example.com',
       port: 2222,
       sshterm: 'xterm-256color'
@@ -24,8 +25,8 @@ describe('extractPostCredentials', () => {
     const result = extractPostCredentials(body)
     
     expect(result).toEqual({
-      username: 'testuser',
-      password: 'testpass',
+      username: TEST_USERNAME,
+      password: TEST_PASSWORD,
       host: 'example.com',
       port: 2222,
       term: 'xterm-256color'
@@ -35,7 +36,7 @@ describe('extractPostCredentials', () => {
   it('should handle hostname alias', () => {
     const body = {
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       hostname: 'server.com'
     }
     
@@ -43,7 +44,7 @@ describe('extractPostCredentials', () => {
     
     expect(result).toEqual({
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       host: 'server.com'
     })
   })
@@ -51,14 +52,14 @@ describe('extractPostCredentials', () => {
   it('should return null for missing credentials', () => {
     expect(extractPostCredentials({})).toBe(null)
     expect(extractPostCredentials({ username: 'user' })).toBe(null)
-    expect(extractPostCredentials({ password: 'pass' })).toBe(null)
-    expect(extractPostCredentials({ username: '', password: 'pass' })).toBe(null)
+    expect(extractPostCredentials({ password: TEST_PASSWORDS.basic })).toBe(null)
+    expect(extractPostCredentials({ username: '', password: TEST_PASSWORDS.basic })).toBe(null)
   })
   
   it('should convert string port to number', () => {
     const body = {
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       port: '3000'
     }
     
@@ -70,7 +71,7 @@ describe('extractPostCredentials', () => {
   it('should validate sshterm', () => {
     const body = {
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       sshterm: 'invalid<script>'
     }
     
@@ -150,7 +151,7 @@ describe('createSshCredentials', () => {
   it('should create credentials object', () => {
     const result = createSshCredentials(
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       'host.com',
       22,
       'xterm'
@@ -158,7 +159,7 @@ describe('createSshCredentials', () => {
     
     expect(result).toEqual({
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       host: 'host.com',
       port: 22,
       term: 'xterm'
@@ -168,7 +169,7 @@ describe('createSshCredentials', () => {
   it('should omit empty term', () => {
     const result = createSshCredentials(
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       'host.com',
       22,
       ''
@@ -180,7 +181,7 @@ describe('createSshCredentials', () => {
   it('should omit null term', () => {
     const result = createSshCredentials(
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       'host.com',
       22,
       null
@@ -194,7 +195,7 @@ describe('isValidCredentialFormat', () => {
   it('should validate credentials with password', () => {
     const creds = {
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     expect(isValidCredentialFormat(creds)).toBe(true)

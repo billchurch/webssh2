@@ -12,6 +12,7 @@ import {
 } from '../../../app/config/config-processor-v2.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
 import { isOk, isErr } from '../../../app/types/result.js'
+import { TEST_PASSWORDS, TEST_PASSPHRASE } from '../../test-constants.js'
 
 describe('parseJsonConfig', () => {
   it('parses valid JSON', () => {
@@ -229,9 +230,9 @@ describe('validateSshAlgorithms', () => {
 describe('sanitizeConfigForClient', () => {
   it('removes sensitive fields', () => {
     const config = createDefaultConfig()
-    config.user.password = 'secret'
+    config.user.password = TEST_PASSWORDS.secret
     config.user.privateKey = 'key'
-    config.user.passphrase = 'phrase'
+    config.user.passphrase = TEST_PASSPHRASE
     
     const result = sanitizeConfigForClient(config)
     

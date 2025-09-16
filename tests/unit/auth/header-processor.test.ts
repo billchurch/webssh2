@@ -69,7 +69,8 @@ describe('colorToStyle', () => {
   it('should return null for invalid values', () => {
     expect(colorToStyle(null)).toBe(null)
     expect(colorToStyle('')).toBe(null)
-    expect(colorToStyle('javascript:alert(1)')).toBe(null)
+    // Testing XSS protection - this is a test string, not actual code execution //NOSONAR
+    expect(colorToStyle('javascript:alert(1)')).toBe(null) //NOSONAR
     expect(colorToStyle('<script>')).toBe(null)
   })
 })

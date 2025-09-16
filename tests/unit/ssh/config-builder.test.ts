@@ -10,6 +10,7 @@ import {
   createExecOptions
 } from '../../../app/ssh/config-builder.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
+import { TEST_PASSWORDS, TEST_PASSPHRASE } from '../../test-constants.js'
 
 describe('extractHost', () => {
   it('extracts string host', () => {
@@ -54,12 +55,12 @@ describe('extractAuthCredentials', () => {
   it('extracts username and password', () => {
     const result = extractAuthCredentials({
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     })
     
     expect(result).toEqual({
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     })
   })
   
@@ -84,24 +85,24 @@ encrypted content
     
     const result = extractAuthCredentials({
       privateKey: encryptedKey,
-      passphrase: 'secret'
+      passphrase: TEST_PASSPHRASE
     })
     
     expect(result).toEqual({
       privateKey: encryptedKey,
-      passphrase: 'secret'
+      passphrase: TEST_PASSPHRASE
     })
   })
   
   it('omits empty strings', () => {
     const result = extractAuthCredentials({
       username: '',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       privateKey: ''
     })
     
     expect(result).toEqual({
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     })
   })
   
@@ -124,7 +125,7 @@ describe('buildSshConfig', () => {
       host: 'example.com',
       port: 2222,
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     const result = buildSshConfig(creds, config, true)
@@ -133,7 +134,7 @@ describe('buildSshConfig', () => {
       host: 'example.com',
       port: 2222,
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       tryKeyboard: true,
       readyTimeout: config.ssh.readyTimeout,
       keepaliveInterval: config.ssh.keepaliveInterval,

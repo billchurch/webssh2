@@ -11,6 +11,8 @@ import {
   createSanitizedCredentials
 } from '../../../app/routes/route-validators.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
+import { TEST_PASSWORDS } from '../../test-constants.js'
+import { PASSWORD_MASK } from '../../../app/constants/security.js'
 
 describe('extractHost', () => {
   const config = createDefaultConfig()
@@ -137,7 +139,7 @@ describe('validatePostCredentials', () => {
   it('validates complete credentials', () => {
     const body = {
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     const result = validatePostCredentials(body)
@@ -145,13 +147,13 @@ describe('validatePostCredentials', () => {
     expect(result).toEqual({
       valid: true,
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     })
   })
   
   it('rejects missing username', () => {
     const body = {
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     const result = validatePostCredentials(body)
@@ -178,7 +180,7 @@ describe('validatePostCredentials', () => {
   it('rejects empty username', () => {
     const body = {
       username: '',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     const result = validatePostCredentials(body)
@@ -191,7 +193,7 @@ describe('validateSessionCredentials', () => {
   it('validates complete credentials', () => {
     const creds = {
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     expect(validateSessionCredentials(creds)).toBe(true)
@@ -203,7 +205,7 @@ describe('validateSessionCredentials', () => {
   
   it('rejects missing username', () => {
     const creds = {
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     expect(validateSessionCredentials(creds)).toBe(false)
@@ -259,7 +261,7 @@ describe('createSanitizedCredentials', () => {
       host: 'host.com',
       port: 22,
       username: 'user',
-      password: '********'
+      password: PASSWORD_MASK
     })
   })
 })
