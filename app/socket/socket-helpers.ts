@@ -115,7 +115,7 @@ export function createErrorPayload(message: string, code?: string): {
 } {
   return {
     message,
-    ...(code && { code }),
+    ...(code != null && code !== '' ? { code } : {}),
     timestamp: Date.now(),
   }
 }
