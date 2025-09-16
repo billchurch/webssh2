@@ -1,12 +1,8 @@
 // server
 // app/utils.ts
 
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
-import maskObject from 'jsmasker'
 import { createNamespacedDebug } from './logger.js'
 import { MESSAGES } from './constants.js'
-import configSchema from './configSchema.js'
 // Import pure validation functions
 import { validateHost, validatePort, validateTerm, normalizeDimension } from './validation/ssh.js'
 import {
@@ -14,30 +10,17 @@ import {
   type Credentials,
 } from './validation/credentials.js'
 import { isValidEnvKey, isValidEnvValue, parseEnvVars } from './validation/environment.js'
+// Import new pure utility functions
+import { deepMergePure } from './utils/object-merger.js'
+import { validateConfigPure } from './utils/config-validator.js'
+import { transformHtml } from './utils/html-transformer.js'
+import { maskSensitive } from './utils/data-masker.js'
+import { isErr } from './types/result.js'
 
 const debug = createNamespacedDebug('utils')
 
-export function deepMerge<T extends object>(target: T, source: unknown): T {
-  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
-  if (source !== null && source !== undefined && typeof source === 'object') {
-    const src = source as Record<string, unknown>
-    for (const key of Object.keys(src)) {
-      // Keys originate from an internal object (not user input)
-      // eslint-disable-next-line security/detect-object-injection
-      const value = src[key]
-      if (value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
-        // eslint-disable-next-line security/detect-object-injection
-        const prev = (output[key] as Record<string, unknown> | undefined) ?? {}
-        // eslint-disable-next-line security/detect-object-injection
-        output[key] = deepMerge(prev, value as Record<string, unknown>)
-      } else {
-        // eslint-disable-next-line security/detect-object-injection
-        output[key] = value
-      }
-    }
-  }
-  return output as T
-}
+// Use pure deep merge function
+export const deepMerge = deepMergePure
 
 // Re-export validation functions for backward compatibility
 export const getValidatedHost = validateHost
@@ -48,41 +31,25 @@ export type { Credentials }
 export const isValidCredentials = validateCredentials
 export const validateSshTerm = validateTerm
 
+// Wrapper for backward compatibility - converts Result to exception
 export function validateConfig(config: unknown): unknown {
-  type ValidateFn = ((data: unknown) => boolean) & { errors?: unknown }
-  interface AjvLike {
-    compile: (schema: unknown) => ValidateFn
-    errorsText: (errors?: unknown) => string
+  const result = validateConfigPure(config)
+  if (isErr(result)) {
+    throw new Error(`${MESSAGES.CONFIG_VALIDATION_ERROR}: ${result.error.message}`)
   }
-  type AjvConstructor = new () => AjvLike
-  const AjvCtor = Ajv as unknown as AjvConstructor
-  const ajv: AjvLike = new AjvCtor()
-  ;(addFormats as unknown as (a: unknown) => void)(ajv)
-  const validate = ajv.compile(configSchema as unknown as object)
-  const valid = validate(config)
-  if (!valid) {
-    throw new Error(`${MESSAGES.CONFIG_VALIDATION_ERROR}: ${ajv.errorsText(validate.errors)}`)
-  }
-  return config
+  return result.value
 }
 
+// Wrapper for backward compatibility using pure transformation
 export function modifyHtml(html: string, config: unknown): string {
   debug('modifyHtml')
-  const modifiedHtml = html.replace(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/')
-  return modifiedHtml.replace(
-    'window.webssh2Config = null;',
-    `window.webssh2Config = ${JSON.stringify(config)};`
-  )
+  return transformHtml(html, config)
 }
 
+// Wrapper for backward compatibility using pure masking
 export function maskSensitiveData(obj: unknown, options?: unknown): unknown {
-  const defaultOptions = {
-    properties: ['password', 'privateKey', 'passphrase', 'key', 'secret', 'token'],
-  }
   debug('maskSensitiveData')
-  const maskingOptions = { ...defaultOptions, ...(options as object | undefined) }
-  const masker = maskObject as unknown as (o: unknown, opts: unknown) => unknown
-  return masker(obj, maskingOptions)
+  return maskSensitive(obj, options as Parameters<typeof maskSensitive>[1])
 }
 
 // Re-export environment validation functions for backward compatibility
