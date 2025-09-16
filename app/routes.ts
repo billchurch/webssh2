@@ -136,7 +136,11 @@ async function handleSshRoute(
 
   // SSH validation succeeded - proceed with normal flow
   processAuthParameters(req.query, req.session)
-  const sanitizedCredentials = setupSshCredentials(req.session, connectionParams)
+  const sanitizedCredentials = setupSshCredentials(req.session, {
+    ...connectionParams,
+    username,
+    password
+  })
   debug('SSH validation passed - serving client: ', sanitizedCredentials)
   
   handleConnection(
