@@ -99,14 +99,14 @@ export function validatePostCredentials(
   if (username == null || username === '') {
     return {
       valid: false,
-      error: 'Missing required field: username'
+      error: 'username, password'
     }
   }
   
   if (password == null || password === '') {
     return {
       valid: false,
-      error: 'Missing required field: password'
+      error: 'username, password'
     }
   }
   
