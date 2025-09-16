@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
+import { TEST_USERNAME } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
@@ -157,14 +158,14 @@ describe('Environment Configuration Tests', () => {
 
 
   test('loadEnvironmentConfig handles all user credential fields', () => {
-    process.env.WEBSSH2_USER_NAME = 'testuser'
+    process.env.WEBSSH2_USER_NAME = TEST_USERNAME
     process.env.WEBSSH2_USER_PASSWORD = 'testpassword'
     process.env.WEBSSH2_USER_PRIVATE_KEY = 'base64encodedkey'
     process.env.WEBSSH2_USER_PASSPHRASE = 'keypassphrase'
 
     const config = loadEnvironmentConfig()
 
-    assert.equal(config.user?.name, 'testuser')
+    assert.equal(config.user?.name, TEST_USERNAME)
     assert.equal(config.user?.password, 'testpassword')
     assert.equal(config.user?.privateKey, 'base64encodedkey')
     assert.equal(config.user?.passphrase, 'keypassphrase')

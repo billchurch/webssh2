@@ -10,6 +10,7 @@ import {
   mergeSessionData,
   type SessionData
 } from '../../../app/routes/session-handler.js'
+import { TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('createSessionCredentials', () => {
   it('creates credentials with all fields', () => {
@@ -17,7 +18,7 @@ describe('createSessionCredentials', () => {
       'host.com',
       2222,
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       'xterm'
     )
     
@@ -25,7 +26,7 @@ describe('createSessionCredentials', () => {
       host: 'host.com',
       port: 2222,
       username: 'user',
-      password: 'pass',
+      password: TEST_PASSWORDS.basic,
       term: 'xterm'
     })
   })
@@ -35,7 +36,7 @@ describe('createSessionCredentials', () => {
       'host.com',
       22,
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       null
     )
     
@@ -43,7 +44,7 @@ describe('createSessionCredentials', () => {
       host: 'host.com',
       port: 22,
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     })
   })
   
@@ -52,7 +53,7 @@ describe('createSessionCredentials', () => {
       'host.com',
       22,
       'user',
-      'pass',
+      TEST_PASSWORDS.basic,
       ''
     )
     
@@ -66,7 +67,7 @@ describe('createPostAuthSession', () => {
       host: 'host.com',
       port: 22,
       username: 'user',
-      password: 'pass'
+      password: TEST_PASSWORDS.basic
     }
     
     const result = createPostAuthSession(credentials)
@@ -127,7 +128,7 @@ describe('hasValidSessionCredentials', () => {
     const session: SessionData = {
       sshCredentials: {
         username: 'user',
-        password: 'pass'
+        password: TEST_PASSWORDS.basic
       }
     }
     
@@ -144,7 +145,7 @@ describe('hasValidSessionCredentials', () => {
     const session: SessionData = {
       sshCredentials: {
         username: '',
-        password: 'pass'
+        password: TEST_PASSWORDS.basic
       }
     }
     

@@ -2,6 +2,7 @@
 // Pure functions for route parameter validation
 
 import { getValidatedPort, validateSshTerm } from '../utils.js'
+import { PASSWORD_MASK } from '../constants/security.js'
 import type { Config } from '../types/config.js'
 
 /**
@@ -167,6 +168,6 @@ export function createSanitizedCredentials(
     host,
     port,
     username,
-    password: '********'
+    password: PASSWORD_MASK
   }
 }

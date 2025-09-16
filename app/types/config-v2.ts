@@ -6,6 +6,7 @@ import type { Config as LegacyConfig } from './config.js'
 import type { SshHost, SshPort, FilePath, CssColor } from './branded.js'
 import type { SshAlgorithms } from './ssh.js'
 import type { Result } from './result.js'
+import { DEFAULT_SSO_HEADERS } from '../constants/security.js'
 
 /**
  * Enhanced SSH configuration with branded types
@@ -244,11 +245,7 @@ export class ConfigBuilder {
         enabled: false,
         csrfProtection: false,
         trustedProxies: [],
-        headerMapping: {
-          username: 'x-forwarded-user',
-          password: 'x-forwarded-password',
-          session: 'x-forwarded-session',
-        },
+        headerMapping: DEFAULT_SSO_HEADERS,
       },
     }
     
