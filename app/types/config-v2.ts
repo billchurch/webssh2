@@ -20,7 +20,7 @@ export interface EnhancedSshConfig {
   readonly alwaysSendKeyboardInteractivePrompts: boolean
   readonly disableInteractiveAuth: boolean
   readonly algorithms: SshAlgorithms
-  readonly envAllowlist?: ReadonlyArray<string>
+  readonly envAllowlist?: readonly string[]
 }
 
 /**
@@ -110,7 +110,7 @@ export function enhanceConfig(config: LegacyConfig): Result<EnhancedConfig, Conf
   
   try {
     // Validate SSH config
-    if (config.ssh != null) {
+    if (config.ssh.host != null) {
       try {
         validateSshHost(config.ssh.host)
       } catch (e) {
@@ -120,20 +120,20 @@ export function enhanceConfig(config: LegacyConfig): Result<EnhancedConfig, Conf
           value: config.ssh.host,
         })
       }
-      
-      try {
-        validateSshPort(config.ssh.port)
-      } catch (e) {
-        errors.push({
-          path: 'ssh.port',
-          message: (e as Error).message,
-          value: config.ssh.port,
-        })
-      }
+    }
+    
+    try {
+      validateSshPort(config.ssh.port)
+    } catch (e) {
+      errors.push({
+        path: 'ssh.port',
+        message: (e as Error).message,
+        value: config.ssh.port,
+      })
     }
     
     // Validate header config
-    if (config.header?.background != null) {
+    if (config.header.background !== '') {
       try {
         validateCssColor(config.header.background)
       } catch (e) {
@@ -165,7 +165,7 @@ export function enhanceConfig(config: LegacyConfig): Result<EnhancedConfig, Conf
  * Configuration builder for creating validated configs
  */
 export class ConfigBuilder {
-  private config: Partial<LegacyConfig> = {}
+  private readonly config: Partial<LegacyConfig> = {}
   
   withSshHost(host: string | null): this {
     this.config.ssh = {

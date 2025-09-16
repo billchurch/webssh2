@@ -3,7 +3,6 @@
 
 import type { Result } from '../types/result.js'
 import { err, ok } from '../types/result.js'
-import type { SshErrorInfo, SshErrorType } from '../types/ssh.js'
 import { createNamespacedDebug } from '../logger.js'
 
 const debug = createNamespacedDebug('error-handler')
@@ -78,24 +77,24 @@ export function extractErrorMessage(error: unknown): string {
   
   if (typeof error === 'object') {
     const e = error as Record<string, unknown>
-    if (typeof e.message === 'string') {
-      return e.message
+    if (typeof e['message'] === 'string') {
+      return e['message']
     }
-    if (typeof e.error === 'string') {
-      return e.error
+    if (typeof e['error'] === 'string') {
+      return e['error']
     }
-    if (typeof e.reason === 'string') {
-      return e.reason
+    if (typeof e['reason'] === 'string') {
+      return e['reason']
     }
-    if (typeof e.code === 'string') {
-      return e.code
+    if (typeof e['code'] === 'string') {
+      return e['code']
     }
   }
   
   try {
     return JSON.stringify(error)
   } catch {
-    return String(error)
+    return '[object]'
   }
 }
 
@@ -109,14 +108,14 @@ export function extractErrorCode(error: unknown): string | undefined {
   
   if (typeof error === 'object') {
     const e = error as Record<string, unknown>
-    if (typeof e.code === 'string') {
-      return e.code
+    if (typeof e['code'] === 'string') {
+      return e['code']
     }
-    if (typeof e.errno === 'string') {
-      return e.errno
+    if (typeof e['errno'] === 'string') {
+      return e['errno']
     }
-    if (typeof e.syscall === 'string') {
-      return e.syscall
+    if (typeof e['syscall'] === 'string') {
+      return e['syscall']
     }
   }
   
@@ -274,8 +273,9 @@ export function tryExecute<T>(
   } catch (error) {
     const message = extractErrorMessage(error)
     const type = errorType ?? classifyErrorType(error)
+    const code = extractErrorCode(error)
     return err(createTypedError(message, type, {
-      code: extractErrorCode(error),
+      ...(code != null && { code }),
       details: error,
     }))
   }
@@ -294,8 +294,9 @@ export async function tryExecuteAsync<T>(
   } catch (error) {
     const message = extractErrorMessage(error)
     const type = errorType ?? classifyErrorType(error)
+    const code = extractErrorCode(error)
     return err(createTypedError(message, type, {
-      code: extractErrorCode(error),
+      ...(code != null && { code }),
       details: error,
     }))
   }
@@ -355,10 +356,10 @@ export function formatErrorResponse(
     error: {
       message,
       type,
-      code,
+      ...(code != null && { code }),
       statusCode,
       timestamp: new Date(),
-      details: includeDetails ? error : undefined,
+      ...(includeDetails && { details: error }),
     }
   }
 }
@@ -420,8 +421,9 @@ export async function executeWithRetry<T>(
   
   const message = extractErrorMessage(lastError)
   const type = classifyErrorType(lastError)
+  const code = extractErrorCode(lastError)
   return err(createTypedError(message, type, {
-    code: extractErrorCode(lastError),
+    ...(code != null && { code }),
     details: lastError,
   }))
 }
