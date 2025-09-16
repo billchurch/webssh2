@@ -1,5 +1,6 @@
 // server
 // app/routes.ts
+// Orchestration layer for HTTP route handling
 
 import express, { type Router, type Request, type Response } from 'express'
 import handleConnection from './connectionHandler.js'
@@ -14,26 +15,35 @@ import {
   validateConnectionParams,
   type AuthSession,
 } from './auth/auth-utils.js'
-import { getValidatedPort, validateSshTerm, maskSensitiveData } from './utils.js'
 import { validateSshCredentials } from './connection/index.js'
+
+// Import pure functions from decomposed modules
+import {
+  createSshValidationErrorResponse,
+  createRouteErrorMessage,
+  type ErrorResponse
+} from './routes/route-error-handler.js'
+
+import {
+  extractHost,
+  extractPort,
+  extractTerm,
+  validatePostCredentials,
+  validateSessionCredentials,
+  createSanitizedCredentials
+} from './routes/route-validators.js'
+
+import {
+  createSessionCredentials,
+  createPostAuthSession,
+  getReauthClearKeys,
+  getAuthRelatedKeys
+} from './routes/session-handler.js'
 
 const debug = createNamespacedDebug('routes')
 
 // Use AuthSession from auth-utils
 type Sess = AuthSession
-
-function handleRouteError(
-  err: Error,
-  res: { status: (c: number) => { send: (b: unknown) => void; json: (b: unknown) => void } }
-): void {
-  const error = new ConfigError(`Invalid configuration: ${err.message}`)
-  handleError(
-    error,
-    res as unknown as {
-      status: (c: number) => { send: (b: unknown) => void; json: (b: unknown) => void }
-    }
-  )
-}
 
 type ReqWithSession = Request & {
   session: Sess
@@ -44,46 +54,35 @@ type ReqWithSession = Request & {
 }
 
 /**
- * Handles SSH validation failure responses based on error type
- * Pure function that returns response data without side effects
+ * Handle route errors with proper HTTP responses
+ * Side effect: sends HTTP response
  */
-function createSshValidationErrorResponse(validationResult: {
-  errorType?: string
-  errorMessage?: string
-}, host: string, port: number): {
-  status: number
-  headers?: Record<string, string>
-  message: string
-} {
-  switch (validationResult.errorType) {
-    case 'auth':
-      // Authentication failed - allow re-authentication
-      return {
-        status: HTTP.UNAUTHORIZED,
-        headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
-        message: 'SSH authentication failed'
-      }
-    case 'network':
-      // Network/connectivity issue - no point in re-authenticating
-      return {
-        status: 502,
-        message: `Bad Gateway: Unable to connect to SSH server at ${host}:${port} - ${validationResult.errorMessage}`
-      }
-    case 'timeout':
-      // Connection timeout
-      return {
-        status: 504,
-        message: `Gateway Timeout: SSH connection to ${host}:${port} timed out`
-      }
-    case undefined:
-    case 'unknown':
-    default:
-      // Unknown error - return 502 as it's likely a connectivity issue
-      return {
-        status: 502,
-        message: `Bad Gateway: SSH connection failed - ${validationResult.errorMessage}`
-      }
+function handleRouteError(
+  err: Error,
+  res: { status: (c: number) => { send: (b: unknown) => void; json: (b: unknown) => void } }
+): void {
+  const error = new ConfigError(createRouteErrorMessage(err))
+  handleError(
+    error,
+    res as unknown as {
+      status: (c: number) => { send: (b: unknown) => void; json: (b: unknown) => void }
+    }
+  )
+}
+
+/**
+ * Apply error response to HTTP response object
+ * Side effect: sends HTTP response
+ */
+function sendErrorResponse(res: Response, errorResponse: ErrorResponse): void {
+  // Set headers if provided
+  if (errorResponse.headers != null) {
+    Object.entries(errorResponse.headers).forEach(([key, value]) => {
+      res.setHeader(key, value)
+    })
   }
+  
+  res.status(errorResponse.status).send(errorResponse.message)
 }
 
 /**
@@ -100,45 +99,38 @@ async function handleSshRoute(
   },
   config: Config
 ): Promise<void> {
-  // Get credentials from session (set by auth middleware)
-  const sshCredentials = req.session.sshCredentials
-  if (sshCredentials?.username == null || sshCredentials.username === '' || 
-      sshCredentials.password == null || sshCredentials.password === '') {
+  // Validate session has credentials
+  if (!validateSessionCredentials(req.session.sshCredentials)) {
     debug('Missing SSH credentials in session')
     res.setHeader(HTTP.AUTHENTICATE, HTTP.REALM)
     res.status(HTTP.UNAUTHORIZED).send('Missing SSH credentials')
     return
   }
 
+  const { username, password } = req.session.sshCredentials as { username: string; password: string }
+
   // Validate SSH credentials immediately
   const validationResult = await validateSshCredentials(
     connectionParams.host,
     connectionParams.port,
-    sshCredentials.username,
-    sshCredentials.password,
+    username,
+    password,
     config
   )
 
   if (validationResult.success === false) {
     debug(
-      `SSH validation failed for ${sshCredentials.username}@${connectionParams.host}:${connectionParams.port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
+      `SSH validation failed for ${username}@${connectionParams.host}:${connectionParams.port}: ${validationResult.errorType} - ${validationResult.errorMessage}`
     )
 
-    // Get error response data
+    // Get error response data using pure function
     const errorResponse = createSshValidationErrorResponse(
       validationResult,
       connectionParams.host,
       connectionParams.port
     )
 
-    // Set headers if provided
-    if (errorResponse.headers != null) {
-      Object.entries(errorResponse.headers).forEach(([key, value]) => {
-        res.setHeader(key, value)
-      })
-    }
-
-    res.status(errorResponse.status).send(errorResponse.message)
+    sendErrorResponse(res, errorResponse)
     return
   }
 
@@ -146,6 +138,7 @@ async function handleSshRoute(
   processAuthParameters(req.query, req.session)
   const sanitizedCredentials = setupSshCredentials(req.session, connectionParams)
   debug('SSH validation passed - serving client: ', sanitizedCredentials)
+  
   handleConnection(
     req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
     res,
@@ -156,30 +149,16 @@ async function handleSshRoute(
   })
 }
 
-
-/**
- * Validate SSH credentials by attempting a connection
- * Returns detailed result including error type for proper HTTP status codes
- *
- * IMPORTANT: HTTP Basic Auth Behavior
- *
- * When invalid credentials are provided:
- * 1. URL WITHOUT embedded credentials (http://host/path) - Browser will show auth dialog on 401, allowing re-authentication
- * 2. URL WITH embedded credentials (http://user:pass@host/path) - Browser will NEVER prompt for new credentials, even on 401
- *
- * This is standard HTTP Basic Auth behavior. URLs with embedded credentials take absolute precedence
- * over HTTP auth dialogs. Users must manually remove bad credentials from the URL to re-authenticate.
- */
-
 export function createRoutes(config: Config): Router {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
 
+  // Root route - uses default config
   router.get('/', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.get./: Accessed / route')
-    // Also allow env vars via /ssh?env=FOO:bar
     processAuthParameters(r.query, r.session)
+    
     handleConnection(
       req as unknown as Request & { session?: Record<string, unknown>; sessionID?: string },
       res
@@ -189,12 +168,13 @@ export function createRoutes(config: Config): Router {
     })
   })
 
+  // Host route without parameter - uses config default
   router.get('/host/', auth, async (req: Request, res: Response): Promise<void> => {
     const r = req as ReqWithSession
     debug(`router.get.host: /ssh/host/ route`)
     processAuthParameters(r.query, r.session)
+    
     try {
-      // Convert port to number early if it exists
       const portParam = r.query['port'] as string | undefined
       const portNumber = portParam != null && portParam !== '' ? parseInt(portParam, 10) : undefined
       
@@ -211,11 +191,12 @@ export function createRoutes(config: Config): Router {
     }
   })
 
+  // Host route with parameter
   router.get('/host/:host', auth, async (req: Request, res: Response): Promise<void> => {
     const r = req as ReqWithSession
     debug(`router.get.host: /ssh/host/${String((req).params['host'])} route`)
+    
     try {
-      // Convert port to number early if it exists
       const portParam = r.query['port'] as string | undefined
       const portNumber = portParam != null && portParam !== '' ? parseInt(portParam, 10) : undefined
       
@@ -233,7 +214,6 @@ export function createRoutes(config: Config): Router {
   })
 
   // Clean POST authentication route for SSO/API integration
-  // Separated from Basic Auth to avoid session credential conflicts
   router.post('/', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.post./: POST /ssh route for SSO authentication')
@@ -242,53 +222,39 @@ export function createRoutes(config: Config): Router {
       const body = req.body as Record<string, unknown>
       const query = r.query as Record<string, unknown>
 
-      // Username and password are required in body
-      const { username, password } = body
-      if (username == null || username === '' || password == null || password === '') {
-        res.status(400).send('Missing required fields in body: username, password')
+      // Validate credentials using pure function
+      const credentialValidation = validatePostCredentials(body)
+      if (!credentialValidation.valid) {
+        res.status(400).send(`Missing required fields in body: ${credentialValidation.error}`)
         return
       }
 
-      // Host can come from body or query params (body takes precedence)
-      const host = (body['host'] ?? query['host'] ?? query['hostname']) as string | undefined
-      if (host == null || host === '') {
+      // Extract host using pure function
+      const host = extractHost(body, query, config)
+      if (host == null) {
         res.status(400).send('Missing required field: host (in body or query params)')
         return
       }
 
-      // Port can come from body or query params (body takes precedence)
-      // Convert to number early if it exists
-      const portParam = (body['port'] ?? query['port']) as string | number | undefined
-      let portNumber: number | undefined
-      if (portParam != null) {
-        portNumber = typeof portParam === 'number' ? portParam : parseInt(portParam, 10)
-      } else {
-        portNumber = undefined
-      }
-      const port = getValidatedPort(portNumber)
+      // Extract port and term using pure functions
+      const port = extractPort(body, query)
+      const term = extractTerm(body, query)
 
-      // SSH term can come from body or query params (body takes precedence)
-      const sshterm = (body['sshterm'] ?? query['sshterm']) as string | undefined
-      const term = validateSshTerm(sshterm)
-
-      // Store credentials in session for this POST auth
-      r.session.authMethod = 'POST'
-      r.session.sshCredentials = {
+      // Create session credentials using pure function
+      const sessionCredentials = createSessionCredentials(
         host,
         port,
-        username: username as string,
-        password: password as string,
-      }
-      if (term != null && term !== '') {
-        r.session.sshCredentials.term = term
-      }
+        credentialValidation.username ?? '',
+        credentialValidation.password ?? '',
+        term
+      )
 
-      const sanitized = maskSensitiveData({
-        host,
-        port,
-        username: username as string,
-        password: '********',
-      })
+      // Apply to session using pure function pattern
+      const sessionUpdates = createPostAuthSession(sessionCredentials)
+      Object.assign(r.session, sessionUpdates)
+
+      // Create sanitized log data using pure function
+      const sanitized = createSanitizedCredentials(host, port, credentialValidation.username ?? '')
       debug('POST /ssh - Credentials stored in session:', sanitized)
       debug(
         'POST /ssh - Source: body=%o, query=%o',
@@ -306,34 +272,37 @@ export function createRoutes(config: Config): Router {
     }
   })
 
+  // Clear credentials route
   router.get('/clear-credentials', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     delete (r.session as Record<string, unknown>)['sshCredentials']
     res.status(HTTP.OK).send(HTTP.CREDENTIALS_CLEARED)
   })
 
+  // Force reconnect route
   router.get('/force-reconnect', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     delete (r.session as Record<string, unknown>)['sshCredentials']
     res.status(HTTP.UNAUTHORIZED).send(HTTP.AUTH_REQUIRED)
   })
 
+  // Re-authentication route
   router.get('/reauth', (req: Request, res: Response) => {
     const r = req as ReqWithSession
     debug('router.get.reauth: Clearing session credentials and forcing re-authentication')
 
-    // Clear all SSH-related session data
-    delete (r.session as Record<string, unknown>)['sshCredentials']
-    delete (r.session as Record<string, unknown>)['usedBasicAuth']
-    delete (r.session as Record<string, unknown>)['authMethod']
-
-    // Clear any other auth-related session data
+    // Clear standard auth keys using pure function
+    const clearKeys = getReauthClearKeys()
     const session = r.session as Record<string, unknown>
-    Object.keys(session).forEach((key) => {
-      if (key.startsWith('ssh') || key.includes('auth') || key.includes('cred')) {
-        // Use Reflect.deleteProperty to safely delete properties
-        Reflect.deleteProperty(session, key)
-      }
+    
+    clearKeys.forEach(key => {
+      Reflect.deleteProperty(session, key)
+    })
+
+    // Clear additional auth-related keys using pure function
+    const authRelatedKeys = getAuthRelatedKeys(Object.keys(session))
+    authRelatedKeys.forEach(key => {
+      Reflect.deleteProperty(session, key)
     })
 
     // Redirect to the main SSH page for fresh authentication
