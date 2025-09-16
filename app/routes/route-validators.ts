@@ -66,7 +66,7 @@ export function extractPort(
   const portParam = body.port ?? query.port
   
   if (portParam == null) {
-    return getValidatedPort(undefined)
+    return getValidatedPort()
   }
   
   const portNumber = typeof portParam === 'number' 
