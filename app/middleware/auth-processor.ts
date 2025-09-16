@@ -107,7 +107,17 @@ export function processAuthentication(
   config: Config,
   basicAuth?: BasicAuthCredentials | null
 ): Result<AuthResult, { code: number; message: string }> {
-  // Check config credentials first
+  // Basic Auth takes precedence over config credentials
+  if (basicAuth != null) {
+    const processedCreds = processBasicAuthCredentials(basicAuth)
+    return ok({
+      credentials: processedCreds,
+      usedBasicAuth: true,
+      source: 'basicAuth'
+    })
+  }
+  
+  // Check config credentials as fallback
   const configCreds = extractConfigCredentials(config)
   if (configCreds != null) {
     return ok({
@@ -117,19 +127,10 @@ export function processAuthentication(
     })
   }
   
-  // Check basic auth credentials
-  if (basicAuth == null) {
-    return err({
-      code: 401,
-      message: 'Authentication required'
-    })
-  }
-  
-  const processedCreds = processBasicAuthCredentials(basicAuth)
-  return ok({
-    credentials: processedCreds,
-    usedBasicAuth: true,
-    source: 'basicAuth'
+  // No credentials available
+  return err({
+    code: 401,
+    message: 'Authentication required'
   })
 }
 
