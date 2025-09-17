@@ -1,95 +1,28 @@
-// app/types/branded.ts
-// Branded types for type-safe domain modeling
-
 /**
- * Brand a type with a unique symbol to prevent mixing
+ * Branded types for domain modeling and type safety
  */
-declare const brand: unique symbol
-interface Brand<B> { readonly [brand]: B }
 
-/**
- * Branded type helper
- */
-export type Branded<T, B> = T & Brand<B>
+// Session-related branded types
+export type SessionId = string & { readonly __brand: 'SessionId' }
+export type UserId = string & { readonly __brand: 'UserId' }
+export type ConnectionId = string & { readonly __brand: 'ConnectionId' }
+export type SocketId = string & { readonly __brand: 'SocketId' }
 
-// Domain-specific branded types
+// Constructor functions for branded types
+export const createSessionId = (id: string): SessionId => id as SessionId
+export const createUserId = (id: string): UserId => id as UserId
+export const createConnectionId = (id: string): ConnectionId => id as ConnectionId
+export const createSocketId = (id: string): SocketId => id as SocketId
 
-/**
- * Session ID type - prevents mixing with other string IDs
- */
-export type SessionId = Branded<string, 'SessionId'>
+// Type guards
+export const isSessionId = (value: unknown): value is SessionId =>
+  typeof value === 'string' && value.length > 0
 
-/**
- * User ID type
- */
-export type UserId = Branded<string, 'UserId'>
+export const isUserId = (value: unknown): value is UserId =>
+  typeof value === 'string' && value.length > 0
 
-/**
- * SSH Host type - validated hostname or IP
- */
-export type SshHost = Branded<string, 'SshHost'>
+export const isConnectionId = (value: unknown): value is ConnectionId =>
+  typeof value === 'string' && value.length > 0
 
-/**
- * SSH Port type - validated port number (1-65535)
- */
-export type SshPort = Branded<number, 'SshPort'>
-
-/**
- * Username type - non-empty string
- */
-export type Username = Branded<string, 'Username'>
-
-/**
- * Encoded password - ensures passwords are properly handled
- */
-export type Password = Branded<string, 'Password'>
-
-/**
- * Private key content
- */
-export type PrivateKey = Branded<string, 'PrivateKey'>
-
-/**
- * Terminal type string (e.g., 'xterm-256color')
- */
-export type TerminalType = Branded<string, 'TerminalType'>
-
-/**
- * Environment variable name
- */
-export type EnvVarName = Branded<string, 'EnvVarName'>
-
-/**
- * Environment variable value
- */
-export type EnvVarValue = Branded<string, 'EnvVarValue'>
-
-/**
- * WebSocket event name
- */
-export type EventName = Branded<string, 'EventName'>
-
-/**
- * File path
- */
-export type FilePath = Branded<string, 'FilePath'>
-
-/**
- * URL string
- */
-export type UrlString = Branded<string, 'UrlString'>
-
-/**
- * CSS color value
- */
-export type CssColor = Branded<string, 'CssColor'>
-
-/**
- * HTML content (safe)
- */
-export type SafeHtml = Branded<string, 'SafeHtml'>
-
-/**
- * Regex pattern string
- */
-export type RegexPattern = Branded<string, 'RegexPattern'>
+export const isSocketId = (value: unknown): value is SocketId =>
+  typeof value === 'string' && value.length > 0

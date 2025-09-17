@@ -7,7 +7,7 @@
 import type { Config } from '../../app/config.js'
 import type { Server } from 'node:http'
 import type { Express } from 'express'
-import { TEST_SECRET_KEY } from '../test-constants.js'
+import { TEST_SECRET_KEY, TEST_PORTS, TEST_TIMEOUTS } from '../test-constants.js'
 
 /**
  * Environment variable map for testing
@@ -122,25 +122,6 @@ export interface AssertionHelpers {
   /** Assert strict equality */
   strictEqual: <T>(actual: T, expected: T) => void
 }
-
-/**
- * Common test timeouts (in milliseconds)
- */
-export const TEST_TIMEOUTS = {
-  short: 1000,
-  medium: 5000,
-  long: 10000,
-  network: 15000
-} as const
-
-/**
- * Common test ports
- */
-export const TEST_PORTS = {
-  webssh2: 2288,
-  sshServer: 2289,
-  alternateWebssh2: 2290
-} as const
 
 /**
  * Default test configuration
