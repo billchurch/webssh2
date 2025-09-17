@@ -20,7 +20,8 @@ import {
   TEST_SECRET_123,
   TEST_IPS,
   TEST_SUBNETS,
-  SSO_AUTH_HEADERS
+  SSO_AUTH_HEADERS,
+  TEST_HTTP_ORIGINS
 } from '../test-constants.js'
 
 describe('Enhanced Config Feature Parity', () => {
@@ -31,7 +32,7 @@ describe('Enhanced Config Feature Parity', () => {
         PORT: '3000',
         WEBSSH2_LISTEN_IP: TEST_IPS.LOCALHOST,
         WEBSSH2_LISTEN_PORT: '2222',
-        WEBSSH2_HTTP_ORIGINS: 'http://localhost:3000,http://localhost:8080',
+        WEBSSH2_HTTP_ORIGINS: TEST_HTTP_ORIGINS.MULTIPLE,
         WEBSSH2_SSH_HOST: 'example.com',
         WEBSSH2_SSH_PORT: '22',
         WEBSSH2_SSH_LOCAL_ADDRESS: TEST_IPS.PRIVATE_192,
@@ -158,7 +159,7 @@ describe('Enhanced Config Feature Parity', () => {
       builder
         .withSessionSecret(TEST_SECRET_123) // Add session secret first for validation
         .withListenConfig(TEST_IPS.LOCALHOST, 3000)
-        .withHttpOrigins(['http://localhost:3000'])
+        .withHttpOrigins([TEST_HTTP_ORIGINS.SINGLE])
         .withUserCredentials({
           name: TEST_USERNAME,
           password: TEST_PASSWORD,
@@ -186,7 +187,7 @@ describe('Enhanced Config Feature Parity', () => {
       
       expect(config).toBeDefined()
       expect(config?.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 3000 })
-      expect(config?.http.origins).toEqual(['http://localhost:3000'])
+      expect(config?.http.origins).toEqual([TEST_HTTP_ORIGINS.SINGLE])
       expect(config?.user).toMatchObject({
         name: TEST_USERNAME,
         password: TEST_PASSWORD,
@@ -217,7 +218,7 @@ describe('Enhanced Config Feature Parity', () => {
       const builder = new ConfigBuilder()
       const config = builder
         .withSessionSecret(TEST_SECRET) // Required for validation
-        .withHttpOrigins(['http://localhost:3000', 'http://localhost:8080'])
+        .withHttpOrigins(TEST_HTTP_ORIGINS.ARRAY)
         .build()
       
       if (config) {
@@ -225,7 +226,7 @@ describe('Enhanced Config Feature Parity', () => {
         const { createCorsConfig } = await import('../../app/config/config-processor.js')
         const corsConfig = createCorsConfig(config)
         expect(corsConfig).toEqual({
-          origin: ['http://localhost:3000', 'http://localhost:8080'],
+          origin: TEST_HTTP_ORIGINS.ARRAY,
           methods: ['GET', 'POST'],
           credentials: true,
         })
