@@ -1,12 +1,11 @@
 // app/utils/config-builder.ts
 // Configuration builder utility for creating and validating configs
 
-import type { Config, ConfigValidationResult } from '../types/config.js'
+import type { Config, ConfigValidationResult, ConfigValidationError } from '../types/config.js'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/result.js'
 import { validateConfigPure } from './config-validator.js'
 import { DEFAULT_SSO_HEADERS } from '../constants/security.js'
-import type { ConfigValidationError } from '../types/config.js'
 import { 
   validateSshHost,
   validateSshPort,
