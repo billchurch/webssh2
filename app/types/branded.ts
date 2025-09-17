@@ -2,11 +2,24 @@
  * Branded types for domain modeling and type safety
  */
 
+// Generic branded type utility
+export type Branded<T, B> = T & { readonly __brand: B }
+
 // Session-related branded types
 export type SessionId = string & { readonly __brand: 'SessionId' }
 export type UserId = string & { readonly __brand: 'UserId' }
 export type ConnectionId = string & { readonly __brand: 'ConnectionId' }
 export type SocketId = string & { readonly __brand: 'SocketId' }
+
+// SSH-related branded types
+export type SshHost = string & { readonly __brand: 'SshHost' }
+export type SshPort = number & { readonly __brand: 'SshPort' }
+
+// File system branded types
+export type FilePath = string & { readonly __brand: 'FilePath' }
+
+// UI-related branded types
+export type CssColor = string & { readonly __brand: 'CssColor' }
 
 // Constructor functions for branded types
 export const createSessionId = (id: string): SessionId => id as SessionId

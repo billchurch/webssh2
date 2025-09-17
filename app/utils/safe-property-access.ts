@@ -86,7 +86,7 @@ export function safeSetNested(
   }
   
   // Use slice and pop to avoid array index access
-  const pathCopy = [...path]
+  const pathCopy: SafeKey[] = [...path]
   const lastKey = pathCopy.pop()
   if (lastKey === undefined) {
     return

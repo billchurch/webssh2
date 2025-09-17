@@ -70,6 +70,7 @@ export const createConnectionConfig = (
 
   const { password, privateKey, passphrase } = sshConfig
   
+  // eslint-disable-next-line security/detect-possible-timing-attacks
   if (password != null) {
     config.password = String(password)
   }
