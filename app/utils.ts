@@ -15,7 +15,7 @@ import { deepMergePure } from './utils/object-merger.js'
 import { validateConfigPure } from './utils/config-validator.js'
 import { transformHtml } from './utils/html-transformer.js'
 import { maskSensitive } from './utils/data-masker.js'
-import { isErr } from './types/result.js'
+import { isErr } from './utils/result.js'
 
 const debug = createNamespacedDebug('utils')
 

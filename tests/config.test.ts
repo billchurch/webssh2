@@ -4,6 +4,7 @@ import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
+import { ConfigError } from '../dist/app/errors.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-helpers.js'
 import { TEST_SECRET_LONG } from './test-constants.js'
 
@@ -88,16 +89,19 @@ describe('Config Module - Baseline Sync Tests', () => {
     assert.equal(config.listen.port, 4444)
   })
 
-  test('handles malformed JSON gracefully', async () => {
+  test('throws error for malformed JSON', async () => {
     // Write invalid JSON
     fs.writeFileSync(configManager.configPath, '{ invalid json }')
 
-    // Re-import with cache bust
-    const config = await getConfig()
-
-    // Should fall back to defaults
-    assert.equal(config.listen.ip, '0.0.0.0')
-    assert.equal(config.listen.port, 2222)
+    // Should throw ConfigError for malformed JSON
+    await assert.rejects(
+      async () => await getConfig(),
+      (err: Error) => {
+        assert(err instanceof ConfigError)
+        assert(err.message.includes('Configuration validation failed'))
+        return true
+      }
+    )
   })
 
   test('validates SSH algorithms configuration', async () => {

@@ -34,7 +34,9 @@ export default defineConfig({
     url: `${BASE_URL}/ssh`,
     reuseExistingServer: true,
     timeout: TIMEOUTS.WEB_SERVER,
-    env: { DEBUG: process.env.E2E_DEBUG ?? '' },
+    env: { 
+      DEBUG: process.env.E2E_DEBUG ?? ''
+    },
   },
   ...(enableE2E
     ? {

@@ -1,3 +1,11 @@
+// app/types/config.ts
+// Configuration type definitions
+
+import type { Result } from './result.js'
+
+/**
+ * SSH algorithms configuration
+ */
 export interface AlgorithmsConfig {
   cipher: string[]
   compress: string[]
@@ -6,9 +14,14 @@ export interface AlgorithmsConfig {
   serverHostKey: string[]
 }
 
+/**
+ * SSH configuration
+ */
 export interface SSHConfig {
   host: string | null
   port: number
+  localAddress?: string
+  localPort?: number
   term: string
   readyTimeout: number
   keepaliveInterval: number
@@ -20,11 +33,17 @@ export interface SSHConfig {
   envAllowlist?: string[]
 }
 
+/**
+ * Header configuration
+ */
 export interface HeaderConfig {
   text: string | null
   background: string
 }
 
+/**
+ * Options configuration
+ */
 export interface OptionsConfig {
   challengeButton: boolean
   autoLog: boolean
@@ -34,11 +53,17 @@ export interface OptionsConfig {
   replayCRLF?: boolean
 }
 
+/**
+ * Session configuration
+ */
 export interface SessionConfig {
   secret: string
   name: string
 }
 
+/**
+ * SSO configuration
+ */
 export interface SsoConfig {
   enabled: boolean
   csrfProtection: boolean
@@ -50,6 +75,9 @@ export interface SsoConfig {
   }
 }
 
+/**
+ * Main configuration interface
+ */
 export interface Config {
   listen: { ip: string; port: number }
   http: { origins: string[] }
@@ -66,3 +94,18 @@ export interface Config {
   sso: SsoConfig
   getCorsConfig?: () => { origin: string[]; methods: string[]; credentials: boolean }
 }
+
+/**
+ * Configuration validation error
+ */
+export interface ConfigValidationError {
+  readonly path: string
+  readonly message: string
+  readonly value?: unknown
+  readonly expected?: string
+}
+
+/**
+ * Configuration validation result
+ */
+export type ConfigValidationResult = Result<Config, ConfigValidationError[]>
