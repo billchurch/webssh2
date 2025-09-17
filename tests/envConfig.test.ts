@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET } from './test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
@@ -78,12 +78,12 @@ describe('Environment Configuration Tests', () => {
 
   test('loadEnvironmentConfig handles comma-separated arrays', () => {
     process.env.WEBSSH2_HTTP_ORIGINS = 'localhost:3000,*.example.com,api.test.com'
-    process.env.WEBSSH2_SSH_ALLOWED_SUBNETS = '192.168.1.0/24,10.0.0.0/8'
+    process.env.WEBSSH2_SSH_ALLOWED_SUBNETS = `${TEST_SUBNETS.PRIVATE_192},${TEST_SUBNETS.PRIVATE_10}`
 
     const config = loadEnvironmentConfig()
 
     assert.deepEqual(config.http?.origins, ['localhost:3000', '*.example.com', 'api.test.com'])
-    assert.deepEqual(config.ssh?.allowedSubnets, ['192.168.1.0/24', '10.0.0.0/8'])
+    assert.deepEqual(config.ssh?.allowedSubnets, [TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
   })
 
   test('loadEnvironmentConfig handles JSON array format', () => {

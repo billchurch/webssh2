@@ -5,6 +5,48 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { EventEmitter } from 'events'
 import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS } from '../../test-constants.js'
 
+// Test helpers for reducing duplication
+interface KeyboardInteractivePrompt {
+  prompt: string
+  echo: boolean
+}
+
+interface KeyboardInteractiveTestParams {
+  name?: string
+  instructions?: string
+  instructionsLang?: string
+  prompts?: KeyboardInteractivePrompt[] | null
+}
+
+const createKeyboardInteractiveTest = (
+  client: MockSSHClient,
+  params: KeyboardInteractiveTestParams = {}
+): Promise<string[]> => {
+  return new Promise<string[]>((resolve) => {
+    const finishMock = vi.fn((responses: string[]) => {
+      resolve(responses)
+    })
+    
+    client.conn.emit('keyboard-interactive',
+      params.name ?? 'SSH Server',
+      params.instructions ?? 'Please authenticate',
+      params.instructionsLang ?? 'en',
+      params.prompts !== undefined 
+        ? params.prompts 
+        : [{ prompt: 'Password: ', echo: false }],
+      finishMock
+    )
+  })
+}
+
+const expectKeyboardInteractiveEvent = (
+  client: MockSSHClient
+): Promise<any> => {
+  return new Promise<any>((resolve) => {
+    client.on('keyboard-interactive', resolve)
+  })
+}
+
 // Mock SSH2 connection
 class MockConnection extends EventEmitter {
   shell = vi.fn((callback: (err: Error | null, stream?: any) => void) => {
@@ -78,22 +120,10 @@ describe('Keyboard-Interactive Authentication', () => {
       password: TEST_PASSWORD
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      // Trigger keyboard-interactive event with one prompt
-      client.conn.emit('keyboard-interactive', 
-        'SSH Server',
-        'Please enter your password',
-        'en',
-        [{ prompt: 'Password: ', echo: false }],
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      instructions: 'Please enter your password'
     })
     
-    const responses = await responsePromise
     expect(responses).toHaveLength(1)
     expect(responses[0]).toBe(TEST_PASSWORD)
   })
@@ -104,26 +134,16 @@ describe('Keyboard-Interactive Authentication', () => {
       password: TEST_PASSWORD
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      // Trigger keyboard-interactive event with multiple prompts
-      client.conn.emit('keyboard-interactive',
-        'Multi-factor Auth',
-        'Answer all prompts',
-        'en',
-        [
-          { prompt: 'Password: ', echo: false },
-          { prompt: 'Confirm Password: ', echo: false },
-          { prompt: 'PIN: ', echo: false }
-        ],
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      name: 'Multi-factor Auth',
+      instructions: 'Answer all prompts',
+      prompts: [
+        { prompt: 'Password: ', echo: false },
+        { prompt: 'Confirm Password: ', echo: false },
+        { prompt: 'PIN: ', echo: false }
+      ]
     })
     
-    const responses = await responsePromise
     expect(responses).toHaveLength(3)
     expect(responses).toEqual([TEST_PASSWORD, TEST_PASSWORD, TEST_PASSWORD])
   })
@@ -134,22 +154,9 @@ describe('Keyboard-Interactive Authentication', () => {
       username: TEST_USERNAME
     }
     
-    const eventPromise = new Promise<any>((resolve) => {
-      client.on('keyboard-interactive', resolve)
-    })
-    
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      client.conn.emit('keyboard-interactive',
-        'SSH Server',
-        'Please enter your password',
-        'en',
-        [{ prompt: 'Password: ', echo: false }],
-        finishMock
-      )
+    const eventPromise = expectKeyboardInteractiveEvent(client)
+    const responsePromise = createKeyboardInteractiveTest(client, {
+      instructions: 'Please enter your password'
     })
     
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])
@@ -165,22 +172,11 @@ describe('Keyboard-Interactive Authentication', () => {
       password: TEST_PASSWORD
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      // Send null prompts
-      client.conn.emit('keyboard-interactive',
-        'SSH Server',
-        'No prompts',
-        'en',
-        null,
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      instructions: 'No prompts',
+      prompts: null
     })
     
-    const responses = await responsePromise
     expect(responses).toHaveLength(0)
   })
   
@@ -190,22 +186,11 @@ describe('Keyboard-Interactive Authentication', () => {
       password: TEST_PASSWORD
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      // Send empty array
-      client.conn.emit('keyboard-interactive',
-        'SSH Server', 
-        'No prompts',
-        'en',
-        [],
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      instructions: 'No prompts',
+      prompts: []
     })
     
-    const responses = await responsePromise
     expect(responses).toHaveLength(0)
   })
   
@@ -273,21 +258,10 @@ describe('Keyboard-Interactive Authentication', () => {
       password: testPassword
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      client.conn.emit('keyboard-interactive',
-        'SSH Server',
-        'Enter password',
-        'en',
-        [{ prompt: 'Password: ', echo: false }],
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      instructions: 'Enter password'
     })
     
-    const responses = await responsePromise
     expect(responses).toHaveLength(1)
     expect(responses[0]).toBe(testPassword)
   })
@@ -299,22 +273,9 @@ describe('Keyboard-Interactive Authentication', () => {
       password: 123 as any // Invalid type
     }
     
-    const eventPromise = new Promise<any>((resolve) => {
-      client.on('keyboard-interactive', resolve)
-    })
-    
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      client.conn.emit('keyboard-interactive',
-        'SSH Server',
-        'Enter password',
-        'en',
-        [{ prompt: 'Password: ', echo: false }],
-        finishMock
-      )
+    const eventPromise = expectKeyboardInteractiveEvent(client)
+    const responsePromise = createKeyboardInteractiveTest(client, {
+      instructions: 'Enter password'
     })
     
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])
@@ -355,23 +316,10 @@ describe('Keyboard-Interactive Auth Regression Tests', () => {
       password: TEST_PASSWORD
     }
     
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      // Simulate server requesting keyboard-interactive auth
-      // Previously this would timeout, now it responds automatically
-      client.conn.emit('keyboard-interactive',
-        'SSH Authentication',
-        'Please authenticate',
-        'en',
-        [{ prompt: 'Password: ', echo: false }],
-        finishMock
-      )
+    const responses = await createKeyboardInteractiveTest(client, {
+      name: 'SSH Authentication',
+      instructions: 'Please authenticate'
     })
-    
-    const responses = await responsePromise
     
     // The key fix: WebSSH2 now automatically responds with the password
     expect(responses).toHaveLength(1)
@@ -387,22 +335,10 @@ describe('Keyboard-Interactive Auth Regression Tests', () => {
       username: TEST_USERNAME
     }
     
-    const eventPromise = new Promise<any>((resolve) => {
-      client.on('keyboard-interactive', resolve)
-    })
-    
-    const responsePromise = new Promise<string[]>((resolve) => {
-      const finishMock = vi.fn((responses: string[]) => {
-        resolve(responses)
-      })
-      
-      client.conn.emit('keyboard-interactive',
-        'SSH Server',
-        'Manual authentication required',
-        'en',
-        [{ prompt: 'Token: ', echo: true }],
-        finishMock
-      )
+    const eventPromise = expectKeyboardInteractiveEvent(client)
+    const responsePromise = createKeyboardInteractiveTest(client, {
+      instructions: 'Manual authentication required',
+      prompts: [{ prompt: 'Token: ', echo: true }]
     })
     
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])

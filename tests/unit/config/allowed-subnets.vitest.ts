@@ -100,7 +100,7 @@ describe('SSH Config - Allowed Subnets and Network Settings', () => {
       }
     ]
     
-    for (const { subnets, description } of testCases) {
+    for (const { subnets } of testCases) {
       const jsonConfig = JSON.stringify({
         ssh: { allowedSubnets: subnets }
       })
@@ -154,7 +154,7 @@ describe('SSH Config - Allowed Subnets and Network Settings', () => {
       { ip: TEST_IPS.PRIVATE_192, description: 'bind to specific private IP' }
     ]
     
-    for (const { ip, description } of testCases) {
+    for (const { ip } of testCases) {
       const jsonConfig = JSON.stringify({
         listen: { ip, port: 2222 }
       })
