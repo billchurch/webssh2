@@ -7,6 +7,10 @@
  * in sonar-project.properties
  */
 
+// ============================================================================
+// CREDENTIALS & AUTHENTICATION
+// ============================================================================
+
 // Basic test credentials
 export const TEST_USERNAME = 'testuser'
 export const TEST_PASSWORD = 'testpass' //NOSONAR
@@ -19,19 +23,18 @@ export const CONFIG_USERNAME = 'configuser'
 export const BASIC_USERNAME = 'basicuser'
 export const SSH_USERNAME = 'sshuser'
 
-// SSH test credentials
-export const SSH_TEST_CREDENTIALS = {
-  host: 'localhost',
-  port: 22,
-  username: TEST_USERNAME,
-  password: TEST_PASSWORD, //NOSONAR
-} as const
-
-export const SSH_INVALID_CREDENTIALS = {
-  host: 'localhost',
-  port: 22,
-  username: TEST_USERNAME,
-  password: INVALID_PASSWORD, //NOSONAR
+// Various test passwords used in different contexts
+export const TEST_PASSWORDS = {
+  basic: 'pass', //NOSONAR
+  basic123: 'pass123', //NOSONAR
+  session: 'session-password', //NOSONAR
+  state: 'state-password', //NOSONAR
+  test: 'test-password', //NOSONAR
+  secret: 'secret', //NOSONAR
+  secret123: 'secret123', //NOSONAR
+  adminPass: 'admin-pass', //NOSONAR
+  configPass: 'configpass', //NOSONAR
+  basicPass: 'basicpass', //NOSONAR
 } as const
 
 // Session and secrets
@@ -51,39 +54,98 @@ export const TEST_SSH_KEY = 'ssh-rsa-key' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_VALID = '-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_INVALID = 'not-a-valid-private-key-format' //NOSONAR
 
-// SSO header names (not actual passwords, but often flagged)
-export const SSO_HEADERS = {
-  username: 'x-apm-username',
-  password: 'x-apm-password', //NOSONAR
-  session: 'x-apm-session',
+// ============================================================================
+// SSH CONFIGURATION
+// ============================================================================
+
+interface TestSSHConstants {
+  readonly USERNAME: string
+  readonly PASSWORD: string
+  readonly HOST: string
+  readonly IP_ADDRESS: string
+  readonly PORT: number
+  readonly PRIVATE_KEY: string
+  readonly PASSPHRASE: string
+  readonly TERMINAL: {
+    readonly TYPE: string
+    readonly DEFAULT_COLS: number
+    readonly DEFAULT_ROWS: number
+    readonly LARGE_COLS: number
+    readonly LARGE_ROWS: number
+    readonly MEDIUM_COLS: number
+    readonly MEDIUM_ROWS: number
+  }
+  readonly COMMANDS: {
+    readonly LIST_FILES: string
+    readonly ECHO_TEST: string
+  }
+  readonly ENV_VARS: {
+    readonly PATH: string
+    readonly USER: string
+  }
+  readonly TIMEOUT_MS: number
+  readonly INVALID_VALUES: {
+    readonly PORT_NEGATIVE: number
+    readonly PORT_TOO_HIGH: number
+    readonly COLS_TOO_HIGH: number
+    readonly ROWS_TOO_LOW: number
+    readonly STRING_PORT: unknown
+  }
+}
+
+export const TEST_SSH: TestSSHConstants = {
+  USERNAME: 'testuser',
+  PASSWORD: 'testpass',
+  HOST: 'example.com',
+  IP_ADDRESS: '192.168.1.100',
+  PORT: 22,
+  PRIVATE_KEY: 'ssh-rsa...',
+  PASSPHRASE: 'keypass',
+  TERMINAL: {
+    TYPE: 'xterm-256color',
+    DEFAULT_COLS: 80,
+    DEFAULT_ROWS: 24,
+    LARGE_COLS: 120,
+    LARGE_ROWS: 40,
+    MEDIUM_COLS: 100,
+    MEDIUM_ROWS: 30
+  },
+  COMMANDS: {
+    LIST_FILES: 'ls -la',
+    ECHO_TEST: 'echo test'
+  },
+  ENV_VARS: {
+    PATH: '/usr/bin',
+    USER: 'testuser'
+  },
+  TIMEOUT_MS: 5000,
+  INVALID_VALUES: {
+    PORT_NEGATIVE: -1,
+    PORT_TOO_HIGH: 70000,
+    COLS_TOO_HIGH: 10000,
+    ROWS_TOO_LOW: 0,
+    STRING_PORT: 'invalid' as unknown
+  }
 } as const
 
-// Alternative SSO header names for testing
-export const SSO_AUTH_HEADERS = {
-  username: 'x-auth-user',
-  password: 'x-auth-pass', //NOSONAR
-  session: 'x-auth-session',
+// SSH test credentials objects
+export const SSH_TEST_CREDENTIALS = {
+  host: 'localhost',
+  port: 22,
+  username: TEST_USERNAME,
+  password: TEST_PASSWORD, //NOSONAR
 } as const
 
-// SSO test values
-export const SSO_TEST_VALUES = {
-  username: 'apmuser',
-  password: 'apmpass', //NOSONAR
+export const SSH_INVALID_CREDENTIALS = {
+  host: 'localhost',
+  port: 22,
+  username: TEST_USERNAME,
+  password: INVALID_PASSWORD, //NOSONAR
 } as const
 
-// Various test passwords used in different contexts
-export const TEST_PASSWORDS = {
-  basic: 'pass', //NOSONAR
-  basic123: 'pass123', //NOSONAR
-  session: 'session-password', //NOSONAR
-  state: 'state-password', //NOSONAR
-  test: 'test-password', //NOSONAR
-  secret: 'secret', //NOSONAR
-  secret123: 'secret123', //NOSONAR
-  adminPass: 'admin-pass', //NOSONAR
-  configPass: 'configpass', //NOSONAR
-  basicPass: 'basicpass', //NOSONAR
-} as const
+// ============================================================================
+// MOCK DATA & TEST SCENARIOS
+// ============================================================================
 
 // Test credentials objects for different scenarios
 export const MOCK_CREDENTIALS = {
@@ -116,6 +178,34 @@ export const ENV_TEST_VALUES = {
   secret: '%TEST_SECRET%',
 } as const
 
+// ============================================================================
+// SSO & HEADERS
+// ============================================================================
+
+// SSO header names (not actual passwords, but often flagged)
+export const SSO_HEADERS = {
+  username: 'x-apm-username',
+  password: 'x-apm-password', //NOSONAR
+  session: 'x-apm-session',
+} as const
+
+// Alternative SSO header names for testing
+export const SSO_AUTH_HEADERS = {
+  username: 'x-auth-user',
+  password: 'x-auth-pass', //NOSONAR
+  session: 'x-auth-session',
+} as const
+
+// SSO test values
+export const SSO_TEST_VALUES = {
+  username: 'apmuser',
+  password: 'apmpass', //NOSONAR
+} as const
+
+// ============================================================================
+// NETWORK & PORTS
+// ============================================================================
+
 // Network and subnet constants for testing
 export const TEST_SUBNETS = {
   PRIVATE_10: '10.0.0.0/8',
@@ -139,6 +229,99 @@ export const TEST_HTTP_ORIGINS = {
   MULTIPLE: 'http://localhost:3000,http://localhost:8080',
   ARRAY: ['http://localhost:3000', 'http://localhost:8080']
 } as const
+
+// Common test ports
+export const TEST_PORTS = {
+  webssh2: 2288,
+  sshServer: 2289,
+  alternateWebssh2: 2290,
+  // E2E test ports (different to avoid conflicts)
+  e2eWeb: Number(process.env.E2E_WEB_PORT || 4444),
+  e2eSsh: Number(process.env.E2E_SSH_PORT || 4422),
+  clientDev: 3000
+} as const
+
+// ============================================================================
+// TIMEOUTS
+// ============================================================================
+
+// Common test timeouts (in milliseconds)
+export const TEST_TIMEOUTS = {
+  short: 1000,
+  medium: 5000,
+  long: 10000,
+  network: 15000,
+  // E2E specific timeouts
+  DEFAULT: 10000,
+  NAVIGATION: 30000,
+  CONNECTION: 5000,
+  PROMPT_WAIT: 10000,
+  SHORT_WAIT: 500,
+  MEDIUM_WAIT: 2000,
+  LONG_WAIT: 5000,
+  ACTION: 15000,
+  TEST_EXTENDED: 60000,
+  DOCKER_WAIT: 20000,
+  DOCKER_RETRY: 250,
+  WEB_SERVER: 120000,
+} as const
+
+// ============================================================================
+// TERMINAL CONFIGURATION
+// ============================================================================
+
+export const TERMINAL = {
+  TYPE: 'xterm-256color',
+  DEFAULT_ROWS: 24,
+  DEFAULT_COLS: 80,
+  TEST_ROWS: 50,
+  TEST_COLS: 120,
+  LARGE_COLS: 120,
+  LARGE_ROWS: 40,
+  MEDIUM_COLS: 100,
+  MEDIUM_ROWS: 30,
+  INPUT_SELECTOR: 'textbox',
+  INPUT_NAME: 'Terminal input',
+} as const
+
+// ============================================================================
+// CONTROL ACTIONS
+// ============================================================================
+
+interface ControlActionsConstants {
+  readonly REAUTH: string
+  readonly CLEAR_CREDENTIALS: string
+  readonly DISCONNECT: string
+}
+
+// Control actions for socket messages
+export const CONTROL_ACTIONS: ControlActionsConstants = {
+  REAUTH: 'reauth',
+  CLEAR_CREDENTIALS: 'clear-credentials',
+  DISCONNECT: 'disconnect'
+} as const
+
+// ============================================================================
+// DOCKER & E2E
+// ============================================================================
+
+// Docker configuration for E2E tests
+export const DOCKER_CONFIG = {
+  CONTAINER: 'webssh2-e2e-sshd',
+  IMAGE: 'ghcr.io/billchurch/ssh_test:alpine',
+} as const
+
+// Invalid test values for negative testing
+export const INVALID_TEST_VALUES = {
+  USERNAME: 'invalid_user',
+  PASSWORD: 'invalid_pass',
+  NON_EXISTENT_HOST: 'nonexistent.invalid.host',
+  INVALID_PORT: '9999',
+} as const
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
 
 export type TestCredentials = typeof SSH_TEST_CREDENTIALS
 export type MockCredentials = typeof MOCK_CREDENTIALS

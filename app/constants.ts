@@ -58,9 +58,12 @@ export const ENV_LIMITS = {
 
 export const HTTP = {
   OK: 200,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   INTERNAL_SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
+  GATEWAY_TIMEOUT: 504,
   AUTHENTICATE: 'WWW-Authenticate',
   REALM: 'Basic realm="WebSSH2"',
   AUTH_REQUIRED: 'Authentication required.',

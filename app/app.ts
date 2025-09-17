@@ -3,7 +3,8 @@ import type { Server as HttpServer } from 'node:http'
 import type { Server as IOServer } from 'socket.io'
 import { getConfig } from './config.js'
 import SSHConnection from './ssh.js'
-import socketHandler, { type SSHCtor } from './socket.js'
+import initSocket from './socket-switcher.js'
+import type { SSHCtor } from './socket.js'
 import { createRoutes } from './routes.js'
 import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
@@ -55,7 +56,7 @@ export async function initializeServerAsync(): Promise<{
       getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean }
     }
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
-    socketHandler(io as Parameters<typeof socketHandler>[0], appConfig, SSHConnection as SSHCtor)
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor)
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
     return { server, io, app, config: appConfig }

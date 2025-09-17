@@ -4,6 +4,7 @@
 import { getValidatedPort, validateSshTerm } from '../utils.js'
 import { PASSWORD_MASK } from '../constants/security.js'
 import type { Config } from '../types/config.js'
+import type { Result } from '../types/result.js'
 
 /**
  * Route parameters from request
@@ -34,6 +35,14 @@ export interface CredentialValidation {
   username?: string
   password?: string
   error?: string
+}
+
+/**
+ * Validated credentials
+ */
+export interface ValidatedCredentials {
+  username: string
+  password: string
 }
 
 /**
@@ -119,6 +128,35 @@ export function validatePostCredentials(
 }
 
 /**
+ * Validates POST body has required credentials (Result version)
+ * Pure function - no side effects
+ */
+export function validatePostCredentialsResult(
+  body: RouteParams
+): Result<ValidatedCredentials> {
+  const { username, password } = body
+  
+  if (username == null || username === '') {
+    return {
+      ok: false,
+      error: new Error('Username is required')
+    }
+  }
+  
+  if (password == null || password === '') {
+    return {
+      ok: false,
+      error: new Error('Password is required')
+    }
+  }
+  
+  return {
+    ok: true,
+    value: { username, password }
+  }
+}
+
+/**
  * Validates session has required SSH credentials
  * Pure function - no side effects
  */
@@ -169,5 +207,73 @@ export function createSanitizedCredentials(
     port,
     username,
     password: PASSWORD_MASK
+  }
+}
+
+/**
+ * Validates connection parameters
+ * Pure function - no side effects
+ */
+export function validateConnectionParams(
+  params: RouteParams,
+  config: Config
+): Result<ValidatedConnectionParams> {
+  const host = extractHost(params, params, config)
+  
+  if (host == null) {
+    return {
+      ok: false,
+      error: new Error('Host is required')
+    }
+  }
+  
+  const port = extractPort(params, params)
+  const term = extractTerm(params, params)
+  
+  return {
+    ok: true,
+    value: { host, port, term }
+  }
+}
+
+/**
+ * Validates route parameters for SSH connection
+ * Pure function - no side effects
+ */
+export function validateRouteParams(
+  body: RouteParams,
+  query: RouteParams,
+  config: Config
+): Result<ValidatedConnectionParams & Partial<ValidatedCredentials>> {
+  const host = extractHost(body, query, config)
+  
+  if (host == null) {
+    return {
+      ok: false,
+      error: new Error('Host is required for SSH connection')
+    }
+  }
+  
+  const port = extractPort(body, query)
+  const term = extractTerm(body, query)
+  
+  const result: ValidatedConnectionParams & Partial<ValidatedCredentials> = {
+    host,
+    port,
+    term
+  }
+  
+  // Add credentials if present
+  if (body.username != null && body.username !== '') {
+    result.username = body.username
+  }
+  
+  if (body.password != null && body.password !== '') {
+    result.password = body.password
+  }
+  
+  return {
+    ok: true,
+    value: result
   }
 }
