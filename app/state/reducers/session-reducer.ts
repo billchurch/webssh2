@@ -38,7 +38,23 @@ export const sessionReducer = (
         }
       }
     
-    default: {
+    // All other actions are delegated to sub-reducers
+    case 'AUTH_REQUEST':
+    case 'AUTH_SUCCESS':
+    case 'AUTH_FAILURE':
+    case 'AUTH_LOGOUT':
+    case 'AUTH_CLEAR_ERROR':
+    case 'CONNECTION_START':
+    case 'CONNECTION_ESTABLISHED':
+    case 'CONNECTION_ERROR':
+    case 'CONNECTION_CLOSED':
+    case 'CONNECTION_ACTIVITY':
+    case 'TERMINAL_RESIZE':
+    case 'TERMINAL_SET_TERM':
+    case 'TERMINAL_SET_ENV':
+    case 'TERMINAL_SET_CWD':
+    case 'METADATA_SET_CLIENT':
+    case 'METADATA_UPDATE_TIMESTAMP': {
       // Delegate to sub-reducers
       const newAuth = authReducer(state.auth, action)
       const newConnection = connectionReducer(state.connection, action)
@@ -60,6 +76,12 @@ export const sessionReducer = (
           metadata: newMetadata
         }
       }
+      return state
+    }
+    
+    default: {
+      const exhaustiveCheck: never = action
+      void exhaustiveCheck
       return state
     }
   }
