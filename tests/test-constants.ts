@@ -38,11 +38,18 @@ export const SSH_INVALID_CREDENTIALS = {
 export const TEST_SECRET = 'test-secret' //NOSONAR
 export const TEST_SECRET_KEY = 'test-secret-key' //NOSONAR
 export const TEST_SECRET_LONG = 'test-secret-key-12345' //NOSONAR
+export const TEST_SECRET_123 = 'test-secret-123' //NOSONAR
 export const MY_SECRET = 'mysecret' //NOSONAR
+export const MY_SESSION_SECRET = 'my-session-secret' //NOSONAR
+export const TEST_SESSION_SECRET = 'test-session-secret' //NOSONAR
+export const TEST_MINIMAL_SECRET = 's' //NOSONAR
 
 // Keys and passphrases
 export const TEST_PRIVATE_KEY = 'test-key' //NOSONAR
 export const TEST_PASSPHRASE = 'test-passphrase' //NOSONAR
+export const TEST_SSH_KEY = 'ssh-rsa-key' //NOSONAR
+export const TEST_SSH_PRIVATE_KEY_VALID = '-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----' //NOSONAR
+export const TEST_SSH_PRIVATE_KEY_INVALID = 'not-a-valid-private-key-format' //NOSONAR
 
 // SSO header names (not actual passwords, but often flagged)
 export const SSO_HEADERS = {

@@ -37,7 +37,7 @@ describe('Credential Validation Functions', () => {
         host: 'host.local',
         port: 22,
         password: TEST_PASSWORDS.basic,
-        privateKey: 'key',
+        privateKey: TEST_PRIVATE_KEY,
         passphrase: TEST_PASSPHRASE
       }
       assert.equal(isValidCredentials(creds), true)
@@ -146,7 +146,7 @@ describe('Credential Validation Functions', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',
-        privateKey: 'key',
+        privateKey: TEST_PRIVATE_KEY,
         passphrase: 123 // Wrong type
       })
       assert.equal(result.valid, false)

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { EventEmitter } from 'events'
 import initSockets from '../../app/socket'
 import type { Config } from '../../app/types/config'
-import { MOCK_CREDENTIALS, SSO_HEADERS } from '../test-constants'
+import { MOCK_CREDENTIALS, SSO_HEADERS, TEST_MINIMAL_SECRET } from '../test-constants'
 
 const instances: MockSSH[] = []
 
@@ -56,7 +56,7 @@ describe('socket env propagation', () => {
       header: { text: null, background: 'green' },
       listen: { ip: '0.0.0.0', port: 2222 },
       http: { origins: ['*:*'] },
-      session: { secret: 's', name: 'n' },
+      session: { secret: TEST_MINIMAL_SECRET, name: 'n' },
       sso: { enabled: false, csrfProtection: false, trustedProxies: [], headerMapping: SSO_HEADERS },
     } as unknown as Config
 

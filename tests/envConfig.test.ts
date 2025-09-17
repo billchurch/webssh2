@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME } from './test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
@@ -159,14 +159,14 @@ describe('Environment Configuration Tests', () => {
 
   test('loadEnvironmentConfig handles all user credential fields', () => {
     process.env.WEBSSH2_USER_NAME = TEST_USERNAME
-    process.env.WEBSSH2_USER_PASSWORD = 'testpassword'
+    process.env.WEBSSH2_USER_PASSWORD = TEST_PASSWORD_ALT
     process.env.WEBSSH2_USER_PRIVATE_KEY = 'base64encodedkey'
     process.env.WEBSSH2_USER_PASSPHRASE = 'keypassphrase'
 
     const config = loadEnvironmentConfig()
 
     assert.equal(config.user?.name, TEST_USERNAME)
-    assert.equal(config.user?.password, 'testpassword')
+    assert.equal(config.user?.password, TEST_PASSWORD_ALT)
     assert.equal(config.user?.privateKey, 'base64encodedkey')
     assert.equal(config.user?.passphrase, 'keypassphrase')
   })
@@ -192,12 +192,12 @@ describe('Environment Configuration Tests', () => {
   })
 
   test('loadEnvironmentConfig handles all session configuration', () => {
-    process.env.WEBSSH2_SESSION_SECRET = 'my-session-secret'
+    process.env.WEBSSH2_SESSION_SECRET = MY_SESSION_SECRET
     process.env.WEBSSH2_SESSION_NAME = 'custom.sid'
 
     const config = loadEnvironmentConfig()
 
-    assert.equal(config.session?.secret, 'my-session-secret')
+    assert.equal(config.session?.secret, MY_SESSION_SECRET)
     assert.equal(config.session?.name, 'custom.sid')
   })
 

@@ -13,7 +13,7 @@ import {
   type SessionState
 } from '../../../app/socket/socket-helpers.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
-import { TEST_USERNAME, TEST_PASSWORDS } from '../../test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORDS, TEST_SSH_KEY } from '../../test-constants.js'
 
 describe('createInitialSessionState', () => {
   it('should create state with all null/false values', () => {
@@ -128,7 +128,7 @@ describe('isValidDimension', () => {
 
 describe('getDefaultTerminalConfig', () => {
   it('should return default terminal config', () => {
-    const config = createDefaultConfig('secret')
+    const config = createDefaultConfig(TEST_PASSWORDS.secret)
     
     const termConfig = getDefaultTerminalConfig(config)
     
@@ -140,7 +140,7 @@ describe('getDefaultTerminalConfig', () => {
   })
   
   it('should use config term if provided', () => {
-    const config = createDefaultConfig('secret')
+    const config = createDefaultConfig(TEST_PASSWORDS.secret)
     config.ssh.term = 'vt100'
     
     const termConfig = getDefaultTerminalConfig(config)
@@ -166,7 +166,7 @@ describe('hasValidSshCredentials', () => {
       ...createInitialSessionState(),
       host: 'example.com',
       username: 'user',
-      privateKey: 'ssh-rsa...'
+      privateKey: TEST_SSH_KEY
     }
     
     expect(hasValidSshCredentials(state)).toBe(true)

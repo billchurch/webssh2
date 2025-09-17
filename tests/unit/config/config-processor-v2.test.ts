@@ -231,7 +231,7 @@ describe('sanitizeConfigForClient', () => {
   it('removes sensitive fields', () => {
     const config = createDefaultConfig()
     config.user.password = TEST_PASSWORDS.secret
-    config.user.privateKey = 'key'
+    config.user.privateKey = TEST_PRIVATE_KEY
     config.user.passphrase = TEST_PASSPHRASE
     
     const result = sanitizeConfigForClient(config)
