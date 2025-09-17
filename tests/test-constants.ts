@@ -58,6 +58,13 @@ export const SSO_HEADERS = {
   session: 'x-apm-session',
 } as const
 
+// Alternative SSO header names for testing
+export const SSO_AUTH_HEADERS = {
+  username: 'x-auth-user',
+  password: 'x-auth-pass', //NOSONAR
+  session: 'x-auth-session',
+} as const
+
 // SSO test values
 export const SSO_TEST_VALUES = {
   username: 'apmuser',

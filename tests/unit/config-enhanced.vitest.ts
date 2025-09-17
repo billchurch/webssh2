@@ -13,6 +13,15 @@ import { ConfigBuilder } from '../../app/utils/config-builder.js'
 // We'll test through the public API instead
 import { mapEnvironmentVariables, ENV_VAR_MAPPING } from '../../app/config/env-mapper.js'
 import type { Config } from '../../app/types/config.js'
+import {
+  TEST_USERNAME,
+  TEST_PASSWORD,
+  TEST_SECRET,
+  TEST_SECRET_123,
+  TEST_IPS,
+  TEST_SUBNETS,
+  SSO_AUTH_HEADERS
+} from '../test-constants.js'
 
 describe('Enhanced Config Feature Parity', () => {
   describe('Environment Variable Support', () => {
@@ -20,40 +29,40 @@ describe('Enhanced Config Feature Parity', () => {
       // Create a test environment with all supported variables
       const testEnv: Record<string, string> = {
         PORT: '3000',
-        WEBSSH2_LISTEN_IP: '127.0.0.1',
+        WEBSSH2_LISTEN_IP: TEST_IPS.LOCALHOST,
         WEBSSH2_LISTEN_PORT: '2222',
         WEBSSH2_HTTP_ORIGINS: 'http://localhost:3000,http://localhost:8080',
         WEBSSH2_SSH_HOST: 'example.com',
         WEBSSH2_SSH_PORT: '22',
-        WEBSSH2_SSH_LOCAL_ADDRESS: '192.168.1.1',
+        WEBSSH2_SSH_LOCAL_ADDRESS: TEST_IPS.PRIVATE_192,
         WEBSSH2_SSH_LOCAL_PORT: '2223',
         WEBSSH2_SSH_TERM: 'xterm-256color',
         WEBSSH2_SSH_ENV_ALLOWLIST: 'LANG,LC_ALL',
-        WEBSSH2_SSH_ALLOWED_SUBNETS: '192.168.1.0/24,10.0.0.0/8',
+        WEBSSH2_SSH_ALLOWED_SUBNETS: `${TEST_SUBNETS.PRIVATE_192},${TEST_SUBNETS.PRIVATE_10}`,
         WEBSSH2_HEADER_TEXT: 'Test Header',
         WEBSSH2_HEADER_BACKGROUND: 'blue',
         WEBSSH2_OPTIONS_CHALLENGE_BUTTON: 'true',
         WEBSSH2_OPTIONS_AUTO_LOG: 'true',
         WEBSSH2_SSO_ENABLED: 'true',
         WEBSSH2_SSO_CSRF_PROTECTION: 'true',
-        WEBSSH2_SSO_TRUSTED_PROXIES: '127.0.0.1,192.168.1.1',
-        WEBSSH2_SSO_HEADER_USERNAME: 'x-auth-user',
-        WEBSSH2_SSO_HEADER_PASSWORD: 'x-auth-pass',
-        WEBSSH2_SSO_HEADER_SESSION: 'x-auth-session',
+        WEBSSH2_SSO_TRUSTED_PROXIES: `${TEST_IPS.LOCALHOST},${TEST_IPS.PRIVATE_192}`,
+        WEBSSH2_SSO_HEADER_USERNAME: SSO_AUTH_HEADERS.username,
+        WEBSSH2_SSO_HEADER_PASSWORD: SSO_AUTH_HEADERS.password,
+        WEBSSH2_SSO_HEADER_SESSION: SSO_AUTH_HEADERS.session,
       }
       
       const config = mapEnvironmentVariables(testEnv)
       
       // Verify all mapped values are present
-      expect(config.listen).toEqual({ ip: '127.0.0.1', port: 2222 })
+      expect(config.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 2222 })
       expect(config.ssh).toMatchObject({
         host: 'example.com',
         port: 22,
-        localAddress: '192.168.1.1',
+        localAddress: TEST_IPS.PRIVATE_192,
         localPort: 2223,
         term: 'xterm-256color',
         envAllowlist: ['LANG', 'LC_ALL'],
-        allowedSubnets: ['192.168.1.0/24', '10.0.0.0/8'],
+        allowedSubnets: [TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10],
       })
       expect(config.header).toEqual({
         text: 'Test Header',
@@ -66,11 +75,11 @@ describe('Enhanced Config Feature Parity', () => {
       expect(config.sso).toMatchObject({
         enabled: true,
         csrfProtection: true,
-        trustedProxies: ['127.0.0.1', '192.168.1.1'],
+        trustedProxies: [TEST_IPS.LOCALHOST, TEST_IPS.PRIVATE_192],
         headerMapping: {
-          username: 'x-auth-user',
-          password: 'x-auth-pass',
-          session: 'x-auth-session',
+          username: SSO_AUTH_HEADERS.username,
+          password: SSO_AUTH_HEADERS.password,
+          session: SSO_AUTH_HEADERS.session,
         },
       })
     })
@@ -86,10 +95,10 @@ describe('Enhanced Config Feature Parity', () => {
     it('should support localAddress and localPort fields', () => {
       const builder = new ConfigBuilder()
       builder
-        .withSessionSecret('test-secret') // Required for validation
+        .withSessionSecret(TEST_SECRET) // Required for validation
         .withSshHost('example.com')
         .withSshPort(22)
-        .withSshLocalAddress('192.168.1.1')
+        .withSshLocalAddress(TEST_IPS.PRIVATE_192)
         .withSshLocalPort(2223)
       
       const result = builder.validate()
@@ -103,7 +112,7 @@ describe('Enhanced Config Feature Parity', () => {
       expect(config?.ssh).toMatchObject({
         host: 'example.com',
         port: 22,
-        localAddress: '192.168.1.1',
+        localAddress: TEST_IPS.PRIVATE_192,
         localPort: 2223,
       })
     })
@@ -111,17 +120,17 @@ describe('Enhanced Config Feature Parity', () => {
     it('should support allowedSubnets field', () => {
       const builder = new ConfigBuilder()
       const config = builder
-        .withSessionSecret('test-secret') // Required for validation
-        .withSshAllowedSubnets(['192.168.1.0/24', '10.0.0.0/8'])
+        .withSessionSecret(TEST_SECRET) // Required for validation
+        .withSshAllowedSubnets([TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
         .build()
       
-      expect(config?.ssh.allowedSubnets).toEqual(['192.168.1.0/24', '10.0.0.0/8'])
+      expect(config?.ssh.allowedSubnets).toEqual([TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
     })
     
     it('should support SSH algorithms configuration', () => {
       const builder = new ConfigBuilder()
       builder
-        .withSessionSecret('test-secret') // Required for validation
+        .withSessionSecret(TEST_SECRET) // Required for validation
         .withSshAlgorithms({
           cipher: ['aes256-gcm'],
           kex: ['curve25519-sha256'],
@@ -147,12 +156,12 @@ describe('Enhanced Config Feature Parity', () => {
     it('should support all configuration sections', () => {
       const builder = new ConfigBuilder()
       builder
-        .withSessionSecret('secret123') // Add session secret first for validation
-        .withListenConfig('127.0.0.1', 3000)
+        .withSessionSecret(TEST_SECRET_123) // Add session secret first for validation
+        .withListenConfig(TEST_IPS.LOCALHOST, 3000)
         .withHttpOrigins(['http://localhost:3000'])
         .withUserCredentials({
-          name: 'testuser',
-          password: 'testpass',
+          name: TEST_USERNAME,
+          password: TEST_PASSWORD,
         })
         .withSshHost('ssh.example.com')
         .withSshPort(22)
@@ -176,11 +185,11 @@ describe('Enhanced Config Feature Parity', () => {
       const config = builder.build()
       
       expect(config).toBeDefined()
-      expect(config?.listen).toEqual({ ip: '127.0.0.1', port: 3000 })
+      expect(config?.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 3000 })
       expect(config?.http.origins).toEqual(['http://localhost:3000'])
       expect(config?.user).toMatchObject({
-        name: 'testuser',
-        password: 'testpass',
+        name: TEST_USERNAME,
+        password: TEST_PASSWORD,
       })
       expect(config?.ssh.host).toBe('ssh.example.com')
       expect(config?.header).toEqual({
@@ -193,7 +202,7 @@ describe('Enhanced Config Feature Parity', () => {
         allowReauth: false,
       })
       expect(config?.session).toMatchObject({
-        secret: 'secret123',
+        secret: TEST_SECRET_123,
         name: 'test-session',
       })
       expect(config?.sso).toMatchObject({
@@ -207,7 +216,7 @@ describe('Enhanced Config Feature Parity', () => {
     it('should generate CORS config from enhanced config', async () => {
       const builder = new ConfigBuilder()
       const config = builder
-        .withSessionSecret('test-secret') // Required for validation
+        .withSessionSecret(TEST_SECRET) // Required for validation
         .withHttpOrigins(['http://localhost:3000', 'http://localhost:8080'])
         .build()
       
@@ -228,7 +237,7 @@ describe('Enhanced Config Feature Parity', () => {
     describe('validateSshHost', () => {
       it('should validate SSH hosts correctly', () => {
         expect(validateSshHost('example.com')).toBe('example.com')
-        expect(validateSshHost('192.168.1.1')).toBe('192.168.1.1')
+        expect(validateSshHost(TEST_IPS.PRIVATE_192)).toBe(TEST_IPS.PRIVATE_192)
         expect(validateSshHost(null)).toBe(null)
         expect(validateSshHost(undefined)).toBe(null)
         expect(validateSshHost('')).toBe(null)
