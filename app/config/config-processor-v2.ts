@@ -205,19 +205,17 @@ export function sanitizeConfigForClient(
   config: Config
 ): Result<Record<string, unknown>, ConfigError> {
   try {
-    // Remove sensitive fields by creating a new object without them
-    const { session, ...configWithoutSession } = config
-    // Explicitly void the unused session variable to satisfy linting
-    void session
+    // Create a new object without sensitive fields
+    const sanitized = Object.fromEntries(
+      Object.entries(config).filter(([key]) => key !== 'session')
+    )
     
-    const sanitized = {
-      ...configWithoutSession,
-      user: {
-        ...config.user,
-        password: null,
-        privateKey: null,
-        passphrase: null
-      }
+    // Override user field to remove sensitive data
+    sanitized['user'] = {
+      ...config.user,
+      password: null,
+      privateKey: null,
+      passphrase: null
     }
     
     return ok(sanitized)
