@@ -122,8 +122,34 @@ export default class SSHConnection extends EventEmitter {
       }
     })
     
-    this.conn?.on('keyboard-interactive', (name, instructions, instructionsLang, prompts) => {
-      this.emit('keyboard-interactive', { name, instructions, instructionsLang, prompts })
+    this.conn?.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+      debug(`keyboard-interactive: ${name}, prompts: ${prompts?.length ?? 0}`)
+      
+      // Auto-respond with password for keyboard-interactive authentication
+      // This handles cases where the SSH server requires keyboard-interactive auth
+      // instead of or in addition to password auth
+      const password = this.creds?.password
+      if (password != null && typeof password === 'string' && typeof finish === 'function') {
+        const responses: string[] = []
+        const promptCount = prompts?.length ?? 0
+        
+        // Respond to each prompt with the password
+        // Most servers asking for password via keyboard-interactive will have 1 prompt
+        for (let i = 0; i < promptCount; i++) {
+          responses.push(password)
+        }
+        
+        debug(`keyboard-interactive: responding to ${promptCount} prompts`)
+        finish(responses)
+      } else {
+        // Emit event for handling by upper layers if no password available
+        this.emit('keyboard-interactive', { name, instructions, instructionsLang, prompts })
+        
+        // Still need to call finish with empty responses to prevent timeout
+        if (typeof finish === 'function') {
+          finish([])
+        }
+      }
     })
   }
 
