@@ -13,6 +13,7 @@ export interface SSHConfig {
   readyTimeout: number
   keepaliveInterval: number
   keepaliveCountMax: number
+  allowedSubnets?: string[]
   alwaysSendKeyboardInteractivePrompts: boolean
   disableInteractiveAuth: boolean
   algorithms: AlgorithmsConfig
