@@ -36,17 +36,13 @@ export function updateSessionCredentials(
  * @pure
  */
 export function clearSessionAuth(session: SshSession): SshSession {
-  const newSession: Record<string, unknown> = {}
-  const authFields = ['sshCredentials', 'usedBasicAuth', 'authMethod', 'authFailed']
+  const authFields = new Set(['sshCredentials', 'usedBasicAuth', 'authMethod', 'authFailed'])
   
-  for (const key in session) {
-    if (!authFields.includes(key)) {
-      // eslint-disable-next-line security/detect-object-injection
-      newSession[key] = (session as Record<string, unknown>)[key]
-    }
-  }
+  // Convert to entries, filter out auth fields, and reconstruct
+  const filteredEntries = Object.entries(session as Record<string, unknown>)
+    .filter(([key]) => !authFields.has(key))
   
-  return newSession as SshSession
+  return Object.fromEntries(filteredEntries) as SshSession
 }
 
 /**
@@ -71,14 +67,9 @@ export function markAuthFailed(session: SshSession): SshSession {
  * @pure
  */
 export function clearAuthFailed(session: SshSession): SshSession {
-  const newSession: Record<string, unknown> = {}
+  // Convert to entries, filter out authFailed, and reconstruct
+  const filteredEntries = Object.entries(session as Record<string, unknown>)
+    .filter(([key]) => key !== 'authFailed')
   
-  for (const key in session) {
-    if (key !== 'authFailed') {
-      // eslint-disable-next-line security/detect-object-injection
-      newSession[key] = (session as Record<string, unknown>)[key]
-    }
-  }
-  
-  return newSession as SshSession
+  return Object.fromEntries(filteredEntries) as SshSession
 }

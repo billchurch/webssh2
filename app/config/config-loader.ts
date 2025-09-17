@@ -15,7 +15,8 @@ import { ok, err } from '../types/result.js'
 export async function readConfigFile(configPath: string): Promise<Result<string, Error>> {
   try {
     await fs.access(configPath)
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is internal
+    // Configuration path is from internal application config, not user input
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const data = await fs.readFile(configPath, 'utf8')
     return ok(data)
   } catch (error) {

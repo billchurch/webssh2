@@ -22,9 +22,20 @@ export function safeToString(value: unknown): string | undefined {
     return undefined
   }
   
-  // For primitives (string, number, boolean, bigint)
-  // eslint-disable-next-line @typescript-eslint/no-base-to-string
-  return String(value)
+  // At this point, value is a primitive type (string, number, boolean, bigint, symbol)
+  // Explicitly handle each primitive type
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return String(value)
+  }
+  if (typeof value === 'symbol') {
+    return value.toString()
+  }
+  
+  // TypeScript should ensure this is never reached, but for safety
+  return undefined
 }
 
 /**

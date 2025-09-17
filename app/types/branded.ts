@@ -308,6 +308,8 @@ export function createRegexPattern(pattern: string): RegexPattern {
     throw new Error('Regex pattern cannot be empty')
   }
   // Try to compile it to validate
+  // This is a validation function specifically for testing regex patterns
+  // The dynamic RegExp creation is intentional and safe as it's only for validation
   try {
     // eslint-disable-next-line security/detect-non-literal-regexp
     new RegExp(pattern)

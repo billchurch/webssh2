@@ -30,21 +30,20 @@ export function deepMergePure<T extends object>(target: T, source: unknown): T {
     return output as T
   }
   
-  for (const key of Object.keys(source)) {
-    // Keys come from source object, not user input - safe for property access
-    // eslint-disable-next-line security/detect-object-injection
-    const sourceValue = source[key]
-    // eslint-disable-next-line security/detect-object-injection
-    const targetValue = output[key]
+  // Convert to Map for safe property access
+  const sourceMap = new Map(Object.entries(source))
+  const outputMap = new Map(Object.entries(output))
+  
+  for (const [key, sourceValue] of sourceMap) {
+    const targetValue = outputMap.get(key)
     
     if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
-      // eslint-disable-next-line security/detect-object-injection
-      output[key] = deepMergePure(targetValue, sourceValue)
+      outputMap.set(key, deepMergePure(targetValue, sourceValue))
     } else {
-      // eslint-disable-next-line security/detect-object-injection
-      output[key] = sourceValue
+      outputMap.set(key, sourceValue)
     }
   }
   
-  return output as T
+  // Convert Map back to object
+  return Object.fromEntries(outputMap) as T
 }

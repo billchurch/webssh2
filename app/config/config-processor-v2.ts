@@ -183,9 +183,10 @@ export function validateSshAlgorithms(
   
   // Validate algorithm arrays
   const fields = ['kex', 'cipher', 'hmac', 'compress', 'serverHostKey']
+  const algMap = new Map(Object.entries(alg))
+  
   for (const field of fields) {
-    // eslint-disable-next-line security/detect-object-injection
-    const value = alg[field]
+    const value = algMap.get(field)
     if (value != null && !Array.isArray(value)) {
       return err({
         type: 'VALIDATION',
@@ -204,9 +205,11 @@ export function sanitizeConfigForClient(
   config: Config
 ): Result<Record<string, unknown>, ConfigError> {
   try {
-    // Remove sensitive fields
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { session: _session, ...configWithoutSession } = config
+    // Remove sensitive fields by creating a new object without them
+    const { session, ...configWithoutSession } = config
+    // Explicitly void the unused session variable to satisfy linting
+    void session
+    
     const sanitized = {
       ...configWithoutSession,
       user: {

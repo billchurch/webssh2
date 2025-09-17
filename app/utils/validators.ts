@@ -1,6 +1,7 @@
 // app/utils/validators.ts
 // Centralized validation utilities
 
+import validator from 'validator'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../types/result.js'
 import {
@@ -38,8 +39,6 @@ export const Constraints = {
   HOST: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
-    // eslint-disable-next-line security/detect-unsafe-regex
-    PATTERN: /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
   },
   PORT: {
     MIN: 1,
@@ -109,32 +108,21 @@ export function validateHost(
     }])
   }
   
-  // Check for IP address
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
-  
-  if (ipv4Pattern.test(value)) {
-    const octets = value.split('.')
-    const valid = octets.every(octet => {
-      const num = parseInt(octet, 10)
-      return num >= 0 && num <= 255
-    })
-    
-    if (!valid) {
-      return err([{
-        field,
-        value,
-        message: 'Invalid IPv4 address',
-        constraint: 'format:ipv4',
-      }])
-    }
-  } else if (!ipv6Pattern.test(value) && !Constraints.HOST.PATTERN.test(value)) {
+  // Check if it's a valid IP address (IPv4 or IPv6)
+  if (validator.isIP(value)) {
+    // Valid IP address, no additional validation needed
+  } else if (!validator.isFQDN(value, {
+    require_tld: false,  // Allow local hostnames without TLD
+    allow_underscores: false,
+    allow_trailing_dot: false,
+    allow_numeric_tld: false,
+    allow_wildcard: false,
+  })) {
+    // Not a valid IP or hostname
     return err([{
       field,
       value,
-      message: 'Invalid hostname format',
+      message: 'Invalid hostname or IP address format',
       constraint: 'format:hostname',
     }])
   }
@@ -466,16 +454,18 @@ export function validateObject<T extends Record<string, unknown>>(
   }
   
   const errors: ValidationError[] = []
-  const result: Record<string, unknown> = {}
+  const resultMap = new Map<string, unknown>()
+  
+  // Convert input object to Map for safe access
+  const objMap = new Map(Object.entries(obj as Record<string, unknown>))
   
   for (const [field, validator] of Object.entries(schema)) {
-    // eslint-disable-next-line security/detect-object-injection
-    const value = (obj as Record<string, unknown>)[field]
+    // Use Map.get which is completely safe from prototype pollution
+    const value = objMap.get(field)
     const validation = validator(value, field)
     
     if (validation.ok) {
-      // eslint-disable-next-line security/detect-object-injection
-      result[field] = validation.value
+      resultMap.set(field, validation.value)
     } else {
       errors.push(...validation.error)
     }
@@ -485,6 +475,8 @@ export function validateObject<T extends Record<string, unknown>>(
     return err(errors)
   }
   
+  // Convert Map back to object
+  const result = Object.fromEntries(resultMap)
   return ok(result as T)
 }
 

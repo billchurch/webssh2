@@ -94,28 +94,35 @@ export function safeSetNested(
   
   let current = obj
   
-  // Navigate to the parent using forEach instead of for loop with index
+  // Navigate to the parent using Map for safe property access
   pathCopy.forEach((key) => {
     const stringKey = key as string
-    // SafeKey guarantees the key is safe for access
-    // eslint-disable-next-line security/detect-object-injection
-    const next: unknown = current[stringKey]
+    const currentMap = new Map(Object.entries(current))
+    const next = currentMap.get(stringKey)
     
     if (next == null || typeof next !== 'object' || Array.isArray(next)) {
-      // eslint-disable-next-line security/detect-object-injection
-      current[stringKey] = {}
-    }
-    // eslint-disable-next-line security/detect-object-injection
-    const nextObj: unknown = current[stringKey]
-    if (typeof nextObj === 'object' && nextObj !== null && !Array.isArray(nextObj)) {
-      current = nextObj as Record<string, unknown>
+      // Create new object at this path
+      const newObj = {}
+      Object.defineProperty(current, stringKey, {
+        value: newObj,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      })
+      current = newObj
+    } else {
+      current = next as Record<string, unknown>
     }
   })
   
-  // Set the final property
+  // Set the final property using Object.defineProperty
   const lastStringKey = lastKey as string
-  // eslint-disable-next-line security/detect-object-injection
-  current[lastStringKey] = value
+  Object.defineProperty(current, lastStringKey, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  })
 }
 
 /**
