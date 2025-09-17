@@ -133,5 +133,12 @@ export const TEST_IPS = {
   PRIVATE_192: '192.168.1.1'
 } as const
 
+// Test HTTP origins
+export const TEST_HTTP_ORIGINS = {
+  SINGLE: 'http://localhost:3000',
+  MULTIPLE: 'http://localhost:3000,http://localhost:8080',
+  ARRAY: ['http://localhost:3000', 'http://localhost:8080']
+} as const
+
 export type TestCredentials = typeof SSH_TEST_CREDENTIALS
 export type MockCredentials = typeof MOCK_CREDENTIALS
