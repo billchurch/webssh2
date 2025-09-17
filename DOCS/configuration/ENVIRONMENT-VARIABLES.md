@@ -7,7 +7,7 @@ WebSSH2 supports comprehensive configuration through environment variables, foll
 Configuration is loaded with the following priority (highest to lowest):
 
 1. **Environment Variables** (highest priority)
-2. `config.json` file 
+2. `config.json` file
 3. Built-in defaults (lowest priority)
 
 ## Environment Variable Format
@@ -19,6 +19,7 @@ WEBSSH2_<SECTION>_<SETTING>=value
 ```
 
 ### Examples
+
 ```bash
 WEBSSH2_LISTEN_PORT=3000
 WEBSSH2_SSH_HOST=example.com
@@ -42,6 +43,7 @@ WEBSSH2_HEADER_TEXT="Production Environment"
 | `WEBSSH2_HTTP_ORIGINS` | array | `["*:*"]` | CORS allowed origins (comma-separated or JSON) |
 
 #### Array Format Examples
+
 ```bash
 # Comma-separated format
 WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com,api.test.com"
@@ -98,6 +100,7 @@ You can configure SSH algorithms in two ways:
 | `WEBSSH2_SSH_ALGORITHMS_PRESET` | `modern`, `legacy`, `strict` | Use predefined algorithm sets |
 
 **Preset Details:**
+
 - **`modern`**: Strong algorithms for contemporary systems
 - **`legacy`**: Compatible with older SSH implementations  
 - **`strict`**: Only the most secure algorithms
@@ -113,6 +116,7 @@ You can configure SSH algorithms in two ways:
 | `WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY` | array | Server host key algorithms |
 
 #### Algorithm Examples
+
 ```bash
 # Using preset (recommended)
 WEBSSH2_SSH_ALGORITHMS_PRESET=modern
@@ -191,27 +195,34 @@ docker run --name webssh2 --rm -it \
 ## Data Type Formats
 
 ### Boolean Values
+
 Use `true`/`false` or `1`/`0`:
+
 ```bash
 WEBSSH2_OPTIONS_AUTO_LOG=true
 WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH=false
 ```
 
 ### Array Values
+
 Two formats supported:
 
 **Comma-separated (simple values):**
+
 ```bash
 WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com"
 ```
 
 **JSON array (complex values or special characters):**
+
 ```bash
 WEBSSH2_SSH_ALGORITHMS_CIPHER='["aes256-gcm@openssh.com","aes128-ctr"]'
 ```
 
 ### Null Values
+
 Use empty string or `null`:
+
 ```bash
 WEBSSH2_SSH_HOST=
 WEBSSH2_USER_NAME=null
@@ -220,6 +231,7 @@ WEBSSH2_USER_NAME=null
 ## Docker Examples
 
 ### Basic Docker Run
+
 ```bash
 docker run -d \
   -p 2222:2222 \
@@ -231,6 +243,7 @@ docker run -d \
 ```
 
 ### Docker with Modern Security
+
 ```bash
 docker run -d \
   -p 2222:2222 \
@@ -241,6 +254,7 @@ docker run -d \
 ```
 
 ### Docker Compose
+
 See `docker-compose.yml` for a complete example configuration.
 
 ## Kubernetes ConfigMap Example
@@ -262,18 +276,22 @@ data:
 ## Environment-First vs Config File
 
 ### Advantages of Environment Variables
+
 - **Security**: No secrets in config files
 - **Flexibility**: Easy per-environment configuration
 - **Cloud-native**: Works with Docker, Kubernetes, etc.
 - **CI/CD friendly**: Easy automated deployment configuration
 
 ### When to Use Config Files
+
 - **Development**: Easier to manage many settings locally
 - **Complex configurations**: Multiple algorithm arrays
 - **Documentation**: Comments and structure in JSON
 
 ### Hybrid Approach
+
 You can use both - environment variables override config.json:
+
 ```bash
 # config.json has base settings
 # Environment variables override specific values
@@ -284,19 +302,25 @@ WEBSSH2_SSH_HOST=prod.example.com
 ## Validation and Debugging
 
 ### Debug Configuration Loading
+
 Enable debug output to see configuration loading:
+
 ```bash
 DEBUG=webssh2:config,webssh2:envConfig npm start
 ```
 
 ### Validation Errors
+
 If configuration validation fails, the server will:
+
 1. Log validation errors
 2. Continue with unvalidated config in development
 3. Use default values for invalid settings
 
 ### Testing Configuration
+
 Test your environment variable configuration:
+
 ```bash
 node -e "
 import { getConfig } from './app/config.js';
@@ -308,17 +332,22 @@ console.log(JSON.stringify(config, null, 2));
 ## Migration from Config File
 
 ### Step 1: Identify Current Settings
+
 Review your current `config.json` and identify values to move to environment variables.
 
 ### Step 2: Set Environment Variables
+
 Convert config paths to environment variable names:
+
 - `listen.port` → `WEBSSH2_LISTEN_PORT`
 - `ssh.algorithms.cipher` → `WEBSSH2_SSH_ALGORITHMS_CIPHER`
 
 ### Step 3: Test Configuration
+
 Verify environment variables take precedence over config file settings.
 
 ### Step 4: Remove Config File (Optional)
+
 Once satisfied with environment variable configuration, you can remove `config.json`.
 
 ## Security Best Practices
@@ -333,17 +362,20 @@ Once satisfied with environment variable configuration, you can remove `config.j
 ## Troubleshooting
 
 ### Environment Variables Not Taking Effect
+
 1. Check variable names are correct (case-sensitive)
 2. Ensure `WEBSSH2_` prefix is used
 3. Enable debug output: `DEBUG=webssh2:envConfig`
 4. Check for typos in boolean values (`true`/`false`)
 
 ### Array Parsing Issues  
+
 1. Use comma-separated format for simple values
 2. Use JSON format for complex values or special characters
 3. Escape quotes properly in shell environments
 
 ### Algorithm Configuration Problems
+
 1. Use presets (`modern`, `legacy`, `strict`) for simplicity
 2. Individual algorithms must be valid SSH algorithm names
 3. Check SSH2 library documentation for supported algorithms
@@ -351,6 +383,7 @@ Once satisfied with environment variable configuration, you can remove `config.j
 ## Support
 
 For issues with environment variable configuration:
+
 1. Enable debug output: `DEBUG=webssh2:*`
 2. Check the configuration validation output
 3. Review this documentation for correct variable names and formats
