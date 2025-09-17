@@ -109,5 +109,22 @@ export const ENV_TEST_VALUES = {
   secret: '%TEST_SECRET%',
 } as const
 
+// Network and subnet constants for testing
+export const TEST_SUBNETS = {
+  PRIVATE_10: '10.0.0.0/8',
+  PRIVATE_172: '172.16.0.0/12',
+  PRIVATE_192: '192.168.1.0/24',
+  LOCALHOST: '127.0.0.0/8',
+  ANY: '0.0.0.0/0'
+} as const
+
+export const TEST_IPS = {
+  ANY: '0.0.0.0',
+  LOCALHOST: '127.0.0.1',
+  PRIVATE_10: '10.0.0.1',
+  PRIVATE_172: '172.16.0.1',
+  PRIVATE_192: '192.168.1.1'
+} as const
+
 export type TestCredentials = typeof SSH_TEST_CREDENTIALS
 export type MockCredentials = typeof MOCK_CREDENTIALS
