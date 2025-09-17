@@ -97,9 +97,9 @@ export class ConnectionPool {
 
     // Check if session already has a connection
     const existingId = this.sessionToConnection.get(sessionId)
-    if (existingId) {
+    if (existingId !== undefined) {
       const existing = this.connections.get(existingId)
-      if (existing && existing.status === 'active') {
+      if (existing !== undefined && existing.status === 'active') {
         this.updateActivity(existingId)
         logger('Reusing existing connection:', existingId)
         return ok(existingId)
@@ -179,7 +179,8 @@ export class ConnectionPool {
     if (entry === undefined) {return null}
 
     // Return public info only
-    const { client: _client, params: _params, timeoutHandle: _timeoutHandle, ...info } = entry
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { client, params, timeoutHandle, ...info } = entry
     return info
   }
 
