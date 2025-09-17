@@ -59,7 +59,7 @@ interface PoolEntry {
   }
   client: Client | null
   params: ConnectionParams | null
-  timeoutHandle?: NodeJS.Timeout
+  timeoutHandle?: ReturnType<typeof setTimeout>
 }
 
 /**
@@ -68,7 +68,7 @@ interface PoolEntry {
 export class ConnectionPool {
   private readonly connections = new Map<ConnectionId, PoolEntry>()
   private readonly sessionToConnection = new Map<SessionId, ConnectionId>()
-  private cleanupTimer?: NodeJS.Timer
+  private cleanupTimer?: ReturnType<typeof setInterval>
   private readonly config: PoolConfig
 
   constructor(
@@ -176,10 +176,10 @@ export class ConnectionPool {
    */
   getConnectionInfo(connectionId: ConnectionId): PooledConnection | null {
     const entry = this.connections.get(connectionId)
-    if (!entry) {return null}
+    if (entry === undefined) {return null}
 
     // Return public info only
-    const { client, params, timeoutHandle, ...info } = entry
+    const { client: _client, params: _params, timeoutHandle: _timeoutHandle, ...info } = entry
     return info
   }
 
@@ -195,12 +195,12 @@ export class ConnectionPool {
     logger('Releasing connection:', connectionId)
 
     // Clear timeout
-    if (entry.timeoutHandle) {
+    if (entry.timeoutHandle !== undefined) {
       clearTimeout(entry.timeoutHandle)
     }
 
     // Destroy client connection
-    if (entry.client) {
+    if (entry.client !== null) {
       try {
         await this.factory.destroy(entry.client)
       } catch (error) {
@@ -220,7 +220,7 @@ export class ConnectionPool {
    */
   async releaseSession(sessionId: SessionId): Promise<void> {
     const connectionId = this.sessionToConnection.get(sessionId)
-    if (connectionId) {
+    if (connectionId !== undefined) {
       await this.release(connectionId)
     }
   }
@@ -230,7 +230,7 @@ export class ConnectionPool {
    */
   updateActivity(connectionId: ConnectionId): void {
     const entry = this.connections.get(connectionId)
-    if (entry) {
+    if (entry !== undefined) {
       entry.lastActivity = Date.now()
       this.resetIdleTimeout(connectionId)
     }
@@ -244,7 +244,7 @@ export class ConnectionPool {
     metrics: Partial<PoolEntry['metrics']>
   ): void {
     const entry = this.connections.get(connectionId)
-    if (entry) {
+    if (entry !== undefined) {
       entry.metrics = { ...entry.metrics, ...metrics }
     }
   }
@@ -287,7 +287,7 @@ export class ConnectionPool {
     logger('Shutting down connection pool')
 
     // Stop cleanup timer
-    if (this.cleanupTimer) {
+    if (this.cleanupTimer !== undefined) {
       clearInterval(this.cleanupTimer)
     }
 
@@ -334,7 +334,7 @@ export class ConnectionPool {
    */
   private setupIdleTimeout(connectionId: ConnectionId): void {
     const entry = this.connections.get(connectionId)
-    if (!entry) {return}
+    if (entry === undefined) {return}
 
     entry.timeoutHandle = setTimeout(() => {
       logger('Connection idle timeout:', connectionId)
@@ -347,9 +347,9 @@ export class ConnectionPool {
    */
   private resetIdleTimeout(connectionId: ConnectionId): void {
     const entry = this.connections.get(connectionId)
-    if (!entry) {return}
+    if (entry === undefined) {return}
 
-    if (entry.timeoutHandle) {
+    if (entry.timeoutHandle !== undefined) {
       clearTimeout(entry.timeoutHandle)
     }
     
@@ -377,8 +377,8 @@ let poolInstance: ConnectionPool | null = null
  * Get singleton pool instance
  */
 export const getPool = (factory?: ConnectionFactory): ConnectionPool => {
-  if (!poolInstance) {
-    if (!factory) {
+  if (poolInstance === null) {
+    if (factory === undefined) {
       throw new Error('ConnectionFactory required for first pool initialization')
     }
     poolInstance = new ConnectionPool(factory)
@@ -390,7 +390,7 @@ export const getPool = (factory?: ConnectionFactory): ConnectionPool => {
  * Reset pool (for testing)
  */
 export const resetPool = async (): Promise<void> => {
-  if (poolInstance) {
+  if (poolInstance !== null) {
     await poolInstance.shutdown()
     poolInstance = null
   }
