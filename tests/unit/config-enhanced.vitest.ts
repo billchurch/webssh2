@@ -240,16 +240,15 @@ describe('Enhanced Config - CORS Configuration', () => {
       .withHttpOrigins(TEST_HTTP_ORIGINS.ARRAY)
       .build()
     
-    if (config !== null && config !== undefined) {
-      // Import createCorsConfig from config-processor
-      const { createCorsConfig } = await import('../../app/config/config-processor.js')
-      const corsConfig = createCorsConfig(config)
-      expect(corsConfig).toEqual({
-        origin: TEST_HTTP_ORIGINS.ARRAY,
-        methods: ['GET', 'POST'],
-        credentials: true,
-      })
-    }
+    expect(config).toBeDefined()
+    // Import createCorsConfig from config-processor
+    const { createCorsConfig } = await import('../../app/config/config-processor.js')
+    const corsConfig = createCorsConfig(config!)
+    expect(corsConfig).toEqual({
+      origin: TEST_HTTP_ORIGINS.ARRAY,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    })
   })
 })
 
