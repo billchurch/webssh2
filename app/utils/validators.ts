@@ -3,19 +3,21 @@
 
 import validator from 'validator'
 import type { Result } from '../types/result.js'
-import { ok, err } from '../types/result.js'
+import { ok, err } from './result.js'
+import type {
+  SshHost,
+  SshPort,
+  Username,
+  Password,
+  TerminalType,
+} from '../types/branded.js'
 import {
   createSshHost,
   createSshPort,
   createUsername,
   createPassword,
   createTerminalType,
-  type SshHost,
-  type SshPort,
-  type Username,
-  type Password,
-  type TerminalType,
-} from '../types/branded.js'
+} from './branded.js'
 
 /**
  * Validation error

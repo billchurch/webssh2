@@ -2,7 +2,7 @@
 // Centralized error handling utilities
 
 import type { Result } from '../types/result.js'
-import { err, ok } from '../types/result.js'
+import { err, ok } from './result.js'
 import { createNamespacedDebug } from '../logger.js'
 
 const debug = createNamespacedDebug('error-handler')

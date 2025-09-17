@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
+import { ConfigError } from '../dist/app/errors.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG } from './test-constants.js'
@@ -114,15 +115,19 @@ describe('Config Module - Async Tests', () => {
     assert.equal(config.listen.port, 4444)
   })
 
-  test('loadConfigAsync handles malformed JSON gracefully', async () => {
+  test('loadConfigAsync throws error for malformed JSON', async () => {
     // Write invalid JSON
     fs.writeFileSync(configPath, '{ invalid json }')
 
-    const config = await loadConfigAsync()
-
-    // Should fall back to defaults
-    assert.equal(config.listen.ip, '0.0.0.0')
-    assert.equal(config.listen.port, 2222)
+    // Should throw ConfigError for malformed JSON
+    await assert.rejects(
+      async () => await loadConfigAsync(),
+      (err: Error) => {
+        assert(err instanceof ConfigError)
+        assert(err.message.includes('Configuration validation failed'))
+        return true
+      }
+    )
   })
 
   test('getConfig returns the same config instance on multiple calls', async () => {

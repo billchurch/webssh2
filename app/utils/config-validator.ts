@@ -2,7 +2,7 @@
 // Pure functions for config validation
 
 import type { Result } from '../types/result.js'
-import { ok, err } from '../types/result.js'
+import { ok, err } from './result.js'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import configSchema from '../configSchema.js'

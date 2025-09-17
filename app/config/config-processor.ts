@@ -3,7 +3,7 @@
 
 import type { Config } from '../types/config.js'
 import type { Result } from '../types/result.js'
-import { ok, err } from '../types/result.js'
+import { ok, err } from '../utils/result.js'
 import { deepMergePure } from '../utils/object-merger.js'
 import { validateConfigPure } from '../utils/config-validator.js'
 import { DEFAULTS } from '../constants.js'
