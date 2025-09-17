@@ -27,6 +27,7 @@ export function createDefaultConfig(sessionSecret?: string): Config {
       readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
       keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
       keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
+      allowedSubnets: [],
       alwaysSendKeyboardInteractivePrompts: false,
       disableInteractiveAuth: false,
       algorithms: {
