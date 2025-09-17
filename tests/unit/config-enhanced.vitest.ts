@@ -12,7 +12,6 @@ import { ConfigBuilder } from '../../app/utils/config-builder.js'
 // Note: loadEnhancedConfig is now internal to config.ts
 // We'll test through the public API instead
 import { mapEnvironmentVariables, ENV_VAR_MAPPING } from '../../app/config/env-mapper.js'
-import type { Config } from '../../app/types/config.js'
 import {
   TEST_USERNAME,
   TEST_PASSWORD,
@@ -26,36 +25,35 @@ import {
 
 describe('Enhanced Config Feature Parity', () => {
   describe('Environment Variable Support', () => {
-    it('should support all environment variables from ENV_VAR_MAPPING', () => {
-      // Create a test environment with all supported variables
-      const testEnv: Record<string, string> = {
-        PORT: '3000',
-        WEBSSH2_LISTEN_IP: TEST_IPS.LOCALHOST,
-        WEBSSH2_LISTEN_PORT: '2222',
-        WEBSSH2_HTTP_ORIGINS: TEST_HTTP_ORIGINS.MULTIPLE,
-        WEBSSH2_SSH_HOST: 'example.com',
-        WEBSSH2_SSH_PORT: '22',
-        WEBSSH2_SSH_LOCAL_ADDRESS: TEST_IPS.PRIVATE_192,
-        WEBSSH2_SSH_LOCAL_PORT: '2223',
-        WEBSSH2_SSH_TERM: 'xterm-256color',
-        WEBSSH2_SSH_ENV_ALLOWLIST: 'LANG,LC_ALL',
-        WEBSSH2_SSH_ALLOWED_SUBNETS: `${TEST_SUBNETS.PRIVATE_192},${TEST_SUBNETS.PRIVATE_10}`,
-        WEBSSH2_HEADER_TEXT: 'Test Header',
-        WEBSSH2_HEADER_BACKGROUND: 'blue',
-        WEBSSH2_OPTIONS_CHALLENGE_BUTTON: 'true',
-        WEBSSH2_OPTIONS_AUTO_LOG: 'true',
-        WEBSSH2_SSO_ENABLED: 'true',
-        WEBSSH2_SSO_CSRF_PROTECTION: 'true',
-        WEBSSH2_SSO_TRUSTED_PROXIES: `${TEST_IPS.LOCALHOST},${TEST_IPS.PRIVATE_192}`,
-        WEBSSH2_SSO_HEADER_USERNAME: SSO_AUTH_HEADERS.username,
-        WEBSSH2_SSO_HEADER_PASSWORD: SSO_AUTH_HEADERS.password,
-        WEBSSH2_SSO_HEADER_SESSION: SSO_AUTH_HEADERS.session,
-      }
-      
-      const config = mapEnvironmentVariables(testEnv)
-      
-      // Verify all mapped values are present
+    const createTestEnvironment = (): Record<string, string> => ({
+      PORT: '3000',
+      WEBSSH2_LISTEN_IP: TEST_IPS.LOCALHOST,
+      WEBSSH2_LISTEN_PORT: '2222',
+      WEBSSH2_HTTP_ORIGINS: TEST_HTTP_ORIGINS.MULTIPLE,
+      WEBSSH2_SSH_HOST: 'example.com',
+      WEBSSH2_SSH_PORT: '22',
+      WEBSSH2_SSH_LOCAL_ADDRESS: TEST_IPS.PRIVATE_192,
+      WEBSSH2_SSH_LOCAL_PORT: '2223',
+      WEBSSH2_SSH_TERM: 'xterm-256color',
+      WEBSSH2_SSH_ENV_ALLOWLIST: 'LANG,LC_ALL',
+      WEBSSH2_SSH_ALLOWED_SUBNETS: `${TEST_SUBNETS.PRIVATE_192},${TEST_SUBNETS.PRIVATE_10}`,
+      WEBSSH2_HEADER_TEXT: 'Test Header',
+      WEBSSH2_HEADER_BACKGROUND: 'blue',
+      WEBSSH2_OPTIONS_CHALLENGE_BUTTON: 'true',
+      WEBSSH2_OPTIONS_AUTO_LOG: 'true',
+      WEBSSH2_SSO_ENABLED: 'true',
+      WEBSSH2_SSO_CSRF_PROTECTION: 'true',
+      WEBSSH2_SSO_TRUSTED_PROXIES: `${TEST_IPS.LOCALHOST},${TEST_IPS.PRIVATE_192}`,
+      WEBSSH2_SSO_HEADER_USERNAME: SSO_AUTH_HEADERS.username,
+      WEBSSH2_SSO_HEADER_PASSWORD: SSO_AUTH_HEADERS.password,
+      WEBSSH2_SSO_HEADER_SESSION: SSO_AUTH_HEADERS.session,
+    })
+
+    const verifyListenConfig = (config: ReturnType<typeof mapEnvironmentVariables>) => {
       expect(config.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 2222 })
+    }
+
+    const verifySshConfig = (config: ReturnType<typeof mapEnvironmentVariables>) => {
       expect(config.ssh).toMatchObject({
         host: 'example.com',
         port: 22,
@@ -65,14 +63,23 @@ describe('Enhanced Config Feature Parity', () => {
         envAllowlist: ['LANG', 'LC_ALL'],
         allowedSubnets: [TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10],
       })
+    }
+
+    const verifyHeaderConfig = (config: ReturnType<typeof mapEnvironmentVariables>) => {
       expect(config.header).toEqual({
         text: 'Test Header',
         background: 'blue',
       })
+    }
+
+    const verifyOptionsConfig = (config: ReturnType<typeof mapEnvironmentVariables>) => {
       expect(config.options).toMatchObject({
         challengeButton: true,
         autoLog: true,
       })
+    }
+
+    const verifySsoConfig = (config: ReturnType<typeof mapEnvironmentVariables>) => {
       expect(config.sso).toMatchObject({
         enabled: true,
         csrfProtection: true,
@@ -83,6 +90,18 @@ describe('Enhanced Config Feature Parity', () => {
           session: SSO_AUTH_HEADERS.session,
         },
       })
+    }
+
+    it('should support all environment variables from ENV_VAR_MAPPING', () => {
+      const testEnv = createTestEnvironment()
+      const config = mapEnvironmentVariables(testEnv)
+      
+      // Verify all mapped values are present
+      verifyListenConfig(config)
+      verifySshConfig(config)
+      verifyHeaderConfig(config)
+      verifyOptionsConfig(config)
+      verifySsoConfig(config)
     })
     
     it('should have mapping for all core environment variables', () => {
