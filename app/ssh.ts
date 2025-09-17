@@ -123,7 +123,8 @@ export default class SSHConnection extends EventEmitter {
     })
     
     this.conn?.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-      debug(`keyboard-interactive: ${name}, prompts: ${prompts?.length ?? 0}`)
+      const promptCount = Array.isArray(prompts) ? prompts.length : 0
+      debug(`keyboard-interactive: ${name}, prompts: ${promptCount}`)
       
       // Auto-respond with password for keyboard-interactive authentication
       // This handles cases where the SSH server requires keyboard-interactive auth
@@ -131,7 +132,6 @@ export default class SSHConnection extends EventEmitter {
       const password = this.creds?.password
       if (password != null && typeof password === 'string' && typeof finish === 'function') {
         const responses: string[] = []
-        const promptCount = prompts?.length ?? 0
         
         // Respond to each prompt with the password
         // Most servers asking for password via keyboard-interactive will have 1 prompt
