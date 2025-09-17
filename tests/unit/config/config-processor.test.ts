@@ -10,6 +10,7 @@ import {
   createCorsConfig
 } from '../../../app/config/config-processor.js'
 import type { Config } from '../../../app/types/config.js'
+import { TEST_SECRET_123, TEST_PASSWORDS } from '../../test-constants.js'
 
 describe('createDefaultConfig', () => {
   it('should create default config without session secret', () => {
@@ -24,7 +25,7 @@ describe('createDefaultConfig', () => {
   })
   
   it('should create default config with provided session secret', () => {
-    const secret = 'test-secret-123'
+    const secret = TEST_SECRET_123
     const config = createDefaultConfig(secret)
     
     expect(config.session.secret).toBe(secret)
@@ -41,7 +42,7 @@ describe('createDefaultConfig', () => {
 
 describe('mergeConfigs', () => {
   it('should return default config when no overrides provided', () => {
-    const defaultConfig = createDefaultConfig('secret')
+    const defaultConfig = createDefaultConfig(TEST_PASSWORDS.secret)
     
     const merged = mergeConfigs(defaultConfig)
     
@@ -94,7 +95,7 @@ describe('mergeConfigs', () => {
 
 describe('processConfig', () => {
   it('should return ok result for valid configuration', () => {
-    const defaultConfig = createDefaultConfig('test-secret')
+    const defaultConfig = createDefaultConfig(TEST_SECRET)
     
     const result = processConfig(defaultConfig)
     
@@ -105,7 +106,7 @@ describe('processConfig', () => {
   })
   
   it('should merge and validate configurations', () => {
-    const defaultConfig = createDefaultConfig('secret')
+    const defaultConfig = createDefaultConfig(TEST_PASSWORDS.secret)
     const fileConfig: Partial<Config> = {
       ssh: { host: 'server.example.com' } as Config['ssh']
     }
@@ -119,7 +120,7 @@ describe('processConfig', () => {
   })
   
   it('should return error result for invalid configuration', () => {
-    const defaultConfig = createDefaultConfig('secret')
+    const defaultConfig = createDefaultConfig(TEST_PASSWORDS.secret)
     const fileConfig: Partial<Config> = {
       listen: { port: -1 } as Config['listen'] // Invalid port
     }

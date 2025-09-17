@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest'
 import { validateConfigPure } from '../../../app/utils/config-validator.js'
 import { isOk, isErr } from '../../../app/types/result.js'
+import { TEST_SECRET } from '../../test-constants.js'
 
 describe('validateConfigPure', () => {
   it('should return ok result for valid configuration', () => {
@@ -28,7 +29,7 @@ describe('validateConfigPure', () => {
         allowReplay: true
       },
       session: {
-        secret: 'test-secret',
+        secret: TEST_SECRET,
         name: 'webssh2'
       }
     }
@@ -57,7 +58,7 @@ describe('validateConfigPure', () => {
       header: { text: null, background: 'green' },
       options: {},
       session: {
-        secret: 'test-secret',
+        secret: TEST_SECRET,
         name: 'webssh2'
       }
     }

@@ -17,6 +17,7 @@ import {
   TEST_PRIVATE_KEY, 
   TEST_PASSPHRASE,
   TEST_PASSWORDS,
+  TEST_SSH_KEY,
   CONFIG_USERNAME,
   BASIC_USERNAME,
   SSH_USERNAME
@@ -90,7 +91,7 @@ describe('extractConfigCredentials', () => {
     
     expect(creds).toEqual({
       username: TEST_USERNAME,
-      privateKey: 'ssh-rsa-key'
+      privateKey: TEST_SSH_KEY
     })
   })
   
@@ -106,7 +107,7 @@ describe('extractConfigCredentials', () => {
     expect(creds).toEqual({
       username: TEST_USERNAME,
       password: TEST_PASSWORD,
-      privateKey: 'ssh-rsa-key',
+      privateKey: TEST_SSH_KEY,
       passphrase: TEST_PASSPHRASE
     })
   })
@@ -258,7 +259,7 @@ describe('createSessionData', () => {
       credentials: {
         username: TEST_USERNAME,
         password: TEST_PASSWORD,
-        privateKey: 'ssh-key',
+        privateKey: TEST_SSH_KEY,
         passphrase: TEST_PASSPHRASE
       },
       usedBasicAuth: true,
@@ -271,7 +272,7 @@ describe('createSessionData', () => {
       sshCredentials: {
         username: TEST_USERNAME,
         password: TEST_PASSWORD,
-        privateKey: 'ssh-key',
+        privateKey: TEST_SSH_KEY,
         passphrase: TEST_PASSPHRASE
       },
       usedBasicAuth: true

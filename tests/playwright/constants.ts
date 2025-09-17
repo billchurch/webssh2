@@ -16,10 +16,12 @@ export const CLIENT_DEV_URL = `http://localhost:${CLIENT_DEV_PORT}`
 
 // SSH test server configuration
 export const SSH_HOST = 'localhost'
-export const USERNAME = process.env.E2E_SSH_USER || 'testuser'
-export const PASSWORD = process.env.E2E_SSH_PASS || 'testpassword'
-export const INVALID_USERNAME = 'wronguser'
-export const INVALID_PASSWORD = 'wrongpass'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, INVALID_USERNAME as INVALID_USER, INVALID_PASSWORD as INVALID_PASS } from '../test-constants.js'
+
+export const USERNAME = process.env.E2E_SSH_USER || TEST_USERNAME
+export const PASSWORD = process.env.E2E_SSH_PASS || TEST_PASSWORD_ALT
+export const INVALID_USERNAME = INVALID_USER
+export const INVALID_PASSWORD = INVALID_PASS
 export const NON_EXISTENT_HOST = 'nonexistent.invalid.host'
 export const INVALID_PORT = '9999'
 

@@ -7,6 +7,7 @@
 import type { Config } from '../../app/config.js'
 import type { Server } from 'node:http'
 import type { Express } from 'express'
+import { TEST_SECRET_KEY } from '../test-constants.js'
 
 /**
  * Environment variable map for testing
@@ -164,7 +165,7 @@ export const DEFAULT_TEST_CONFIG: Config = {
   },
   session: {
     name: 'webssh2.test.sid',
-    secret: 'test-secret-key'
+    secret: TEST_SECRET_KEY
   },
   options: {
     challengeButton: true,
