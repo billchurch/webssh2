@@ -515,7 +515,7 @@ export function isCommandSafe(command: string): boolean {
   // Basic safety checks - can be expanded based on requirements
   const dangerousPatterns = [
     /;\s*rm\s+-rf\s+\//i,     // rm -rf /
-    /dd\s+[^=]*of=\/dev\//i,  // NOSONAR dd overwriting devices - use negated class instead of .*
+    /dd\s+.*of=\/dev\//i,     // NOSONAR dd overwriting devices
     />\s*\/dev\/s[a-z]+/i,    // Redirecting to block devices
   ]
 
