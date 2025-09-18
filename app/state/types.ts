@@ -3,6 +3,7 @@
  */
 
 import type { SessionId, UserId, ConnectionId } from '../types/branded.js'
+import { TERMINAL_DEFAULTS } from '../constants/index.js'
 
 /**
  * Root session state - immutable
@@ -135,9 +136,9 @@ export const createInitialState = (sessionId: SessionId): SessionState => ({
     lastActivity: Date.now()
   },
   terminal: {
-    term: 'xterm-256color',
-    rows: 24,
-    cols: 80,
+    term: TERMINAL_DEFAULTS.DEFAULT_TERM,
+    rows: TERMINAL_DEFAULTS.DEFAULT_ROWS,
+    cols: TERMINAL_DEFAULTS.DEFAULT_COLS,
     environment: {},
     cwd: null
   },

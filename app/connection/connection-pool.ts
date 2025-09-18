@@ -2,12 +2,14 @@
  * Connection pool for SSH connection management
  */
 
+import { randomUUID } from 'node:crypto'
 import type { SessionId, ConnectionId } from '../types/branded.js'
 import type { PooledConnection, ConnectionStatus, Result } from '../state/types.js'
 import { createConnectionId } from '../types/branded.js'
 import { ok, err } from '../state/types.js'
 import debug from 'debug'
 import type { Client } from 'ssh2'
+import { TIMEOUTS } from '../constants/index.js'
 
 const logger = debug('webssh2:pool')
 
@@ -77,9 +79,9 @@ export class ConnectionPool {
   ) {
     this.config = {
       maxConnections: config.maxConnections ?? 100,
-      idleTimeout: config.idleTimeout ?? 300000, // 5 minutes
-      connectionTimeout: config.connectionTimeout ?? 30000, // 30 seconds
-      cleanupInterval: config.cleanupInterval ?? 60000 // 1 minute
+      idleTimeout: config.idleTimeout ?? TIMEOUTS.DEFAULT_IDLE_TIMEOUT_MS,
+      connectionTimeout: config.connectionTimeout ?? TIMEOUTS.AUTH_TIMEOUT_MS,
+      cleanupInterval: config.cleanupInterval ?? TIMEOUTS.CLEANUP_INTERVAL_MS
     }
 
     // Start cleanup timer
@@ -119,7 +121,7 @@ export class ConnectionPool {
     }
 
     // Create new connection
-    const connectionId = createConnectionId(`conn_${Date.now()}_${Math.random().toString(36).slice(2)}`)
+    const connectionId = createConnectionId(randomUUID())
     const entry: PoolEntry = {
       id: connectionId,
       sessionId,

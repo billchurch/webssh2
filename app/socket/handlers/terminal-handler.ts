@@ -1,7 +1,7 @@
 // app/socket/handlers/terminal-handler.ts
 // Pure functions for handling terminal configuration
 
-import { DEFAULTS } from '../../constants.js'
+import { DEFAULTS, VALIDATION_LIMITS, VALIDATION_MESSAGES } from '../../constants/index.js'
 import type { TerminalSettings } from '../../types/contracts/v1/socket.js'
 import type { Config } from '../../types/config.js'
 
@@ -34,6 +34,42 @@ export interface ShellOptions {
 }
 
 /**
+ * Parses a value to a number
+ * @param value - Value to parse
+ * @returns Parsed number or NaN
+ * @pure
+ */
+function parseToNumber(value: unknown): number {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    return parseInt(value, 10)
+  }
+  return NaN
+}
+
+/**
+ * Validates a single terminal dimension
+ * @param value - Dimension value
+ * @param min - Minimum allowed value
+ * @param max - Maximum allowed value
+ * @returns Valid dimension or undefined
+ * @pure
+ */
+function validateDimension(value: unknown, min: number, max: number): number | undefined {
+  if (value == null) {
+    return undefined
+  }
+
+  const num = parseToNumber(value)
+  if (!isNaN(num) && num >= min && num <= max) {
+    return num
+  }
+  return undefined
+}
+
+/**
  * Validates terminal dimensions
  * @param cols - Number of columns
  * @param rows - Number of rows
@@ -44,39 +80,18 @@ export function validateTerminalDimensions(
   cols: unknown,
   rows: unknown
 ): { valid: boolean; cols: number | undefined; rows: number | undefined; error?: string } {
-  let validCols: number | undefined
-  let validRows: number | undefined
+  const validCols = validateDimension(cols, VALIDATION_LIMITS.MIN_TERMINAL_COLS, VALIDATION_LIMITS.MAX_TERMINAL_COLS)
 
-  // Validate columns
-  if (cols != null) {
-    let colsNum = NaN
-    if (typeof cols === 'number') {
-      colsNum = cols
-    } else if (typeof cols === 'string') {
-      colsNum = parseInt(cols, 10)
-    }
-
-    if (!isNaN(colsNum) && colsNum > 0 && colsNum <= 1000) {
-      validCols = colsNum
-    } else {
-      return { valid: false, error: `Invalid columns value`, cols: undefined, rows: undefined }
-    }
+  // Check if cols was provided but invalid
+  if (cols != null && validCols === undefined) {
+    return { valid: false, error: VALIDATION_MESSAGES.INVALID_COLUMNS_VALUE, cols: undefined, rows: undefined }
   }
 
-  // Validate rows
-  if (rows != null) {
-    let rowsNum = NaN
-    if (typeof rows === 'number') {
-      rowsNum = rows
-    } else if (typeof rows === 'string') {
-      rowsNum = parseInt(rows, 10)
-    }
+  const validRows = validateDimension(rows, VALIDATION_LIMITS.MIN_TERMINAL_ROWS, VALIDATION_LIMITS.MAX_TERMINAL_ROWS)
 
-    if (!isNaN(rowsNum) && rowsNum > 0 && rowsNum <= 1000) {
-      validRows = rowsNum
-    } else {
-      return { valid: false, error: `Invalid rows value`, cols: validCols, rows: undefined }
-    }
+  // Check if rows was provided but invalid
+  if (rows != null && validRows === undefined) {
+    return { valid: false, error: VALIDATION_MESSAGES.INVALID_ROWS_VALUE, cols: validCols, rows: undefined }
   }
 
   return { valid: true, cols: validCols, rows: validRows }

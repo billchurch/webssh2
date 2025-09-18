@@ -3,6 +3,7 @@
 
 import type { AuthCredentials } from '../../types/contracts/v1/socket.js'
 import type { Config } from '../../types/config.js'
+import { DEFAULTS, VALIDATION_MESSAGES, VALIDATION_LIMITS } from '../../constants/index.js'
 
 export interface SessionState {
   authenticated: boolean
@@ -31,6 +32,106 @@ export interface AuthResponse {
 }
 
 /**
+ * Validates a required string field
+ * @param value - Value to validate
+ * @param errorMessage - Error message if invalid
+ * @returns Validation result
+ * @pure
+ */
+function validateRequiredString(
+  value: unknown,
+  errorMessage: string
+): { valid: boolean; value?: string; error?: string } {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { valid: false, error: errorMessage }
+  }
+  return { valid: true, value }
+}
+
+/**
+ * Parses and validates port number
+ * @param value - Port value to validate
+ * @returns Valid port number or default
+ * @pure
+ */
+function parsePortNumber(value: unknown): number {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    return parseInt(value, 10)
+  }
+  return DEFAULTS.SSH_PORT
+}
+
+/**
+ * Validates authentication method availability
+ * @param creds - Credentials object
+ * @returns Validation result with auth flags
+ * @pure
+ */
+function validateAuthMethod(
+  creds: Record<string, unknown>
+): { hasPassword: boolean; hasPrivateKey: boolean; error?: string } {
+  const hasPassword = typeof creds['password'] === 'string' && creds['password'] !== ''
+  const hasPrivateKey = typeof creds['privateKey'] === 'string' && creds['privateKey'] !== ''
+
+  if (!hasPassword && !hasPrivateKey) {
+    return { hasPassword: false, hasPrivateKey: false, error: VALIDATION_MESSAGES.AUTH_METHOD_REQUIRED }
+  }
+
+  return { hasPassword, hasPrivateKey }
+}
+
+/**
+ * Builds authentication credentials object
+ * @param creds - Raw credentials
+ * @param port - Validated port number
+ * @param hasPassword - Whether password is provided
+ * @param hasPrivateKey - Whether private key is provided
+ * @returns Built credentials object
+ * @pure
+ */
+function buildCredentials(
+  creds: Record<string, unknown>,
+  port: number,
+  hasPassword: boolean,
+  hasPrivateKey: boolean
+): AuthCredentials {
+  const validatedCreds: AuthCredentials = {
+    username: creds['username'] as string,
+    host: creds['host'] as string,
+    port,
+  }
+
+  if (hasPassword) {
+    validatedCreds.password = creds['password'] as string
+  }
+
+  if (hasPrivateKey) {
+    validatedCreds.privateKey = creds['privateKey'] as string
+    if (typeof creds['passphrase'] === 'string') {
+      validatedCreds.passphrase = creds['passphrase']
+    }
+  }
+
+  // Optional terminal settings
+  if (typeof creds['term'] === 'string') {
+    validatedCreds.term = creds['term']
+  }
+
+  if (typeof creds['cols'] === 'number' && creds['cols'] > 0) {
+    validatedCreds.cols = creds['cols']
+  }
+
+  if (typeof creds['rows'] === 'number' && creds['rows'] > 0) {
+    validatedCreds.rows = creds['rows']
+  }
+
+  return validatedCreds
+}
+
+/**
  * Validates authentication credentials
  * @param credentials - Credentials to validate
  * @returns Validation result
@@ -44,65 +145,37 @@ export function validateAuthCredentials(
   }
 
   const creds = credentials as Record<string, unknown>
-  
-  // Required fields validation
-  if (typeof creds['username'] !== 'string' || creds['username'].trim() === '') {
-    return { valid: false, error: 'Username is required' }
-  }
-  
-  if (typeof creds['host'] !== 'string' || creds['host'].trim() === '') {
-    return { valid: false, error: 'Host is required' }
-  }
-  
-  // Port validation
-  let port = 22
-  if (typeof creds['port'] === 'number') {
-    port = creds['port']
-  } else if (typeof creds['port'] === 'string') {
-    port = parseInt(creds['port'], 10)
-  }
-      
-  if (isNaN(port) || port < 1 || port > 65535) {
-    return { valid: false, error: 'Invalid port number' }
-  }
-  
-  // Authentication method validation
-  const hasPassword = typeof creds['password'] === 'string' && creds['password'] !== ''
-  const hasPrivateKey = typeof creds['privateKey'] === 'string' && creds['privateKey'] !== ''
-  
-  if (!hasPassword && !hasPrivateKey) {
-    return { valid: false, error: 'Either password or private key is required' }
+
+  // Validate required fields
+  const usernameValidation = validateRequiredString(creds['username'], VALIDATION_MESSAGES.USERNAME_REQUIRED)
+  if (!usernameValidation.valid) {
+    return { valid: false, error: usernameValidation.error ?? 'Invalid username' }
   }
 
-  const validatedCreds: AuthCredentials = {
-    username: creds['username'],
-    host: creds['host'],
+  const hostValidation = validateRequiredString(creds['host'], VALIDATION_MESSAGES.HOST_REQUIRED)
+  if (!hostValidation.valid) {
+    return { valid: false, error: hostValidation.error ?? 'Invalid host' }
+  }
+
+  // Validate port
+  const port = parsePortNumber(creds['port'])
+  if (isNaN(port) || port < VALIDATION_LIMITS.MIN_PORT || port > VALIDATION_LIMITS.MAX_PORT) {
+    return { valid: false, error: VALIDATION_MESSAGES.INVALID_PORT_NUMBER }
+  }
+
+  // Validate authentication method
+  const authValidation = validateAuthMethod(creds)
+  if (authValidation.error != null) {
+    return { valid: false, error: authValidation.error }
+  }
+
+  // Build and return validated credentials
+  const validatedCreds = buildCredentials(
+    creds,
     port,
-  }
-
-  if (hasPassword) {
-    validatedCreds.password = creds['password'] as string
-  }
-  
-  if (hasPrivateKey) {
-    validatedCreds.privateKey = creds['privateKey'] as string
-    if (typeof creds['passphrase'] === 'string') {
-      validatedCreds.passphrase = creds['passphrase']
-    }
-  }
-
-  // Optional terminal settings
-  if (typeof creds['term'] === 'string') {
-    validatedCreds.term = creds['term']
-  }
-  
-  if (typeof creds['cols'] === 'number' && creds['cols'] > 0) {
-    validatedCreds.cols = creds['cols']
-  }
-  
-  if (typeof creds['rows'] === 'number' && creds['rows'] > 0) {
-    validatedCreds.rows = creds['rows']
-  }
+    authValidation.hasPassword,
+    authValidation.hasPrivateKey
+  )
 
   return { valid: true, data: validatedCreds }
 }
@@ -180,7 +253,7 @@ export function handleAuthRequest(
   if (!validation.valid || validation.data == null) {
     return {
       success: false,
-      error: validation.error ?? 'Invalid credentials',
+      error: validation.error ?? VALIDATION_MESSAGES.INVALID_CREDENTIALS,
     }
   }
 
@@ -214,7 +287,7 @@ export function createAuthResponse(result: AuthResult): AuthResponse {
   return {
     action: 'auth_result',
     success: false,
-    message: result.error ?? 'Authentication failed',
+    message: result.error ?? VALIDATION_MESSAGES.AUTHENTICATION_FAILED,
   }
 }
 

@@ -4,6 +4,7 @@
 import type { Socket } from 'socket.io'
 import type { EventEmitter } from 'events'
 import { createNamespacedDebug } from '../../logger.js'
+import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
 import {
   handleAuthRequest,
@@ -125,13 +126,13 @@ export class SocketAdapter {
   private initializeSocketEvents(): void {
     debug(`Socket connected: ${this.socket.id}`)
 
-    this.socket.on('authenticate', (creds) => this.handleAuthenticate(creds))
-    this.socket.on('terminal', (settings) => this.handleTerminal(settings))
-    this.socket.on('exec', (payload) => this.handleExec(payload))
-    this.socket.on('resize', (size) => this.handleResize(size))
-    this.socket.on('data', (chunk) => this.handleData(chunk))
-    this.socket.on('control', (msg) => this.handleControl(msg))
-    this.socket.on('disconnect', (reason) => this.handleDisconnect(reason))
+    this.socket.on(SOCKET_EVENTS.AUTH, (creds) => this.handleAuthenticate(creds))
+    this.socket.on(SOCKET_EVENTS.TERMINAL, (settings) => this.handleTerminal(settings))
+    this.socket.on(SOCKET_EVENTS.EXEC, (payload) => this.handleExec(payload))
+    this.socket.on(SOCKET_EVENTS.RESIZE, (size) => this.handleResize(size))
+    this.socket.on(SOCKET_EVENTS.DATA, (chunk) => this.handleData(chunk))
+    this.socket.on(SOCKET_EVENTS.CONTROL, (msg) => this.handleControl(msg))
+    this.socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => this.handleDisconnect(reason))
   }
 
   /**
@@ -151,13 +152,15 @@ export class SocketAdapter {
         if (result.success && result.sessionState != null) {
           this.sessionState = result.sessionState
           if (result.credentials != null) {
-            void this.handlers?.onAuth(result.credentials, this.sessionState)
+            this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
+              debug('Auth handler error:', error)
+            })
           }
         }
       }
     } else if (requiresInteractiveAuth(this.sessionState, this.config)) {
       debug('Requesting interactive authentication')
-      this.socket.emit('authentication', { action: 'request_auth' })
+      this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, { action: 'request_auth' })
     }
   }
 
@@ -178,13 +181,15 @@ export class SocketAdapter {
       if (result.credentials != null) {
         // Update auth pipeline
         this.authPipeline.setManualCredentials(result.credentials as unknown as Record<string, unknown>)
-        
+
         // Call async handler
-        void this.handlers?.onAuth(result.credentials, this.sessionState)
+        this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
+          debug('Auth handler error:', error)
+        })
       }
     } else {
       const response = createAuthResponse(result)
-      this.socket.emit('authentication', response)
+      this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, response)
     }
   }
 
@@ -216,9 +221,11 @@ export class SocketAdapter {
       }
 
       // Call async handler
-      void this.handlers?.onTerminal(settings, this.sessionState)
+      this.handlers?.onTerminal(settings, this.sessionState).catch((error: unknown) => {
+        debug('Terminal handler error:', error)
+      })
     } else if (result.error != null) {
-      this.socket.emit('ssherror', result.error)
+      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error)
     }
   }
 
@@ -242,9 +249,11 @@ export class SocketAdapter {
 
     if (result.success) {
       // Call async handler
-      void this.handlers?.onExec(payload, this.sessionState)
+      this.handlers?.onExec(payload, this.sessionState).catch((error: unknown) => {
+        debug('Exec handler error:', error)
+      })
     } else {
-      this.socket.emit('ssherror', result.error ?? 'Exec request failed')
+      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error ?? 'Exec request failed')
     }
   }
 
@@ -286,7 +295,7 @@ export class SocketAdapter {
     
     // Clean up client data handler
     if (this.onClientData != null) {
-      this.socket.off('data', this.onClientData)
+      this.socket.off(SOCKET_EVENTS.DATA, this.onClientData)
       this.onClientData = null
     }
     
@@ -314,14 +323,14 @@ export class SocketAdapter {
     // Forward shell output to client
     this.shellStream.on('data', (data: Buffer) => {
       const text = data.toString('utf-8')
-      this.socket.emit('data', text)
+      this.socket.emit(SOCKET_EVENTS.SSH_DATA, text)
     })
 
     // Handle shell close
     this.shellStream.on('close', () => {
       debug('Shell stream closed')
       if (this.onClientData != null) {
-        this.socket.off('data', this.onClientData)
+        this.socket.off(SOCKET_EVENTS.DATA, this.onClientData)
         this.onClientData = null
       }
       this.shellStream = null
@@ -330,7 +339,7 @@ export class SocketAdapter {
     // Handle shell errors
     this.shellStream.on('error', (err: Error) => {
       debug(`Shell stream error: ${err.message}`)
-      this.socket.emit('ssherror', `Shell error: ${err.message}`)
+      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, `Shell error: ${err.message}`)
     })
   }
 
@@ -341,9 +350,9 @@ export class SocketAdapter {
     // Handle stdout
     stream.on('data', (data: Buffer) => {
       const text = data.toString('utf-8')
-      this.socket.emit('data', text)
+      this.socket.emit(SOCKET_EVENTS.SSH_DATA, text)
       const payload = createExecDataPayload('stdout', text)
-      this.socket.emit('exec-data', payload)
+      this.socket.emit(SOCKET_EVENTS.EXEC_DATA, payload)
     })
 
     // Handle stderr
@@ -351,7 +360,7 @@ export class SocketAdapter {
       stream.stderr.on('data', (data: Buffer) => {
         const text = data.toString('utf-8')
         const payload = createExecDataPayload('stderr', text)
-        this.socket.emit('exec-data', payload)
+        this.socket.emit(SOCKET_EVENTS.EXEC_DATA, payload)
       })
     }
 
@@ -360,12 +369,12 @@ export class SocketAdapter {
       const safeCode = typeof code === 'number' ? code : null
       const safeSignal = typeof signal === 'string' ? signal : null
       const payload = createExecExitPayload(safeCode, safeSignal)
-      this.socket.emit('exec-exit', payload)
+      this.socket.emit(SOCKET_EVENTS.EXEC_EXIT, payload)
     })
 
     // Handle errors
     stream.on('error', (err: Error) => {
-      this.socket.emit('ssherror', `SSH exec error: ${err.message}`)
+      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, `SSH exec error: ${err.message}`)
     })
   }
 
@@ -373,7 +382,7 @@ export class SocketAdapter {
    * Emit authentication success
    */
   emitAuthSuccess(): void {
-    this.socket.emit('authentication', {
+    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
       action: 'auth_result',
       success: true,
     })
@@ -383,7 +392,7 @@ export class SocketAdapter {
    * Emit authentication failure
    */
   emitAuthFailure(message: string): void {
-    this.socket.emit('authentication', {
+    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
       action: 'auth_result',
       success: false,
       message,
@@ -394,7 +403,7 @@ export class SocketAdapter {
    * Emit permissions
    */
   emitPermissions(): void {
-    this.socket.emit('permissions', {
+    this.socket.emit(SOCKET_EVENTS.PERMISSIONS, {
       autoLog: !!this.config.options.autoLog,
       allowReplay: !!this.config.options.allowReplay,
       allowReconnect: !!this.config.options.allowReconnect,
@@ -406,20 +415,20 @@ export class SocketAdapter {
    * Emit UI update
    */
   emitUIUpdate(element: string, value: string): void {
-    this.socket.emit('updateUI', { element, value })
+    this.socket.emit(SOCKET_EVENTS.UPDATE_UI, { element, value })
   }
 
   /**
    * Emit terminal request
    */
   emitGetTerminal(open: boolean): void {
-    this.socket.emit('getTerminal', open)
+    this.socket.emit(SOCKET_EVENTS.GET_TERMINAL, open)
   }
 
   /**
    * Emit SSH error
    */
   emitError(message: string): void {
-    this.socket.emit('ssherror', message)
+    this.socket.emit(SOCKET_EVENTS.SSH_ERROR, message)
   }
 }

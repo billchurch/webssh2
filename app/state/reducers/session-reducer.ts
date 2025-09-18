@@ -49,11 +49,15 @@ export const sessionReducer = (
     case 'CONNECTION_ERROR':
     case 'CONNECTION_CLOSED':
     case 'CONNECTION_ACTIVITY':
+    case 'TERMINAL_INIT':
     case 'TERMINAL_RESIZE':
     case 'TERMINAL_SET_TERM':
     case 'TERMINAL_SET_ENV':
+    case 'TERMINAL_UPDATE_ENV':
     case 'TERMINAL_SET_CWD':
+    case 'TERMINAL_DESTROY':
     case 'METADATA_SET_CLIENT':
+    case 'METADATA_UPDATE':
     case 'METADATA_UPDATE_TIMESTAMP': {
       // Delegate to sub-reducers
       const newAuth = authReducer(state.auth, action)
@@ -79,11 +83,8 @@ export const sessionReducer = (
       return state
     }
     
-    default: {
-      const exhaustiveCheck: never = action
-      void exhaustiveCheck
+    default:
       return state
-    }
   }
 }
 
