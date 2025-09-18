@@ -67,20 +67,21 @@ export const authReducer = (
     case 'CONNECTION_START':
     case 'CONNECTION_ESTABLISHED':
     case 'CONNECTION_ACTIVITY':
+    case 'TERMINAL_INIT':
     case 'TERMINAL_RESIZE':
     case 'TERMINAL_SET_TERM':
     case 'TERMINAL_SET_ENV':
+    case 'TERMINAL_UPDATE_ENV':
     case 'TERMINAL_SET_CWD':
+    case 'TERMINAL_DESTROY':
     case 'METADATA_SET_CLIENT':
+    case 'METADATA_UPDATE':
     case 'METADATA_UPDATE_TIMESTAMP':
     case 'SESSION_RESET':
     case 'SESSION_END':
       return state
     
-    default: {
-      const exhaustiveCheck: never = action
-      void exhaustiveCheck
+    default:
       return state
-    }
   }
 }

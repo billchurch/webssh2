@@ -14,6 +14,9 @@ import { createNamespacedDebug } from './logger.js'
 import { MESSAGES } from './constants.js'
 import { getClientPublicPath } from './client-path.js'
 import type { Config } from './types/config.js'
+import { initializeGlobalContainer } from './services/setup.js'
+import { TOKENS } from './services/container.js'
+import type { Services } from './services/interfaces.js'
 
 const debug = createNamespacedDebug('app')
 
@@ -45,10 +48,17 @@ export async function initializeServerAsync(): Promise<{
   io: IOServer
   app: Application
   config: Config
+  services: Services
 }> {
   try {
     const appConfig = await getConfig()
     debug('Configuration loaded asynchronously')
+
+    // Initialize DI container and services
+    const container = initializeGlobalContainer(appConfig)
+    const services = container.resolve<Services>(TOKENS.Services)
+    const store = container.resolve(TOKENS.SessionStore)
+    debug('Services initialized with DI container')
 
     const { app, sessionMiddleware } = createAppAsync(appConfig)
     const server = createServer(app)
@@ -56,10 +66,13 @@ export async function initializeServerAsync(): Promise<{
       getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean }
     }
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
-    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor)
+    
+    // Pass services to socket initialization
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor, services, store)
+    
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
-    return { server, io, app, config: appConfig }
+    return { server, io, app, config: appConfig, services }
   } catch (err) {
     if (err instanceof Error) {
       handleError(err)

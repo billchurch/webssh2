@@ -7,6 +7,7 @@ import { isNetworkError, extractSessionCredentials, hasCompleteSessionCredential
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'
 import type { Socket } from 'socket.io'
+import { VALIDATION_MESSAGES, DEFAULTS } from '../constants/index.js'
 
 const debug = createNamespacedDebug('socket:connection')
 
@@ -138,9 +139,9 @@ export function createUIUpdatePayload(connectionString: string): UIUpdatePayload
  * @pure
  */
 export function getConnectionErrorMessage(error: Error): string {
-  return error instanceof SSHConnectionError 
-    ? error.message 
-    : 'SSH connection failed'
+  return error instanceof SSHConnectionError
+    ? error.message
+    : VALIDATION_MESSAGES.SSH_CONNECTION_FAILED
 }
 
 /**
@@ -161,7 +162,7 @@ export function clearSessionOnNetworkError(
     delete req.session.sshCredentials
     delete req.session.usedBasicAuth
     delete req.session.authMethod
-    debug('Session credentials cleared due to network error')
+    debug(VALIDATION_MESSAGES.SESSION_CREDENTIALS_CLEARED)
   }
 }
 
@@ -219,7 +220,7 @@ export function handleConnectionSuccess(
   // Update UI with connection info
   const connectionString = buildConnectionString(
     credentials.host ?? 'unknown',
-    credentials.port ?? 22
+    credentials.port ?? DEFAULTS.SSH_PORT
   )
   socket.emit('updateUI', createUIUpdatePayload(connectionString))
 }

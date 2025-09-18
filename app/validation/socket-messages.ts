@@ -3,6 +3,7 @@
 
 import type { Result } from '../types/result.js'
 import validator from 'validator'
+import { ENV_LIMITS, VALIDATION_LIMITS } from '../constants/index.js'
 
 export interface AuthCredentials {
   username: string
@@ -125,7 +126,7 @@ const validateDimension = (
   const value = obj[field]
   if (value == null) {return { ok: true, value: undefined }}
   
-  const result = parseIntInRange(value, 1, 9999, field === 'rows' ? 'Rows' : 'Columns')
+  const result = parseIntInRange(value, VALIDATION_LIMITS.MIN_TERMINAL_ROWS, VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION, field === 'rows' ? 'Rows' : 'Columns')
   if (!result.ok) {return result}
   return { ok: true, value: result.value }
 }
@@ -138,11 +139,11 @@ const validateEnvironmentVars = (value: unknown): Record<string, string> | undef
   
   const env: Record<string, string> = {}
   const entries = Object.entries(value as Record<string, unknown>)
-    .slice(0, 50) // Limit to 50 env vars
+    .slice(0, ENV_LIMITS.MAX_PAIRS)
     .filter(([key, val]) => {
       return typeof key === 'string' && 
              key.length > 0 && 
-             key.length < 256 &&
+             key.length < VALIDATION_LIMITS.MAX_ENV_KEY_LENGTH &&
              /^[A-Za-z_]\w*$/.test(key) && 
              val != null
     })
@@ -198,6 +199,44 @@ const addOptionalExecDimensions = (
   return { ok: true, value: undefined }
 }
 
+// Helper to validate multiple optional string fields
+const validateOptionalFields = (
+  creds: Record<string, unknown>,
+  fields: string[]
+): Result<Record<string, string | undefined>> => {
+  const results: Record<string, string | undefined> = {}
+
+  for (const field of fields) {
+    const result = validateStringField(creds, field)
+    if (!result.ok) {
+      return result as Result<Record<string, string | undefined>>
+    }
+    // eslint-disable-next-line security/detect-object-injection
+    results[field] = result.value
+  }
+
+  return { ok: true, value: results }
+}
+
+// Helper to validate optional dimensions
+const validateOptionalDimensions = (
+  creds: Record<string, unknown>,
+  fields: string[]
+): Result<Record<string, number | undefined>> => {
+  const results: Record<string, number | undefined> = {}
+
+  for (const field of fields) {
+    const result = validateDimension(creds, field)
+    if (!result.ok) {
+      return result as Result<Record<string, number | undefined>>
+    }
+    // eslint-disable-next-line security/detect-object-injection
+    results[field] = result.value
+  }
+
+  return { ok: true, value: results }
+}
+
 /**
  * Validates authentication message
  * @param data - Raw authentication data
@@ -215,73 +254,47 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
 
   const creds = data as Record<string, unknown>
 
-  // Validate required username
-  const usernameResult = validateStringField(
-    creds, 
-    'username', 
-    true, 
-    'Username is required and must be a non-empty string'
-  )
+  // Validate required fields
+  const usernameResult = validateStringField(creds, 'username', true, 'Username is required and must be a non-empty string')
   if (!usernameResult.ok) {return usernameResult as Result<AuthCredentials>}
 
-  // Validate required host
-  const hostResult = validateStringField(
-    creds, 
-    'host', 
-    true, 
-    'Host is required and must be a non-empty string'
-  )
+  const hostResult = validateStringField(creds, 'host', true, 'Host is required and must be a non-empty string')
   if (!hostResult.ok) {return hostResult as Result<AuthCredentials>}
 
   // Validate port
-  let port = 22 // default SSH port
-  if (creds['port'] != null) {
-    const portResult = validatePort(creds['port'])
-    if (!portResult.ok) {return portResult as Result<AuthCredentials>}
-    port = portResult.value
-  }
+  const port = creds['port'] != null
+    ? validatePort(creds['port'])
+    : { ok: true, value: 22 } as Result<number>
+  if (!port.ok) {return port as Result<AuthCredentials>}
 
-  // Build validated credentials
-  // Safe to use non-null assertion as we validated these fields are required
-  const username = usernameResult.value as string
-  const host = hostResult.value as string
-  
-  const validated: AuthCredentials = {
-    username: username.trim(),
-    host: host.trim(),
-    port
-  }
-
-  // Validate optional string fields
-  const passwordResult = validateStringField(creds, 'password')
-  if (!passwordResult.ok) {return passwordResult as Result<AuthCredentials>}
-  if (passwordResult.value != null) {validated.password = passwordResult.value}
-  
-  const privateKeyResult = validateStringField(creds, 'privateKey')
-  if (!privateKeyResult.ok) {return privateKeyResult as Result<AuthCredentials>}
-  if (privateKeyResult.value != null) {validated.privateKey = privateKeyResult.value}
-  
-  const passphraseResult = validateStringField(creds, 'passphrase')
-  if (!passphraseResult.ok) {return passphraseResult as Result<AuthCredentials>}
-  if (passphraseResult.value != null) {validated.passphrase = passphraseResult.value}
-  
-  const termResult = validateStringField(creds, 'term')
-  if (!termResult.ok) {return termResult as Result<AuthCredentials>}
-  if (termResult.value != null) {validated.term = termResult.value}
+  // Validate all optional string fields at once
+  const optionalStrings = validateOptionalFields(creds, ['password', 'privateKey', 'passphrase', 'term'])
+  if (!optionalStrings.ok) {return optionalStrings as Result<AuthCredentials>}
 
   // Validate optional dimensions
-  const colsResult = validateDimension(creds, 'cols')
-  if (!colsResult.ok) {return colsResult as Result<AuthCredentials>}
-  if (colsResult.value != null) {validated.cols = colsResult.value}
+  const optionalDimensions = validateOptionalDimensions(creds, ['cols', 'rows'])
+  if (!optionalDimensions.ok) {return optionalDimensions as Result<AuthCredentials>}
 
-  const rowsResult = validateDimension(creds, 'rows')
-  if (!rowsResult.ok) {return rowsResult as Result<AuthCredentials>}
-  if (rowsResult.value != null) {validated.rows = rowsResult.value}
-
-  return {
-    ok: true,
-    value: validated
+  // Build validated credentials
+  const validated: AuthCredentials = {
+    username: (usernameResult.value as string).trim(),
+    host: (hostResult.value as string).trim(),
+    port: port.value
   }
+
+  // Add optional fields if present
+  const { password, privateKey, passphrase, term } = optionalStrings.value
+  // eslint-disable-next-line security/detect-possible-timing-attacks
+  if (password !== undefined) {validated.password = password}
+  if (privateKey !== undefined) {validated.privateKey = privateKey}
+  if (passphrase !== undefined) {validated.passphrase = passphrase}
+  if (term !== undefined) {validated.term = term}
+
+  const { cols, rows } = optionalDimensions.value
+  if (cols !== undefined) {validated.cols = cols}
+  if (rows !== undefined) {validated.rows = rows}
+
+  return { ok: true, value: validated }
 }
 
 /**

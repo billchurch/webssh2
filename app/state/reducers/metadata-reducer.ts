@@ -21,25 +21,28 @@ export const metadataReducer = (
         updatedAt: Date.now()
       }
     
+    case 'METADATA_UPDATE':
+      return {
+        ...state,
+        ...(action.payload.userId !== undefined && { userId: action.payload.userId }),
+        ...(action.payload.clientIp !== undefined && { clientIp: action.payload.clientIp }),
+        ...(action.payload.userAgent !== undefined && { userAgent: action.payload.userAgent }),
+        updatedAt: action.payload.updatedAt ?? Date.now()
+      }
+    
     case 'METADATA_UPDATE_TIMESTAMP':
+    case 'CONNECTION_ACTIVITY':
+    case 'TERMINAL_RESIZE':
       return {
         ...state,
         updatedAt: Date.now()
       }
-    
+
     // Update userId on successful auth
     case 'AUTH_SUCCESS':
       return {
         ...state,
         userId: action.payload.userId ?? null,
-        updatedAt: Date.now()
-      }
-    
-    // Update timestamp on any activity
-    case 'CONNECTION_ACTIVITY':
-    case 'TERMINAL_RESIZE':
-      return {
-        ...state,
         updatedAt: Date.now()
       }
     
@@ -52,17 +55,17 @@ export const metadataReducer = (
     case 'CONNECTION_ESTABLISHED':
     case 'CONNECTION_ERROR':
     case 'CONNECTION_CLOSED':
+    case 'TERMINAL_INIT':
     case 'TERMINAL_SET_TERM':
     case 'TERMINAL_SET_ENV':
+    case 'TERMINAL_UPDATE_ENV':
     case 'TERMINAL_SET_CWD':
+    case 'TERMINAL_DESTROY':
     case 'SESSION_RESET':
     case 'SESSION_END':
       return state
     
-    default: {
-      const exhaustiveCheck: never = action
-      void exhaustiveCheck
+    default:
       return state
-    }
   }
 }

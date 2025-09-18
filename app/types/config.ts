@@ -59,6 +59,8 @@ export interface OptionsConfig {
 export interface SessionConfig {
   secret: string
   name: string
+  sessionTimeout?: number
+  maxHistorySize?: number
 }
 
 /**
@@ -73,6 +75,22 @@ export interface SsoConfig {
     password: string
     session: string
   }
+}
+
+/**
+ * Terminal configuration
+ */
+export interface TerminalConfig {
+  rows?: number
+  cols?: number
+  term?: string
+}
+
+/**
+ * Logging configuration
+ */
+export interface LoggingConfig {
+  namespace?: string
 }
 
 /**
@@ -92,6 +110,10 @@ export interface Config {
   options: OptionsConfig
   session: SessionConfig
   sso: SsoConfig
+  terminal?: TerminalConfig
+  logging?: LoggingConfig
+  allowedSubnets?: string[]
+  safeShutdownDuration?: number
   getCorsConfig?: () => { origin: string[]; methods: string[]; credentials: boolean }
 }
 

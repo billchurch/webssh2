@@ -4,13 +4,18 @@
 import type { Server as IOServer } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import { SocketAdapter } from './socket/adapters/socket-adapter.js'
+import { ServiceSocketAdapter } from './socket/adapters/service-socket-adapter.js'
 import { SSHConnectionAdapter } from './ssh/connection-adapter.js'
 import type { Config } from './types/config.js'
+import type { Services } from './services/interfaces.js'
+import type { SessionStore } from './state/store.js'
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData,
+  AuthCredentials,
+  TerminalSettings,
 } from './types/contracts/v1/socket.js'
 import type { SSHCtor } from './socket.js'
 
@@ -22,12 +27,25 @@ const debug = createNamespacedDebug('socket:v2')
 export default function init(
   io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   config: Config,
-  SSHConnectionClass: SSHCtor
+  SSHConnectionClass: SSHCtor,
+  services?: Services,
+  store?: SessionStore
 ): void {
   io.on('connection', (socket) => {
     debug(`New connection: ${socket.id}`)
     
-    // Create adapters
+    // Use service-based adapter if services are available
+    if (services !== undefined && store !== undefined) {
+      debug('Using service-based socket adapter')
+      // ServiceSocketAdapter sets up all handlers in its constructor
+      const serviceAdapter = new ServiceSocketAdapter(socket, config, services, store)
+      // Keep reference to prevent GC (adapter manages its own lifecycle via socket events)
+      void serviceAdapter //NOSONAR
+      return
+    }
+    
+    // Otherwise use the legacy adapters
+    debug('Using legacy adapters (no services provided)')
     const socketAdapter = new SocketAdapter(socket, config)
     const sshAdapter = new SSHConnectionAdapter(config, SSHConnectionClass)
     
@@ -174,10 +192,6 @@ export default function init(
             // Send password to shell if available
             // Note: shellStream is private on adapter, would need to expose it
             // For now, credential replay is not implemented in v2
-            /* const shellStream = (socketAdapter as any).shellStream
-            if (shellStream?.write != null) {
-              shellStream.write(`${state.password}\r`)
-            } */
             debug(`Credential replay not implemented in v2 for ${socket.id}`)
           }
         } else if (msg === 'reauth') {
@@ -203,5 +217,4 @@ export default function init(
 }
 
 // Re-export types for compatibility
-import type { AuthCredentials, TerminalSettings } from './types/contracts/v1/socket.js'
 import type { SessionState } from './socket/handlers/auth-handler.js'

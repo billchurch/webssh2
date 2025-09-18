@@ -1,7 +1,7 @@
 // app/socket/handlers/exec-handler.ts
 // Pure functions for handling command execution
 
-import { DEFAULTS } from '../../constants.js'
+import { DEFAULTS, VALIDATION_MESSAGES, VALIDATION_LIMITS } from '../../constants/index.js'
 import type { ExecRequestPayload } from '../../types/contracts/v1/socket.js'
 
 export interface ExecState {
@@ -32,12 +32,82 @@ export interface ExecResult {
 }
 
 /**
- * Validates exec request payload
- * @param payload - Raw payload from client
+ * Parses a numeric value from unknown type
+ * @param value - Value to parse
+ * @returns Parsed number or NaN
+ * @pure
+ */
+function parseNumericValue(value: unknown): number {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    return parseInt(value, 10)
+  }
+  return NaN
+}
+
+/**
+ * Validates a numeric field within bounds
+ * @param value - Value to validate
+ * @param min - Minimum allowed value
+ * @param max - Maximum allowed value
+ * @param errorMessage - Error message if validation fails
  * @returns Validation result
  * @pure
  */
-export function validateExecPayload(
+function validateNumericField(
+  value: unknown,
+  min: number,
+  max: number,
+  errorMessage: string
+): { valid: boolean; value?: number; error?: string } {
+  const numValue = parseNumericValue(value)
+  if (isNaN(numValue) || numValue < min || numValue > max) {
+    return { valid: false, error: errorMessage }
+  }
+  return { valid: true, value: numValue }
+}
+
+/**
+ * Validates environment variables object
+ * @param envObj - Environment variables object to validate
+ * @returns Validation result with converted environment object
+ * @pure
+ */
+function validateEnvironmentVariables(
+  envObj: unknown
+): { valid: boolean; env?: Record<string, string>; error?: string } {
+  if (typeof envObj !== 'object' || envObj === null || Array.isArray(envObj)) {
+    return { valid: false, error: 'Environment variables must be an object' }
+  }
+
+  const env: Record<string, string> = {}
+  const entries = Object.entries(envObj as Record<string, unknown>)
+
+  for (const [key, value] of entries) {
+    if (typeof value !== 'string') {
+      return { valid: false, error: 'Environment variables must be string key-value pairs' }
+    }
+    // Use Object.defineProperty to avoid object injection warning
+    Object.defineProperty(env, key, {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    })
+  }
+
+  return { valid: true, env }
+}
+
+/**
+ * Validates the basic structure and required fields
+ * @param payload - Raw payload from client
+ * @returns Validation result with base data
+ * @pure
+ */
+function validateBasePayload(
   payload: unknown
 ): { valid: boolean; data?: ExecRequestPayload; error?: string } {
   if (payload == null || typeof payload !== 'object') {
@@ -46,100 +116,252 @@ export function validateExecPayload(
 
   const execPayload = payload as Record<string, unknown>
 
-  // Command is required
   if (typeof execPayload['command'] !== 'string' || execPayload['command'].trim() === '') {
-    return { valid: false, error: 'Command is required' }
+    return { valid: false, error: VALIDATION_MESSAGES.COMMAND_REQUIRED }
   }
 
-  const validated: ExecRequestPayload = {
-    command: execPayload['command'],
+  return {
+    valid: true,
+    data: { command: execPayload['command'] }
+  }
+}
+
+/**
+ * Validates PTY field
+ * @param value - Value to validate
+ * @returns Valid PTY value or error message
+ * @pure
+ */
+function validatePtyField(value: unknown): { valid: true; value: boolean } | { valid: false; error: string } {
+  if (typeof value !== 'boolean') {
+    return { valid: false, error: VALIDATION_MESSAGES.PTY_FLAG_BOOLEAN_ERROR }
+  }
+  return { valid: true, value }
+}
+
+/**
+ * Validates terminal type field
+ * @param value - Value to validate
+ * @returns Valid term value or error message
+ * @pure
+ */
+function validateTermField(value: unknown): { valid: true; value: string } | { valid: false; error: string } {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { valid: false, error: VALIDATION_MESSAGES.INVALID_TERMINAL_TYPE }
+  }
+  return { valid: true, value }
+}
+
+/**
+ * Processes and validates PTY field
+ * @param execPayload - Raw payload object
+ * @param validated - Validated payload to update
+ * @returns Error message if validation fails
+ * @pure
+ */
+function processPtyField(execPayload: Record<string, unknown>, validated: ExecRequestPayload): string | undefined {
+  const value = execPayload['pty']
+  if (value == null) {
+    return undefined
+  }
+  const result = validatePtyField(value)
+  if (!result.valid) {
+    return result.error
+  }
+  validated.pty = result.value
+  return undefined
+}
+
+/**
+ * Processes and validates term field
+ * @param execPayload - Raw payload object
+ * @param validated - Validated payload to update
+ * @returns Error message if validation fails
+ * @pure
+ */
+function processTermField(execPayload: Record<string, unknown>, validated: ExecRequestPayload): string | undefined {
+  const value = execPayload['term']
+  if (value == null) {
+    return undefined
+  }
+  const result = validateTermField(value)
+  if (!result.valid) {
+    return result.error
+  }
+  validated.term = result.value
+  return undefined
+}
+
+/**
+ * Processes and validates a numeric field
+ * @param execPayload - Raw payload object
+ * @param fieldName - Field name to process
+ * @param min - Minimum allowed value
+ * @param max - Maximum allowed value
+ * @param errorMsg - Error message if validation fails
+ * @param validated - Validated payload to update
+ * @returns Error message if validation fails
+ * @pure
+ */
+function processNumericField(
+  execPayload: Record<string, unknown>,
+  fieldName: 'cols' | 'rows' | 'timeoutMs',
+  min: number,
+  max: number,
+  errorMsg: string,
+  validated: ExecRequestPayload
+): string | undefined {
+  // Access field value safely by explicit field name
+  let value: unknown
+  if (fieldName === 'cols') {
+    value = execPayload['cols']
+  } else if (fieldName === 'rows') {
+    value = execPayload['rows']
+  } else {
+    // fieldName must be 'timeoutMs' due to the type constraint
+    value = execPayload['timeoutMs']
   }
 
-  // Optional PTY flag
-  if (execPayload['pty'] != null) {
-    if (typeof execPayload['pty'] !== 'boolean') {
-      return { valid: false, error: 'PTY flag must be boolean' }
-    }
-    validated.pty = execPayload['pty']
+  if (value == null) {
+    return undefined
   }
 
-  // Optional terminal type
-  if (execPayload['term'] != null) {
-    if (typeof execPayload['term'] !== 'string' || execPayload['term'].trim() === '') {
-      return { valid: false, error: 'Invalid terminal type' }
-    }
-    validated.term = execPayload['term']
+  const result = validateNumericField(value, min, max, errorMsg)
+  if (!result.valid) {
+    return result.error ?? errorMsg
   }
 
-  // Optional dimensions
-  if (execPayload['cols'] != null) {
-    let cols = NaN
-    if (typeof execPayload['cols'] === 'number') {
-      cols = execPayload['cols']
-    } else if (typeof execPayload['cols'] === 'string') {
-      cols = parseInt(execPayload['cols'], 10)
+  if (result.value !== undefined) {
+    // Assign to correct field based on fieldName
+    if (fieldName === 'cols') {
+      validated.cols = result.value
+    } else if (fieldName === 'rows') {
+      validated.rows = result.value
+    } else {
+      // fieldName must be 'timeoutMs' due to the type constraint
+      validated.timeoutMs = result.value
     }
-    
-    if (isNaN(cols) || cols < 1 || cols > 1000) {
-      return { valid: false, error: 'Invalid columns value' }
-    }
-    validated.cols = cols
   }
 
-  if (execPayload['rows'] != null) {
-    let rows = NaN
-    if (typeof execPayload['rows'] === 'number') {
-      rows = execPayload['rows']
-    } else if (typeof execPayload['rows'] === 'string') {
-      rows = parseInt(execPayload['rows'], 10)
-    }
-    
-    if (isNaN(rows) || rows < 1 || rows > 1000) {
-      return { valid: false, error: 'Invalid rows value' }
-    }
-    validated.rows = rows
+  return undefined
+}
+
+/**
+ * Processes and validates env field
+ * @param execPayload - Raw payload object
+ * @param validated - Validated payload to update
+ * @returns Error message if validation fails
+ * @pure
+ */
+function processEnvField(execPayload: Record<string, unknown>, validated: ExecRequestPayload): string | undefined {
+  const value = execPayload['env']
+  if (value == null) {
+    return undefined
+  }
+  const result = validateEnvironmentVariables(value)
+  if (!result.valid) {
+    return result.error ?? 'Invalid environment variables'
+  }
+  if (result.env !== undefined) {
+    validated.env = result.env
+  }
+  return undefined
+}
+
+/**
+ * Validates and adds optional fields to the payload
+ * @param execPayload - Raw exec payload object
+ * @param validated - Partially validated payload to add fields to
+ * @returns Error message if validation fails, undefined if successful
+ * @pure
+ */
+function validateOptionalFields(
+  execPayload: Record<string, unknown>,
+  validated: ExecRequestPayload
+): string | undefined {
+  // Process each field and return early on any error
+  let error: string | undefined
+
+  error = processPtyField(execPayload, validated)
+  if (error !== undefined) {
+    return error
   }
 
-  // Optional environment variables
-  if (execPayload['env'] != null) {
-    if (typeof execPayload['env'] !== 'object' || Array.isArray(execPayload['env'])) {
-      return { valid: false, error: 'Environment variables must be an object' }
-    }
-
-    const env: Record<string, string> = {}
-    const envObj = execPayload['env'] as Record<string, unknown>
-    const envEntries = Object.entries(envObj)
-    for (const [key, value] of envEntries) {
-      if (typeof value !== 'string') {
-        return { valid: false, error: 'Environment variables must be string key-value pairs' }
-      }
-      // Use Object.defineProperty to avoid object injection warning
-      Object.defineProperty(env, key, {
-        value,
-        writable: true,
-        enumerable: true,
-        configurable: true
-      })
-    }
-    validated.env = env
+  error = processTermField(execPayload, validated)
+  if (error !== undefined) {
+    return error
   }
 
-  // Optional timeout
-  if (execPayload['timeoutMs'] != null) {
-    let timeout = NaN
-    if (typeof execPayload['timeoutMs'] === 'number') {
-      timeout = execPayload['timeoutMs']
-    } else if (typeof execPayload['timeoutMs'] === 'string') {
-      timeout = parseInt(execPayload['timeoutMs'], 10)
-    }
-    
-    if (isNaN(timeout) || timeout < 0 || timeout > 3600000) { // Max 1 hour
-      return { valid: false, error: 'Invalid timeout value' }
-    }
-    validated.timeoutMs = timeout
+  error = processNumericField(
+    execPayload,
+    'cols',
+    VALIDATION_LIMITS.MIN_TERMINAL_COLS,
+    VALIDATION_LIMITS.MAX_TERMINAL_COLS,
+    VALIDATION_MESSAGES.INVALID_COLUMNS_VALUE,
+    validated
+  )
+  if (error !== undefined) {
+    return error
   }
 
-  return { valid: true, data: validated }
+  error = processNumericField(
+    execPayload,
+    'rows',
+    VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
+    VALIDATION_LIMITS.MAX_TERMINAL_ROWS,
+    VALIDATION_MESSAGES.INVALID_ROWS_VALUE,
+    validated
+  )
+  if (error !== undefined) {
+    return error
+  }
+
+  error = processNumericField(
+    execPayload,
+    'timeoutMs',
+    VALIDATION_LIMITS.MIN_EXEC_TIMEOUT_MS,
+    VALIDATION_LIMITS.MAX_EXEC_TIMEOUT_MS,
+    VALIDATION_MESSAGES.INVALID_TIMEOUT_VALUE,
+    validated
+  )
+  if (error !== undefined) {
+    return error
+  }
+
+  error = processEnvField(execPayload, validated)
+  if (error !== undefined) {
+    return error
+  }
+
+  return undefined
+}
+
+/**
+ * Validates exec request payload
+ * @param payload - Raw payload from client
+ * @returns Validation result
+ * @pure
+ */
+export function validateExecPayload(
+  payload: unknown
+): { valid: boolean; data?: ExecRequestPayload; error?: string } {
+  // Validate base structure and required fields
+  const baseResult = validateBasePayload(payload)
+  if (!baseResult.valid || baseResult.data === undefined) {
+    return baseResult
+  }
+
+  // Validate optional fields
+  const error = validateOptionalFields(
+    payload as Record<string, unknown>,
+    baseResult.data
+  )
+
+  if (error !== undefined) {
+    return { valid: false, error }
+  }
+
+  return { valid: true, data: baseResult.data }
 }
 
 /**
@@ -292,9 +514,9 @@ export function createExecExitPayload(
 export function isCommandSafe(command: string): boolean {
   // Basic safety checks - can be expanded based on requirements
   const dangerousPatterns = [
-    /;\s*rm\s+-rf\s+\//i,  // rm -rf /
-    /dd\s+.*of=\/dev\//i,   // dd overwriting devices
-    />\s*\/dev\/s[a-z]+/i,   // Redirecting to block devices
+    /;\s*rm\s+-rf\s+\//i,     // rm -rf /
+    /dd\s+[^=]*of=\/dev\//i,  // NOSONAR dd overwriting devices - use negated class instead of .*
+    />\s*\/dev\/s[a-z]+/i,    // Redirecting to block devices
   ]
 
   for (const pattern of dangerousPatterns) {
@@ -313,15 +535,15 @@ export function isCommandSafe(command: string): boolean {
  * @pure
  */
 export function sanitizeEnvVarName(name: string): string | null {
-  // Allow alphanumeric, underscore, and common env var characters
-  const sanitized = name.replace(/[^A-Za-z0-9_]/g, '')
+  // Allow alphanumeric and underscore characters
+  const sanitized = name.replace(/\W/g, '')
   
-  if (sanitized === '' || sanitized.length > 255) {
+  if (sanitized === '' || sanitized.length > VALIDATION_LIMITS.MAX_ENV_VAR_NAME_LENGTH) {
     return null
   }
 
   // Don't allow names starting with numbers
-  if (/^[0-9]/.test(sanitized)) {
+  if (/^\d/.test(sanitized)) {
     return null
   }
 
@@ -355,7 +577,7 @@ export function filterEnvironmentVariables(
     if (sanitizedKey != null && !sensitiveVars.has(sanitizedKey)) {
       // Limit value length and use Object.defineProperty to avoid object injection warning
       Object.defineProperty(filtered, sanitizedKey, {
-        value: value.substring(0, 10000),
+        value: value.substring(0, VALIDATION_LIMITS.MAX_ENV_VALUE_LENGTH),
         writable: true,
         enumerable: true,
         configurable: true

@@ -43,6 +43,7 @@ export const DEFAULTS = {
   SSH_KEEPALIVE_COUNT_MAX: 10,
   HSTS_MAX_AGE_SECONDS: 31_536_000,
   SESSION_COOKIE_NAME: 'webssh2.sid',
+  SESSION_TIMEOUT_MS: 86_400_000, // 24 hours
   SSO_HEADERS: {
     USERNAME: 'x-apm-username',
     PASSWORD: 'x-apm-password',

@@ -28,16 +28,20 @@ export type ConnectionAction =
  * Terminal actions
  */
 export type TerminalAction =
+  | { type: 'TERMINAL_INIT'; payload: { term: string; rows: number; cols: number; environment: Record<string, string>; cwd: string | null } }
   | { type: 'TERMINAL_RESIZE'; payload: { rows: number; cols: number } }
   | { type: 'TERMINAL_SET_TERM'; payload: { term: string } }
   | { type: 'TERMINAL_SET_ENV'; payload: { environment: Record<string, string> } }
+  | { type: 'TERMINAL_UPDATE_ENV'; payload: { environment: Record<string, string> } }
   | { type: 'TERMINAL_SET_CWD'; payload: { cwd: string } }
+  | { type: 'TERMINAL_DESTROY'; payload: {} }
 
 /**
  * Metadata actions
  */
 export type MetadataAction =
   | { type: 'METADATA_SET_CLIENT'; payload: { clientIp: string; userAgent: string } }
+  | { type: 'METADATA_UPDATE'; payload: { userId?: UserId | null; clientIp?: string | null; userAgent?: string | null; updatedAt?: number } }
   | { type: 'METADATA_UPDATE_TIMESTAMP' }
 
 /**
