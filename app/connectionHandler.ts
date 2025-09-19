@@ -23,7 +23,8 @@ function hasSessionCredentials(session: Sess): boolean {
 
 async function sendClient(filePath: string, config: unknown, res: Response): Promise<void> {
   try {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath from trusted client module
+    // File path is from internal client module resolution, not user input
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const data = await fs.readFile(filePath, 'utf8')
     const modifiedHtml = modifyHtml(data, config)
     res.send(modifiedHtml)

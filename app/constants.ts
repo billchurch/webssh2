@@ -43,6 +43,7 @@ export const DEFAULTS = {
   SSH_KEEPALIVE_COUNT_MAX: 10,
   HSTS_MAX_AGE_SECONDS: 31_536_000,
   SESSION_COOKIE_NAME: 'webssh2.sid',
+  SESSION_TIMEOUT_MS: 86_400_000, // 24 hours
   SSO_HEADERS: {
     USERNAME: 'x-apm-username',
     PASSWORD: 'x-apm-password',
@@ -58,9 +59,12 @@ export const ENV_LIMITS = {
 
 export const HTTP = {
   OK: 200,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   INTERNAL_SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
+  GATEWAY_TIMEOUT: 504,
   AUTHENTICATE: 'WWW-Authenticate',
   REALM: 'Basic realm="WebSSH2"',
   AUTH_REQUIRED: 'Authentication required.',

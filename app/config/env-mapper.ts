@@ -4,6 +4,7 @@
 import type { EnvValueType } from './env-parser.js'
 import { parseEnvValue } from './env-parser.js'
 import { getAlgorithmPreset } from './algorithm-presets.js'
+import { createSafeKey, safeGet, safePathToKeys, safeSetNested } from '../utils/safe-property-access.js'
 
 export interface EnvVarMap { 
   path: string
@@ -73,9 +74,8 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
   
   for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
     // Access restricted to known keys from ENV_VAR_MAPPING
-    // eslint-disable-next-line security/detect-object-injection
-    const envValue = env[envVar]
-    if (envValue !== undefined) {
+    const envValue = safeGet(env, createSafeKey(envVar))
+    if (envValue !== undefined && typeof envValue === 'string') {
       if (mapping.type === 'preset') {
         const preset = getAlgorithmPreset(envValue)
         if (preset != null) {
@@ -99,28 +99,9 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
  * @pure - Note: This function mutates obj for efficiency, but could be made pure by returning a new object
  */
 export function setNestedProperty(obj: Record<string, unknown>, path: string, value: unknown): void {
-  const keys = path.split('.')
-  let current: Record<string, unknown> = obj
-  
-  for (let i = 0; i < keys.length - 1; i += 1) {
-    // Index based on known path segments
-    // eslint-disable-next-line security/detect-object-injection
-    const key = keys[i] as string
-    // Keys originate from static mapping (ENV_VAR_MAPPING), not user input
-    // eslint-disable-next-line security/detect-object-injection
-    const next = current[key]
-    if (next == null || typeof next !== 'object') {
-      // eslint-disable-next-line security/detect-object-injection
-      current[key] = {}
-    }
-    // eslint-disable-next-line security/detect-object-injection
-    current = current[key] as Record<string, unknown>
-  }
-  
-  const last = keys[keys.length - 1] as string
-  // Keys derive from static mapping, not user input
-  // eslint-disable-next-line security/detect-object-injection
-  current[last] = value
+  // Convert path to SafeKeys since paths come from static ENV_VAR_MAPPING
+  const safeKeys = safePathToKeys(path)
+  safeSetNested(obj, safeKeys, value)
 }
 
 /**
@@ -152,10 +133,13 @@ export function setNestedPropertyImmutable(
     return { ...obj, [head]: value }
   }
   
-  // Head is validated above to be non-empty string
-  // eslint-disable-next-line security/detect-object-injection
-  const current = obj[head] as Record<string, unknown> | undefined
-  const nested = current != null && typeof current === 'object' ? current : {}
+  // Head is validated above to be non-empty string, safe to use
+  const safeHead = createSafeKey(head)
+  const current = safeGet(obj, safeHead)
+  const nested: Record<string, unknown> = 
+    current != null && typeof current === 'object' && !Array.isArray(current)
+      ? current as Record<string, unknown>
+      : {}
   
   return {
     ...obj,

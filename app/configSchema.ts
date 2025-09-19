@@ -42,6 +42,16 @@ const configSchema = {
         readyTimeout: { type: 'integer' },
         keepaliveInterval: { type: 'integer' },
         keepaliveCountMax: { type: 'integer' },
+        allowedSubnets: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+        alwaysSendKeyboardInteractivePrompts: { type: 'boolean' },
+        disableInteractiveAuth: { type: 'boolean' },
+        envAllowlist: {
+          type: 'array',
+          items: { type: 'string' },
+        },
         algorithms: {
           type: 'object',
           properties: {

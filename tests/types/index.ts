@@ -7,6 +7,7 @@
 import type { Config } from '../../app/config.js'
 import type { Server } from 'node:http'
 import type { Express } from 'express'
+import { TEST_SECRET_KEY, TEST_PORTS, TEST_TIMEOUTS } from '../test-constants.js'
 
 /**
  * Environment variable map for testing
@@ -123,25 +124,6 @@ export interface AssertionHelpers {
 }
 
 /**
- * Common test timeouts (in milliseconds)
- */
-export const TEST_TIMEOUTS = {
-  short: 1000,
-  medium: 5000,
-  long: 10000,
-  network: 15000
-} as const
-
-/**
- * Common test ports
- */
-export const TEST_PORTS = {
-  webssh2: 2288,
-  sshServer: 2289,
-  alternateWebssh2: 2290
-} as const
-
-/**
  * Default test configuration
  */
 export const DEFAULT_TEST_CONFIG: Config = {
@@ -164,7 +146,7 @@ export const DEFAULT_TEST_CONFIG: Config = {
   },
   session: {
     name: 'webssh2.test.sid',
-    secret: 'test-secret-key'
+    secret: TEST_SECRET_KEY
   },
   options: {
     challengeButton: true,

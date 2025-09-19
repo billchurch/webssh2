@@ -41,8 +41,8 @@ export function filterEnvironmentVariables(
         if (valueType !== 'string' && valueType !== 'number' && valueType !== 'boolean') {
           return false
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        const strValue = String(v)
+        // At this point v is string, number, or boolean - safe to convert
+        const strValue = String(v as string | number | boolean)
         return isValidEnvValue(strValue) && strValue.length <= ENV_LIMITS.MAX_VALUE_LENGTH
       }
     )

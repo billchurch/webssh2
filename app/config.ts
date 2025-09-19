@@ -2,96 +2,71 @@
 // app/config.ts
 
 import path, { dirname } from 'path'
-import { promises as fs, existsSync } from 'fs'
+import { existsSync } from 'fs'
 import { fileURLToPath } from 'url'
-import { deepMerge, validateConfig } from './utils.js'
 import { generateSecureSecret } from './crypto-utils.js'
 import { createNamespacedDebug } from './logger.js'
-import { ConfigError, handleError } from './errors.js'
-import { DEFAULTS } from './constants.js'
-import { loadEnvironmentConfig } from './envConfig.js'
-import type { Config } from './types/config.js'
+import { ConfigError } from './errors.js'
+import type { Config, ConfigValidationError } from './types/config.js'
+import { enhanceConfig } from './utils/config-builder.js'
+import { mapEnvironmentVariables } from './config/env-mapper.js'
+import { readConfigFile } from './config/config-loader.js'
+import { 
+  createDefaultConfig,
+  processConfig as processConfigPure,
+  parseConfigJson,
+  createCorsConfig as createCorsConfigPure
+} from './config/config-processor.js'
+import type { Result } from './types/result.js'
+import { err } from './utils/result.js'
 
 const debug = createNamespacedDebug('config')
 
-const defaultConfig: Config = {
-  listen: { ip: '0.0.0.0', port: DEFAULTS.LISTEN_PORT },
-  http: { origins: ['*:*'] },
-  user: { name: null, password: null, privateKey: null, passphrase: null },
-  ssh: {
-    host: null,
-    port: DEFAULTS.SSH_PORT,
-    term: DEFAULTS.SSH_TERM,
-    readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
-    keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
-    keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
-    alwaysSendKeyboardInteractivePrompts: false,
-    disableInteractiveAuth: false,
-    algorithms: {
-      cipher: [
-        'chacha20-poly1305@openssh.com',
-        'aes128-gcm',
-        'aes128-gcm@openssh.com',
-        'aes256-gcm',
-        'aes256-gcm@openssh.com',
-        'aes128-ctr',
-        'aes192-ctr',
-        'aes256-ctr',
-        'aes256-cbc',
-      ],
-      compress: ['none', 'zlib@openssh.com', 'zlib'],
-      hmac: [
-        'hmac-sha2-256-etm@openssh.com',
-        'hmac-sha2-512-etm@openssh.com',
-        'hmac-sha1-etm@openssh.com',
-        'hmac-sha2-256',
-        'hmac-sha2-512',
-        'hmac-sha1',
-      ],
-      kex: [
-        'curve25519-sha256',
-        'curve25519-sha256@libssh.org',
-        'ecdh-sha2-nistp256',
-        'ecdh-sha2-nistp384',
-        'ecdh-sha2-nistp521',
-        'diffie-hellman-group14-sha256',
-        'diffie-hellman-group-exchange-sha256',
-        'diffie-hellman-group14-sha1',
-      ],
-      serverHostKey: [
-        'ssh-ed25519',
-        'rsa-sha2-512',
-        'rsa-sha2-256',
-        'ecdsa-sha2-nistp256',
-        'ecdsa-sha2-nistp384',
-        'ecdsa-sha2-nistp521',
-        'ssh-rsa',
-      ],
+// Session secret will be generated inside loadEnhancedConfig if needed
+
+// Helper function to format config for debug output (masks sensitive data)
+function formatConfigForDebug(config: Config): Record<string, unknown> {
+  return {
+    listen: config.listen,
+    http: {
+      origins: config.http.origins.length > 0 ? `${config.http.origins.length} origin(s)` : 'none'
     },
-  },
-  header: { text: null, background: 'green' },
-  options: {
-    challengeButton: true,
-    autoLog: false,
-    allowReauth: true,
-    allowReconnect: true,
-    allowReplay: true,
-    replayCRLF: false,
-  },
-  session: {
-    secret: process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret(),
-    name: DEFAULTS.SESSION_COOKIE_NAME,
-  },
-  sso: {
-    enabled: false,
-    csrfProtection: false,
-    trustedProxies: [],
-    headerMapping: {
-      username: DEFAULTS.SSO_HEADERS.USERNAME,
-      password: DEFAULTS.SSO_HEADERS.PASSWORD,
-      session: DEFAULTS.SSO_HEADERS.SESSION,
+    user: {
+      name: config.user.name != null && config.user.name !== '' ? '***' : null,
+      password: config.user.password != null && config.user.password !== '' ? '***' : null,
+      privateKey: config.user.privateKey != null && config.user.privateKey !== '' ? '***' : null,
+      passphrase: config.user.passphrase != null && config.user.passphrase !== '' ? '***' : null
     },
-  },
+    ssh: {
+      host: config.ssh.host,
+      port: config.ssh.port,
+      localAddress: config.ssh.localAddress,
+      localPort: config.ssh.localPort,
+      term: config.ssh.term,
+      readyTimeout: config.ssh.readyTimeout,
+      keepaliveInterval: config.ssh.keepaliveInterval,
+      keepaliveCountMax: config.ssh.keepaliveCountMax,
+      allowedSubnets: config.ssh.allowedSubnets?.length ?? 0,
+      algorithms: {
+        cipher: config.ssh.algorithms.cipher.length,
+        kex: config.ssh.algorithms.kex.length,
+        hmac: config.ssh.algorithms.hmac.length,
+        compress: config.ssh.algorithms.compress.length,
+        serverHostKey: config.ssh.algorithms.serverHostKey.length
+      }
+    },
+    header: config.header,
+    options: config.options,
+    session: {
+      name: config.session.name,
+      secret: config.session.secret !== '' ? '***' : 'not set'
+    },
+    sso: {
+      enabled: config.sso.enabled,
+      csrfProtection: config.sso.csrfProtection,
+      trustedProxies: config.sso.trustedProxies.length
+    }
+  }
 }
 
 const FILENAME = fileURLToPath(import.meta.url)
@@ -110,45 +85,103 @@ function getConfigPath(): string {
   return candidateA
 }
 
-export async function loadConfigAsync(): Promise<Config> {
-  const configPath = getConfigPath()
-  let config: Config = JSON.parse(JSON.stringify(defaultConfig)) as Config
-  try {
-    await fs.access(configPath)
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is internal, not user input
-    const data = await fs.readFile(configPath, 'utf8')
-    const providedConfig = JSON.parse(data) as Partial<Config>
-    config = deepMerge<Config>(config, providedConfig)
-    debug('Loaded and merged config.json')
-  } catch (err: unknown) {
-    const e = err as { code?: string; message?: string }
-    if (e.code === 'ENOENT') {
-      debug('No config.json found, using environment variables and defaults')
+async function loadEnhancedConfig(
+  configPath?: string,
+  sessionSecret?: string
+): Promise<Result<Config, ConfigValidationError[]>> {
+  // Start with default config
+  const defaultConfig = createDefaultConfig(sessionSecret)
+  
+  // Load file config if path provided and file exists
+  let fileConfig: Partial<Config> | undefined
+  if (configPath != null && configPath !== '') {
+    const fileResult = await readConfigFile(configPath)
+    if (!fileResult.ok) {
+      // Check if it's just a missing file (ENOENT) - this is expected and not an error
+      const error = fileResult.error as { code?: string }
+      if (error.code !== 'ENOENT') {
+        // Only treat non-ENOENT errors as actual errors
+        return err([{
+          path: 'config.json',
+          message: `Failed to read config file: ${fileResult.error.message}`,
+        }])
+      }
+      // File doesn't exist - this is fine, we'll use env vars and defaults
     } else {
-      debug('Error loading config.json: %s', e.message)
-      const error = new ConfigError(
-        `Problem loading config.json for webssh: ${e.message ?? 'unknown error'}`
-      )
-      handleError(error)
+      const parseResult = parseConfigJson(fileResult.value)
+      if (!parseResult.ok) {
+        return err([{
+          path: 'config.json',
+          message: `Failed to parse config JSON: ${parseResult.error.message}`,
+        }])
+      }
+      
+      fileConfig = parseResult.value
     }
   }
-
-  const envConfig = loadEnvironmentConfig()
-  if (Object.keys(envConfig).length > 0) {
-    config = deepMerge<Config>(config, envConfig as Partial<Config>)
-    debug('Merged environment variables into configuration')
-    debug('Header config after env merge: %O', config.header)
+  
+  // Load environment config
+  const envConfig = mapEnvironmentVariables(process.env)
+  
+  // Process and merge configs
+  const processResult = processConfigPure(
+    defaultConfig,
+    fileConfig,
+    envConfig as Partial<Config>
+  )
+  
+  if (!processResult.ok) {
+    return err([{
+      path: '',
+      message: processResult.error.message,
+      value: processResult.error.originalConfig,
+    }])
   }
+  
+  // Enhance with branded types validation
+  return enhanceConfig(processResult.value)
+}
 
-  try {
-    const validatedConfig = validateConfig(config) as Config
-    debug('Configuration loaded and validated successfully')
-    return validatedConfig
-  } catch (validationErr: unknown) {
-    const e = validationErr as { message?: string }
-    debug('Configuration validation failed: %s', e.message)
-    return config
+export async function loadConfigAsync(): Promise<Config> {
+  debug('Using enhanced configuration implementation')
+  const configPath = getConfigPath()
+  const sessionSecret = process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret()
+  
+  const result = await loadEnhancedConfig(configPath, sessionSecret)
+  
+  if (!result.ok) {
+    // Check if it's a real error or just normal operation with env vars
+    const errors = result.error
+    const hasRealError = errors.some(e => 
+      !e.path.includes('config.json') || 
+      !e.message.includes('ENOENT')
+    )
+    
+    if (hasRealError) {
+      debug('Config validation error: %O', result.error)
+      throw new ConfigError(
+        `Configuration validation failed: ${errors.map(e => e.message).join(', ')}`
+      )
+    } else {
+      // This shouldn't happen but keeping as safety
+      debug('Config returned an unexpected result, check the implementation')
+      throw new ConfigError('Configuration loading failed unexpectedly')
+    }
   }
+  
+  // Check if config.json was found or just using env/defaults
+  // configPath is from internal getConfigPath(), not user input
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  const configFileExists = existsSync(configPath)
+  if (configFileExists) {
+    debug('Configuration loaded from config.json and environment variables')
+  } else {
+    debug('No config.json found, configuration loaded from environment variables and defaults')
+  }
+  
+  const finalConfig = result.value
+  debug('Loaded configuration: %O', formatConfigForDebug(finalConfig))
+  return finalConfig
 }
 
 let configInstance: Config | null = null
@@ -175,7 +208,9 @@ export function getCorsConfig(): { origin: string[]; methods: string[]; credenti
   if (currentConfig == null) {
     throw new ConfigError('Configuration not loaded. Call getConfig() first.')
   }
-  return { origin: currentConfig.http.origins, methods: ['GET', 'POST'], credentials: true }
+  
+  // Create CORS configuration
+  return createCorsConfigPure(currentConfig)
 }
 
 export function resetConfigForTesting(): void {

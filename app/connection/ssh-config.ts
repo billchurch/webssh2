@@ -4,6 +4,7 @@
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'
 import { validatePrivateKey, isEncryptedKey } from '../validation/ssh.js'
+import { DEFAULTS } from '../constants/index.js'
 
 export interface SSHConfig {
   host: string
@@ -34,7 +35,7 @@ export function buildSSHConfig(
 ): SSHConfig {
   const sshConfig: SSHConfig = {
     host: creds.host ?? '',
-    port: creds.port ?? 22,
+    port: creds.port ?? DEFAULTS.SSH_PORT,
     tryKeyboard,
     algorithms: config.ssh.algorithms as unknown,
     readyTimeout: config.ssh.readyTimeout,

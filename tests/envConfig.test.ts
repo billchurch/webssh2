@@ -2,9 +2,10 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
+import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS, TEST_PRIVATE_KEY, TEST_PASSPHRASE } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
@@ -77,12 +78,12 @@ describe('Environment Configuration Tests', () => {
 
   test('loadEnvironmentConfig handles comma-separated arrays', () => {
     process.env.WEBSSH2_HTTP_ORIGINS = 'localhost:3000,*.example.com,api.test.com'
-    process.env.WEBSSH2_SSH_ALLOWED_SUBNETS = '192.168.1.0/24,10.0.0.0/8'
+    process.env.WEBSSH2_SSH_ALLOWED_SUBNETS = `${TEST_SUBNETS.PRIVATE_192},${TEST_SUBNETS.PRIVATE_10}`
 
     const config = loadEnvironmentConfig()
 
     assert.deepEqual(config.http?.origins, ['localhost:3000', '*.example.com', 'api.test.com'])
-    assert.deepEqual(config.ssh?.allowedSubnets, ['192.168.1.0/24', '10.0.0.0/8'])
+    assert.deepEqual(config.ssh?.allowedSubnets, [TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
   })
 
   test('loadEnvironmentConfig handles JSON array format', () => {
@@ -157,17 +158,17 @@ describe('Environment Configuration Tests', () => {
 
 
   test('loadEnvironmentConfig handles all user credential fields', () => {
-    process.env.WEBSSH2_USER_NAME = 'testuser'
-    process.env.WEBSSH2_USER_PASSWORD = 'testpassword'
-    process.env.WEBSSH2_USER_PRIVATE_KEY = 'base64encodedkey'
-    process.env.WEBSSH2_USER_PASSPHRASE = 'keypassphrase'
+    process.env.WEBSSH2_USER_NAME = TEST_USERNAME
+    process.env.WEBSSH2_USER_PASSWORD = TEST_PASSWORD_ALT
+    process.env.WEBSSH2_USER_PRIVATE_KEY = TEST_PRIVATE_KEY
+    process.env.WEBSSH2_USER_PASSPHRASE = TEST_PASSPHRASE
 
     const config = loadEnvironmentConfig()
 
-    assert.equal(config.user?.name, 'testuser')
-    assert.equal(config.user?.password, 'testpassword')
-    assert.equal(config.user?.privateKey, 'base64encodedkey')
-    assert.equal(config.user?.passphrase, 'keypassphrase')
+    assert.equal(config.user?.name, TEST_USERNAME)
+    assert.equal(config.user?.password, TEST_PASSWORD_ALT)
+    assert.equal(config.user?.privateKey, TEST_PRIVATE_KEY)
+    assert.equal(config.user?.passphrase, TEST_PASSPHRASE)
   })
 
   test('loadEnvironmentConfig handles complex nested structures', () => {
@@ -191,12 +192,12 @@ describe('Environment Configuration Tests', () => {
   })
 
   test('loadEnvironmentConfig handles all session configuration', () => {
-    process.env.WEBSSH2_SESSION_SECRET = 'my-session-secret'
+    process.env.WEBSSH2_SESSION_SECRET = MY_SESSION_SECRET
     process.env.WEBSSH2_SESSION_NAME = 'custom.sid'
 
     const config = loadEnvironmentConfig()
 
-    assert.equal(config.session?.secret, 'my-session-secret')
+    assert.equal(config.session?.secret, MY_SESSION_SECRET)
     assert.equal(config.session?.name, 'custom.sid')
   })
 
