@@ -101,6 +101,17 @@ export class SSHServiceImpl implements SSHService {
     return new Promise((resolve) => {
       try {
         logger('Connecting to SSH server:', config.host, config.port)
+        logger('SSH config details:', {
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          hasPassword: config.password !== undefined && config.password !== '',
+          hasPrivateKey: config.privateKey !== undefined && config.privateKey !== '',
+          hasPassphrase: config.passphrase !== undefined && config.passphrase !== '',
+          hasAlgorithms: config.algorithms !== undefined,
+          readyTimeout: config.readyTimeout ?? this.connectionTimeout,
+          keepaliveInterval: config.keepaliveInterval ?? this.keepaliveInterval
+        })
 
         const client = new SSH2Client()
         const connectionId = createConnectionId(randomUUID())
@@ -121,11 +132,36 @@ export class SSHServiceImpl implements SSHService {
           resolve(err(new Error('Connection timeout')))
         }, this.connectionTimeout)
 
+        // Handle keyboard-interactive authentication
+        client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
+          logger('Keyboard-interactive authentication requested')
+          logger('Prompts:', prompts.map(p => ({ prompt: p.prompt, echo: p.echo })))
+
+          // If we have a password and the prompt looks like a password prompt, use it
+          if (config.password !== undefined && config.password !== '' && prompts.length > 0) {
+            const responses: string[] = []
+            for (const prompt of prompts) {
+              // Check if this looks like a password prompt
+              if (prompt.prompt.toLowerCase().includes('password')) {
+                logger('Responding to password prompt')
+                responses.push(config.password)
+              } else {
+                logger(`Unknown prompt: ${prompt.prompt}`)
+                responses.push('') // Empty response for unknown prompts
+              }
+            }
+            finish(responses)
+          } else {
+            logger('No password available for keyboard-interactive')
+            finish([])
+          }
+        })
+
         // Handle ready event
         client.on('ready', () => {
           clearTimeout(timeout)
           logger('SSH connection ready')
-          
+
           connection.status = 'connected'
           connection.lastActivity = Date.now()
           this.pool.add(connection)
@@ -140,9 +176,14 @@ export class SSHServiceImpl implements SSHService {
         })
 
         // Handle error event
-        client.on('error', (error: Error) => {
+        client.on('error', (error: Error & { level?: string }) => {
           clearTimeout(timeout)
-          logger('SSH connection error:', error)
+          logger('SSH connection error:', error.message)
+          logger('SSH error details:', {
+            message: error.message,
+            level: error.level,
+            stack: error.stack
+          })
           
           connection.status = 'error'
           
@@ -173,21 +214,43 @@ export class SSHServiceImpl implements SSHService {
           port: config.port,
           username: config.username,
           readyTimeout: config.readyTimeout ?? this.connectionTimeout,
-          keepaliveInterval: config.keepaliveInterval ?? this.keepaliveInterval
+          keepaliveInterval: config.keepaliveInterval ?? this.keepaliveInterval,
+          // Enable keyboard-interactive authentication
+          tryKeyboard: true
         }
 
         if (config.password !== undefined && config.password !== '') {
           connectConfig.password = config.password
+          logger('Password authentication configured')
+          // Also store password for keyboard-interactive use
         } else if (config.privateKey !== undefined && config.privateKey !== '') {
           connectConfig.privateKey = config.privateKey
+          logger('Private key authentication configured')
           if (config.passphrase !== undefined && config.passphrase !== '') {
             connectConfig.passphrase = config.passphrase
+            logger('Passphrase configured for private key')
           }
+        } else {
+          logger('WARNING: No authentication method configured (no password or private key)')
         }
 
         if (config.algorithms !== undefined) {
           connectConfig.algorithms = config.algorithms
         }
+
+        // Log the actual connection config being used (without sensitive data)
+        logger('SSH2 client connect config:', {
+          host: connectConfig.host,
+          port: connectConfig.port,
+          username: connectConfig.username,
+          hasPassword: 'password' in connectConfig,
+          hasPrivateKey: 'privateKey' in connectConfig,
+          hasPassphrase: 'passphrase' in connectConfig,
+          algorithms: connectConfig.algorithms !== undefined ? 'configured' : 'default',
+          readyTimeout: connectConfig.readyTimeout,
+          keepaliveInterval: connectConfig.keepaliveInterval,
+          tryKeyboard: connectConfig.tryKeyboard
+        })
 
         client.connect(connectConfig)
 
@@ -216,18 +279,32 @@ export class SSHServiceImpl implements SSHService {
         }
 
         logger('Opening shell for connection:', connectionId)
-        
-        const shellOptions: PseudoTtyOptions & { env?: Record<string, string> } = {
+        logger('Shell options provided:', {
+          term: options.term,
+          cols: options.cols,
+          rows: options.rows,
+          hasEnv: options.env !== undefined
+        })
+
+        const ptyOptions: PseudoTtyOptions = {
           term: options.term ?? 'xterm-256color',
           cols: options.cols ?? 80,
           rows: options.rows ?? 24
         }
 
-        if (options.env !== undefined) {
-          shellOptions.env = options.env
-        }
+        logger('Final shell PTY options:', {
+          term: ptyOptions.term,
+          cols: ptyOptions.cols,
+          rows: ptyOptions.rows
+        })
 
-        connection.client.shell(shellOptions, (error: Error | undefined, stream: ClientChannel) => {
+        // Environment variables should be passed as second parameter
+        const envOptions = options.env !== undefined ? { env: options.env } : {}
+
+        logger('Shell environment options:', { hasEnv: options.env !== undefined })
+
+        // Pass PTY and env options as separate parameters like v1
+        connection.client.shell(ptyOptions, envOptions, (error: Error | undefined, stream: ClientChannel) => {
           if (error !== undefined) {
             logger('Failed to open shell:', error)
             resolve(err(error))
@@ -236,6 +313,13 @@ export class SSHServiceImpl implements SSHService {
 
           connection.lastActivity = Date.now()
           logger('Shell opened successfully')
+
+          // Log what the stream thinks its window size is
+          if ('rows' in stream && 'cols' in stream) {
+            const streamWithWindow = stream as ClientChannel & { rows: number; cols: number }
+            logger('Stream window size:', { rows: streamWithWindow.rows, cols: streamWithWindow.cols })
+          }
+
           resolve(ok(stream))
         })
 

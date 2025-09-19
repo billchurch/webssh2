@@ -49,10 +49,19 @@ export class AuthServiceImpl implements AuthService {
   authenticate(credentials: Credentials): Promise<Result<AuthResult>> {
     try {
       logger('Authenticating user:', credentials.username)
+      logger('Auth credentials:', {
+        username: credentials.username,
+        host: credentials.host,
+        port: credentials.port,
+        hasPassword: credentials.password !== undefined && credentials.password !== '',
+        hasPrivateKey: credentials.privateKey !== undefined && credentials.privateKey !== '',
+        hasPassphrase: credentials.passphrase !== undefined && credentials.passphrase !== ''
+      })
 
       // Validate credentials
       const validationError = this.validateCredentials(credentials)
       if (validationError !== null) {
+        logger('Credential validation failed:', validationError)
         return Promise.resolve(err(new Error(validationError)))
       }
 
