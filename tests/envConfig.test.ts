@@ -2,10 +2,10 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../dist/app/envConfig.js'
+import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS } from './test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS, TEST_PRIVATE_KEY, TEST_PASSPHRASE } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
@@ -160,15 +160,15 @@ describe('Environment Configuration Tests', () => {
   test('loadEnvironmentConfig handles all user credential fields', () => {
     process.env.WEBSSH2_USER_NAME = TEST_USERNAME
     process.env.WEBSSH2_USER_PASSWORD = TEST_PASSWORD_ALT
-    process.env.WEBSSH2_USER_PRIVATE_KEY = 'base64encodedkey'
-    process.env.WEBSSH2_USER_PASSPHRASE = 'keypassphrase'
+    process.env.WEBSSH2_USER_PRIVATE_KEY = TEST_PRIVATE_KEY
+    process.env.WEBSSH2_USER_PASSPHRASE = TEST_PASSPHRASE
 
     const config = loadEnvironmentConfig()
 
     assert.equal(config.user?.name, TEST_USERNAME)
     assert.equal(config.user?.password, TEST_PASSWORD_ALT)
-    assert.equal(config.user?.privateKey, 'base64encodedkey')
-    assert.equal(config.user?.passphrase, 'keypassphrase')
+    assert.equal(config.user?.privateKey, TEST_PRIVATE_KEY)
+    assert.equal(config.user?.passphrase, TEST_PASSPHRASE)
   })
 
   test('loadEnvironmentConfig handles complex nested structures', () => {

@@ -12,9 +12,11 @@ export type AuthEvent =
       type: 'auth.request'
       payload: {
         sessionId: SessionId
-        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive'
+        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive' | 'key' | 'password'
         username: string
         password?: string
+        privateKey?: string
+        passphrase?: string
         host?: string
         port?: number
       }
@@ -25,7 +27,7 @@ export type AuthEvent =
         sessionId: SessionId
         userId: UserId
         username: string
-        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive'
+        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive' | 'key' | 'password'
       }
     }
   | {
@@ -33,7 +35,7 @@ export type AuthEvent =
       payload: {
         sessionId: SessionId
         reason: string
-        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive'
+        method: 'basic' | 'manual' | 'post' | 'keyboard-interactive' | 'key' | 'password'
       }
     }
   | {
@@ -94,9 +96,9 @@ export type ConnectionEvent =
       type: 'connection.closed'
       payload: {
         sessionId: SessionId
-        connectionId: ConnectionId
+        connectionId?: ConnectionId
         reason: string
-        hadError: boolean
+        hadError?: boolean
       }
     }
   | {
@@ -111,6 +113,45 @@ export type ConnectionEvent =
  * Terminal I/O related events
  */
 export type TerminalEvent =
+  | {
+      type: 'terminal.create'
+      payload: {
+        sessionId: SessionId
+        term: string
+        rows: number
+        cols: number
+        cwd: string | null
+        env: Record<string, string>
+      }
+    }
+  | {
+      type: 'terminal.ready'
+      payload: {
+        sessionId: SessionId
+        stream?: unknown // SSH2Stream
+      }
+    }
+  | {
+      type: 'terminal.error'
+      payload: {
+        sessionId: SessionId
+        error: string
+      }
+    }
+  | {
+      type: 'terminal.input'
+      payload: {
+        sessionId: SessionId
+        data: string
+      }
+    }
+  | {
+      type: 'terminal.output'
+      payload: {
+        sessionId: SessionId
+        data: string
+      }
+    }
   | {
       type: 'terminal.data.in'
       payload: {
@@ -168,6 +209,27 @@ export type TerminalEvent =
         execId: string
         code: number | null
         signal: string | null
+      }
+    }
+
+/**
+ * Exec-specific events
+ */
+export type ExecEvent =
+  | {
+      type: 'exec.request'
+      payload: {
+        sessionId: SessionId
+        command: string
+      }
+    }
+  | {
+      type: 'exec.result'
+      payload: {
+        sessionId: SessionId
+        stdout: string
+        stderr: string
+        code: number
       }
     }
 
@@ -306,6 +368,7 @@ export type AppEvent =
   | AuthEvent
   | ConnectionEvent
   | TerminalEvent
+  | ExecEvent
   | SessionEvent
   | SystemEvent
   | RecordingEvent

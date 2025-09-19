@@ -3,7 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
-import { execSchema } from '../dist/app/validators/execSchema.js'
+import { execSchema } from '../app/validators/execSchema.js'
 
 test('execSchema validates minimal valid payload', () => {
   const ajv = new Ajv({ allErrors: true })

@@ -5,8 +5,7 @@
 import type { EventBus } from '../event-bus.js'
 import type { SSHService } from '../../services/interfaces.js'
 import type { SessionStore } from '../../state/store.js'
-import { EventPriority } from '../types.js'
-import { isEventType } from '../types.js'
+import { EventPriority, isEventType } from '../types.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:events:connection')
@@ -226,8 +225,10 @@ export function createConnectionHandlers(
       logger('Connection closed for session %s: %s (error: %s)', sessionId, reason, hadError)
 
       try {
-        // Clean up connection
-        await sshService.disconnect(connectionId)
+        // Clean up connection if we have a connectionId
+        if (connectionId !== undefined) {
+          await sshService.disconnect(connectionId)
+        }
 
         // Dispatch closed to store
         sessionStore.dispatch(sessionId, {

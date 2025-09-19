@@ -110,6 +110,7 @@
     "eslint-plugin-security": "^3.0.1",
     "husky": "^9.1.7",
     "prettier": "^3.6.2",
+    "rollup": "^4.50.2",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
@@ -128,5 +129,8 @@
     "test": "tests"
   },
   "author": "",
-  "type": "module"
+  "type": "module",
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.50.2"
+  }
 }
