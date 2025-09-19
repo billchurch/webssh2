@@ -21,6 +21,9 @@ export const SOCKET_EVENTS = {
   SSH_END: 'end',
   SSH_CLOSE: 'close',
   SSH_AUTH_FAILURE: 'authFailure',
+  AUTH_SUCCESS: 'authentication',
+  READY: 'ready',
+  EXEC_RESULT: 'exec-result',
 
   // Application events
   AUTHENTICATION: 'authentication',

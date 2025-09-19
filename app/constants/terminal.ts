@@ -3,10 +3,13 @@
 
 export const TERMINAL_DEFAULTS = {
   // Default dimensions
+  COLS: 80,
+  ROWS: 24,
   DEFAULT_COLS: 80,
   DEFAULT_ROWS: 24,
-  
+
   // Terminal types
+  TERM: 'xterm-256color',
   DEFAULT_TERM: 'xterm-256color',
   SUPPORTED_TERMS: [
     'xterm',
