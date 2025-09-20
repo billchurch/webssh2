@@ -12,6 +12,8 @@ import type { Duplex } from 'node:stream'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
+import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
+import type { AuthMethod } from '../../auth/providers/auth-provider.interface.js'
 
 // SSH2 stream extends Duplex with additional methods
 interface SSH2Stream extends Duplex {
@@ -121,6 +123,8 @@ export class ServiceSocketAdapter {
   private shellStream: SSH2Stream | null = null
   private readonly initialTermSettings: { term?: string; rows?: number; cols?: number } = {}
   private storedPassword: string | null = null
+  private readonly authPipeline: UnifiedAuthPipeline
+  private originalAuthMethod: AuthMethod | null = null
 
   constructor(
     private readonly socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
@@ -128,14 +132,61 @@ export class ServiceSocketAdapter {
     private readonly services: Services,
     private readonly store: SessionStore
   ) {
+    // Initialize auth pipeline
+    this.authPipeline = new UnifiedAuthPipeline(socket.request, config)
+
     this.setupEventHandlers()
-    // Request authentication from the client
-    this.requestAuthentication()
+
+    // Check authentication state on connection
+    this.checkInitialAuth()
+  }
+
+  private checkInitialAuth(): void {
+    debug(`Checking initial auth state for client ${this.socket.id}`)
+
+    if (this.authPipeline.isAuthenticated()) {
+      const creds = this.authPipeline.getCredentials()
+      if (creds !== null) {
+        // Store original auth method for tracking
+        this.originalAuthMethod = this.authPipeline.getAuthMethod()
+        debug(`Client already authenticated via ${this.originalAuthMethod}, auto-connecting`)
+
+        // Auto-connect with existing credentials
+        void this.handleAuthentication(creds as AuthCredentials)
+      }
+    } else if (this.authPipeline.requiresAuthRequest()) {
+      // Check if interactive auth is allowed
+      if (this.config.ssh.alwaysSendKeyboardInteractivePrompts === true) {
+        this.requestKeyboardInteractiveAuth()
+      } else {
+        this.requestAuthentication()
+      }
+    } else {
+      // Default to requesting auth
+      this.requestAuthentication()
+    }
   }
 
   private requestAuthentication(): void {
-    debug(`Requesting authentication from client ${this.socket.id}`)
+    const authMethod = this.authPipeline.getAuthMethod()
+    debug(`Requesting authentication from client ${this.socket.id}, method: ${authMethod ?? 'manual'}`)
+
     this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, { action: 'request_auth' })
+  }
+
+  private requestKeyboardInteractiveAuth(): void {
+    debug(`Requesting keyboard-interactive auth from client ${this.socket.id}`)
+
+    // Emit keyboard-interactive event with prompts
+    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+      action: 'keyboard-interactive',
+      prompts: [
+        { prompt: 'Username: ', echo: true },
+        { prompt: 'Password: ', echo: false }
+      ],
+      name: 'SSH Authentication',
+      instructions: 'Please provide your credentials'
+    })
   }
 
   private setupEventHandlers(): void {
@@ -158,10 +209,16 @@ export class ServiceSocketAdapter {
       }
     })
 
-    // Handle authentication
-    this.socket.on(SOCKET_EVENTS.AUTH, async (credentials: AuthCredentials) => {
+    // Handle authentication - covers both regular auth and keyboard-interactive responses
+    this.socket.on(SOCKET_EVENTS.AUTH, async (credentials: AuthCredentials | { responses: string[] }) => {
       debug(`Received AUTH event (${SOCKET_EVENTS.AUTH})`)
-      await this.handleAuthentication(credentials)
+
+      // Check if this is a keyboard-interactive response
+      if ('responses' in credentials) {
+        await this.handleKeyboardInteractiveResponse(credentials.responses)
+      } else {
+        await this.handleAuthentication(credentials)
+      }
     })
 
     // Handle terminal setup
@@ -201,9 +258,56 @@ export class ServiceSocketAdapter {
     })
   }
 
+  private async handleKeyboardInteractiveResponse(responses: string[]): Promise<void> {
+    if (responses.length >= 2 && responses[0] !== undefined && responses[1] !== undefined) {
+      // Check if host is configured
+      if (this.config.ssh.host === null) {
+        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No SSH host configured')
+        return
+      }
+
+      const credentials: AuthCredentials = {
+        username: responses[0],
+        password: responses[1],
+        host: this.config.ssh.host,
+        port: this.config.ssh.port
+      }
+
+      await this.handleAuthentication(credentials)
+    } else {
+      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'Invalid authentication response')
+    }
+  }
+
   private async handleAuthentication(credentials: AuthCredentials): Promise<void> {
     try {
       debug('Authenticating user:', credentials.username)
+
+      // Track original auth method if not already set
+      this.originalAuthMethod ??= this.authPipeline.getAuthMethod()
+
+      // Update pipeline with manual credentials if provided
+      if (Object.keys(credentials).length > 0) {
+        // Convert AuthCredentials to Credentials type for pipeline
+        const pipelineCredentials = {
+          username: credentials.username,
+          password: credentials.password,
+          host: credentials.host,
+          port: credentials.port
+        }
+
+        if (!this.authPipeline.setManualCredentials(pipelineCredentials)) {
+          this.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.INVALID_CREDENTIALS)
+          return
+        }
+      }
+
+      // Get validated credentials from pipeline
+      const validatedCreds = this.authPipeline.getCredentials()
+      if (validatedCreds === null) {
+        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No credentials available')
+        return
+      }
 
       // Store terminal settings from auth credentials for later use
       if (credentials.term !== undefined) {
@@ -218,13 +322,31 @@ export class ServiceSocketAdapter {
       debug('Stored initial terminal settings:', this.initialTermSettings)
 
       // Store password for credential replay if enabled
-      if (this.config.options.allowReplay && credentials.password !== undefined && credentials.password !== '') {
-        this.storedPassword = credentials.password
+      if (this.config.options.allowReplay && typeof validatedCreds.password === 'string' && validatedCreds.password !== '') {
+        this.storedPassword = validatedCreds.password
         debug('Stored password for credential replay')
       }
 
-      // Authenticate using auth service
-      const authCreds = buildAuthCredentials(credentials)
+      // Authenticate using auth service - use validated creds from pipeline
+      // Build AuthCredentials from the validated Credentials
+      const authCredentials: AuthCredentials = {
+        username: validatedCreds.username ?? credentials.username,
+        host: validatedCreds.host ?? credentials.host,
+        port: validatedCreds.port ?? credentials.port
+      }
+
+      // Add optional fields if present
+      if (validatedCreds.password !== undefined) {
+        authCredentials.password = validatedCreds.password
+      }
+      if (validatedCreds.privateKey !== undefined) {
+        authCredentials.privateKey = validatedCreds.privateKey
+      }
+      if (validatedCreds.passphrase !== undefined) {
+        authCredentials.passphrase = validatedCreds.passphrase
+      }
+
+      const authCreds = buildAuthCredentials(authCredentials)
       const authResult = await this.services.auth.authenticate(authCreds)
 
       if (!authResult.ok) {
@@ -234,8 +356,8 @@ export class ServiceSocketAdapter {
 
       this.sessionId = authResult.value.sessionId
 
-      // Connect SSH using SSH service
-      const sshConfig = buildSSHConfig(credentials, this.sessionId, this.config)
+      // Connect SSH using SSH service - use validated creds from pipeline
+      const sshConfig = buildSSHConfig(authCredentials, this.sessionId, this.config)
       const sshResult = await this.services.ssh.connect(sshConfig)
 
       if (!sshResult.ok) {
@@ -244,9 +366,11 @@ export class ServiceSocketAdapter {
       }
 
       this.connectionId = sshResult.value.id as string
-      this.emitAuthenticationSuccess(credentials)
+      this.emitAuthenticationSuccess(authCredentials)
 
-      debug('Authentication successful')
+      debug(`Authentication successful via ${this.originalAuthMethod ?? 'manual'}`)
+      // Log auth method for tracking
+      console.info(`[auth] socket=${this.socket.id} method=${this.originalAuthMethod ?? 'manual'}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : VALIDATION_MESSAGES.AUTHENTICATION_FAILED
       this.socket.emit(SOCKET_EVENTS.SSH_ERROR, message)
@@ -255,7 +379,10 @@ export class ServiceSocketAdapter {
   }
 
   private emitAuthenticationSuccess(credentials: AuthCredentials): void {
-    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, { action: 'auth_result', success: true })
+    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+      action: 'auth_result',
+      success: true
+    })
     this.socket.emit(SOCKET_EVENTS.PERMISSIONS, {
       autoLog: this.config.options.autoLog,
       allowReplay: this.config.options.allowReplay,
@@ -373,7 +500,20 @@ export class ServiceSocketAdapter {
   }
 
   private handleResize(dimensions: { rows: number; cols: number }): void {
-    if (this.sessionId === null) {return}
+    if (this.sessionId === null) {
+      debug('Resize ignored: No session ID yet')
+      return
+    }
+
+    // Check if terminal exists before attempting resize
+    const terminalResult = this.services.terminal.getTerminal(this.sessionId)
+    if (!terminalResult.ok || terminalResult.value === null) {
+      debug('Resize ignored: Terminal not created yet for session', this.sessionId)
+      // Store dimensions for when terminal is created
+      this.initialTermSettings.rows = dimensions.rows
+      this.initialTermSettings.cols = dimensions.cols
+      return
+    }
 
     const result = this.services.terminal.resize(this.sessionId, dimensions)
     if (!result.ok) {
