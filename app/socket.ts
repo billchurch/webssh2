@@ -450,5 +450,10 @@ export default function init(
   config: Config,
   SSHConnectionClass: SSHCtor
 ): void {
-  io.on('connection', (socket: WSSocket) => new WebSSH2Socket(socket, config, SSHConnectionClass))
+  debug('V1 socket init() called - registering connection handler')
+  io.on('connection', (socket: WSSocket) => {
+    debug(`V1 connection handler triggered for socket ${socket.id}`)
+    return new WebSSH2Socket(socket, config, SSHConnectionClass)
+  })
+  debug('V1 socket init() complete')
 }

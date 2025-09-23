@@ -52,10 +52,14 @@ export default function initSocket(
 
   if (version === 'v2') {
     debug('Using v2 (refactored) socket implementation')
+    debug('V2 socket initialization starting')
     initV2Socket(io, config, SSHConnectionClass, services, store)
+    debug('V2 socket initialization complete')
   } else {
     debug('Using v1 (legacy) socket implementation')
+    debug('V1 socket initialization starting')
     initV1(io, config, SSHConnectionClass)
+    debug('V1 socket initialization complete')
   }
 }
 

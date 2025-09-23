@@ -262,7 +262,11 @@ export class ServiceSocketAdapter {
     if (responses.length >= 2 && responses[0] !== undefined && responses[1] !== undefined) {
       // Check if host is configured
       if (this.config.ssh.host === null) {
-        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No SSH host configured')
+        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+          action: 'auth_result',
+          success: false,
+          message: 'No SSH host configured'
+        })
         return
       }
 
@@ -275,7 +279,11 @@ export class ServiceSocketAdapter {
 
       await this.handleAuthentication(credentials)
     } else {
-      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'Invalid authentication response')
+      this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+        action: 'auth_result',
+        success: false,
+        message: 'Invalid authentication response'
+      })
     }
   }
 
@@ -297,7 +305,11 @@ export class ServiceSocketAdapter {
         }
 
         if (!this.authPipeline.setManualCredentials(pipelineCredentials)) {
-          this.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.INVALID_CREDENTIALS)
+          this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+            action: 'auth_result',
+            success: false,
+            message: VALIDATION_MESSAGES.INVALID_CREDENTIALS
+          })
           return
         }
       }
@@ -305,7 +317,11 @@ export class ServiceSocketAdapter {
       // Get validated credentials from pipeline
       const validatedCreds = this.authPipeline.getCredentials()
       if (validatedCreds === null) {
-        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No credentials available')
+        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+          action: 'auth_result',
+          success: false,
+          message: 'No credentials available'
+        })
         return
       }
 
@@ -350,7 +366,11 @@ export class ServiceSocketAdapter {
       const authResult = await this.services.auth.authenticate(authCreds)
 
       if (!authResult.ok) {
-        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, authResult.error.message)
+        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+          action: 'auth_result',
+          success: false,
+          message: authResult.error.message
+        })
         return
       }
 
@@ -361,7 +381,11 @@ export class ServiceSocketAdapter {
       const sshResult = await this.services.ssh.connect(sshConfig)
 
       if (!sshResult.ok) {
-        this.socket.emit(SOCKET_EVENTS.SSH_ERROR, sshResult.error.message)
+        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+          action: 'auth_result',
+          success: false,
+          message: sshResult.error.message
+        })
         return
       }
 
@@ -373,7 +397,11 @@ export class ServiceSocketAdapter {
       console.info(`[auth] socket=${this.socket.id} method=${this.originalAuthMethod ?? 'manual'}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : VALIDATION_MESSAGES.AUTHENTICATION_FAILED
-      this.socket.emit(SOCKET_EVENTS.SSH_ERROR, message)
+      this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+        action: 'auth_result',
+        success: false,
+        message
+      })
       debug('Authentication error:', error)
     }
   }
@@ -391,8 +419,12 @@ export class ServiceSocketAdapter {
     })
     this.socket.emit(SOCKET_EVENTS.GET_TERMINAL, true)
 
-    const connectionString = `ssh://${credentials.username}@${credentials.host}:${credentials.port}`
+    // Emit connection string without username to match V1 behavior
+    const connectionString = `ssh://${credentials.host}:${credentials.port}`
     this.socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'footer', value: connectionString })
+
+    // Emit Connected status that tests expect
+    this.socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'status', value: 'Connected' })
   }
 
   private async handleTerminal(settings: TerminalSettings): Promise<void> {

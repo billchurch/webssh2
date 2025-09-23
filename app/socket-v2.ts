@@ -31,8 +31,9 @@ export default function init(
   services?: Services,
   store?: SessionStore
 ): void {
+  debug('V2 socket init() called - registering connection handler')
   io.on('connection', (socket) => {
-    debug(`New connection: ${socket.id}`)
+    debug(`V2 connection handler triggered for socket ${socket.id}`)
     
     // Use service-based adapter if services are available
     if (services !== undefined && store !== undefined) {
@@ -62,11 +63,14 @@ export default function init(
             socketAdapter.emitAuthSuccess()
             socketAdapter.emitPermissions()
             socketAdapter.emitGetTerminal(true)
-            
+
             // Update UI with connection info
             const connectionString = `ssh://${credentials.host}:${credentials.port}`
             socketAdapter.emitUIUpdate('footer', connectionString)
-            
+
+            // Emit Connected status that tests expect
+            socketAdapter.emitUIUpdate('status', 'Connected')
+
             debug(`Authentication successful for ${socket.id}`)
           } else {
             socketAdapter.emitAuthFailure(connectionResult.error ?? 'Connection failed')

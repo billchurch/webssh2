@@ -154,6 +154,13 @@ export class SocketAdapter {
           if (result.credentials != null) {
             this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
               debug('Auth handler error:', error)
+              // Emit auth failure to client when handler fails
+              const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+              this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+                action: 'auth_result',
+                success: false,
+                message: errorMessage,
+              })
             })
           }
         }
@@ -185,6 +192,13 @@ export class SocketAdapter {
         // Call async handler
         this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
           debug('Auth handler error:', error)
+          // Emit auth failure to client when handler fails
+          const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+          this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+            action: 'auth_result',
+            success: false,
+            message: errorMessage,
+          })
         })
       }
     } else {
