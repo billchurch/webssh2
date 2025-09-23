@@ -5,12 +5,10 @@ import type { Server as IOServer } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import initV1 from './socket.js'
 import initV2 from './socket-v2.js'
-import initV3 from './socket-v3.js'
 import type { Config } from './types/config.js'
 import type { SSHCtor } from './socket.js'
 import type { Services } from './services/interfaces.js'
 import type { SessionStore } from './state/store.js'
-import type { EventBus } from './events/event-bus.js'
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -19,27 +17,6 @@ import type {
 } from './types/contracts/v1/socket.js'
 
 const debug = createNamespacedDebug('socket:switcher')
-
-/**
- * Initialize v3 socket with fallback to v2
- */
-function initV3Socket(
-  io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  config: Config,
-  SSHConnectionClass: SSHCtor,
-  services?: Services,
-  store?: SessionStore,
-  eventBus?: EventBus
-): void {
-  if (eventBus !== undefined && services !== undefined && store !== undefined) {
-    debug('Using v3 (event-driven) socket implementation')
-    initV3(io, config, services, store, eventBus)
-    return
-  }
-
-  debug('Warning: EventBus/Services/Store not provided, falling back to v2')
-  initV2Socket(io, config, SSHConnectionClass, services, store)
-}
 
 /**
  * Initialize v2 socket with optional services
@@ -69,14 +46,11 @@ export default function initSocket(
   config: Config,
   SSHConnectionClass: SSHCtor,
   services?: Services,
-  store?: SessionStore,
-  eventBus?: EventBus
+  store?: SessionStore
 ): void {
   const version = getSocketVersion()
 
-  if (version === 'v3') {
-    initV3Socket(io, config, SSHConnectionClass, services, store, eventBus)
-  } else if (version === 'v2') {
+  if (version === 'v2') {
     debug('Using v2 (refactored) socket implementation')
     initV2Socket(io, config, SSHConnectionClass, services, store)
   } else {
@@ -88,14 +62,10 @@ export default function initSocket(
 /**
  * Get version of socket implementation being used
  */
-export function getSocketVersion(): 'v1' | 'v2' | 'v3' {
-  const useV3 = process.env['WEBSSH2_USE_EVENT_BUS'] === 'true'
+export function getSocketVersion(): 'v1' | 'v2' {
   const useV2 = process.env['WEBSSH2_USE_V2_SOCKET'] === 'true' ||
                 process.env['WEBSSH2_USE_REFACTORED_SOCKET'] === 'true'
 
-  if (useV3) {
-    return 'v3'
-  }
   if (useV2) {
     return 'v2'
   }

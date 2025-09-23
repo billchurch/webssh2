@@ -6,7 +6,6 @@ import debug from 'debug'
 import type { Config } from '../types/config.js'
 import type { Logger, AuthService, SSHService, TerminalService, SessionService, Services } from './interfaces.js'
 import type { SessionStore } from '../state/store.js'
-import type { EventBus } from '../events/event-bus.js'
 
 const logger = debug('webssh2:services:container')
 
@@ -235,6 +234,5 @@ export const TOKENS = {
   SSHService: createToken<SSHService>('SSHService'),
   TerminalService: createToken<TerminalService>('TerminalService'),
   SessionService: createToken<SessionService>('SessionService'),
-  Services: createToken<Services>('Services'),
-  EventBus: createToken<EventBus>('EventBus')
+  Services: createToken<Services>('Services')
 } as const

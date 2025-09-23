@@ -10,7 +10,6 @@ import {
   createServices
 } from './factory.js'
 import type { ExtendedServiceDependencies } from './factory.js'
-import { setupEventSystem } from '../events/setup-simple.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:setup')
@@ -36,15 +35,6 @@ export function setupContainer(config: Config): Container {
   container.register(TOKENS.SessionStore, () => {
     logger('Creating session store')
     return createSessionStore(config)
-  })
-
-  // Register event bus factory
-  container.register(TOKENS.EventBus, () => {
-    logger('Creating event bus')
-    const services = container.resolve(TOKENS.Services)
-    const store = container.resolve(TOKENS.SessionStore)
-    const eventSystem = setupEventSystem(services, store, config)
-    return eventSystem.eventBus
   })
 
   // Register individual service factories

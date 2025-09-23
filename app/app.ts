@@ -58,7 +58,6 @@ export async function initializeServerAsync(): Promise<{
     const container = initializeGlobalContainer(appConfig)
     const services = container.resolve<Services>(TOKENS.Services)
     const store = container.resolve(TOKENS.SessionStore)
-    const eventBus = container.resolve(TOKENS.EventBus)
     debug('Services initialized with DI container')
 
     const { app, sessionMiddleware } = createAppAsync(appConfig)
@@ -69,7 +68,7 @@ export async function initializeServerAsync(): Promise<{
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
 
     // Pass services to socket initialization
-    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor, services, store, eventBus)
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor, services, store)
     
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
