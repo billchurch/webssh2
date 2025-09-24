@@ -80,7 +80,7 @@ export function extractPort(
   
   const portNumber = typeof portParam === 'number' 
     ? portParam 
-    : parseInt(portParam, 10)
+    : Number.parseInt(portParam, 10)
   
   return getValidatedPort(portNumber)
 }
@@ -183,7 +183,7 @@ export function createConnectionParams(
   if (portParam != null) {
     portNumber = typeof portParam === 'number' 
       ? portParam 
-      : parseInt(portParam, 10)
+      : Number.parseInt(portParam, 10)
   }
   
   return {

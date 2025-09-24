@@ -144,12 +144,9 @@ async function handlePostAuthRoute(
   const routeRequest = extractRouteRequest(expressReq)
 
   // Merge host from URL into body if not present
-  const bodyWithHost = {
-    ...(routeRequest.body ?? {}),
-    ...(hostOverride != null && routeRequest.body?.['host'] == null
-      ? { host: hostOverride }
-      : {})
-  }
+  const bodyWithHost = hostOverride != null && routeRequest.body?.['host'] == null
+    ? { ...(routeRequest.body ?? {}), host: hostOverride }
+    : routeRequest.body ?? {}
 
   // Process POST authentication request
   const authResult = processPostAuthRequest(
@@ -288,9 +285,9 @@ export function createRoutesV2(config: Config): Router {
     
     // Clear session keys
     const session = expressReq.session as unknown as Record<string, unknown>
-    keysToRemove.forEach((key: string) => {
+    for (const key of keysToRemove) {
       Reflect.deleteProperty(session, key)
-    })
+    }
     
     // Redirect to login
     res.redirect(redirectPath)

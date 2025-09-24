@@ -1,7 +1,7 @@
 // app/config/config-loader.ts
 // I/O operations for loading configuration (separated from pure logic)
 
-import { promises as fs } from 'fs'
+import { promises as fs } from 'node:fs'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/result.js'
 

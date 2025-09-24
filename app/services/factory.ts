@@ -36,37 +36,38 @@ export class DefaultLogger implements Logger {
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
-    if (meta !== undefined) {
-      this.debugLogger(message, meta)
-    } else {
+    if (meta === undefined) {
       this.debugLogger(message)
+    } else {
+      this.debugLogger(message, meta)
     }
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    if (meta !== undefined) {
-      this.debugLogger('[INFO]', message, meta)
-    } else {
+    if (meta === undefined) {
       this.debugLogger('[INFO]', message)
+    } else {
+      this.debugLogger('[INFO]', message, meta)
     }
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    if (meta !== undefined) {
-      this.debugLogger('[WARN]', message, meta)
-    } else {
+    if (meta === undefined) {
       this.debugLogger('[WARN]', message)
+    } else {
+      this.debugLogger('[WARN]', message, meta)
     }
   }
 
   error(message: string, error?: Error, meta?: Record<string, unknown>): void {
-    if (error !== undefined) {
-      this.debugLogger('[ERROR]', message, error.message, error.stack)
-    }
-    if (meta !== undefined) {
-      this.debugLogger('[ERROR]', message, meta)
-    } else if (error === undefined) {
+    if (error === undefined && meta === undefined) {
       this.debugLogger('[ERROR]', message)
+    } else if (error === undefined) {
+      this.debugLogger('[ERROR]', message, meta)
+    } else if (meta === undefined) {
+      this.debugLogger('[ERROR]', message, error.message, error.stack)
+    } else {
+      this.debugLogger('[ERROR]', message, error.message, error.stack, meta)
     }
   }
 }

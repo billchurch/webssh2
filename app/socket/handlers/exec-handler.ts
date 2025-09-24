@@ -34,7 +34,7 @@ export interface ExecResult {
 /**
  * Parses a numeric value from unknown type
  * @param value - Value to parse
- * @returns Parsed number or NaN
+ * @returns Parsed number or Number.NaN
  * @pure
  */
 function parseNumericValue(value: unknown): number {
@@ -42,9 +42,9 @@ function parseNumericValue(value: unknown): number {
     return value
   }
   if (typeof value === 'string') {
-    return parseInt(value, 10)
+    return Number.parseInt(value, 10)
   }
-  return NaN
+  return Number.NaN
 }
 
 /**
@@ -63,7 +63,7 @@ function validateNumericField(
   errorMessage: string
 ): { valid: boolean; value?: number; error?: string } {
   const numValue = parseNumericValue(value)
-  if (isNaN(numValue) || numValue < min || numValue > max) {
+  if (Number.isNaN(numValue) || numValue < min || numValue > max) {
     return { valid: false, error: errorMessage }
   }
   return { valid: true, value: numValue }

@@ -59,7 +59,7 @@ function parsePortNumber(value: unknown): number {
     return value
   }
   if (typeof value === 'string') {
-    return parseInt(value, 10)
+    return Number.parseInt(value, 10)
   }
   return DEFAULTS.SSH_PORT
 }

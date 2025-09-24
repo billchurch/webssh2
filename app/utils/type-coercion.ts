@@ -92,8 +92,8 @@ export function safeParseInt(value: unknown, radix = 10): number | undefined {
     return undefined
   }
   
-  const result = parseInt(str, radix)
-  return isNaN(result) ? undefined : result
+  const result = Number.parseInt(str, radix)
+  return Number.isNaN(result) ? undefined : result
 }
 
 /**

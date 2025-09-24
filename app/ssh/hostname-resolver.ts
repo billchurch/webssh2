@@ -74,8 +74,8 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
     return false
   }
 
-  const mask = parseInt(maskStr, 10)
-  if (isNaN(mask) || mask < 0 || mask > 32) {
+  const mask = Number.parseInt(maskStr, 10)
+  if (Number.isNaN(mask) || mask < 0 || mask > 32) {
     return false
   }
 
@@ -86,8 +86,8 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
       return 0
     }
     return parts.reduce((acc, part, i) => {
-      const num = parseInt(part, 10)
-      if (isNaN(num) || num < 0 || num > 255) {
+      const num = Number.parseInt(part, 10)
+      if (Number.isNaN(num) || num < 0 || num > 255) {
         return 0
       }
       return acc + (num << (8 * (3 - i)))
@@ -110,8 +110,8 @@ const isIpv6InCidr = (ip: string, subnet: string): boolean => {
     return false
   }
 
-  const mask = parseInt(maskStr, 10)
-  if (isNaN(mask) || mask < 0 || mask > 128) {
+  const mask = Number.parseInt(maskStr, 10)
+  if (Number.isNaN(mask) || mask < 0 || mask > 128) {
     return false
   }
 
@@ -144,8 +144,8 @@ const isIpv6InCidr = (ip: string, subnet: string): boolean => {
     const ipPart = ipParts[i] ?? '0'
     // eslint-disable-next-line security/detect-object-injection
     const subnetPart = subnetParts[i] ?? '0'
-    const ipHex = parseInt(ipPart, 16)
-    const subnetHex = parseInt(subnetPart, 16)
+    const ipHex = Number.parseInt(ipPart, 16)
+    const subnetHex = Number.parseInt(subnetPart, 16)
 
     const bitsToCheck = Math.min(16, mask - bitsChecked)
     const bitMask = (0xFFFF << (16 - bitsToCheck)) & 0xFFFF

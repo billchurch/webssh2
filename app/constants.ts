@@ -1,8 +1,8 @@
 // server
 // app/constants.ts
 
-import { fileURLToPath } from 'url'
-import * as path from 'path'
+import { fileURLToPath } from 'node:url'
+import * as path from 'node:path'
 
 const FILENAME = fileURLToPath(import.meta.url)
 const DIRNAME = path.dirname(FILENAME)

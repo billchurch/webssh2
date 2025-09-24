@@ -293,7 +293,7 @@ export class SSHServiceImpl implements SSHService {
           hasPassword: 'password' in connectConfig,
           hasPrivateKey: 'privateKey' in connectConfig,
           hasPassphrase: 'passphrase' in connectConfig,
-          algorithms: connectConfig.algorithms !== undefined ? 'configured' : 'default',
+          algorithms: connectConfig.algorithms === undefined ? 'default' : 'configured',
           readyTimeout: connectConfig.readyTimeout,
           keepaliveInterval: connectConfig.keepaliveInterval,
           tryKeyboard: connectConfig.tryKeyboard
@@ -346,11 +346,11 @@ export class SSHServiceImpl implements SSHService {
         })
 
         // Environment variables should be passed as second parameter
-        const envOptions = options.env !== undefined ? { env: options.env } : {}
+        const envOptions = options.env === undefined ? {} : { env: options.env }
 
         logger('Shell environment options:', {
           hasEnv: options.env !== undefined,
-          envKeys: options.env !== undefined ? Object.keys(options.env) : [],
+          envKeys: options.env === undefined ? [] : Object.keys(options.env),
           env: options.env
         })
 
@@ -367,8 +367,7 @@ export class SSHServiceImpl implements SSHService {
 
           // Log what the stream thinks its window size is
           if ('rows' in stream && 'cols' in stream) {
-            const streamWithWindow = stream as ClientChannel & { rows: number; cols: number }
-            logger('Stream window size:', { rows: streamWithWindow.rows, cols: streamWithWindow.cols })
+            logger('Stream window size:', { rows: stream.rows, cols: stream.cols })
           }
 
           resolve(ok(stream))

@@ -82,7 +82,7 @@ function parseDate(value: unknown): Date | undefined {
     return undefined
   }
   const date = new Date(value)
-  return isNaN(date.getTime()) ? undefined : date
+  return Number.isNaN(date.getTime()) ? undefined : date
 }
 
 /**
@@ -94,8 +94,8 @@ function parseNumber(value: unknown): number | undefined {
     return value
   }
   if (typeof value === 'string') {
-    const parsed = parseInt(value, 10)
-    return isNaN(parsed) ? undefined : parsed
+    const parsed = Number.parseInt(value, 10)
+    return Number.isNaN(parsed) ? undefined : parsed
   }
   return undefined
 }
@@ -175,8 +175,8 @@ export function extractReadyTimeout(params: Record<string, unknown>): number | n
   }
   
   if (typeof timeout === 'string') {
-    const parsed = parseInt(timeout, 10)
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = Number.parseInt(timeout, 10)
+    if (!Number.isNaN(parsed) && parsed > 0) {
       return Math.min(parsed, 300000)
     }
   }

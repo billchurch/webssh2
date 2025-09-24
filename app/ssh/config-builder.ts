@@ -88,8 +88,8 @@ export function extractPort(creds: SshCredentials): number {
   }
   
   if (typeof portValue === 'string') {
-    const parsed = parseInt(portValue, 10)
-    return isNaN(parsed) ? 22 : parsed
+    const parsed = Number.parseInt(portValue, 10)
+    return Number.isNaN(parsed) ? 22 : parsed
   }
   
   return 22

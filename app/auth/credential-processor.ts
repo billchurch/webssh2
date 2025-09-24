@@ -69,7 +69,7 @@ export function extractPostCredentials(body: Record<string, unknown>): SshCreden
   
   const port = body['port']
   if (typeof port === 'number' || typeof port === 'string') {
-    credentials.port = typeof port === 'number' ? port : parseInt(port, 10)
+    credentials.port = typeof port === 'number' ? port : Number.parseInt(port, 10)
   }
   
   const sshterm = body['sshterm']
@@ -101,9 +101,9 @@ export function validateConnectionParams(params: ConnectionParams): ValidatedCon
   const port = getValidatedPort(params.port)
   
   // Determine terminal
-  const term = params.sshterm != null 
-    ? validateSshTerm(params.sshterm)
-    : params.config.ssh.term
+  const term = params.sshterm == null
+    ? params.config.ssh.term
+    : validateSshTerm(params.sshterm)
   
   return { host, port, term }
 }
@@ -173,8 +173,8 @@ export function extractReadyTimeout(params: Record<string, unknown>): number | n
   }
   
   if (typeof timeout === 'string') {
-    const parsed = parseInt(timeout, 10)
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = Number.parseInt(timeout, 10)
+    if (!Number.isNaN(parsed) && parsed > 0) {
       return Math.min(parsed, 300000) // Max 5 minutes
     }
   }

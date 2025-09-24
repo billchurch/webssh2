@@ -1,9 +1,9 @@
 // server
 // app/config.ts
 
-import path, { dirname } from 'path'
-import { existsSync } from 'fs'
-import { fileURLToPath } from 'url'
+import path, { dirname } from 'node:path'
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { generateSecureSecret } from './crypto-utils.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
@@ -59,7 +59,7 @@ function formatConfigForDebug(config: Config): Record<string, unknown> {
     options: config.options,
     session: {
       name: config.session.name,
-      secret: config.session.secret !== '' ? '***' : 'not set'
+      secret: config.session.secret === '' ? 'not set' : '***'
     },
     sso: {
       enabled: config.sso.enabled,
@@ -94,12 +94,18 @@ async function loadEnhancedConfig(
   
   // Load file config if path provided and file exists
   let fileConfig: Partial<Config> | undefined
-  if (configPath != null && configPath !== '') {
+  if (configPath == null || configPath === '') {
+    // No config path provided, skip file loading
+    debug('No config path provided, using environment variables and defaults')
+  } else {
     const fileResult = await readConfigFile(configPath)
     if (!fileResult.ok) {
       // Check if it's just a missing file (ENOENT) - this is expected and not an error
       const error = fileResult.error as { code?: string }
-      if (error.code !== 'ENOENT') {
+      if (error.code === 'ENOENT') {
+        // Missing file is expected and not an error
+        debug('Config file not found (expected):', configPath)
+      } else {
         // Only treat non-ENOENT errors as actual errors
         return err([{
           path: 'config.json',

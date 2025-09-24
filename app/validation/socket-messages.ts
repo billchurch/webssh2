@@ -61,7 +61,7 @@ const parseIntInRange = (
   }
   return {
     ok: true,
-    value: parseInt(str, 10)
+    value: Number.parseInt(str, 10)
   }
 }
 
@@ -76,7 +76,7 @@ const validatePort = (value: unknown): Result<number> => {
   }
   return {
     ok: true,
-    value: parseInt(str, 10)
+    value: Number.parseInt(str, 10)
   }
 }
 

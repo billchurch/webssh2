@@ -73,7 +73,7 @@ export function parseDimension(value: unknown): number | null {
   if (!isValidDimension(value)) {
     return null
   }
-  return parseInt(String(value), 10)
+  return Number.parseInt(String(value), 10)
 }
 
 /**

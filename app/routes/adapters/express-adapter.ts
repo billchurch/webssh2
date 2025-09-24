@@ -39,9 +39,9 @@ export const applyRouteResponse = (
 ): void => {
   // Apply headers if present
   if (response.headers != null) {
-    Object.entries(response.headers).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(response.headers)) {
       res.setHeader(key, value)
-    })
+    }
   }
 
   // Handle redirect
@@ -56,10 +56,13 @@ export const applyRouteResponse = (
   // For 502 Bad Gateway, send plain text for compatibility with tests
   if (response.status === 502) {
     res.send('Bad Gateway')
-  } else if (response.data != null) {
-    res.json(response.data)
-  } else {
+    return
+  }
+
+  if (response.data == null) {
     res.end()
+  } else {
+    res.json(response.data)
   }
 }
 
@@ -109,7 +112,7 @@ export const asyncRouteHandler = (
 export const createSessionUpdater = (
   updates: (req: ExpressRequest) => Partial<AuthSession>
 ): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     const expressReq = req as unknown as ExpressRequest
     const sessionUpdates = updates(expressReq)
     Object.assign(expressReq.session, sessionUpdates)
@@ -123,16 +126,16 @@ export const createSessionUpdater = (
 export const createSessionCleaner = (
   keysToRemove: string[] | ((req: ExpressRequest) => string[])
 ): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     const expressReq = req as unknown as ExpressRequest
     const keys = typeof keysToRemove === 'function' 
       ? keysToRemove(expressReq)
       : keysToRemove
     
     const session = expressReq.session as unknown as Record<string, unknown>
-    keys.forEach(key => {
+    for (const key of keys) {
       Reflect.deleteProperty(session, key)
-    })
+    }
     
     next()
   }

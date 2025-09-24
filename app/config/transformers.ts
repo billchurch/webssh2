@@ -215,7 +215,7 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
     options: config.options,
     session: {
       name: config.session.name,
-      secret: config.session.secret !== '' ? '***' : 'not set'
+      secret: config.session.secret === '' ? 'not set' : '***'
     },
     sso: {
       enabled: config.sso.enabled,
@@ -241,12 +241,12 @@ export const normalizePort = (port: unknown, defaultPort: number = 22): number =
   if (typeof port === 'number') {
     portNum = port
   } else if (typeof port === 'string') {
-    portNum = parseInt(port, 10)
+    portNum = Number.parseInt(port, 10)
   } else {
-    portNum = NaN
+    portNum = Number.NaN
   }
   
-  if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+  if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
     return defaultPort
   }
   

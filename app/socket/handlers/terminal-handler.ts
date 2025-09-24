@@ -36,7 +36,7 @@ export interface ShellOptions {
 /**
  * Parses a value to a number
  * @param value - Value to parse
- * @returns Parsed number or NaN
+ * @returns Parsed number or Number.NaN
  * @pure
  */
 function parseToNumber(value: unknown): number {
@@ -44,9 +44,9 @@ function parseToNumber(value: unknown): number {
     return value
   }
   if (typeof value === 'string') {
-    return parseInt(value, 10)
+    return Number.parseInt(value, 10)
   }
-  return NaN
+  return Number.NaN
 }
 
 /**
@@ -63,7 +63,7 @@ function validateDimension(value: unknown, min: number, max: number): number | u
   }
 
   const num = parseToNumber(value)
-  if (!isNaN(num) && num >= min && num <= max) {
+  if (!Number.isNaN(num) && num >= min && num <= max) {
     return num
   }
   return undefined

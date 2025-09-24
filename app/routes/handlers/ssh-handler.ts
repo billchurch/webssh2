@@ -181,7 +181,7 @@ export const processPostAuthRequest = (
   if (typeof portValue === 'number') {
     port = portValue
   } else if (typeof portValue === 'string' && portValue !== '') {
-    port = parseInt(portValue, 10)
+    port = Number.parseInt(portValue, 10)
   } else {
     port = config.ssh.port
   }
@@ -273,8 +273,8 @@ export const validateConnectionParameters = (
   if (typeof params.port === 'number') {
     port = params.port
   } else if (typeof params.port === 'string') {
-    port = parseInt(params.port, 10)
-    if (isNaN(port) || port <= 0 || port > 65535) {
+    port = Number.parseInt(params.port, 10)
+    if (Number.isNaN(port) || port <= 0 || port > 65535) {
       return {
         ok: false,
         error: new Error(`Invalid port: ${params.port}`)

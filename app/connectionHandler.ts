@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
 import { modifyHtml } from './utils.js'
