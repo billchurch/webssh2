@@ -3,7 +3,7 @@
 
 import { Client as SSH } from 'ssh2'
 import type { ConnectConfig, ClientChannel } from 'ssh2'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import { createNamespacedDebug } from './logger.js'
 import { SSHConnectionError } from './errors.js'
 import { maskSensitiveData } from './utils.js'

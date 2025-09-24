@@ -1,7 +1,7 @@
 // app/types/ssh.ts
 // Shared SSH connection type definitions
 
-import type { EventEmitter } from 'events'
+import type { EventEmitter } from 'node:events'
 import type { Config } from './config.js'
 
 /**

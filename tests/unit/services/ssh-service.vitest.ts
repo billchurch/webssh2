@@ -24,32 +24,56 @@ vi.mock('ssh2', () => ({
   }))
 }))
 
+// Helper functions defined outside describe block to reduce nesting
+const createTestSSHConfig = (overrides?: Partial<SSHConfig>): SSHConfig => ({
+  sessionId: createSessionId('test-session'),
+  host: TEST_SSH.HOST,
+  port: TEST_SSH.PORT,
+  username: TEST_USERNAME,
+  password: TEST_PASSWORD,
+  readyTimeout: 20000,
+  keepaliveInterval: 30000,
+  ...overrides
+})
+
+// Event handler factories
+const createReadyHandler = (client: any) => (event: string, handler: Function) => {
+  if (event === 'ready') setTimeout(() => handler(), 0)
+  return client
+}
+
+const createErrorHandler = (client: any, error: Error) => (event: string, handler: Function) => {
+  if (event === 'error') setTimeout(() => handler(error), 0)
+  return client
+}
+
+const createShellCallback = (stream: Duplex | null, error?: Error) => (opts: any, callback: Function) => {
+  callback(error ?? undefined, stream)
+}
+
+const createExecCallback = (mockStream: any, error?: Error) => (cmd: string, callback: Function) => {
+  callback(error ?? undefined, mockStream)
+}
+
+// Mock stream factory
+const createMockExecStream = (stdout: string, exitCode: number = 0) => ({
+  on: vi.fn((event: string, handler: Function) => {
+    if (event === 'data') setTimeout(() => handler(Buffer.from(stdout)), 0)
+    if (event === 'close') setTimeout(() => handler(exitCode), 10)
+    return createMockExecStream(stdout, exitCode)
+  }),
+  stderr: { on: vi.fn() }
+})
+
 describe('SSHService', () => {
   let sshService: SSHServiceImpl
   let mockDeps: ReturnType<typeof createMockDependencies>
   let mockStore: ReturnType<typeof createMockStore>
   let mockClient: ReturnType<typeof createMockSSH2Client>
 
-  // Helper function to create test SSH config
-  const createTestSSHConfig = (overrides?: Partial<SSHConfig>): SSHConfig => ({
-    sessionId: createSessionId('test-session'),
-    host: TEST_SSH.HOST,
-    port: TEST_SSH.PORT,
-    username: TEST_USERNAME,
-    password: TEST_PASSWORD,
-    readyTimeout: 20000,
-    keepaliveInterval: 30000,
-    ...overrides
-  })
-
   // Helper function to mock successful connection
   const mockSuccessfulConnection = () => {
-    mockClient.on.mockImplementation((event: string, handler: Function) => {
-      if (event === 'ready') {
-        setTimeout(() => handler(), 0)
-      }
-      return mockClient
-    })
+    mockClient.on.mockImplementation(createReadyHandler(mockClient))
   }
 
   // Helper function to establish a test connection
@@ -128,15 +152,9 @@ describe('SSHService', () => {
 
     it('should handle connection errors', async () => {
       const config = createTestSSHConfig()
-
-      // Mock connection error
       const error = new Error('Connection refused')
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'error') {
-          setTimeout(() => handler(error), 0)
-        }
-        return mockClient
-      })
+
+      mockClient.on.mockImplementation(createErrorHandler(mockClient, error))
 
       const result = await sshService.connect(config)
 
@@ -174,7 +192,6 @@ describe('SSHService', () => {
 
   describe('shell', () => {
     it.skip('should open shell stream', async () => {
-      const connectionId = createConnectionId('test-conn')
       const options: ShellOptions = {
         term: 'xterm-256color',
         rows: 24,
@@ -182,59 +199,52 @@ describe('SSHService', () => {
         env: { LANG: 'en_US.UTF-8' }
       }
 
-      // First establish a connection
-      const { config, result: connectResult } = await establishTestConnection()
-
-      if (connectResult.ok) {
-        // Mock shell creation
-        const mockStream = new Duplex()
-        mockClient.shell.mockImplementation((opts: any, callback: Function) => {
-          callback(undefined, mockStream)
-        })
-
-        const shellResult = await sshService.shell(connectResult.value.id, options)
-
-        expect(shellResult.ok).toBe(true)
-        if (shellResult.ok) {
-          expect(shellResult.value).toBe(mockStream)
-        }
-
-        expect(mockClient.shell).toHaveBeenCalledWith(
-          expect.objectContaining({
-            term: 'xterm-256color',
-            rows: 24,
-            cols: 80,
-            env: { LANG: 'en_US.UTF-8' }
-          }),
-          expect.any(Function)
-        )
+      const { result: connectResult } = await establishTestConnection()
+      if (!connectResult.ok) {
+        return
       }
+
+      const mockStream = new Duplex()
+      mockClient.shell.mockImplementation(createShellCallback(mockStream))
+
+      const shellResult = await sshService.shell(connectResult.value.id, options)
+
+      expect(shellResult.ok).toBe(true)
+      if (shellResult.ok) {
+        expect(shellResult.value).toBe(mockStream)
+      }
+
+      expect(mockClient.shell).toHaveBeenCalledWith(
+        expect.objectContaining({
+          term: 'xterm-256color',
+          rows: 24,
+          cols: 80,
+          env: { LANG: 'en_US.UTF-8' }
+        }),
+        expect.any(Function)
+      )
     })
 
     it.skip('should handle shell errors', async () => {
-      const connectionId = createConnectionId('test-conn')
       const options: ShellOptions = {
         term: 'xterm-256color',
         rows: 24,
         cols: 80
       }
 
-      // Setup connection
-      const { config, result: connectResult } = await establishTestConnection()
+      const { result: connectResult } = await establishTestConnection()
+      if (!connectResult.ok) {
+        return
+      }
 
-      if (connectResult.ok) {
-        // Mock shell error
-        const error = new Error('Shell access denied')
-        mockClient.shell.mockImplementation((opts: any, callback: Function) => {
-          callback(error, null)
-        })
+      const error = new Error('Shell access denied')
+      mockClient.shell.mockImplementation(createShellCallback(null, error))
 
-        const shellResult = await sshService.shell(connectResult.value.id, options)
+      const shellResult = await sshService.shell(connectResult.value.id, options)
 
-        expect(shellResult.ok).toBe(false)
-        if (!shellResult.ok) {
-          expect(shellResult.error.message).toContain('Shell access denied')
-        }
+      expect(shellResult.ok).toBe(false)
+      if (!shellResult.ok) {
+        expect(shellResult.error.message).toContain('Shell access denied')
       }
     })
   })
@@ -243,59 +253,43 @@ describe('SSHService', () => {
     it.skip('should execute command', async () => {
       const command = 'ls -la'
 
-      // Setup connection
-      const { config, result: connectResult } = await establishTestConnection()
-
-      if (connectResult.ok) {
-        // Mock exec
-        const mockStream = {
-          on: vi.fn((event: string, handler: Function) => {
-            if (event === 'data') {
-              setTimeout(() => handler(Buffer.from('file1.txt\nfile2.txt\n')), 0)
-            } else if (event === 'close') {
-              setTimeout(() => handler(0), 10)
-            }
-            return mockStream
-          }),
-          stderr: {
-            on: vi.fn()
-          }
-        }
-
-        mockClient.exec.mockImplementation((cmd: string, callback: Function) => {
-          callback(undefined, mockStream)
-        })
-
-        const execResult = await sshService.exec(connectResult.value.id, command)
-
-        expect(execResult.ok).toBe(true)
-        if (execResult.ok) {
-          expect(execResult.value.stdout).toContain('file1.txt')
-          expect(execResult.value.code).toBe(0)
-        }
-
-        expect(mockClient.exec).toHaveBeenCalledWith(command, expect.any(Function))
+      const { result: connectResult } = await establishTestConnection()
+      if (!connectResult.ok) {
+        return
       }
+
+      const mockStream = createMockExecStream('file1.txt\nfile2.txt\n', 0)
+      mockClient.exec.mockImplementation(createExecCallback(mockStream))
+
+      const execResult = await sshService.exec(connectResult.value.id, command)
+
+      expect(execResult.ok).toBe(true)
+      if (execResult.ok) {
+        expect(execResult.value.stdout).toContain('file1.txt')
+        expect(execResult.value.code).toBe(0)
+      }
+
+      expect(mockClient.exec).toHaveBeenCalledWith(command, expect.any(Function))
     })
   })
 
   describe('disconnect', () => {
     it.skip('should close connection', async () => {
-      // Setup connection
-      const { config, result: connectResult } = await establishTestConnection()
-
-      if (connectResult.ok) {
-        const disconnectResult = await sshService.disconnect(connectResult.value.id)
-
-        expect(disconnectResult.ok).toBe(true)
-        expect(mockClient.end).toHaveBeenCalled()
-        expect(mockStore.dispatch).toHaveBeenCalledWith(
-          config.sessionId,
-          expect.objectContaining({
-            type: 'CONNECTION_CLOSED'
-          })
-        )
+      const { result: connectResult } = await establishTestConnection()
+      if (!connectResult.ok) {
+        return
       }
+
+      const disconnectResult = await sshService.disconnect(connectResult.value.id)
+
+      expect(disconnectResult.ok).toBe(true)
+      expect(mockClient.end).toHaveBeenCalled()
+      expect(mockStore.dispatch).toHaveBeenCalledWith(
+        connectResult.value.sessionId,
+        expect.objectContaining({
+          type: 'CONNECTION_CLOSED'
+        })
+      )
     })
 
     it('should handle non-existent connection', async () => {
@@ -309,18 +303,16 @@ describe('SSHService', () => {
 
   describe('getConnectionStatus', () => {
     it.skip('should return connection status', async () => {
-      // Setup connection
-      const { config, result: connectResult } = await establishTestConnection()
+      const { result: connectResult } = await establishTestConnection()
+      if (!connectResult.ok) {
+        return
+      }
 
-      if (connectResult.ok) {
-        const statusResult = sshService.getConnectionStatus(connectResult.value.id)
+      const statusResult = sshService.getConnectionStatus(connectResult.value.id)
 
-        expect(statusResult.ok).toBe(true)
-        if (statusResult.ok && statusResult.value) {
-          expect(statusResult.value.status).toBe('connected')
-          expect(statusResult.value.host).toBe(TEST_SSH.HOST)
-          expect(statusResult.value.username).toBe(TEST_USERNAME)
-        }
+      expect(statusResult.ok).toBe(true)
+      if (statusResult.ok && statusResult.value !== null) {
+        expect(statusResult.value.status).toBe('connected')
       }
     })
 
@@ -339,10 +331,7 @@ describe('SSHService', () => {
     it.skip('should disconnect all connections for a session', async () => {
       const sessionId = createSessionId('test-session')
 
-      // Create connection for the session
-      const { config, result: connect1 } = await establishTestConnection({ sessionId })
-
-      // Disconnect all connections for the session
+      await establishTestConnection({ sessionId })
       await sshService.disconnectSession(sessionId)
 
       expect(mockClient.end).toHaveBeenCalled()

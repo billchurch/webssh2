@@ -1,7 +1,7 @@
 // app/socket/control-handler.ts
 // Control message handler for WebSocket connections
 
-import type { EventEmitter } from 'events'
+import type { EventEmitter } from 'node:events'
 import { createNamespacedDebug } from '../logger.js'
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'

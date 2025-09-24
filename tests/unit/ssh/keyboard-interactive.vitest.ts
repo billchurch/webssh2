@@ -2,7 +2,7 @@
 // Tests for keyboard-interactive authentication handling
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS } from '../../test-constants.js'
 
 // Test helpers for reducing duplication

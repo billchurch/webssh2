@@ -1,7 +1,7 @@
 // app/ssh/connection-adapter.ts
 // SSH connection I/O adapter
 
-import type { EventEmitter } from 'events'
+import type { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
 import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'

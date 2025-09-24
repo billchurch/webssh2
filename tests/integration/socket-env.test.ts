@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import initSockets from '../../app/socket'
 import type { Config } from '../../app/types/config'
 import { MOCK_CREDENTIALS, SSO_HEADERS, TEST_MINIMAL_SECRET } from '../test-constants'

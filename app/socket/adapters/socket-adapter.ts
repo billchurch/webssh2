@@ -2,7 +2,7 @@
 // I/O adapter for Socket.IO operations
 
 import type { Socket } from 'socket.io'
-import type { EventEmitter } from 'events'
+import type { EventEmitter } from 'node:events'
 import { createNamespacedDebug } from '../../logger.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
