@@ -30,6 +30,37 @@ describe('SSHService', () => {
   let mockStore: ReturnType<typeof createMockStore>
   let mockClient: ReturnType<typeof createMockSSH2Client>
 
+  // Helper function to create test SSH config
+  const createTestSSHConfig = (overrides?: Partial<SSHConfig>): SSHConfig => ({
+    sessionId: createSessionId('test-session'),
+    host: TEST_SSH.HOST,
+    port: TEST_SSH.PORT,
+    username: TEST_USERNAME,
+    password: TEST_PASSWORD,
+    readyTimeout: 20000,
+    keepaliveInterval: 30000,
+    ...overrides
+  })
+
+  // Helper function to mock successful connection
+  const mockSuccessfulConnection = () => {
+    mockClient.on.mockImplementation((event: string, handler: Function) => {
+      if (event === 'ready') {
+        setTimeout(() => handler(), 0)
+      }
+      return mockClient
+    })
+  }
+
+  // Helper function to establish a test connection
+  const establishTestConnection = async (configOverrides?: Partial<SSHConfig>) => {
+    const config = createTestSSHConfig(configOverrides)
+    mockSuccessfulConnection()
+    const result = await sshService.connect(config)
+    expect(result.ok).toBe(true)
+    return { config, result }
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -43,23 +74,9 @@ describe('SSHService', () => {
 
   describe('connect', () => {
     it('should establish SSH connection with password', async () => {
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
+      const config = createTestSSHConfig()
 
-      // Mock successful connection
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
+      mockSuccessfulConnection()
 
       const resultPromise = sshService.connect(config)
 
@@ -95,23 +112,9 @@ describe('SSHService', () => {
 
     it('should handle connection with private key', async () => {
       const privateKey = '-----BEGIN RSA PRIVATE KEY-----\ntest-key\n-----END RSA PRIVATE KEY-----'
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        privateKey,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
+      const config = createTestSSHConfig({ privateKey, password: undefined })
 
-      // Mock successful connection
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
+      mockSuccessfulConnection()
 
       const result = await sshService.connect(config)
 
@@ -124,15 +127,7 @@ describe('SSHService', () => {
     })
 
     it('should handle connection errors', async () => {
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
+      const config = createTestSSHConfig()
 
       // Mock connection error
       const error = new Error('Connection refused')
@@ -159,15 +154,7 @@ describe('SSHService', () => {
     })
 
     it.skip('should handle connection timeout', async () => {
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 100, // Short timeout for test
-        keepaliveInterval: 30000
-      }
+      const config = createTestSSHConfig({ readyTimeout: 100 }) // Short timeout for test
 
       // Don't trigger any events - let it timeout
       mockClient.on.mockReturnValue(mockClient)
@@ -196,25 +183,7 @@ describe('SSHService', () => {
       }
 
       // First establish a connection
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
-
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connectResult = await sshService.connect(config)
-      expect(connectResult.ok).toBe(true)
+      const { config, result: connectResult } = await establishTestConnection()
 
       if (connectResult.ok) {
         // Mock shell creation
@@ -251,25 +220,7 @@ describe('SSHService', () => {
       }
 
       // Setup connection
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
-
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connectResult = await sshService.connect(config)
-      expect(connectResult.ok).toBe(true)
+      const { config, result: connectResult } = await establishTestConnection()
 
       if (connectResult.ok) {
         // Mock shell error
@@ -293,25 +244,7 @@ describe('SSHService', () => {
       const command = 'ls -la'
 
       // Setup connection
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
-
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connectResult = await sshService.connect(config)
-      expect(connectResult.ok).toBe(true)
+      const { config, result: connectResult } = await establishTestConnection()
 
       if (connectResult.ok) {
         // Mock exec
@@ -349,25 +282,7 @@ describe('SSHService', () => {
   describe('disconnect', () => {
     it.skip('should close connection', async () => {
       // Setup connection
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
-
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connectResult = await sshService.connect(config)
-      expect(connectResult.ok).toBe(true)
+      const { config, result: connectResult } = await establishTestConnection()
 
       if (connectResult.ok) {
         const disconnectResult = await sshService.disconnect(connectResult.value.id)
@@ -395,25 +310,7 @@ describe('SSHService', () => {
   describe('getConnectionStatus', () => {
     it.skip('should return connection status', async () => {
       // Setup connection
-      const config: SSHConfig = {
-        sessionId: createSessionId('test-session'),
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
-
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connectResult = await sshService.connect(config)
-      expect(connectResult.ok).toBe(true)
+      const { config, result: connectResult } = await establishTestConnection()
 
       if (connectResult.ok) {
         const statusResult = sshService.getConnectionStatus(connectResult.value.id)
@@ -441,27 +338,9 @@ describe('SSHService', () => {
   describe('disconnectSession', () => {
     it.skip('should disconnect all connections for a session', async () => {
       const sessionId = createSessionId('test-session')
-      
-      // Create multiple connections for the same session
-      const config1: SSHConfig = {
-        sessionId,
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        username: TEST_USERNAME,
-        password: TEST_PASSWORD,
-        readyTimeout: 20000,
-        keepaliveInterval: 30000
-      }
 
-      mockClient.on.mockImplementation((event: string, handler: Function) => {
-        if (event === 'ready') {
-          setTimeout(() => handler(), 0)
-        }
-        return mockClient
-      })
-
-      const connect1 = await sshService.connect(config1)
-      expect(connect1.ok).toBe(true)
+      // Create connection for the session
+      const { config, result: connect1 } = await establishTestConnection({ sessionId })
 
       // Disconnect all connections for the session
       await sshService.disconnectSession(sessionId)
