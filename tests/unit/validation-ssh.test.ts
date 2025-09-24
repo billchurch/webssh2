@@ -139,7 +139,7 @@ MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr`
     })
 
     it('should handle edge cases correctly', () => {
-      assert.equal(normalizeDimension(NaN, 50, 80), 50) // NaN uses session
+      assert.equal(normalizeDimension(Number.NaN, 50, 80), 50) // NaN uses session
       assert.equal(normalizeDimension(Infinity, 50, 80), 50) // Infinity uses session
       assert.equal(normalizeDimension(-Infinity, 50, 80), 50) // -Infinity uses session
     })

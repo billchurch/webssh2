@@ -159,7 +159,7 @@ export function validateAuthCredentials(
 
   // Validate port
   const port = parsePortNumber(creds['port'])
-  if (isNaN(port) || port < VALIDATION_LIMITS.MIN_PORT || port > VALIDATION_LIMITS.MAX_PORT) {
+  if (Number.isNaN(port) || port < VALIDATION_LIMITS.MIN_PORT || port > VALIDATION_LIMITS.MAX_PORT) {
     return { valid: false, error: VALIDATION_MESSAGES.INVALID_PORT_NUMBER }
   }
 

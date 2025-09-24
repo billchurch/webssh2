@@ -5,7 +5,7 @@ import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative Paths', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, lastShellOptions: any
+  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
 
   beforeEach(() => {
     io = new EventEmitter()
@@ -33,8 +33,7 @@ describe('Socket.IO Negative Paths', () => {
         this.resizeTerminal = mock.fn()
       }
       async connect() { return }
-      async shell(options: any) {
-        lastShellOptions = options
+      async shell(_options: any) {
         const stream: any = new EventEmitter()
         stream.write = () => {}
         return stream

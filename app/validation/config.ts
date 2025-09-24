@@ -22,12 +22,11 @@ export function validateSshHost(host: string | null | undefined): SshHost | null
 /**
  * Validate SSH port
  */
-export function validateSshPort(port: number | undefined): SshPort {
-  const p = port ?? 22
-  if (!Number.isInteger(p) || p < 1 || p > 65535) {
-    throw new Error(`Invalid SSH port: ${p}`)
+export function validateSshPort(port: number = 22): SshPort {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid SSH port: ${port}`)
   }
-  return p as SshPort
+  return port as SshPort
 }
 
 /**

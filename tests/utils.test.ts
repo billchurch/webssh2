@@ -49,7 +49,7 @@ describe('getValidatedPort', () => {
     assert.equal(getValidatedPort(65536), 22)
     assert.equal(getValidatedPort(-1), 22)
     assert.equal(getValidatedPort(undefined), 22)
-    assert.equal(getValidatedPort(NaN), 22)
+    assert.equal(getValidatedPort(Number.NaN), 22)
   })
 })
 

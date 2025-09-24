@@ -118,8 +118,8 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Find the match that looks like terminal dimensions (not timestamps or other numbers)
     const sttyMatch = matches.find((m) => {
-      const r = parseInt(m[1])
-      const c = parseInt(m[2])
+      const r = Number.parseInt(m[1])
+      const c = Number.parseInt(m[2])
       // Terminal dimensions should be reasonable
       return r > 0 && r < 500 && c > 0 && c < 500
     })

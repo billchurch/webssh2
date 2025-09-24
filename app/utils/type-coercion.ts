@@ -73,7 +73,7 @@ export function safeToNumber(value: unknown): number | undefined {
   
   if (typeof value === 'string') {
     const num = Number(value)
-    return isNaN(num) ? undefined : num
+    return Number.isNaN(num) ? undefined : num
   }
   
   if (typeof value === 'boolean') {
