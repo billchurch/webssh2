@@ -11,63 +11,19 @@ import type { Config, ConfigValidationError } from './types/config.js'
 import { enhanceConfig } from './utils/config-builder.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
 import { readConfigFile } from './config/config-loader.js'
-import { 
+import {
   createDefaultConfig,
   processConfig as processConfigPure,
   parseConfigJson,
   createCorsConfig as createCorsConfigPure
 } from './config/config-processor.js'
+import { maskSensitiveConfig } from './config/transformers.js'
 import type { Result } from './types/result.js'
 import { err } from './utils/result.js'
 
 const debug = createNamespacedDebug('config')
 
 // Session secret will be generated inside loadEnhancedConfig if needed
-
-// Helper function to format config for debug output (masks sensitive data)
-function formatConfigForDebug(config: Config): Record<string, unknown> {
-  return {
-    listen: config.listen,
-    http: {
-      origins: config.http.origins.length > 0 ? `${config.http.origins.length} origin(s)` : 'none'
-    },
-    user: {
-      name: config.user.name != null && config.user.name !== '' ? '***' : null,
-      password: config.user.password != null && config.user.password !== '' ? '***' : null,
-      privateKey: config.user.privateKey != null && config.user.privateKey !== '' ? '***' : null,
-      passphrase: config.user.passphrase != null && config.user.passphrase !== '' ? '***' : null
-    },
-    ssh: {
-      host: config.ssh.host,
-      port: config.ssh.port,
-      localAddress: config.ssh.localAddress,
-      localPort: config.ssh.localPort,
-      term: config.ssh.term,
-      readyTimeout: config.ssh.readyTimeout,
-      keepaliveInterval: config.ssh.keepaliveInterval,
-      keepaliveCountMax: config.ssh.keepaliveCountMax,
-      allowedSubnets: config.ssh.allowedSubnets?.length ?? 0,
-      algorithms: {
-        cipher: config.ssh.algorithms.cipher.length,
-        kex: config.ssh.algorithms.kex.length,
-        hmac: config.ssh.algorithms.hmac.length,
-        compress: config.ssh.algorithms.compress.length,
-        serverHostKey: config.ssh.algorithms.serverHostKey.length
-      }
-    },
-    header: config.header,
-    options: config.options,
-    session: {
-      name: config.session.name,
-      secret: config.session.secret === '' ? 'not set' : '***'
-    },
-    sso: {
-      enabled: config.sso.enabled,
-      csrfProtection: config.sso.csrfProtection,
-      trustedProxies: config.sso.trustedProxies.length
-    }
-  }
-}
 
 const FILENAME = fileURLToPath(import.meta.url)
 const DIRNAME = dirname(FILENAME)
@@ -186,7 +142,7 @@ export async function loadConfigAsync(): Promise<Config> {
   }
   
   const finalConfig = result.value
-  debug('Loaded configuration: %O', formatConfigForDebug(finalConfig))
+  debug('Loaded configuration: %O', maskSensitiveConfig(finalConfig))
   return finalConfig
 }
 

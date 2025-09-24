@@ -55,7 +55,7 @@ export default class SSHConnection extends EventEmitter {
     debug('connect: %O', maskSensitiveData(creds))
     this.creds = creds
     
-    if (this.conn != null) {
+    if (this.conn !== null) {
       this.conn.end()
     }
     
@@ -90,7 +90,7 @@ export default class SSHConnection extends EventEmitter {
 
     this.conn?.on('ready', () => {
       // Extract host using pure function
-      const host = this.creds != null ? extractHost(this.creds) : ''
+      const host = this.creds !== null ? extractHost(this.creds) : ''
       debug(`connect: ready: ${host !== '' ? host : '[no host]'}`)
       isResolved = true
       resolve(this.conn)
@@ -102,7 +102,7 @@ export default class SSHConnection extends EventEmitter {
       const logMessage = formatErrorForLog(err)
       debug(`connect: error: ${logMessage}`)
       
-      if (isResolved === false) {
+      if (!isResolved) {
         isResolved = true
         const sshError = new SSHConnectionError(errorInfo.message)
         // Preserve original error properties for error type detection
@@ -116,7 +116,7 @@ export default class SSHConnection extends EventEmitter {
     
     this.conn?.on('close', (hadError?: boolean) => {
       debug(`connect: close: hadError=${hadError}, isResolved=${isResolved}`)
-      if (isResolved === false) {
+      if (!isResolved) {
         isResolved = true
         reject(new SSHConnectionError('SSH authentication failed - connection closed'))
       }
@@ -130,7 +130,7 @@ export default class SSHConnection extends EventEmitter {
       // This handles cases where the SSH server requires keyboard-interactive auth
       // instead of or in addition to password auth
       const password = this.creds?.password
-      if (password != null && typeof password === 'string' && typeof finish === 'function') {
+      if (password !== undefined && typeof password === 'string' && typeof finish === 'function') {
         const responses: string[] = []
         
         // Respond to each prompt with the password
@@ -161,8 +161,8 @@ export default class SSHConnection extends EventEmitter {
     const ptyOptions = createPtyOptions(options)
     
     // Filter environment variables
-    const envOptions = envVars != null 
-      ? { env: this.getEnvironment(envVars) } 
+    const envOptions = envVars !== undefined && envVars !== null
+      ? { env: this.getEnvironment(envVars) }
       : undefined
     
     debug(`shell: Creating shell with PTY options:`, ptyOptions, 'and env options:', envOptions)
@@ -172,7 +172,7 @@ export default class SSHConnection extends EventEmitter {
         ptyOptions,
         envOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
-          if (err != null) {
+          if (err !== undefined) {
             const errorMessage = extractErrorMessage(err)
             reject(new Error(errorMessage))
           } else {
@@ -198,7 +198,7 @@ export default class SSHConnection extends EventEmitter {
   ): Promise<unknown> {
     // Create exec options using pure functions
     const ptyOptions = options.pty === true ? options : undefined
-    const filteredEnv = envVars != null ? this.getEnvironment(envVars) : undefined
+    const filteredEnv = envVars !== undefined ? this.getEnvironment(envVars) : undefined
     const execOptions = createExecOptions(ptyOptions, filteredEnv)
     
     debug('exec: Executing command with options:', command, execOptions)
@@ -208,7 +208,7 @@ export default class SSHConnection extends EventEmitter {
         command,
         execOptions as unknown as object,
         (err: unknown, stream: ClientChannel & EventEmitter) => {
-          if (err != null) {
+          if (err !== undefined) {
             const errorMessage = extractErrorMessage(err)
             reject(new Error(errorMessage))
           } else {
@@ -221,17 +221,17 @@ export default class SSHConnection extends EventEmitter {
   }
 
   resizeTerminal(rows: number, cols: number): void {
-    if (this.stream != null && typeof this.stream.setWindow === 'function') {
+    if (this.stream !== null && typeof this.stream.setWindow === 'function') {
       this.stream.setWindow(rows, cols)
     }
   }
 
   end(): void {
-    if (this.stream != null) {
+    if (this.stream !== null) {
       this.stream.end?.()
       this.stream = null
     }
-    if (this.conn != null) {
+    if (this.conn !== null) {
       this.conn.end()
       this.conn = null
     }

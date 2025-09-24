@@ -30,33 +30,19 @@ try {
  * Creates a mock SessionStore for testing
  */
 export function createMockStore(): SessionStore {
-  if (vi) {
-    // Vitest environment
-    return {
-      dispatch: vi.fn(),
-      getState: vi.fn(),
-      createSession: vi.fn(),
-      removeSession: vi.fn(),
-      getSessionIds: vi.fn(() => []),
-      hasSession: vi.fn(() => false),
-      getHistory: vi.fn(() => []),
-      clear: vi.fn(),
-      subscribe: vi.fn()
-    } as unknown as SessionStore
-  } else {
-    // Node test environment
-    return {
-      dispatch: mock.fn(),
-      getState: mock.fn(),
-      createSession: mock.fn(),
-      removeSession: mock.fn(),
-      getSessionIds: mock.fn(() => []),
-      hasSession: mock.fn(() => false),
-      getHistory: mock.fn(() => []),
-      clear: mock.fn(),
-      subscribe: mock.fn()
-    } as unknown as SessionStore
-  }
+  const mockFn = vi ? vi.fn : mock.fn
+
+  return {
+    dispatch: mockFn(),
+    getState: mockFn(),
+    createSession: mockFn(),
+    removeSession: mockFn(),
+    getSessionIds: mockFn(() => []),
+    hasSession: mockFn(() => false),
+    getHistory: mockFn(() => []),
+    clear: mockFn(),
+    subscribe: mockFn()
+  } as unknown as SessionStore
 }
 
 /**
@@ -124,25 +110,64 @@ export function createMockSSH2Client(): any {
 }
 
 /**
+ * Create base auth state properties
+ */
+function createBaseAuthState(status: 'pending' | 'authenticated' | 'failed') {
+  return {
+    status,
+    username: status === 'authenticated' ? TEST_USERNAME : null,
+    method: status === 'authenticated' ? 'manual' as const : null,
+    timestamp: Date.now(),
+    errorMessage: null
+  }
+}
+
+/**
  * Creates a standard auth state for testing
  */
 export function createAuthState(status: 'pending' | 'authenticated' | 'failed' = 'authenticated') {
-  const baseState = {
-    auth: {
-      status,
-      username: null as string | null,
-      method: null as string | null,
-      timestamp: Date.now(),
-      errorMessage: null as string | null
-    }
+  return {
+    auth: createBaseAuthState(status)
   }
+}
 
-  if (status === 'authenticated') {
-    baseState.auth.username = TEST_USERNAME
-    baseState.auth.method = 'manual'
+/**
+ * Create base connection state properties
+ */
+function createBaseConnectionState(status: 'idle' | 'connecting' | 'connected' | 'closed') {
+  return {
+    status,
+    host: status !== 'idle' ? TEST_SSH.HOST : null,
+    port: status !== 'idle' ? TEST_SSH.PORT : null,
+    connectionId: status === 'connected' ? 'test-conn-id' : null,
+    errorMessage: null
   }
+}
 
-  return baseState
+/**
+ * Create base terminal state properties
+ */
+function createBaseTerminalState(rows: number, cols: number) {
+  return {
+    terminalId: null,
+    rows,
+    cols,
+    environment: {}
+  }
+}
+
+/**
+ * Create base metadata state properties
+ */
+function createBaseMetadataState() {
+  const now = Date.now()
+  return {
+    createdAt: now - 1000,
+    updatedAt: now,
+    userId: null,
+    clientIp: null,
+    userAgent: null
+  }
 }
 
 /**
@@ -162,33 +187,10 @@ export function createSessionState(overrides?: {
   } = overrides || {}
 
   return {
-    auth: {
-      status: authStatus,
-      username: authStatus === 'authenticated' ? TEST_USERNAME : null,
-      method: authStatus === 'authenticated' ? 'manual' as const : null,
-      timestamp: Date.now(),
-      errorMessage: null
-    },
-    connection: {
-      status: connectionStatus,
-      host: connectionStatus !== 'idle' ? TEST_SSH.HOST : null,
-      port: connectionStatus !== 'idle' ? TEST_SSH.PORT : null,
-      connectionId: connectionStatus === 'connected' ? 'test-conn-id' : null,
-      errorMessage: null
-    },
-    terminal: {
-      terminalId: null,
-      rows: terminalRows,
-      cols: terminalCols,
-      environment: {}
-    },
-    metadata: {
-      createdAt: Date.now() - 1000,
-      updatedAt: Date.now(),
-      userId: null,
-      clientIp: null,
-      userAgent: null
-    }
+    auth: createBaseAuthState(authStatus),
+    connection: createBaseConnectionState(connectionStatus),
+    terminal: createBaseTerminalState(terminalRows, terminalCols),
+    metadata: createBaseMetadataState()
   }
 }
 
@@ -240,14 +242,26 @@ export function setupMockStoreStates(mockStore: SessionStore, ...states: any[]) 
 // =============================================================================
 
 /**
+ * Check if a key is a test-relevant environment variable
+ */
+function isTestEnvironmentVariable(key: string): boolean {
+  return key.startsWith('WEBSSH2_') || key === 'PORT'
+}
+
+/**
+ * Get all test-relevant environment variables
+ */
+function getTestEnvironmentVariables(): string[] {
+  return Object.keys(process.env).filter(isTestEnvironmentVariable)
+}
+
+/**
  * Clean up all WEBSSH2_ and PORT environment variables
  * Should be called in beforeEach/afterEach hooks across all test files
  */
 export function cleanupEnvironmentVariables(): void {
-  Object.keys(process.env).forEach(key => {
-    if (key.startsWith('WEBSSH2_') || key === 'PORT') {
-      delete process.env[key]
-    }
+  getTestEnvironmentVariables().forEach(key => {
+    delete process.env[key]
   })
 }
 
@@ -257,10 +271,8 @@ export function cleanupEnvironmentVariables(): void {
  */
 export function storeEnvironmentVariables(): TestEnvironment {
   const originalEnv: TestEnvironment = {}
-  Object.keys(process.env).forEach(key => {
-    if (key.startsWith('WEBSSH2_') || key === 'PORT') {
-      originalEnv[key] = process.env[key]
-    }
+  getTestEnvironmentVariables().forEach(key => {
+    originalEnv[key] = process.env[key]
   })
   return originalEnv
 }
@@ -274,8 +286,7 @@ export function restoreEnvironmentVariables(originalEnv: TestEnvironment): void 
   cleanupEnvironmentVariables()
 
   // Then restore original values
-  Object.keys(originalEnv).forEach(key => {
-    const value = originalEnv[key]
+  Object.entries(originalEnv).forEach(([key, value]) => {
     if (value !== undefined) {
       process.env[key] = value
     }

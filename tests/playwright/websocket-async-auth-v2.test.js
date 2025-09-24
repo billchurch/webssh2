@@ -16,7 +16,14 @@ import {
   connectV2,
   checkForV2AuthError,
   waitForCommandOutput,
-  getTerminalContent
+  getTerminalContent,
+  buildBasicAuthUrl,
+  connectWithBasicAuth,
+  executeAndVerifyCommand,
+  connectAndWaitForTerminal,
+  fillFormDirectly,
+  executeCommandsWithExpectedOutput,
+  executeCommandList
 } from './v2-helpers.js'
 
 test.describe('V2 Async/Await Modal Login Authentication', () => {
@@ -73,17 +80,13 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
   })
 
   test('should handle async shell creation and terminal operations (V2)', async ({ page }) => {
-    // Connect first
-    await connectV2(page, {
+    // Connect and wait for terminal
+    await connectAndWaitForTerminal(page, {
       host: TEST_CONFIG.sshHost,
       port: TEST_CONFIG.sshPort,
       username: TEST_CONFIG.validUsername,
       password: TEST_CONFIG.validPassword
     })
-
-    await waitForV2Connection(page)
-    await waitForV2Terminal(page)
-    await waitForV2Prompt(page)
 
     // Test multiple async terminal operations
     const commands = [
@@ -94,24 +97,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
       'date'
     ]
 
-    for (const command of commands) {
-      await executeV2Command(page, command)
-
-      // Wait for each command to complete
-      await page.waitForFunction(
-        (cmd) => {
-          const content = document.querySelector('.xterm-screen')?.textContent || ''
-          // For echo commands, look for the output
-          if (cmd.startsWith('echo ')) {
-            const expectedOutput = cmd.match(/"([^"]+)"/)?.[1]
-            return expectedOutput ? content.includes(expectedOutput) : true
-          }
-          return true
-        },
-        command,
-        { timeout: TIMEOUTS.SHORT_WAIT * 2 }
-      )
-    }
+    await executeCommandList(page, commands)
 
     // Verify all commands executed
     const finalContent = await getTerminalContent(page)
@@ -120,16 +106,13 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
   })
 
   test('should handle terminal resize with async operations (V2)', async ({ page }) => {
-    // Connect first
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-    await page.click('button:has-text("Connect")')
-
-    await waitForV2Connection(page)
-    await waitForV2Terminal(page)
-    await waitForV2Prompt(page)
+    // Connect using helper
+    await connectAndWaitForTerminal(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // Get initial terminal size
     await executeV2Command(page, 'stty size')
@@ -157,10 +140,14 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
 test.describe('V2 Async/Await HTTP Basic Authentication', () => {
   test('should handle async auto-connect with valid Basic Auth (V2)', async ({ page }) => {
-    // Navigate with Basic Auth credentials
-    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
-    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    // Use helper to build URL
+    const url = buildBasicAuthUrl(
+      TEST_CONFIG.baseUrl,
+      TEST_CONFIG.validUsername,
+      TEST_CONFIG.validPassword,
+      TEST_CONFIG.sshHost,
+      TEST_CONFIG.sshPort
+    )
 
     console.log('V2 Basic Auth URL:', url)
     await page.goto(url)
@@ -173,10 +160,14 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
   })
 
   test('should handle async auth failure with invalid Basic Auth (V2)', async ({ page }) => {
-    // Navigate with invalid Basic Auth credentials
-    const badAuth = `${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}`
-    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${badAuth}@`)
-    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    // Use helper to build URL with invalid credentials
+    const url = buildBasicAuthUrl(
+      TEST_CONFIG.baseUrl,
+      TEST_CONFIG.invalidUsername,
+      TEST_CONFIG.invalidPassword,
+      TEST_CONFIG.sshHost,
+      TEST_CONFIG.sshPort
+    )
 
     // Expect navigation to fail with 401
     const response = await page.goto(url, { waitUntil: 'commit' })
@@ -187,10 +178,14 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
   })
 
   test('should return 502 for async connection with Basic Auth to non-existent host (V2)', async ({ page }) => {
-    // Navigate with Basic Auth to non-existent host
-    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
-    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    // Use helper to build URL with non-existent host
+    const url = buildBasicAuthUrl(
+      TEST_CONFIG.baseUrl,
+      TEST_CONFIG.validUsername,
+      TEST_CONFIG.validPassword,
+      TEST_CONFIG.nonExistentHost,
+      TEST_CONFIG.sshPort
+    )
 
     // Expect 502 for network connectivity issues
     const response = await page.goto(url, { waitUntil: 'commit' })
@@ -201,14 +196,15 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
   })
 
   test('should handle multiple async commands with Basic Auth session (V2)', async ({ page }) => {
-    // Navigate with Basic Auth credentials
-    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
-    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
-    await page.goto(url)
-
-    await waitForV2Connection(page)
-    await waitForV2Terminal(page)
+    // Use helper to connect with Basic Auth
+    await connectWithBasicAuth(
+      page,
+      TEST_CONFIG.baseUrl,
+      TEST_CONFIG.validUsername,
+      TEST_CONFIG.validPassword,
+      TEST_CONFIG.sshHost,
+      TEST_CONFIG.sshPort
+    )
     await waitForV2Prompt(page)
 
     // Execute multiple async commands
@@ -218,33 +214,24 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
       { cmd: 'uname -a', expect: 'Linux' }
     ]
 
-    for (const { cmd, expect: expectedText } of commands) {
-      await executeV2Command(page, cmd)
+    await executeCommandsWithExpectedOutput(page, commands)
 
-      await page.waitForFunction(
-        (expected) => {
-          const content = document.querySelector('.xterm-screen')?.textContent || ''
-          return content.includes(expected)
-        },
-        expectedText,
-        { timeout: TIMEOUTS.CONNECTION }
-      )
-    }
-
-    const finalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    const finalContent = await getTerminalContent(page)
     expect(finalContent).toContain('/home/testuser')
     expect(finalContent).toContain('.ssh')
     expect(finalContent).toContain('Linux')
   })
 
   test('should handle async session persistence with Basic Auth (V2)', async ({ page }) => {
-    const basicAuth = `${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}`
-    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', `://${basicAuth}@`)
-    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
-    await page.goto(url)
-
-    await waitForV2Connection(page)
-    await waitForV2Terminal(page)
+    // Use helper to connect with Basic Auth
+    await connectWithBasicAuth(
+      page,
+      TEST_CONFIG.baseUrl,
+      TEST_CONFIG.validUsername,
+      TEST_CONFIG.validPassword,
+      TEST_CONFIG.sshHost,
+      TEST_CONFIG.sshPort
+    )
     await waitForV2Prompt(page)
 
     // Create a test file to verify session persistence
@@ -252,20 +239,12 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
     await executeV2Command(page, `echo "V2 session persistence" > ${testFile}`)
 
     // Verify file was created
-    await executeV2Command(page, `cat ${testFile}`)
-
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent || ''
-        return content.includes('V2 session persistence')
-      },
-      { timeout: TIMEOUTS.CONNECTION }
-    )
+    await executeAndVerifyCommand(page, `cat ${testFile}`, 'V2 session persistence')
 
     // Clean up
     await executeV2Command(page, `rm ${testFile}`)
 
-    const content = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    const content = await getTerminalContent(page)
     expect(content).toContain('V2 session persistence')
   })
 })
@@ -275,12 +254,7 @@ test.describe('V2 Async Error Recovery and Edge Cases', () => {
     await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
 
     // Fill form with very slow/unresponsive host to test timeout
-    await page.fill('[name="host"]', '192.0.2.1') // TEST-NET-1 (should not respond)
-    await page.fill('[name="port"]', '22')
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-
-    await page.click('button:has-text("Connect")')
+    await fillFormDirectly(page, '192.0.2.1', '22', TEST_CONFIG.validUsername, TEST_CONFIG.validPassword)
 
     // V2 should handle timeout errors gracefully
     await expect(

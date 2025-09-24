@@ -9,7 +9,7 @@
  * @returns Transformed HTML with updated asset paths
  */
 export function transformAssetPaths(html: string): string {
-  return html.replace(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/')
+  return html.replaceAll(/(src|href)="(?!http|\/\/)/g, '$1="/ssh/assets/')
 }
 
 /**

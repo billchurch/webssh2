@@ -4,29 +4,22 @@
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../../dist/app/socket-v2.js'
-import { MOCK_CREDENTIALS } from '../test-constants.js'
+import {
+  createMockSocket,
+  createMockIO,
+  createMockConfig,
+  setupAuthenticatedSocket,
+  trackEmittedEvents,
+  waitForAsync
+} from './socket-v2-test-utils.js'
 
 describe('Socket V2 Exec Edge Cases', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
 
   beforeEach(() => {
-    io = new EventEmitter()
-    io.on = vi.fn(io.on.bind(io))
-
-    mockSocket = new EventEmitter()
-    mockSocket.id = 'neg-exec-more'
-    mockSocket.request = {
-      session: { save: vi.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },
-    }
-    mockSocket.emit = vi.fn()
-    mockSocket.disconnect = vi.fn()
-
-    mockConfig = {
-      ssh: { term: 'xterm-color', disableInteractiveAuth: false },
-      options: { allowReauth: true, allowReplay: true, allowReconnect: true },
-      user: {},
-      header: null,
-    }
+    io = createMockIO()
+    mockSocket = createMockSocket('neg-exec-more')
+    mockConfig = createMockConfig()
 
     class SSH extends EventEmitter {
       async connect() { return }
@@ -50,37 +43,9 @@ describe('Socket V2 Exec Edge Cases', () => {
     socketHandler(io, mockConfig, MockSSHConnection)
   })
 
-  // Helper function to setup authenticated socket
-  const setupAuthenticatedSocket = async () => {
-    const onConn = (io.on as any).mock.calls[0][1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    // Wait for authentication
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
-  }
-
-  // Helper function to track emitted events
-  const trackEmittedEvents = () => {
-    const emittedEvents: Array<{ event: string; payload?: any }> = []
-    const originalEmit = mockSocket.emit
-    mockSocket.emit = vi.fn((...args) => {
-      emittedEvents.push({ event: args[0], payload: args[1] })
-      return originalEmit.apply(mockSocket, args)
-    })
-    return emittedEvents
-  }
-
-  // Helper function to wait for async operations
-  const waitForAsync = async () => {
-    await new Promise((r) => setImmediate(r))
-  }
-
   it('exec: non-string command → ssherror', async () => {
-    await setupAuthenticatedSocket()
-    const emittedEvents = trackEmittedEvents()
+    await setupAuthenticatedSocket(io, mockSocket)
+    const emittedEvents = trackEmittedEvents(mockSocket)
 
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 123 })
     await waitForAsync()
@@ -90,7 +55,7 @@ describe('Socket V2 Exec Edge Cases', () => {
   })
 
   it('exec: exit payload contains code and signal', async () => {
-    await setupAuthenticatedSocket()
+    await setupAuthenticatedSocket(io, mockSocket)
 
     // Set up promise to wait for exec-exit event
     const execExitPromise = new Promise<any>((resolve) => {

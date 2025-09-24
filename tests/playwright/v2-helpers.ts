@@ -164,3 +164,86 @@ export async function connectV2(page: Page, options: {
   await fillV2LoginForm(page, options)
   await page.click('button:has-text("Connect")')
 }
+
+/**
+ * Builds a Basic Auth URL for SSH connection
+ */
+export function buildBasicAuthUrl(baseUrl: string, username: string, password: string, host: string, port: string | number): string {
+  const basicAuth = `${username}:${password}`
+  const baseUrlWithAuth = baseUrl.replace('://', `://${basicAuth}@`)
+  return `${baseUrlWithAuth}/ssh/host/${host}?port=${port}`
+}
+
+/**
+ * Navigates to SSH with Basic Auth and waits for connection
+ */
+export async function connectWithBasicAuth(page: Page, baseUrl: string, username: string, password: string, host: string, port: string | number): Promise<void> {
+  const url = buildBasicAuthUrl(baseUrl, username, password, host, port)
+  await page.goto(url)
+  await waitForV2Connection(page)
+  await waitForV2Terminal(page)
+}
+
+/**
+ * Executes a command and verifies its output
+ */
+export async function executeAndVerifyCommand(page: Page, command: string, expectedOutput: string): Promise<void> {
+  await executeV2Command(page, command)
+  await expect(page.locator('.xterm-screen').filter({ hasText: expectedOutput })).toBeVisible()
+}
+
+/**
+ * Connects using form and waits for terminal to be ready
+ */
+export async function connectAndWaitForTerminal(page: Page, options: {
+  host: string
+  port: string
+  username: string
+  password: string
+}): Promise<void> {
+  await connectV2(page, options)
+  await waitForV2Connection(page)
+  await waitForV2Terminal(page)
+  await waitForV2Prompt(page)
+}
+
+/**
+ * Fills form fields directly without using helper
+ */
+export async function fillFormDirectly(page: Page, host: string, port: string | number, username: string, password: string): Promise<void> {
+  await page.fill('[name="host"]', host)
+  await page.fill('[name="port"]', port.toString())
+  await page.fill('[name="username"]', username)
+  await page.fill('[name="password"]', password)
+  await page.click('button:has-text("Connect")')
+}
+
+/**
+ * Executes multiple commands and waits for their output
+ */
+export async function executeCommandsWithExpectedOutput(
+  page: Page,
+  commands: Array<{ cmd: string; expect: string }>
+): Promise<void> {
+  for (const { cmd, expect: expectedText } of commands) {
+    await executeV2Command(page, cmd)
+    await waitForCommandOutput(page, expectedText)
+  }
+}
+
+/**
+ * Executes a list of commands sequentially
+ */
+export async function executeCommandList(page: Page, commands: string[]): Promise<void> {
+  for (const command of commands) {
+    await executeV2Command(page, command)
+
+    // Wait for command to complete - check for echo output
+    if (command.startsWith('echo ')) {
+      const expectedOutput = command.match(/"([^"]+)"/)?.[1]
+      if (expectedOutput) {
+        await waitForCommandOutput(page, expectedOutput, TIMEOUTS.SHORT_WAIT * 2)
+      }
+    }
+  }
+}

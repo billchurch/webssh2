@@ -175,7 +175,7 @@ const matchesIpv4Wildcard = (ip: string, subnet: string): boolean => {
     return false
   }
 
-  const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
+  const pattern = subnet.replaceAll(/\./g, '\\.').replaceAll(/\*/g, '.*')
   // eslint-disable-next-line security/detect-non-literal-regexp
   const regex = new RegExp(`^${pattern}$`)
   return regex.test(ip)

@@ -536,7 +536,7 @@ export function isCommandSafe(command: string): boolean {
  */
 export function sanitizeEnvVarName(name: string): string | null {
   // Allow alphanumeric and underscore characters
-  const sanitized = name.replace(/\W/g, '')
+  const sanitized = name.replaceAll(/\W/g, '')
   
   if (sanitized === '' || sanitized.length > VALIDATION_LIMITS.MAX_ENV_VAR_NAME_LENGTH) {
     return null
