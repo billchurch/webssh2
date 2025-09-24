@@ -25,12 +25,15 @@ import {
   createExecExitPayload,
 } from '../handlers/exec-handler.js'
 import type { Config } from '../../types/config.js'
-import type { 
-  ClientToServerEvents, 
+import type {
+  ClientToServerEvents,
   ServerToClientEvents,
   AuthCredentials,
   TerminalSettings,
 } from '../../types/contracts/v1/socket.js'
+
+// Type for shell streams with optional write method
+type ShellStream = EventEmitter & { write?: (data: string) => void }
 
 const debug = createNamespacedDebug('socket:adapter')
 
@@ -63,7 +66,7 @@ export class SocketAdapter {
   private readonly terminalConfig: TerminalConfig
   private terminalState: TerminalState | null = null
   private handlers: SocketHandlers | null = null
-  private shellStream: EventEmitter | null = null
+  private shellStream: ShellStream | null = null
   private onClientData: ((chunk: string) => void) | null = null
 
   constructor(
@@ -74,14 +77,18 @@ export class SocketAdapter {
     this.config = config
     this.authPipeline = new UnifiedAuthPipeline(socket.request, config)
     this.sessionState = createInitialSessionState()
+
+    // Get initial term from session credentials if available
+    const req = socket.request as { session?: { sshCredentials?: { term?: string } } }
+    const initialTerm = req.session?.sshCredentials?.term ?? null
+
     this.terminalConfig = {
-      term: null,
+      term: initialTerm,
       cols: null,
       rows: null,
     }
 
     this.initializeSocketEvents()
-    this.checkInitialAuth()
   }
 
   /**
@@ -89,6 +96,8 @@ export class SocketAdapter {
    */
   setHandlers(handlers: SocketHandlers): void {
     this.handlers = handlers
+    // Check for initial authentication after handlers are set
+    this.checkInitialAuth()
   }
 
   /**
@@ -106,6 +115,13 @@ export class SocketAdapter {
   }
 
   /**
+   * Gets the shell stream for credential replay
+   */
+  getShellStream(): ShellStream | null {
+    return this.shellStream
+  }
+
+  /**
    * Updates session state
    */
   updateSessionState(state: Partial<SessionState>): void {
@@ -115,7 +131,7 @@ export class SocketAdapter {
   /**
    * Sets the shell stream for I/O
    */
-  setShellStream(stream: EventEmitter): void {
+  setShellStream(stream: ShellStream): void {
     this.shellStream = stream
     this.setupShellStreamHandlers()
   }

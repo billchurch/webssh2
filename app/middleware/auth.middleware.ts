@@ -35,7 +35,18 @@ export function createAuthMiddleware(config: Config): RequestHandler {
     
     // Apply session data
     Object.assign(r.session, sessionData)
-    
-    next()
+
+    // Explicitly save session to ensure Socket.IO can access it
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (r.session != null && typeof r.session.save === 'function') {
+      r.session.save((err: unknown) => {
+        if (err != null) {
+          console.error('Session save error:', err)
+        }
+        next()
+      })
+    } else {
+      next()
+    }
   }
 }

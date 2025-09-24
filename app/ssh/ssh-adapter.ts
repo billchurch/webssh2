@@ -186,15 +186,15 @@ export class SSHConnectionAdapter extends EventEmitter {
     }
 
     debug('Creating shell with options: %O', options)
-    
+
     return new Promise((resolve) => {
-      const shellOptions = options.env != null 
-        ? { ...options.pty, env: options.env }
-        : options.pty
+      // SSH2 expects pty options as first parameter and env as second
+      const ptyOptions = options.pty
+      const envOptions = options.env != null ? { env: options.env } : {}
 
       this.client?.shell(
-        shellOptions as object,
-        options.env != null ? { env: options.env } : {},
+        ptyOptions as object,
+        envOptions,
         (err: unknown, stream: ClientChannel) => {
           if (err != null) {
             const errorMessage = extractErrorMessage(err)

@@ -48,7 +48,7 @@ export default async function globalSetup() {
     '-e', 'SSH_DEBUG_LEVEL=3',
     '-e', 'SSH_PERMIT_PASSWORD_AUTH=yes',
     '-e', 'SSH_PERMIT_PUBKEY_AUTH=yes',
-    '-e', 'SSH_CUSTOM_CONFIG=PermitUserEnvironment yes\nAcceptEnv FOO VAR1 VAR2 SPECIAL',
+    '-e', 'SSH_CUSTOM_CONFIG=PermitUserEnvironment yes\nAcceptEnv FOO',
     DOCKER_IMAGE,
   ]
   const res = docker(...args)

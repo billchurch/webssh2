@@ -96,41 +96,29 @@ export const processSshValidationResult = (
 
   // Map validation error types to HTTP responses
   switch (result.errorType) {
-    case undefined:
-    case 'unknown':
-      return {
-        status: HTTP.INTERNAL_SERVER_ERROR,
-        data: {
-          error: 'SSH validation failed',
-          message: result.errorMessage ?? 'Unknown error',
-          host,
-          port
-        }
-      }
-      
     case 'auth':
       return {
         status: HTTP.UNAUTHORIZED,
         headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
-        data: { 
+        data: {
           error: 'Authentication failed',
           message: result.errorMessage,
           host,
-          port 
+          port
         }
       }
-      
+
     case 'network':
       return {
         status: HTTP.BAD_GATEWAY,
-        data: { 
+        data: {
           error: 'Connection failed',
           message: result.errorMessage,
           host,
           port
         }
       }
-      
+
     case 'timeout':
       return {
         status: HTTP.GATEWAY_TIMEOUT,
@@ -141,7 +129,9 @@ export const processSshValidationResult = (
           port
         }
       }
-      
+
+    case undefined:
+    case 'unknown':
     default:
       return {
         status: HTTP.INTERNAL_SERVER_ERROR,
@@ -215,10 +205,16 @@ export const createAuthSessionUpdates = (
   connection: SshConnectionParams
 ): Record<string, unknown> => {
   return {
-    sshCredentials: credentials,
+    sshCredentials: {
+      ...credentials,
+      host: connection.host,
+      port: connection.port,
+      term: connection.term
+    },
     sshHost: connection.host,
     sshPort: connection.port,
-    sshterm: connection.term ?? undefined
+    sshterm: connection.term ?? undefined,
+    authMethod: 'POST'
   }
 }
 

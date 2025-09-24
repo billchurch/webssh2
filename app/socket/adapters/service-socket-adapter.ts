@@ -14,6 +14,7 @@ import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
 import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
 import type { AuthMethod } from '../../auth/providers/auth-provider.interface.js'
+import type { Credentials } from '../../validation/credentials.js'
 
 // SSH2 stream extends Duplex with additional methods
 interface SSH2Stream extends Duplex {
@@ -290,120 +291,169 @@ export class ServiceSocketAdapter {
   private async handleAuthentication(credentials: AuthCredentials): Promise<void> {
     try {
       debug('Authenticating user:', credentials.username)
-
-      // Track original auth method if not already set
       this.originalAuthMethod ??= this.authPipeline.getAuthMethod()
 
-      // Update pipeline with manual credentials if provided
-      if (Object.keys(credentials).length > 0) {
-        // Convert AuthCredentials to Credentials type for pipeline
-        const pipelineCredentials = {
-          username: credentials.username,
-          password: credentials.password,
-          host: credentials.host,
-          port: credentials.port
-        }
-
-        if (!this.authPipeline.setManualCredentials(pipelineCredentials)) {
-          this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-            action: 'auth_result',
-            success: false,
-            message: VALIDATION_MESSAGES.INVALID_CREDENTIALS
-          })
-          return
-        }
+      // Step 1: Update pipeline with credentials
+      if (!this.updateAuthPipeline(credentials)) {
+        return
       }
 
-      // Get validated credentials from pipeline
+      // Step 2: Get and validate credentials
       const validatedCreds = this.authPipeline.getCredentials()
-      if (validatedCreds === null) {
-        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-          action: 'auth_result',
-          success: false,
-          message: 'No credentials available'
-        })
+      if (!this.validateCredentials(validatedCreds)) {
         return
       }
 
-      // Store terminal settings from auth credentials for later use
-      if (credentials.term !== undefined) {
-        this.initialTermSettings.term = credentials.term
-      }
-      if (credentials.rows !== undefined) {
-        this.initialTermSettings.rows = credentials.rows
-      }
-      if (credentials.cols !== undefined) {
-        this.initialTermSettings.cols = credentials.cols
-      }
-      debug('Stored initial terminal settings:', this.initialTermSettings)
+      // Step 3: Store settings for later use
+      this.storeTerminalSettings(credentials)
+      this.storePasswordIfEnabled(validatedCreds)
 
-      // Store password for credential replay if enabled
-      if (this.config.options.allowReplay && typeof validatedCreds.password === 'string' && validatedCreds.password !== '') {
-        this.storedPassword = validatedCreds.password
-        debug('Stored password for credential replay')
-      }
+      // Step 4: Build auth credentials
+      const authCredentials = this.buildAuthCredentials(validatedCreds, credentials)
 
-      // Authenticate using auth service - use validated creds from pipeline
-      // Build AuthCredentials from the validated Credentials
-      const authCredentials: AuthCredentials = {
-        username: validatedCreds.username ?? credentials.username,
-        host: validatedCreds.host ?? credentials.host,
-        port: validatedCreds.port ?? credentials.port
-      }
-
-      // Add optional fields if present
-      if (validatedCreds.password !== undefined) {
-        authCredentials.password = validatedCreds.password
-      }
-      if (validatedCreds.privateKey !== undefined) {
-        authCredentials.privateKey = validatedCreds.privateKey
-      }
-      if (validatedCreds.passphrase !== undefined) {
-        authCredentials.passphrase = validatedCreds.passphrase
-      }
-
-      const authCreds = buildAuthCredentials(authCredentials)
-      const authResult = await this.services.auth.authenticate(authCreds)
-
-      if (!authResult.ok) {
-        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-          action: 'auth_result',
-          success: false,
-          message: authResult.error.message
-        })
+      // Step 5: Perform authentication
+      const authResult = await this.performAuthentication(authCredentials)
+      if (authResult === null) {
         return
       }
 
-      this.sessionId = authResult.value.sessionId
-
-      // Connect SSH using SSH service - use validated creds from pipeline
-      const sshConfig = buildSSHConfig(authCredentials, this.sessionId, this.config)
-      const sshResult = await this.services.ssh.connect(sshConfig)
-
-      if (!sshResult.ok) {
-        this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-          action: 'auth_result',
-          success: false,
-          message: sshResult.error.message
-        })
+      // Step 6: Connect SSH
+      const sshResult = await this.connectSSH(authCredentials, authResult.sessionId)
+      if (sshResult === null) {
         return
       }
 
-      this.connectionId = sshResult.value.id as string
+      // Step 7: Finalize successful authentication
+      this.connectionId = sshResult.id
+      this.sessionId = authResult.sessionId
       this.emitAuthenticationSuccess(authCredentials)
 
       debug(`Authentication successful via ${this.originalAuthMethod ?? 'manual'}`)
-      // Log auth method for tracking
       console.info(`[auth] socket=${this.socket.id} method=${this.originalAuthMethod ?? 'manual'}`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : VALIDATION_MESSAGES.AUTHENTICATION_FAILED
-      this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-        action: 'auth_result',
-        success: false,
-        message
-      })
-      debug('Authentication error:', error)
+      this.handleAuthenticationError(error)
     }
+  }
+
+  private updateAuthPipeline(credentials: AuthCredentials): boolean {
+    if (Object.keys(credentials).length === 0) {
+      return true
+    }
+
+    const pipelineCredentials = {
+      username: credentials.username,
+      password: credentials.password,
+      host: credentials.host,
+      port: credentials.port
+    }
+
+    if (!this.authPipeline.setManualCredentials(pipelineCredentials)) {
+      this.emitAuthenticationFailure('Invalid credentials')
+      return false
+    }
+
+    return true
+  }
+
+  private validateCredentials(validatedCreds: Credentials | null): validatedCreds is Credentials {
+    if (validatedCreds === null) {
+      this.emitAuthenticationFailure('No credentials available')
+      return false
+    }
+    return true
+  }
+
+  private storeTerminalSettings(credentials: AuthCredentials): void {
+    if (credentials.term !== undefined) {
+      this.initialTermSettings.term = credentials.term
+    }
+    if (credentials.rows !== undefined) {
+      this.initialTermSettings.rows = credentials.rows
+    }
+    if (credentials.cols !== undefined) {
+      this.initialTermSettings.cols = credentials.cols
+    }
+    debug('Stored initial terminal settings:', this.initialTermSettings)
+  }
+
+  private storePasswordIfEnabled(validatedCreds: Credentials): void {
+    if (this.config.options.allowReplay &&
+        typeof validatedCreds.password === 'string' &&
+        validatedCreds.password !== '') {
+      this.storedPassword = validatedCreds.password
+      debug('Stored password for credential replay')
+    }
+  }
+
+  private buildAuthCredentials(validatedCreds: Credentials, credentials: AuthCredentials): AuthCredentials {
+    const authCredentials: AuthCredentials = {
+      username: validatedCreds.username ?? credentials.username,
+      host: validatedCreds.host ?? credentials.host,
+      port: validatedCreds.port ?? credentials.port
+    }
+
+    if (validatedCreds.password !== undefined) {
+      authCredentials.password = validatedCreds.password
+    }
+    if (validatedCreds.privateKey !== undefined) {
+      authCredentials.privateKey = validatedCreds.privateKey
+    }
+    if (validatedCreds.passphrase !== undefined) {
+      authCredentials.passphrase = validatedCreds.passphrase
+    }
+
+    return authCredentials
+  }
+
+  private async performAuthentication(authCredentials: AuthCredentials): Promise<{ sessionId: SessionId } | null> {
+    const authCreds = buildAuthCredentials(authCredentials)
+    const authResult = await this.services.auth.authenticate(authCreds)
+
+    if (!authResult.ok) {
+      const errorMessage = this.normalizeAuthError(authResult.error.message)
+      this.emitAuthenticationFailure(errorMessage)
+      return null
+    }
+
+    return authResult.value
+  }
+
+  private normalizeAuthError(message: string): string {
+    if (message.includes('Invalid credentials format') ||
+        message.includes('Username is required') ||
+        message.includes('No authentication method provided')) {
+      return 'Invalid credentials'
+    }
+    return message
+  }
+
+  private async connectSSH(
+    authCredentials: AuthCredentials,
+    sessionId: SessionId
+  ): Promise<{ id: string } | null> {
+    const sshConfig = buildSSHConfig(authCredentials, sessionId, this.config)
+    const sshResult = await this.services.ssh.connect(sshConfig)
+
+    if (!sshResult.ok) {
+      this.emitAuthenticationFailure(sshResult.error.message)
+      return null
+    }
+
+    return sshResult.value
+  }
+
+  private emitAuthenticationFailure(message: string): void {
+    this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
+      action: 'auth_result',
+      success: false,
+      message
+    })
+  }
+
+  private handleAuthenticationError(error: unknown): void {
+    const message = error instanceof Error ? error.message : VALIDATION_MESSAGES.AUTHENTICATION_FAILED
+    this.emitAuthenticationFailure(message)
+    debug('Authentication error:', error)
   }
 
   private emitAuthenticationSuccess(credentials: AuthCredentials): void {
@@ -468,13 +518,17 @@ export class ServiceSocketAdapter {
     cols: number
     env: Record<string, string>
   } {
+    // Get environment variables from session
+    const req = this.socket.request as { session?: { envVars?: Record<string, string> } }
+    const envVars = req.session?.envVars ?? {}
+
     // Use settings from terminal event, fall back to initial settings from auth, then defaults
     return {
       sessionId: this.sessionId as SessionId,
       term: settings.term ?? this.initialTermSettings.term ?? TERMINAL_DEFAULTS.DEFAULT_TERM,
       rows: settings.rows ?? this.initialTermSettings.rows ?? TERMINAL_DEFAULTS.DEFAULT_ROWS,
       cols: settings.cols ?? this.initialTermSettings.cols ?? TERMINAL_DEFAULTS.DEFAULT_COLS,
-      env: {}
+      env: envVars
     }
   }
 
@@ -495,10 +549,15 @@ export class ServiceSocketAdapter {
   }
 
   private async openShell(config: { term: string; rows: number; cols: number }): Promise<Duplex | null> {
+    // Get environment variables from session
+    const req = this.socket.request as { session?: { envVars?: Record<string, string> } }
+    const envVars = req.session?.envVars ?? {}
+
     debug('Opening shell with config:', {
       term: config.term,
       rows: config.rows,
-      cols: config.cols
+      cols: config.cols,
+      hasEnv: Object.keys(envVars).length > 0
     })
 
     const shellResult = await this.services.ssh.shell(
@@ -507,7 +566,7 @@ export class ServiceSocketAdapter {
         term: config.term,
         rows: config.rows,
         cols: config.cols,
-        env: {}
+        env: envVars
       }
     )
 

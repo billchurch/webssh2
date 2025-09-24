@@ -118,6 +118,18 @@ export function createRoutesV2(config: Config): Router {
     const sanitized = sanitizeCredentialsForLogging(credResult.value, connResult.value)
     debug('SSH validation passed:', sanitized)
 
+    // Update session credentials with host, port, and term from URL for socket auto-connection
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain
+    if (expressReq.session != null && expressReq.session.sshCredentials != null) {
+      expressReq.session.sshCredentials = {
+        ...expressReq.session.sshCredentials,
+        host: connResult.value.host,
+        port: connResult.value.port,
+        ...(connResult.value.term != null && { term: connResult.value.term })
+      }
+      debug('Updated session credentials with host/port/term from URL')
+    }
+
     // Process auth and serve client
     processAuthParameters(routeRequest.query, expressReq.session)
     await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res, { host: connResult.value.host })
@@ -183,6 +195,18 @@ export function createRoutesV2(config: Config): Router {
     const sanitized = sanitizeCredentialsForLogging(credResult.value, connResult.value)
     debug('SSH validation passed:', sanitized)
 
+    // Update session credentials with host, port, and term from URL for socket auto-connection
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain
+    if (expressReq.session != null && expressReq.session.sshCredentials != null) {
+      expressReq.session.sshCredentials = {
+        ...expressReq.session.sshCredentials,
+        host: connResult.value.host,
+        port: connResult.value.port,
+        ...(connResult.value.term != null && { term: connResult.value.term })
+      }
+      debug('Updated session credentials with host/port/term from URL')
+    }
+
     // Process auth and serve client
     processAuthParameters(routeRequest.query, expressReq.session)
     await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res, { host: connResult.value.host })
@@ -228,6 +252,57 @@ export function createRoutesV2(config: Config): Router {
     // Serve the client page
     await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res, { 
       host: authResult.value.connection.host 
+    })
+  }))
+
+  /**
+   * POST /host/:host route for SSO forms that post to specific host endpoints
+   * Allows posting to /ssh/host/:host (when mounted under /ssh)
+   */
+  router.post('/host/:host', asyncRouteHandler(async (req: Request, res: Response) => {
+    const expressReq = req as unknown as ExpressRequest
+    const routeRequest = extractRouteRequest(expressReq)
+    const hostParam = routeRequest.params['host']
+    debug(`POST /host/${hostParam} - SSO authentication route with host`)
+
+    // Merge host from URL into body if not present
+    const bodyWithHost = {
+      ...(routeRequest.body ?? {}),
+      host: routeRequest.body?.['host'] ?? hostParam
+    }
+
+    // Process POST authentication request
+    const authResult = processPostAuthRequest(
+      bodyWithHost,
+      routeRequest.query,
+      config
+    )
+
+    if (!authResult.ok) {
+      applyRouteResponse({
+        status: 400,
+        data: { error: authResult.error.message }
+      }, res)
+      return
+    }
+
+    // Create and apply session updates
+    const sessionUpdates = createAuthSessionUpdates(
+      authResult.value.credentials,
+      authResult.value.connection
+    )
+    Object.assign(expressReq.session, sessionUpdates)
+
+    // Log sanitized data
+    const sanitized = sanitizeCredentialsForLogging(
+      authResult.value.credentials,
+      authResult.value.connection
+    )
+    debug('POST /host auth - Credentials stored:', sanitized)
+
+    // Serve the client page
+    await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res, {
+      host: authResult.value.connection.host
     })
   }))
 
@@ -282,21 +357,4 @@ export function createRoutesV2(config: Config): Router {
   })
 
   return router
-}
-
-/**
- * Feature flag to switch between v1 and v2 routes
- */
-export async function createRoutes(config: Config): Promise<Router> {
-  const useV2 = process.env['WEBSSH2_USE_V2_ROUTES'] === 'true'
-  
-  if (useV2) {
-    debug('Using v2 routes with pure handlers')
-    return createRoutesV2(config)
-  }
-  
-  // Fall back to v1 routes (import the original)
-  debug('Using v1 routes (legacy)')
-  const { createRoutes: createRoutesV1 } = await import('../routes.js')
-  return createRoutesV1(config)
 }

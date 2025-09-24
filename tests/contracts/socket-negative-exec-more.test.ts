@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../../dist/app/socket.js'
+import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative: exec edge cases', () => {
@@ -64,22 +64,5 @@ describe('Socket.IO Negative: exec edge cases', () => {
     assert.ok(ssherrorEmits.length > 0, 'ssherror emitted for non-string command')
   })
 
-  it('exec: exit payload contains code and signal', async () => {
-    const onConn = (io.on as any).mock.calls[0].arguments[1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
-
-    EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 'test' })
-    await new Promise((r) => setImmediate(r))
-
-    const exitEmits = (mockSocket.emit as any).mock.calls.filter((c: any) => c.arguments[0] === 'exec-exit')
-    assert.ok(exitEmits.length > 0, 'exec-exit emitted')
-    const exitPayload = exitEmits[0].arguments[1]
-    assert.equal(exitPayload.code, 0)
-    assert.equal(exitPayload.signal, null)
-  })
+  // Test moved to tests/unit/socket-v2-exec-edge-cases.vitest.ts (vitest)
 })

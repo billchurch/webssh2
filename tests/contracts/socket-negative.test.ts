@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../../dist/app/socket.js'
+import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative Paths', () => {
@@ -49,21 +49,7 @@ describe('Socket.IO Negative Paths', () => {
     socketHandler(io, mockConfig, MockSSHConnection)
   })
 
-  it('terminal: ignores invalid term and keeps default', async () => {
-    const onConn = (io.on as any).mock.calls[0].arguments[1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-    await new Promise((r) => setImmediate(r))
-
-    // send non-integer sizes (term now ignored from client)
-    EventEmitter.prototype.emit.call(mockSocket, 'terminal', { rows: 'abc', cols: 'xyz' })
-    await new Promise((r) => setImmediate(r))
-
-    assert.equal(lastShellOptions.term, 'xterm-color', 'falls back to default term')
-    assert.equal(lastShellOptions.rows, 24, 'falls back to default rows')
-    assert.equal(lastShellOptions.cols, 80, 'falls back to default cols')
-  })
+  // Test moved to tests/unit/socket-v2-terminal-control.vitest.ts (vitest)
 
   it('resize: ignores invalid sizes and does not call resizeTerminal', async () => {
     const onConn = (io.on as any).mock.calls[0].arguments[1]
@@ -88,20 +74,5 @@ describe('Socket.IO Negative Paths', () => {
     assert.equal(resizeCalls.length, 0, 'no ssherror emitted on bad resize')
   })
 
-  it('control: warns on invalid control command', async () => {
-    const onConn = (io.on as any).mock.calls[0].arguments[1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-    await new Promise((r) => setImmediate(r))
-
-    const warn = mock.method(console, 'warn', () => {})
-    EventEmitter.prototype.emit.call(mockSocket, 'terminal', {})
-    await new Promise((r) => setImmediate(r))
-    EventEmitter.prototype.emit.call(mockSocket, 'control', 'bad-cmd')
-    await new Promise((r) => setImmediate(r))
-
-    assert.ok(warn.mock.calls.length >= 1, 'console.warn called for invalid control')
-    warn.mock.restore()
-  })
+  // Test moved to tests/unit/socket-v2-terminal-control.vitest.ts (vitest)
 })

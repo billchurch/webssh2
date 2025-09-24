@@ -1,7 +1,7 @@
 // Contract test: verify expected HTTP routes are registered without invoking handlers
 import test from 'node:test'
 import assert from 'node:assert'
-import { createRoutes } from '../../dist/app/routes.js'
+import { createRoutesV2 as createRoutes } from '../../dist/app/routes/routes-v2.js'
 import { TEST_SECRET } from '../test-constants.js'
 
 const minimalConfig = {

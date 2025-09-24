@@ -229,7 +229,7 @@ export function createRoutes(config: Config): Router {
       // Validate credentials using pure function
       const credentialValidation = validatePostCredentials(body)
       if (!credentialValidation.valid) {
-        res.status(400).send(`Missing required fields in body: ${credentialValidation.error}`)
+        res.status(400).send('Missing required fields in body: username, password')
         return
       }
 

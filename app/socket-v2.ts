@@ -17,7 +17,8 @@ import type {
   AuthCredentials,
   TerminalSettings,
 } from './types/contracts/v1/socket.js'
-import type { SSHCtor } from './socket.js'
+import type { SSHCtor } from './types/ssh.js'
+import { handleControlMessage } from './socket/control-handler.js'
 
 const debug = createNamespacedDebug('socket:v2')
 
@@ -143,7 +144,7 @@ export default function init(
         const { handleExecRequest } = await import('./socket/handlers/exec-handler.js')
         const req = socket.request as { session?: { envVars?: Record<string, string> } }
         const sessionEnv = req.session?.envVars ?? {}
-        
+
         const execResult = handleExecRequest(
           payload,
           state.term,
@@ -189,20 +190,22 @@ export default function init(
       
       // Handle control messages
       onControl(msg: string): void {
-        if (msg === 'replayCredentials') {
-          // Handle credential replay
-          const state = socketAdapter.getSessionState()
-          if (state.password != null) {
-            // Send password to shell if available
-            // Note: shellStream is private on adapter, would need to expose it
-            // For now, credential replay is not implemented in v2
-            debug(`Credential replay not implemented in v2 for ${socket.id}`)
-          }
-        } else if (msg === 'reauth') {
-          // Request re-authentication
-          socket.emit('authentication', { action: 'reauth' })
-          debug(`Re-authentication requested for ${socket.id}`)
+        const state = socketAdapter.getSessionState()
+        const shellStream = socketAdapter.getShellStream()
+
+        // Create session state compatible with control handler
+        const sessionState = {
+          password: state.password
         }
+
+        // Use the control message handler
+        handleControlMessage(
+          socket,
+          config,
+          sessionState,
+          shellStream,
+          msg
+        )
       },
       
       // Handle disconnect

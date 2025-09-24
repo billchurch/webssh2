@@ -1,11 +1,11 @@
 import { describe, it, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../../dist/app/socket.js'
+import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket.IO Negative: authenticate + exec env', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, capturedEnv: any, capturedOptions: any
+  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, capturedEnv: any, capturedOptions: any, execResolve: any
 
   beforeEach(() => {
     io = new EventEmitter()
@@ -31,6 +31,7 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
       async shell() { const s: any = new EventEmitter(); s.write = () => {}; return s }
       async exec(_cmd: string, options: any, env: any) {
         capturedEnv = env
+        if (execResolve) execResolve()
         const s: any = new EventEmitter()
         s.stderr = new EventEmitter()
         process.nextTick(() => {
@@ -76,8 +77,12 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
     await new Promise((r) => setImmediate(r))
     await new Promise((r) => setImmediate(r))
 
+    const execPromise = new Promise((resolve) => { execResolve = resolve })
+
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 'echo' })
-    await new Promise((r) => setImmediate(r))
+
+    // Wait for the mock exec to be called
+    await execPromise
 
     assert.deepEqual(capturedEnv, { FOO: 'bar' }, 'session.envVars passed to exec')
   })

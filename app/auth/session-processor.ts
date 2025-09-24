@@ -27,13 +27,27 @@ export interface RecordingParams {
  */
 export function extractEnvironmentVars(params: Record<string, unknown>): Record<string, string> | null {
   const envParam = params['env']
-  
-  if (typeof envParam !== 'string' || envParam === '') {
+
+  // Handle both single string and array of strings (multiple query params)
+  let envString: string | undefined
+
+  if (typeof envParam === 'string' && envParam !== '') {
+    envString = envParam
+  } else if (Array.isArray(envParam)) {
+    // Join multiple env parameters with comma separator
+    // e.g., ['VAR1:value1', 'VAR2:value2'] -> 'VAR1:value1,VAR2:value2'
+    const validStrings = envParam.filter(item => typeof item === 'string' && item !== '')
+    if (validStrings.length > 0) {
+      envString = validStrings.join(',')
+    }
+  }
+
+  if (envString === undefined) {
     return null
   }
-  
+
   try {
-    const parsed = parseEnvVars(envParam)
+    const parsed = parseEnvVars(envString)
     if (parsed != null && Object.keys(parsed).length > 0) {
       debug('Parsed environment variables: %O', parsed)
       return parsed
@@ -41,7 +55,7 @@ export function extractEnvironmentVars(params: Record<string, unknown>): Record<
   } catch (err) {
     debug('Failed to parse environment variables: %s', err)
   }
-  
+
   return null
 }
 

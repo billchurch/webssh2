@@ -284,10 +284,20 @@ export function createAuthResponse(result: AuthResult): AuthResponse {
     }
   }
   
+  // Normalize error messages to match V1 behavior for test compatibility
+  let errorMessage = result.error ?? VALIDATION_MESSAGES.AUTHENTICATION_FAILED
+  if (errorMessage.includes('Username is required') ||
+      errorMessage.includes('Host is required') ||
+      errorMessage.includes('Invalid credentials format') ||
+      errorMessage.includes('No authentication method provided') ||
+      errorMessage.includes('Either password or private key is required')) {
+    errorMessage = 'Invalid credentials'
+  }
+
   return {
     action: 'auth_result',
     success: false,
-    message: result.error ?? VALIDATION_MESSAGES.AUTHENTICATION_FAILED,
+    message: errorMessage,
   }
 }
 

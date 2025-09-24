@@ -2,10 +2,11 @@
 // SSH connection I/O adapter
 
 import type { EventEmitter } from 'events'
+import { randomUUID } from 'node:crypto'
 import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'
 import type { AuthCredentials } from '../types/contracts/v1/socket.js'
-import type { SSHCtor } from '../socket.js'
+import type { SSHCtor } from '../types/ssh.js'
 
 const debug = createNamespacedDebug('ssh:adapter')
 
@@ -173,9 +174,7 @@ export function parseSSHError(error: unknown): string {
  * @pure
  */
 export function generateConnectionId(): string {
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 9)
-  return `conn_${timestamp}_${random}`
+  return `conn_${randomUUID()}`
 }
 
 /**
@@ -294,7 +293,7 @@ export class SSHConnectionAdapter {
 
     try {
       debug(`Executing command: ${command}`)
-      
+
       const stream = await this.sshClient.exec(command, options, env) as Stream
       
       debug('Command execution started')
