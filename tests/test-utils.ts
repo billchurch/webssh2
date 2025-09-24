@@ -196,11 +196,15 @@ export function createSessionState(overrides?: {
  * Helper to set up mock store state
  */
 export function setupMockStoreState(mockStore: SessionStore, state: any) {
-  if (Mock) {
+  if (vi) {
+    // Vitest environment
     (mockStore.getState as any).mockReturnValue(state)
-  } else {
+  } else if ((mockStore.getState as any).mock) {
     // Node test environment
     (mockStore.getState as any).mock.mockImplementation(() => state)
+  } else {
+    // Fallback for other test environments
+    ;(mockStore as any).getState = () => state
   }
   return mockStore
 }
