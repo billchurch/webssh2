@@ -84,10 +84,63 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_READY_TIMEOUT` | number | `20000` | Connection ready timeout (ms) |
 | `WEBSSH2_SSH_KEEPALIVE_INTERVAL` | number | `120000` | Keep-alive interval (ms) |
 | `WEBSSH2_SSH_KEEPALIVE_COUNT_MAX` | number | `10` | Maximum keep-alive count |
-| `WEBSSH2_SSH_ALLOWED_SUBNETS` | array | `[]` | Allowed subnets (comma-separated) |
+| `WEBSSH2_SSH_ALLOWED_SUBNETS` | array | `[]` | Allowed subnets - IPv4/IPv6 CIDR notation (comma-separated) |
 | `WEBSSH2_SSH_ALWAYS_SEND_KEYBOARD_INTERACTIVE` | boolean | `false` | Always send keyboard-interactive prompts to client |
 | `WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH` | boolean | `false` | Disable interactive authentication |
 | `WEBSSH2_SSH_ENV_ALLOWLIST` | array | `[]` | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Caps: max 50 pairs; key length ≤ 32; value length ≤ 512. |
+
+### SSH Subnet Restrictions
+
+The `WEBSSH2_SSH_ALLOWED_SUBNETS` variable enables network access control by restricting SSH connections to specific IP subnets. When configured, only hosts within the specified subnets can be accessed.
+
+#### Features
+
+- **IPv4 Support**: Full CIDR notation (/0 to /32), exact IPs, and wildcards
+- **IPv6 Support**: Full CIDR notation (/0 to /128) and exact IPs
+- **Mixed Networks**: Configure both IPv4 and IPv6 subnets together
+- **DNS Resolution**: Hostnames are resolved and validated against allowed subnets
+
+#### Subnet Format Examples
+
+```bash
+# IPv4 CIDR notation
+WEBSSH2_SSH_ALLOWED_SUBNETS="192.168.1.0/24,10.0.0.0/8"
+
+# IPv6 CIDR notation
+WEBSSH2_SSH_ALLOWED_SUBNETS="2001:db8::/32,fe80::/10"
+
+# Mixed IPv4 and IPv6
+WEBSSH2_SSH_ALLOWED_SUBNETS="127.0.0.0/8,::1/128"
+
+# Exact IP addresses
+WEBSSH2_SSH_ALLOWED_SUBNETS="192.168.1.100,2001:db8::1"
+
+# IPv4 wildcards (IPv4 only)
+WEBSSH2_SSH_ALLOWED_SUBNETS="192.168.*.*,10.0.1.*"
+
+# Complex example with all formats
+WEBSSH2_SSH_ALLOWED_SUBNETS="10.0.0.0/8,192.168.1.100,172.16.*.*,::1/128,2001:db8::/32"
+```
+
+#### Common Use Cases
+
+```bash
+# Allow only localhost connections (IPv4 and IPv6)
+WEBSSH2_SSH_ALLOWED_SUBNETS="127.0.0.0/8,::1/128"
+
+# Allow only private networks (RFC 1918 + RFC 4193)
+WEBSSH2_SSH_ALLOWED_SUBNETS="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+
+# Allow specific office network
+WEBSSH2_SSH_ALLOWED_SUBNETS="203.0.113.0/24,2001:db8:1234::/48"
+```
+
+#### Important Notes
+
+- When no subnets are specified, all connections are allowed (default behavior)
+- Hostnames are resolved to IP addresses before validation
+- If a hostname resolves to multiple IPs, connection is allowed if any IP matches
+- Connection is blocked before SSH authentication if host is not in allowed subnets
 
 ### SSH Algorithms
 

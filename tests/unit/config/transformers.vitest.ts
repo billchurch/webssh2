@@ -16,7 +16,7 @@ import {
 } from '../../../app/config/transformers.js'
 import type { Config } from '../../../app/types/config.js'
 import { DEFAULTS } from '../../../app/constants.js'
-import { TEST_SESSION_SECRET_VALID, TEST_SESSION_SECRET_SHORT, TEST_SESSION_SECRET_SUPER, TEST_SSH, TEST_IPS, TEST_USERNAME, TEST_PASSWORD } from '../../test-constants.js'
+import { TEST_SESSION_SECRET_VALID, TEST_SESSION_SECRET_SHORT, TEST_SESSION_SECRET_SUPER, TEST_SSH, TEST_IPS, TEST_USERNAME, TEST_PASSWORD, SSO_HEADERS } from '../../test-constants.js'
 
 describe('Config Transformers', () => {
   const baseConfig: Config = {
@@ -56,9 +56,9 @@ describe('Config Transformers', () => {
       csrfProtection: false,
       trustedProxies: [],
       headerMapping: {
-        username: 'x-username',
-        password: 'x-password',
-        session: 'x-session'
+        username: SSO_HEADERS.USERNAME,
+        password: SSO_HEADERS.PASSWORD,
+        session: SSO_HEADERS.SESSION
       }
     }
   }
@@ -319,8 +319,8 @@ describe('Config Transformers', () => {
       const config: Config = {
         ...baseConfig,
         user: {
-          name: 'testuser',
-          password: 'testpass',
+          name: TEST_USERNAME,
+          password: TEST_PASSWORD,
           privateKey: TEST_SSH.PRIVATE_KEY,
           passphrase: TEST_SSH.PASSPHRASE
         },

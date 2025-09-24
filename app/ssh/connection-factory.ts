@@ -248,15 +248,59 @@ export const processKeyboardInteractive = (
 export const isConnectionAllowed = (
   host: string,
   allowedSubnets?: string[]
-): boolean => {
+): Result<boolean> => {
   if (allowedSubnets == null || allowedSubnets.length === 0) {
-    return true // No restrictions
+    return { ok: true, value: true } // No restrictions
   }
 
-  // This would need IP resolution logic
-  // For now, return true as actual implementation requires async DNS lookup
-  // which would be handled in the adapter layer
-  return true
+  // Check if host is an IP address
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+
+  const isIpAddress = ipv4Pattern.test(host) || ipv6Pattern.test(host)
+
+  if (!isIpAddress) {
+    // Host is a hostname, needs async DNS resolution
+    return {
+      ok: false,
+      error: new Error(`Hostname validation requires DNS resolution: ${host}`)
+    }
+  }
+
+  // Simple IP subnet check (supports CIDR notation)
+  // This is a basic implementation - real subnet matching would be more complex
+  for (const subnet of allowedSubnets) {
+    // Check for exact IP match
+    if (subnet === host) {
+      return { ok: true, value: true }
+    }
+
+    // Check for CIDR notation (e.g., 192.168.1.0/24)
+    if (subnet.includes('/')) {
+      const [subnetBase] = subnet.split('/')
+      // Basic prefix matching (simplified)
+      if (subnetBase !== undefined) {
+        const lastDot = subnetBase.lastIndexOf('.')
+        if (lastDot !== -1 && host.startsWith(subnetBase.substring(0, lastDot))) {
+          return { ok: true, value: true }
+        }
+      }
+    }
+
+    // Check for wildcard notation (e.g., 192.168.1.*)
+    if (subnet.includes('*')) {
+      const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
+      // eslint-disable-next-line security/detect-non-literal-regexp
+      const regex = new RegExp(`^${pattern}$`)
+      if (regex.test(host)) {
+        return { ok: true, value: true }
+      }
+    }
+  }
+
+  return { ok: true, value: false } // IP not in allowed subnets
 }
 
 /**

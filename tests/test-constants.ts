@@ -187,6 +187,10 @@ export const SSO_HEADERS = {
   username: 'x-apm-username',
   password: 'x-apm-password', //NOSONAR
   session: 'x-apm-session',
+  // Standard header names
+  USERNAME: 'x-username',
+  PASSWORD: 'x-password', //NOSONAR
+  SESSION: 'x-session'
 } as const
 
 // Alternative SSO header names for testing
@@ -202,25 +206,54 @@ export const SSO_TEST_VALUES = {
   password: 'apmpass', //NOSONAR
 } as const
 
+
 // ============================================================================
 // NETWORK & PORTS
 // ============================================================================
 
 // Network and subnet constants for testing
 export const TEST_SUBNETS = {
+  // IPv4 subnets
   PRIVATE_10: '10.0.0.0/8', //NOSONAR
   PRIVATE_172: '172.16.0.0/12', //NOSONAR
   PRIVATE_192: '192.168.1.0/24', //NOSONAR
-  LOCALHOST: '127.0.0.0/8', 
-  ANY: '0.0.0.0/0'
+  LOCALHOST: '127.0.0.0/8',
+  ANY: '0.0.0.0/0',
+  // IPv6 subnets
+  LOCALHOST_V6: '::1/128',
+  LINK_LOCAL_V6: 'fe80::/10',
+  UNIQUE_LOCAL_V6: 'fc00::/7',
+  DOCUMENTATION_V6: '2001:db8::/32',
+  ANY_V6: '::/0'
 } as const
 
 export const TEST_IPS = {
+  // IPv4 addresses
   ANY: '0.0.0.0',
   LOCALHOST: '127.0.0.1',
   PRIVATE_10: '10.0.0.1', //NOSONAR
+  PRIVATE_10_ALT: '10.255.255.254', //NOSONAR
   PRIVATE_172: '172.16.0.1', //NOSONAR
-  PRIVATE_192: '192.168.1.1' //NOSONAR
+  PRIVATE_192: '192.168.1.1', //NOSONAR
+  PRIVATE_192_100: '192.168.1.100', //NOSONAR
+  PRIVATE_192_254: '192.168.1.254', //NOSONAR
+  PUBLIC_DNS: '8.8.8.8', //NOSONAR
+  // IPv6 addresses
+  LOCALHOST_V6: '::1',
+  LOCALHOST_V6_ALT: '::2',
+  DOCUMENTATION_V6: '2001:db8::1',
+  DOCUMENTATION_V6_ALT: '2001:db8::2',
+  DOCUMENTATION_V6_FFFF: '2001:db8::ffff',
+  DOCUMENTATION_V6_SUBNET: '2001:db8:1::1',
+  DOCUMENTATION_V6_SUBNET_ALT: '2001:db8:ffff::1',
+  DOCUMENTATION_V6_DIFF: '2001:db9::1'
+} as const
+
+// Test wildcards for IPv4
+export const TEST_WILDCARDS = {
+  PRIVATE_192_ALL: '192.168.1.*',
+  PRIVATE_10_DOUBLE: '10.0.*.*',
+  PRIVATE_172_ALL: '172.16.*.*'
 } as const
 
 // Test HTTP origins

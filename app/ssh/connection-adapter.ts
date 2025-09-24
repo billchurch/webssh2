@@ -7,6 +7,7 @@ import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'
 import type { AuthCredentials } from '../types/contracts/v1/socket.js'
 import type { SSHCtor } from '../types/ssh.js'
+import { validateConnectionWithDns } from './hostname-resolver.js'
 
 const debug = createNamespacedDebug('ssh:adapter')
 
@@ -199,27 +200,59 @@ export class SSHConnectionAdapter {
     try {
       // Create SSH configuration
       const sshConfig = createSSHConfig(credentials, this.config)
-      
+
+      // Validate connection against allowed subnets if configured
+      if (this.config.ssh.allowedSubnets != null && this.config.ssh.allowedSubnets.length > 0) {
+        debug(`Validating connection to ${sshConfig.host} against subnet restrictions`)
+
+        const validationResult = await validateConnectionWithDns(
+          sshConfig.host,
+          this.config.ssh.allowedSubnets
+        )
+
+        if (!validationResult.ok) {
+          // DNS resolution failed
+          const errorMessage = validationResult.error.message
+          debug(`Host validation failed: ${errorMessage}`)
+
+          return {
+            success: false,
+            error: errorMessage,
+          }
+        }
+
+        if (!validationResult.value) {
+          // Host not in allowed subnets
+          debug(`Host ${sshConfig.host} is not in allowed subnets: ${this.config.ssh.allowedSubnets.join(', ')}`)
+          const errorMessage = `Connection to host ${sshConfig.host} is not permitted`
+
+          return {
+            success: false,
+            error: errorMessage,
+          }
+        }
+      }
+
       // Create new SSH client
       this.sshClient = new this.SSHConnectionClass(this.config)
-      
+
       // Create connection record
       this.connection = {
         id: generateConnectionId(),
         status: 'connecting',
       }
-      
+
       debug(`Connecting to ${sshConfig.host}:${sshConfig.port}`)
-      
+
       // Attempt connection
       await this.sshClient.connect(sshConfig as unknown as Record<string, unknown>)
-      
+
       // Update connection status
       this.connection.status = 'connected'
       this.connection.connectedAt = new Date()
-      
+
       debug(`Connected successfully: ${this.connection.id}`)
-      
+
       return {
         success: true,
         connection: { ...this.connection },
@@ -227,12 +260,12 @@ export class SSHConnectionAdapter {
     } catch (error) {
       const errorMessage = parseSSHError(error)
       debug(`Connection failed: ${errorMessage}`)
-      
+
       if (this.connection != null) {
         this.connection.status = 'error'
         this.connection.error = errorMessage
       }
-      
+
       return {
         success: false,
         error: errorMessage,

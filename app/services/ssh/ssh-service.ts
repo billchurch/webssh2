@@ -20,6 +20,7 @@ import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 import type { Duplex } from 'node:stream'
 import type { PseudoTtyOptions, ClientChannel } from 'ssh2'
+import { validateConnectionWithDns } from '../../ssh/hostname-resolver.js'
 
 const logger = debug('webssh2:services:ssh')
 
@@ -221,6 +222,30 @@ export class SSHServiceImpl implements SSHService {
    * Connect to SSH server
    */
   async connect(config: SSHConfig): Promise<Result<SSHConnection>> {
+    // Validate connection against allowed subnets if configured
+    const allowedSubnets = this.deps.config.ssh.allowedSubnets
+
+    if (allowedSubnets != null && allowedSubnets.length > 0) {
+      logger(`Validating connection to ${config.host} against subnet restrictions`)
+
+      const validationResult = await validateConnectionWithDns(config.host, allowedSubnets)
+
+      if (!validationResult.ok) {
+        // DNS resolution failed
+        logger(`Host validation failed: ${validationResult.error.message}`)
+        return err(validationResult.error)
+      }
+
+      if (!validationResult.value) {
+        // Host not in allowed subnets
+        logger(`Host ${config.host} is not in allowed subnets: ${allowedSubnets.join(', ')}`)
+        const errorMessage = `Connection to host ${config.host} is not permitted`
+        return err(new Error(errorMessage))
+      }
+
+      logger(`Host ${config.host} passed subnet validation`)
+    }
+
     return new Promise((resolve) => {
       try {
         logger('Connecting to SSH server:', config.host, config.port)
