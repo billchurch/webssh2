@@ -200,8 +200,9 @@ export function setupMockStoreState(mockStore: SessionStore, state: any) {
     // Vitest environment
     (mockStore.getState as any).mockReturnValue(state)
   } else if ((mockStore.getState as any).mock) {
-    // Node test environment
-    (mockStore.getState as any).mock.mockImplementation(() => state)
+    // Node test environment - getState is already a mock function
+    const mockGetState = mockStore.getState as any
+    mockGetState.mockImplementation = () => state
   } else {
     // Fallback for other test environments
     ;(mockStore as any).getState = () => state
@@ -215,12 +216,8 @@ export function setupMockStoreState(mockStore: SessionStore, state: any) {
 export function setupMockStoreStates(mockStore: SessionStore, ...states: any[]) {
   if (Mock) {
     const mockObj = mockStore.getState as any
-    states.forEach((state, index) => {
-      if (index === 0) {
-        mockObj.mockReturnValueOnce(state)
-      } else {
-        mockObj.mockReturnValueOnce(state)
-      }
+    states.forEach((state) => {
+      mockObj.mockReturnValueOnce(state)
     })
     if (states.length > 0) {
       mockObj.mockReturnValue(states[states.length - 1])
@@ -228,11 +225,12 @@ export function setupMockStoreStates(mockStore: SessionStore, ...states: any[]) 
   } else {
     // Node test environment - simplified implementation
     let callIndex = 0
-    (mockStore.getState as any).mock.mockImplementation(() => {
+    const mockGetState = mockStore.getState as any
+    mockGetState.mockImplementation = () => {
       const state = callIndex < states.length ? states[callIndex] : states[states.length - 1]
       callIndex++
       return state
-    })
+    }
   }
   return mockStore
 }

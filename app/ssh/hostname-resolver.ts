@@ -161,6 +161,63 @@ const isIpv6InCidr = (ip: string, subnet: string): boolean => {
 }
 
 /**
+ * Check if IP matches exact subnet
+ */
+const matchesExactIp = (ip: string, subnet: string): boolean => {
+  return subnet === ip
+}
+
+/**
+ * Check if IPv4 matches wildcard notation
+ */
+const matchesIpv4Wildcard = (ip: string, subnet: string): boolean => {
+  if (!subnet.includes('*')) {
+    return false
+  }
+
+  const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
+  // eslint-disable-next-line security/detect-non-literal-regexp
+  const regex = new RegExp(`^${pattern}$`)
+  return regex.test(ip)
+}
+
+/**
+ * Check if IP matches CIDR subnet
+ */
+const matchesCidrSubnet = (
+  ip: string,
+  subnet: string,
+  isIpv4: boolean,
+  isIpv6: boolean
+): boolean => {
+  if (!subnet.includes('/')) {
+    return false
+  }
+
+  if (isIpv4 && subnet.includes('.')) {
+    return isIpv4InCidr(ip, subnet)
+  }
+
+  if (isIpv6 && subnet.includes(':')) {
+    return isIpv6InCidr(ip, subnet)
+  }
+
+  return false
+}
+
+/**
+ * Determine IP version
+ */
+const getIpVersion = (ip: string): { isIpv4: boolean; isIpv6: boolean } => {
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip)
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const isIpv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(ip)
+
+  return { isIpv4, isIpv6 }
+}
+
+/**
  * Check if an IP address is in allowed subnets
  * Pure function for IP validation
  */
@@ -172,41 +229,19 @@ export const isIpInSubnets = (
     return true // No restrictions
   }
 
-  // Determine if IP is IPv4 or IPv6
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip)
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(ip)
+  const { isIpv4, isIpv6 } = getIpVersion(ip)
 
   for (const subnet of allowedSubnets) {
-    // Check for exact IP match
-    if (subnet === ip) {
+    if (matchesExactIp(ip, subnet)) {
       return true
     }
 
-    // Check for CIDR notation
-    if (subnet.includes('/')) {
-      if (isIpv4 && subnet.includes('.')) {
-        // IPv4 CIDR check
-        if (isIpv4InCidr(ip, subnet)) {
-          return true
-        }
-      } else if (isIpv6 && subnet.includes(':')) {
-        // IPv6 CIDR check
-        if (isIpv6InCidr(ip, subnet)) {
-          return true
-        }
-      }
+    if (matchesCidrSubnet(ip, subnet, isIpv4, isIpv6)) {
+      return true
     }
 
-    // Check for wildcard notation (IPv4 only, e.g., 192.168.1.*)
-    if (isIpv4 && subnet.includes('*')) {
-      const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
-      // eslint-disable-next-line security/detect-non-literal-regexp
-      const regex = new RegExp(`^${pattern}$`)
-      if (regex.test(ip)) {
-        return true
-      }
+    if (isIpv4 && matchesIpv4Wildcard(ip, subnet)) {
+      return true
     }
   }
 

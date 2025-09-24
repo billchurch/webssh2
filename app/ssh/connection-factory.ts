@@ -242,6 +242,83 @@ export const processKeyboardInteractive = (
 }
 
 /**
+ * Check if a host string is an IP address
+ * Pure function - no side effects
+ */
+const isIpAddress = (host: string): boolean => {
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
+  // eslint-disable-next-line security/detect-unsafe-regex
+  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+
+  return ipv4Pattern.test(host) || ipv6Pattern.test(host)
+}
+
+/**
+ * Check if IP matches exact subnet
+ * Pure function - no side effects
+ */
+const matchesExact = (host: string, subnet: string): boolean => {
+  return subnet === host
+}
+
+/**
+ * Check if IP matches CIDR notation subnet
+ * Pure function - no side effects
+ */
+const matchesCidr = (host: string, subnet: string): boolean => {
+  if (!subnet.includes('/')) {
+    return false
+  }
+
+  const [subnetBase] = subnet.split('/')
+  if (subnetBase === undefined) {
+    return false
+  }
+
+  // Basic prefix matching (simplified)
+  const lastDot = subnetBase.lastIndexOf('.')
+  return lastDot !== -1 && host.startsWith(subnetBase.substring(0, lastDot))
+}
+
+/**
+ * Check if IP matches wildcard notation subnet
+ * Pure function - no side effects
+ */
+const matchesWildcard = (host: string, subnet: string): boolean => {
+  if (!subnet.includes('*')) {
+    return false
+  }
+
+  const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
+  // eslint-disable-next-line security/detect-non-literal-regexp
+  const regex = new RegExp(`^${pattern}$`)
+  return regex.test(host)
+}
+
+/**
+ * Check if IP is in any of the allowed subnets
+ * Pure function - no side effects
+ */
+const isIpInSubnets = (host: string, allowedSubnets: string[]): boolean => {
+  for (const subnet of allowedSubnets) {
+    if (matchesExact(host, subnet)) {
+      return true
+    }
+
+    if (matchesCidr(host, subnet)) {
+      return true
+    }
+
+    if (matchesWildcard(host, subnet)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
  * Check if connection is allowed based on subnet restrictions
  * Pure function - no side effects
  */
@@ -253,15 +330,7 @@ export const isConnectionAllowed = (
     return { ok: true, value: true } // No restrictions
   }
 
-  // Check if host is an IP address
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
-
-  const isIpAddress = ipv4Pattern.test(host) || ipv6Pattern.test(host)
-
-  if (!isIpAddress) {
+  if (!isIpAddress(host)) {
     // Host is a hostname, needs async DNS resolution
     return {
       ok: false,
@@ -269,38 +338,8 @@ export const isConnectionAllowed = (
     }
   }
 
-  // Simple IP subnet check (supports CIDR notation)
-  // This is a basic implementation - real subnet matching would be more complex
-  for (const subnet of allowedSubnets) {
-    // Check for exact IP match
-    if (subnet === host) {
-      return { ok: true, value: true }
-    }
-
-    // Check for CIDR notation (e.g., 192.168.1.0/24)
-    if (subnet.includes('/')) {
-      const [subnetBase] = subnet.split('/')
-      // Basic prefix matching (simplified)
-      if (subnetBase !== undefined) {
-        const lastDot = subnetBase.lastIndexOf('.')
-        if (lastDot !== -1 && host.startsWith(subnetBase.substring(0, lastDot))) {
-          return { ok: true, value: true }
-        }
-      }
-    }
-
-    // Check for wildcard notation (e.g., 192.168.1.*)
-    if (subnet.includes('*')) {
-      const pattern = subnet.replace(/\./g, '\\.').replace(/\*/g, '.*')
-      // eslint-disable-next-line security/detect-non-literal-regexp
-      const regex = new RegExp(`^${pattern}$`)
-      if (regex.test(host)) {
-        return { ok: true, value: true }
-      }
-    }
-  }
-
-  return { ok: true, value: false } // IP not in allowed subnets
+  const isAllowed = isIpInSubnets(host, allowedSubnets)
+  return { ok: true, value: isAllowed }
 }
 
 /**
