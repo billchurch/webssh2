@@ -172,7 +172,9 @@ export function handleReplayCredentials(
   
   // Validate replay request
   const validation = validateReplayRequest(config, password, shellStream)
-  if (!validation.valid) {
+  if (validation.valid) {
+    // Validation passed, continue with replay
+  } else {
     debug(`Replay credentials denied: ${validation.error}`)
     socket.emit(SOCKET_EVENTS.SSH_ERROR, validation.error)
     return
@@ -191,7 +193,9 @@ export function handleReplayCredentials(
   }
   
   const result = writeCredentialsToShell(shellStream, replayOptions)
-  if (!result.success) {
+  if (result.success) {
+    // Successfully wrote credentials
+  } else {
     socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error)
   }
 }

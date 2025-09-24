@@ -210,21 +210,24 @@ export class SSHConnectionAdapter {
           this.config.ssh.allowedSubnets
         )
 
-        if (!validationResult.ok) {
+        if (validationResult.ok) {
+          // DNS resolution succeeded, check if host is in allowed subnets
+          if (validationResult.value) {
+            // Host is in allowed subnets, continue
+          } else {
+            // Host not in allowed subnets
+            debug(`Host ${sshConfig.host} is not in allowed subnets: ${this.config.ssh.allowedSubnets.join(', ')}`)
+            const errorMessage = `Connection to host ${sshConfig.host} is not permitted`
+
+            return {
+              success: false,
+              error: errorMessage,
+            }
+          }
+        } else {
           // DNS resolution failed
           const errorMessage = validationResult.error.message
           debug(`Host validation failed: ${errorMessage}`)
-
-          return {
-            success: false,
-            error: errorMessage,
-          }
-        }
-
-        if (!validationResult.value) {
-          // Host not in allowed subnets
-          debug(`Host ${sshConfig.host} is not in allowed subnets: ${this.config.ssh.allowedSubnets.join(', ')}`)
-          const errorMessage = `Connection to host ${sshConfig.host} is not permitted`
 
           return {
             success: false,

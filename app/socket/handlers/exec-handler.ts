@@ -165,11 +165,12 @@ function processPtyField(execPayload: Record<string, unknown>, validated: ExecRe
     return undefined
   }
   const result = validatePtyField(value)
-  if (!result.valid) {
+  if (result.valid) {
+    validated.pty = result.value
+    return undefined
+  } else {
     return result.error
   }
-  validated.pty = result.value
-  return undefined
 }
 
 /**
@@ -185,11 +186,12 @@ function processTermField(execPayload: Record<string, unknown>, validated: ExecR
     return undefined
   }
   const result = validateTermField(value)
-  if (!result.valid) {
+  if (result.valid) {
+    validated.term = result.value
+    return undefined
+  } else {
     return result.error
   }
-  validated.term = result.value
-  return undefined
 }
 
 /**
@@ -227,23 +229,22 @@ function processNumericField(
   }
 
   const result = validateNumericField(value, min, max, errorMsg)
-  if (!result.valid) {
+  if (result.valid) {
+    if (result.value !== undefined) {
+      // Assign to correct field based on fieldName
+      if (fieldName === 'cols') {
+        validated.cols = result.value
+      } else if (fieldName === 'rows') {
+        validated.rows = result.value
+      } else {
+        // fieldName must be 'timeoutMs' due to the type constraint
+        validated.timeoutMs = result.value
+      }
+    }
+    return undefined
+  } else {
     return result.error ?? errorMsg
   }
-
-  if (result.value !== undefined) {
-    // Assign to correct field based on fieldName
-    if (fieldName === 'cols') {
-      validated.cols = result.value
-    } else if (fieldName === 'rows') {
-      validated.rows = result.value
-    } else {
-      // fieldName must be 'timeoutMs' due to the type constraint
-      validated.timeoutMs = result.value
-    }
-  }
-
-  return undefined
 }
 
 /**
@@ -259,13 +260,14 @@ function processEnvField(execPayload: Record<string, unknown>, validated: ExecRe
     return undefined
   }
   const result = validateEnvironmentVariables(value)
-  if (!result.valid) {
+  if (result.valid) {
+    if (result.env !== undefined) {
+      validated.env = result.env
+    }
+    return undefined
+  } else {
     return result.error ?? 'Invalid environment variables'
   }
-  if (result.env !== undefined) {
-    validated.env = result.env
-  }
-  return undefined
 }
 
 /**
@@ -347,7 +349,9 @@ export function validateExecPayload(
 ): { valid: boolean; data?: ExecRequestPayload; error?: string } {
   // Validate base structure and required fields
   const baseResult = validateBasePayload(payload)
-  if (!baseResult.valid || baseResult.data === undefined) {
+  if (baseResult.valid && baseResult.data !== undefined) {
+    // Base validation passed, continue with optional fields
+  } else {
     return baseResult
   }
 
@@ -448,7 +452,9 @@ export function handleExecRequest(
 ): ExecResult {
   // Validate payload
   const validation = validateExecPayload(payload)
-  if (!validation.valid || validation.data == null) {
+  if (validation.valid && validation.data != null) {
+    // Validation passed, continue
+  } else {
     return {
       success: false,
       error: validation.error ?? 'Invalid exec request',

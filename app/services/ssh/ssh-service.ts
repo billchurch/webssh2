@@ -230,20 +230,22 @@ export class SSHServiceImpl implements SSHService {
 
       const validationResult = await validateConnectionWithDns(config.host, allowedSubnets)
 
-      if (!validationResult.ok) {
+      if (validationResult.ok) {
+        // DNS resolution succeeded, check if host is in allowed subnets
+        if (validationResult.value) {
+          // Host is in allowed subnets
+          logger(`Host ${config.host} passed subnet validation`)
+        } else {
+          // Host not in allowed subnets
+          logger(`Host ${config.host} is not in allowed subnets: ${allowedSubnets.join(', ')}`)
+          const errorMessage = `Connection to host ${config.host} is not permitted`
+          return err(new Error(errorMessage))
+        }
+      } else {
         // DNS resolution failed
         logger(`Host validation failed: ${validationResult.error.message}`)
         return err(validationResult.error)
       }
-
-      if (!validationResult.value) {
-        // Host not in allowed subnets
-        logger(`Host ${config.host} is not in allowed subnets: ${allowedSubnets.join(', ')}`)
-        const errorMessage = `Connection to host ${config.host} is not permitted`
-        return err(new Error(errorMessage))
-      }
-
-      logger(`Host ${config.host} passed subnet validation`)
     }
 
     return new Promise((resolve) => {

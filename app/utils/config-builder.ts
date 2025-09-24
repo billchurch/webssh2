@@ -1,7 +1,7 @@
 // app/utils/config-builder.ts
 // Configuration builder utility for creating and validating configs
 
-import type { Config, ConfigValidationResult, ConfigValidationError } from '../types/config.js'
+import type { Config, ConfigValidationError } from '../types/config.js'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/result.js'
 import { validateConfigPure } from './config-validator.js'
@@ -18,8 +18,10 @@ import {
 export function enhanceConfig(config: Config): Result<Config, ConfigValidationError[]> {
   // Use the existing validation pipeline
   const validationResult = validateConfigPure(config)
-  
-  if (!validationResult.ok) {
+
+  if (validationResult.ok) {
+    // Validation passed, continue with additional checks
+  } else {
     // Convert validation error to our error format
     return err([{
       path: '',
@@ -199,7 +201,7 @@ export class ConfigBuilder {
     return this
   }
   
-  validate(): ConfigValidationResult {
+  validate(): Result<Config, ConfigValidationError[]> {
     // Set defaults for required fields
     const fullConfig: Config = {
       listen: this.config.listen ?? { ip: '0.0.0.0', port: 2222 },

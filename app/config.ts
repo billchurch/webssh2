@@ -55,7 +55,17 @@ async function loadEnhancedConfig(
     debug('No config path provided, using environment variables and defaults')
   } else {
     const fileResult = await readConfigFile(configPath)
-    if (!fileResult.ok) {
+    if (fileResult.ok) {
+      const parseResult = parseConfigJson(fileResult.value)
+      if (parseResult.ok) {
+        fileConfig = parseResult.value
+      } else {
+        return err([{
+          path: 'config.json',
+          message: `Failed to parse config JSON: ${parseResult.error.message}`,
+        }])
+      }
+    } else {
       // Check if it's just a missing file (ENOENT) - this is expected and not an error
       const error = fileResult.error as { code?: string }
       if (error.code === 'ENOENT') {
@@ -69,16 +79,6 @@ async function loadEnhancedConfig(
         }])
       }
       // File doesn't exist - this is fine, we'll use env vars and defaults
-    } else {
-      const parseResult = parseConfigJson(fileResult.value)
-      if (!parseResult.ok) {
-        return err([{
-          path: 'config.json',
-          message: `Failed to parse config JSON: ${parseResult.error.message}`,
-        }])
-      }
-      
-      fileConfig = parseResult.value
     }
   }
   
@@ -92,16 +92,16 @@ async function loadEnhancedConfig(
     envConfig as Partial<Config>
   )
   
-  if (!processResult.ok) {
+  if (processResult.ok) {
+    // Enhance with branded types validation
+    return enhanceConfig(processResult.value)
+  } else {
     return err([{
       path: '',
       message: processResult.error.message,
       value: processResult.error.originalConfig,
     }])
   }
-  
-  // Enhance with branded types validation
-  return enhanceConfig(processResult.value)
 }
 
 export async function loadConfigAsync(): Promise<Config> {
@@ -111,14 +111,16 @@ export async function loadConfigAsync(): Promise<Config> {
   
   const result = await loadEnhancedConfig(configPath, sessionSecret)
   
-  if (!result.ok) {
+  if (result.ok) {
+    // Config loaded successfully, continue
+  } else {
     // Check if it's a real error or just normal operation with env vars
     const errors = result.error
-    const hasRealError = errors.some(e => 
-      !e.path.includes('config.json') || 
+    const hasRealError = errors.some(e =>
+      !e.path.includes('config.json') ||
       !e.message.includes('ENOENT')
     )
-    
+
     if (hasRealError) {
       debug('Config validation error: %O', result.error)
       throw new ConfigError(

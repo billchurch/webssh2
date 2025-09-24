@@ -1,7 +1,7 @@
 // app/validation/config.ts
 // Configuration validation functions
 
-import type { SshHost, SshPort, FilePath, CssColor } from '../types/branded.js'
+import type { SshHost, SshPort, CssColor } from '../types/branded.js'
 
 /**
  * Validate SSH host
@@ -40,12 +40,3 @@ export function validateCssColor(color: string | undefined): CssColor | undefine
   return color as CssColor
 }
 
-/**
- * Validate file path
- */
-export function validateFilePath(path: string | undefined): FilePath | undefined {
-  if (path == null || path === '') {
-    return undefined
-  }
-  return path as FilePath
-}

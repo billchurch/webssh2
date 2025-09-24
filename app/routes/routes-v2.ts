@@ -53,7 +53,9 @@ async function handleSshGetRoute(
 
   // Validate credentials
   const credResult = validateSshRouteCredentials(routeRequest.session.sshCredentials)
-  if (!credResult.ok) {
+  if (credResult.ok) {
+    // Continue with connection parameters
+  } else {
     applyRouteResponse({
       status: HTTP.UNAUTHORIZED,
       headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
@@ -79,7 +81,9 @@ async function handleSshGetRoute(
 
   // Validate connection parameters
   const connResult = validateConnectionParameters(connectionParams, config)
-  if (!connResult.ok) {
+  if (connResult.ok) {
+    // Continue with SSH validation
+  } else {
     applyRouteResponse({
       status: 400,
       data: { error: connResult.error.message }
@@ -155,7 +159,9 @@ async function handlePostAuthRoute(
     config
   )
 
-  if (!authResult.ok) {
+  if (authResult.ok) {
+    // Continue with session updates
+  } else {
     applyRouteResponse({
       status: 400,
       data: { error: authResult.error.message }

@@ -87,11 +87,11 @@ export const validateConfig = (config: unknown): Result<Config> => {
 
   // Use existing validation
   const validationResult = validateConfigPure(config as Config)
-  if (!validationResult.ok) {
+  if (validationResult.ok) {
+    return ok(validationResult.value as Config)
+  } else {
     return err(new Error(validationResult.error.message))
   }
-
-  return ok(validationResult.value as Config)
 }
 
 /**

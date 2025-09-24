@@ -265,26 +265,26 @@ export const validateConnectionWithDns = async (
   // Resolve hostname to IP
   const resolveResult = await resolveHostname(host)
 
-  if (!resolveResult.ok) {
+  if (resolveResult.ok) {
+    // Check if any resolved IP is in allowed subnets
+    const { addresses } = resolveResult.value
+
+    for (const ip of addresses) {
+      if (isIpInSubnets(ip, allowedSubnets)) {
+        debug(`${host} (${ip}) is in allowed subnets`)
+        return { ok: true, value: true }
+      }
+    }
+
+    debug(`${host} (${addresses.join(', ')}) is not in allowed subnets`)
+    return {
+      ok: true,
+      value: false
+    }
+  } else {
     return {
       ok: false,
       error: resolveResult.error
     }
-  }
-
-  // Check if any resolved IP is in allowed subnets
-  const { addresses } = resolveResult.value
-
-  for (const ip of addresses) {
-    if (isIpInSubnets(ip, allowedSubnets)) {
-      debug(`${host} (${ip}) is in allowed subnets`)
-      return { ok: true, value: true }
-    }
-  }
-
-  debug(`${host} (${addresses.join(', ')}) is not in allowed subnets`)
-  return {
-    ok: true,
-    value: false
   }
 }

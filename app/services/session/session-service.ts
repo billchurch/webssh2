@@ -342,18 +342,18 @@ export class SessionServiceImpl implements SessionService {
    */
   getStats(): { totalSessions: number; activeSessions: number } {
     const sessions = this.list()
-    if (!sessions.ok) {
+    if (sessions.ok) {
+      const activeSessions = sessions.value.filter(
+        s => s.state.auth.status === 'authenticated' &&
+             s.state.connection.status === 'connected'
+      ).length
+
+      return {
+        totalSessions: sessions.value.length,
+        activeSessions
+      }
+    } else {
       return { totalSessions: 0, activeSessions: 0 }
-    }
-
-    const activeSessions = sessions.value.filter(
-      s => s.state.auth.status === 'authenticated' && 
-           s.state.connection.status === 'connected'
-    ).length
-
-    return {
-      totalSessions: sessions.value.length,
-      activeSessions
     }
   }
 

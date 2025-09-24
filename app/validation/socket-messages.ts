@@ -127,8 +127,11 @@ const validateDimension = (
   if (value == null) {return { ok: true, value: undefined }}
   
   const result = parseIntInRange(value, VALIDATION_LIMITS.MIN_TERMINAL_ROWS, VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION, field === 'rows' ? 'Rows' : 'Columns')
-  if (!result.ok) {return result}
-  return { ok: true, value: result.value }
+  if (result.ok) {
+    return { ok: true, value: result.value }
+  } else {
+    return result
+  }
 }
 
 // Helper function to validate environment variables
@@ -181,19 +184,21 @@ const addOptionalExecDimensions = (
   validated: ExecCommand
 ): Result<void> => {
   const colsResult = validateDimension(exec, 'cols')
-  if (!colsResult.ok) {
+  if (colsResult.ok) {
+    if (colsResult.value != null) {
+      validated.cols = colsResult.value
+    }
+  } else {
     return { ok: false, error: colsResult.error }
-  }
-  if (colsResult.value != null) {
-    validated.cols = colsResult.value
   }
 
   const rowsResult = validateDimension(exec, 'rows')
-  if (!rowsResult.ok) {
+  if (rowsResult.ok) {
+    if (rowsResult.value != null) {
+      validated.rows = rowsResult.value
+    }
+  } else {
     return { ok: false, error: rowsResult.error }
-  }
-  if (rowsResult.value != null) {
-    validated.rows = rowsResult.value
   }
 
   return { ok: true, value: undefined }
@@ -208,11 +213,12 @@ const validateOptionalFields = (
 
   for (const field of fields) {
     const result = validateStringField(creds, field)
-    if (!result.ok) {
+    if (result.ok) {
+      // eslint-disable-next-line security/detect-object-injection
+      results[field] = result.value
+    } else {
       return result as Result<Record<string, string | undefined>>
     }
-    // eslint-disable-next-line security/detect-object-injection
-    results[field] = result.value
   }
 
   return { ok: true, value: results }
@@ -227,11 +233,12 @@ const validateOptionalDimensions = (
 
   for (const field of fields) {
     const result = validateDimension(creds, field)
-    if (!result.ok) {
+    if (result.ok) {
+      // eslint-disable-next-line security/detect-object-injection
+      results[field] = result.value
+    } else {
       return result as Result<Record<string, number | undefined>>
     }
-    // eslint-disable-next-line security/detect-object-injection
-    results[field] = result.value
   }
 
   return { ok: true, value: results }
@@ -256,24 +263,44 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
 
   // Validate required fields
   const usernameResult = validateStringField(creds, 'username', true, 'Username is required and must be a non-empty string')
-  if (!usernameResult.ok) {return usernameResult as Result<AuthCredentials>}
+  if (usernameResult.ok) {
+    // Continue with other validations
+  } else {
+    return usernameResult as Result<AuthCredentials>
+  }
 
   const hostResult = validateStringField(creds, 'host', true, 'Host is required and must be a non-empty string')
-  if (!hostResult.ok) {return hostResult as Result<AuthCredentials>}
+  if (hostResult.ok) {
+    // Continue with other validations
+  } else {
+    return hostResult as Result<AuthCredentials>
+  }
 
   // Validate port
   const port = creds['port'] != null
     ? validatePort(creds['port'])
     : { ok: true, value: 22 } as Result<number>
-  if (!port.ok) {return port as Result<AuthCredentials>}
+  if (port.ok) {
+    // Continue with other validations
+  } else {
+    return port as Result<AuthCredentials>
+  }
 
   // Validate all optional string fields at once
   const optionalStrings = validateOptionalFields(creds, ['password', 'privateKey', 'passphrase', 'term'])
-  if (!optionalStrings.ok) {return optionalStrings as Result<AuthCredentials>}
+  if (optionalStrings.ok) {
+    // Continue with other validations
+  } else {
+    return optionalStrings as Result<AuthCredentials>
+  }
 
   // Validate optional dimensions
   const optionalDimensions = validateOptionalDimensions(creds, ['cols', 'rows'])
-  if (!optionalDimensions.ok) {return optionalDimensions as Result<AuthCredentials>}
+  if (optionalDimensions.ok) {
+    // Continue with building validated credentials
+  } else {
+    return optionalDimensions as Result<AuthCredentials>
+  }
 
   // Build validated credentials
   const validated: AuthCredentials = {
@@ -320,18 +347,27 @@ export const validateTerminalMessage = (data: unknown): Result<TerminalConfig> =
 
   // Validate rows
   const rowsResult = validateDimension(config, 'rows')
-  if (!rowsResult.ok) {return rowsResult as Result<TerminalConfig>}
-  if (rowsResult.value != null) {validated.rows = rowsResult.value}
+  if (rowsResult.ok) {
+    if (rowsResult.value != null) {validated.rows = rowsResult.value}
+  } else {
+    return rowsResult as Result<TerminalConfig>
+  }
 
   // Validate cols
   const colsResult = validateDimension(config, 'cols')
-  if (!colsResult.ok) {return colsResult as Result<TerminalConfig>}
-  if (colsResult.value != null) {validated.cols = colsResult.value}
+  if (colsResult.ok) {
+    if (colsResult.value != null) {validated.cols = colsResult.value}
+  } else {
+    return colsResult as Result<TerminalConfig>
+  }
 
   // Validate optional term
   const termResult = validateStringField(config, 'term')
-  if (!termResult.ok) {return termResult as Result<TerminalConfig>}
-  if (termResult.value != null) {validated.term = termResult.value}
+  if (termResult.ok) {
+    if (termResult.value != null) {validated.term = termResult.value}
+  } else {
+    return termResult as Result<TerminalConfig>
+  }
 
   return {
     ok: true,
@@ -366,11 +402,19 @@ export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
 
   // Validate rows
   const rowsResult = parseIntInRange(size['rows'], 1, 9999, 'Rows')
-  if (!rowsResult.ok) {return rowsResult as Result<ResizeParams>}
+  if (rowsResult.ok) {
+    // Continue with cols validation
+  } else {
+    return rowsResult as Result<ResizeParams>
+  }
 
   // Validate cols
   const colsResult = parseIntInRange(size['cols'], 1, 9999, 'Columns')
-  if (!colsResult.ok) {return colsResult as Result<ResizeParams>}
+  if (colsResult.ok) {
+    // Continue with building result
+  } else {
+    return colsResult as Result<ResizeParams>
+  }
 
   return {
     ok: true,
@@ -400,12 +444,16 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
 
   // Validate required command field
   const commandResult = validateStringField(
-    exec, 
-    'command', 
+    exec,
+    'command',
     true,
     'Command is required and must be a non-empty string'
   )
-  if (!commandResult.ok) {return commandResult as Result<ExecCommand>}
+  if (commandResult.ok) {
+    // Continue with building validated command
+  } else {
+    return commandResult as Result<ExecCommand>
+  }
 
   // Safe to use type assertion as we validated this field is required
   const command = commandResult.value as string
@@ -425,7 +473,9 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
   }
 
   const dimensionsResult = addOptionalExecDimensions(exec, validated)
-  if (!dimensionsResult.ok) {
+  if (dimensionsResult.ok) {
+    // Continue with other validations
+  } else {
     return dimensionsResult as Result<ExecCommand>
   }
 
@@ -469,7 +519,11 @@ export const validateControlMessage = (data: unknown): Result<{ action: string }
     true,
     'Action is required and must be a non-empty string'
   )
-  if (!actionResult.ok) {return actionResult as Result<{ action: string }>}
+  if (actionResult.ok) {
+    // Continue with building result
+  } else {
+    return actionResult as Result<{ action: string }>
+  }
 
   // Validate known actions
   const validActions = ['reauth', 'clear-credentials', 'disconnect']

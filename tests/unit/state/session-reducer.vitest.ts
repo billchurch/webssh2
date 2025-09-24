@@ -7,7 +7,7 @@ import { sessionReducer } from '../../../app/state/reducers/session-reducer.js'
 import { createInitialState } from '../../../app/state/types.js'
 import { actions } from '../../../app/state/actions.js'
 import { createSessionId, createUserId, createConnectionId } from '../../../app/types/branded.js'
-import { TEST_USERNAME, TEST_PASSWORDS, TEST_SSH, TEST_TIMEOUTS } from '../../test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORDS, TEST_SSH } from '../../test-constants.js'
 import type { SessionState } from '../../../app/state/types.js'
 
 // Reusable test helpers

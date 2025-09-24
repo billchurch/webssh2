@@ -409,13 +409,13 @@ export class ServiceSocketAdapter {
     const authCreds = buildAuthCredentials(authCredentials)
     const authResult = await this.services.auth.authenticate(authCreds)
 
-    if (!authResult.ok) {
+    if (authResult.ok) {
+      return authResult.value
+    } else {
       const errorMessage = this.normalizeAuthError(authResult.error.message)
       this.emitAuthenticationFailure(errorMessage)
       return null
     }
-
-    return authResult.value
   }
 
   private normalizeAuthError(message: string): string {
@@ -434,12 +434,12 @@ export class ServiceSocketAdapter {
     const sshConfig = buildSSHConfig(authCredentials, sessionId, this.config)
     const sshResult = await this.services.ssh.connect(sshConfig)
 
-    if (!sshResult.ok) {
+    if (sshResult.ok) {
+      return sshResult.value
+    } else {
       this.emitAuthenticationFailure(sshResult.error.message)
       return null
     }
-
-    return sshResult.value
   }
 
   private emitAuthenticationFailure(message: string): void {
@@ -541,11 +541,12 @@ export class ServiceSocketAdapter {
   }): boolean {
     const terminalResult = this.services.terminal.create(config)
 
-    if (!terminalResult.ok) {
+    if (terminalResult.ok) {
+      return true
+    } else {
       this.socket.emit(SOCKET_EVENTS.SSH_ERROR, terminalResult.error.message)
       return false
     }
-    return true
   }
 
   private async openShell(config: { term: string; rows: number; cols: number }): Promise<Duplex | null> {
@@ -570,11 +571,12 @@ export class ServiceSocketAdapter {
       }
     )
 
-    if (!shellResult.ok) {
+    if (shellResult.ok) {
+      return shellResult.value
+    } else {
       this.socket.emit(SOCKET_EVENTS.SSH_ERROR, shellResult.error.message)
       return null
     }
-    return shellResult.value
   }
 
   private setupShellDataFlow(stream: Duplex): void {
@@ -598,17 +600,19 @@ export class ServiceSocketAdapter {
 
     // Check if terminal exists before attempting resize
     const terminalResult = this.services.terminal.getTerminal(this.sessionId)
-    if (!terminalResult.ok || terminalResult.value === null) {
+    if (terminalResult.ok && terminalResult.value !== null) {
+      const result = this.services.terminal.resize(this.sessionId, dimensions)
+      if (result.ok) {
+        // Resize successful
+      } else {
+        debug('Resize failed:', result.error)
+      }
+    } else {
       debug('Resize ignored: Terminal not created yet for session', this.sessionId)
       // Store dimensions for when terminal is created
       this.initialTermSettings.rows = dimensions.rows
       this.initialTermSettings.cols = dimensions.cols
       return
-    }
-
-    const result = this.services.terminal.resize(this.sessionId, dimensions)
-    if (!result.ok) {
-      debug('Resize failed:', result.error)
     }
 
     // Also resize the SSH stream if it supports it
