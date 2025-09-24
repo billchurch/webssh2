@@ -11,12 +11,13 @@ import {
   normalizeDimension
 } from '../../app/validation/ssh.js'
 import { DEFAULTS } from '../../app/constants.js'
+import { TEST_IPS } from '../test-constants.js'
 
 describe('SSH Validation Functions', () => {
   describe('validateHost', () => {
     it('should return IP addresses unchanged', () => {
-      assert.equal(validateHost('192.168.1.1'), '192.168.1.1')
-      assert.equal(validateHost('10.0.0.1'), '10.0.0.1')
+      assert.equal(validateHost(TEST_IPS.PRIVATE_192), TEST_IPS.PRIVATE_192)
+      assert.equal(validateHost(TEST_IPS.PRIVATE_10), TEST_IPS.PRIVATE_10)
       assert.equal(validateHost('::1'), '::1')
       assert.equal(validateHost('2001:db8::1'), '2001:db8::1')
     })

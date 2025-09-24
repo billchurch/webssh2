@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Container, createContainer, createToken, TOKENS } from '../../../app/services/container.js'
 import type { Config } from '../../../app/types/config.js'
+import { TEST_SECRET } from '../../test-constants.js'
 
 describe('Container', () => {
   let container: Container
@@ -242,7 +243,7 @@ describe('Container', () => {
       
       // Register dependencies
       const mockConfig: Config = {
-        session: { secret: 'test', name: 'test' },
+        session: { secret: TEST_SECRET, name: 'test' },
         ssh: {
           host: null,
           port: 22,
@@ -285,7 +286,7 @@ describe('Container', () => {
     it('should work with predefined TOKENS', () => {
       // These tokens are defined in the container module
       const mockConfig: Config = {
-        session: { secret: 'test', name: 'test', sessionTimeout: 3600000 },
+        session: { secret: TEST_SECRET, name: 'test', sessionTimeout: 3600000 },
         ssh: {
           host: null,
           port: 22,

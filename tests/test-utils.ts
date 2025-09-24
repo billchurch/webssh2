@@ -10,7 +10,7 @@ import * as path from 'node:path'
 import type { SessionStore } from '../app/state/store.js'
 import type { ServiceDependencies } from '../app/services/interfaces.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME, TEST_SSH, TEST_PASSWORDS } from './test-constants.js'
+import { TEST_USERNAME, TEST_SSH, TEST_PASSWORDS, TEST_SECRET } from './test-constants.js'
 import { DEFAULTS } from '../app/constants.js'
 
 // Dynamic import for vitest when available
@@ -67,7 +67,7 @@ export function createMockDependencies(): ServiceDependencies {
   return {
     config: {
       session: {
-        secret: 'test-secret',
+        secret: TEST_SECRET,
         name: 'test-session',
         sessionTimeout: 3600000,
         maxHistorySize: 100

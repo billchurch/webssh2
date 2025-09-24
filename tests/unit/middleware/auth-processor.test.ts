@@ -85,7 +85,7 @@ describe('extractConfigCredentials', () => {
   it('should extract username and privateKey', () => {
     const config = createDefaultConfig()
     config.user.name = TEST_USERNAME
-    config.user.privateKey = 'ssh-rsa-key'
+    config.user.privateKey = TEST_SSH_KEY
     
     const creds = extractConfigCredentials(config)
     
@@ -99,7 +99,7 @@ describe('extractConfigCredentials', () => {
     const config = createDefaultConfig()
     config.user.name = TEST_USERNAME
     config.user.password = TEST_PASSWORD
-    config.user.privateKey = 'ssh-rsa-key'
+    config.user.privateKey = TEST_SSH_KEY
     config.user.passphrase = TEST_PASSPHRASE
     
     const creds = extractConfigCredentials(config)
@@ -219,14 +219,14 @@ describe('processAuthentication', () => {
   it('should handle config with privateKey', () => {
     const config = createDefaultConfig()
     config.user.name = SSH_USERNAME
-    config.user.privateKey = 'ssh-rsa-key'
+    config.user.privateKey = TEST_SSH_KEY
     
     const result = processAuthentication(config)
     
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.value.credentials.username).toBe(SSH_USERNAME)
-      expect(result.value.credentials.privateKey).toBe('ssh-rsa-key')
+      expect(result.value.credentials.privateKey).toBe(TEST_SSH_KEY)
       expect(result.value.source).toBe('config')
     }
   })

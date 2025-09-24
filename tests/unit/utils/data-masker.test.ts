@@ -7,7 +7,7 @@ import {
   maskSensitive,
   DEFAULT_MASK_PROPERTIES
 } from '../../../app/utils/data-masker.js'
-import { TEST_PASSWORDS } from '../../test-constants.js'
+import { TEST_PASSWORDS, TEST_SSH_KEY } from '../../test-constants.js'
 
 describe('createMaskingOptions', () => {
   it('should return default properties when no options provided', () => {
@@ -51,7 +51,7 @@ describe('maskSensitive', () => {
     const data = {
       username: 'user123',
       password: TEST_PASSWORDS.secret123,
-      privateKey: 'ssh-rsa-key',
+      privateKey: TEST_SSH_KEY,
       normalField: 'visible'
     }
     
@@ -59,7 +59,7 @@ describe('maskSensitive', () => {
     
     expect(masked['username']).toBe('user123')
     expect(masked['password']).not.toBe(TEST_PASSWORDS.secret123)
-    expect(masked['privateKey']).not.toBe('ssh-rsa-key')
+    expect(masked['privateKey']).not.toBe(TEST_SSH_KEY)
     expect(masked['normalField']).toBe('visible')
   })
   

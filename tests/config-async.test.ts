@@ -9,7 +9,7 @@ import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/c
 import { ConfigError } from '../dist/app/errors.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-utils.js'
 import type { TestEnvironment } from './types/index.js'
-import { ENV_TEST_VALUES, TEST_SECRET_LONG } from './test-constants.js'
+import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -75,7 +75,7 @@ describe('Config Module - Async Tests', () => {
   test('loadConfigAsync loads and merges custom config from config.json', async () => {
     const customConfig = {
       listen: {
-        port: 3333
+        port: TEST_CUSTOM_PORTS.port1
       },
       ssh: {
         host: 'test.example.com'
@@ -90,7 +90,7 @@ describe('Config Module - Async Tests', () => {
     const config = await loadConfigAsync()
 
     // Custom values should be merged
-    assert.equal(config.listen.port, 3333)
+    assert.equal(config.listen.port, TEST_CUSTOM_PORTS.port1)
     assert.equal(config.ssh.host, 'test.example.com')
     assert.equal(config.header.text, 'Test Header')
     
@@ -103,7 +103,7 @@ describe('Config Module - Async Tests', () => {
   test('loadConfigAsync overrides port with PORT environment variable', async () => {
     const customConfig = {
       listen: {
-        port: 3333
+        port: TEST_CUSTOM_PORTS.port1
       }
     }
 
@@ -141,7 +141,7 @@ describe('Config Module - Async Tests', () => {
   test('getConfig works with custom configuration file', async () => {
     const customConfig = {
       listen: {
-        port: 5555
+        port: TEST_CUSTOM_PORTS.port2
       },
       ssh: {
         algorithms: {
@@ -154,7 +154,7 @@ describe('Config Module - Async Tests', () => {
 
     const config = await getConfig()
 
-    assert.equal(config.listen.port, 5555)
+    assert.equal(config.listen.port, TEST_CUSTOM_PORTS.port2)
     assert.ok(config.ssh.algorithms?.cipher?.includes('aes256-gcm@openssh.com'))
     assert.ok(typeof config.getCorsConfig === 'function')
   })
@@ -185,7 +185,7 @@ describe('Config Module - Async Tests', () => {
   test('async config loading validates configuration schema', async () => {
     const validConfig = {
       listen: {
-        ip: '127.0.0.1',
+        ip: TEST_IPS.LOCALHOST,
         port: 3000
       },
       ssh: {
@@ -199,7 +199,7 @@ describe('Config Module - Async Tests', () => {
     const config = await loadConfigAsync()
 
     // Should pass validation and merge successfully
-    assert.equal(config.listen.ip, '127.0.0.1')
+    assert.equal(config.listen.ip, TEST_IPS.LOCALHOST)
     assert.equal(config.listen.port, 3000)
     assert.equal(config.ssh.term, 'xterm-256color')
   })
@@ -231,7 +231,7 @@ describe('Config Module - Async Tests', () => {
 
   test('concurrent calls to getConfig return the same instance', async () => {
     const customConfig = {
-      listen: { port: 6666 }
+      listen: { port: TEST_CUSTOM_PORTS.port3 }
     }
 
     fs.writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
@@ -245,6 +245,6 @@ describe('Config Module - Async Tests', () => {
 
     assert.strictEqual(config1, config2)
     assert.strictEqual(config2, config3)
-    assert.equal(config1.listen.port, 6666)
+    assert.equal(config1.listen.port, TEST_CUSTOM_PORTS.port3)
   })
 })

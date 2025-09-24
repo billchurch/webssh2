@@ -52,13 +52,13 @@ describe('mergeConfigs', () => {
   it('should merge file config over defaults', () => {
     const defaultConfig = createDefaultConfig()
     const fileConfig: Partial<Config> = {
-      listen: { ip: '127.0.0.1', port: 3000 },
+      listen: { ip: TEST_IPS.LOCALHOST, port: 3000 },
       ssh: { host: 'example.com', port: 2222 } as Config['ssh']
     }
     
     const merged = mergeConfigs(defaultConfig, fileConfig)
     
-    expect(merged.listen.ip).toBe('127.0.0.1')
+    expect(merged.listen.ip).toBe(TEST_IPS.LOCALHOST)
     expect(merged.listen.port).toBe(3000)
     expect(merged.ssh.host).toBe('example.com')
     expect(merged.ssh.port).toBe(2222)
@@ -68,7 +68,7 @@ describe('mergeConfigs', () => {
   it('should merge env config over file config', () => {
     const defaultConfig = createDefaultConfig()
     const fileConfig: Partial<Config> = {
-      listen: { ip: '127.0.0.1', port: 3000 }
+      listen: { ip: TEST_IPS.LOCALHOST, port: 3000 }
     }
     const envConfig: Partial<Config> = {
       listen: { port: 4000 } as Config['listen']
@@ -76,7 +76,7 @@ describe('mergeConfigs', () => {
     
     const merged = mergeConfigs(defaultConfig, fileConfig, envConfig)
     
-    expect(merged.listen.ip).toBe('127.0.0.1') // From file
+    expect(merged.listen.ip).toBe(TEST_IPS.LOCALHOST) // From file
     expect(merged.listen.port).toBe(4000) // From env (overrides file)
   })
   

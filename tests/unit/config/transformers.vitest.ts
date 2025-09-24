@@ -16,6 +16,7 @@ import {
 } from '../../../app/config/transformers.js'
 import type { Config } from '../../../app/types/config.js'
 import { DEFAULTS } from '../../../app/constants.js'
+import { TEST_SESSION_SECRET_VALID, TEST_SESSION_SECRET_SHORT, TEST_SESSION_SECRET_SUPER, TEST_SSH, TEST_IPS } from '../../test-constants.js'
 
 describe('Config Transformers', () => {
   const baseConfig: Config = {
@@ -49,7 +50,7 @@ describe('Config Transformers', () => {
       allowReplay: true,
       replayCRLF: false
     },
-    session: { name: 'webssh2', secret: 'a'.repeat(32) },
+    session: { name: 'webssh2', secret: TEST_SESSION_SECRET_VALID },
     sso: {
       enabled: false,
       csrfProtection: false,
@@ -110,13 +111,13 @@ describe('Config Transformers', () => {
 
     it('should preserve provided values', () => {
       const partial: Partial<Config> = {
-        listen: { ip: '127.0.0.1', port: 3000 },
+        listen: { ip: TEST_IPS.LOCALHOST, port: 3000 },
         ssh: { host: 'example.com', port: 2222 }
       }
 
       const result = applyDefaults(partial)
       
-      expect(result.listen.ip).toBe('127.0.0.1')
+      expect(result.listen.ip).toBe(TEST_IPS.LOCALHOST)
       expect(result.listen.port).toBe(3000)
       expect(result.ssh.host).toBe('example.com')
       expect(result.ssh.port).toBe(2222)
@@ -138,13 +139,13 @@ describe('Config Transformers', () => {
         user: {
           name: 'testuser',
           password: 'testpass',
-          privateKey: 'ssh-rsa...',
-          passphrase: 'keypass'
+          privateKey: TEST_SSH.PRIVATE_KEY,
+          passphrase: TEST_SSH.PASSPHRASE
         }
       }
 
       const masked = maskSensitiveConfig(config)
-      
+
       expect(masked.user.name).toBe('***')
       expect(masked.user.password).toBe('***')
       expect(masked.user.privateKey).toBe('***')
@@ -320,17 +321,17 @@ describe('Config Transformers', () => {
         user: {
           name: 'testuser',
           password: 'testpass',
-          privateKey: 'ssh-rsa...',
-          passphrase: 'keypass'
+          privateKey: TEST_SSH.PRIVATE_KEY,
+          passphrase: TEST_SSH.PASSPHRASE
         },
         session: {
           name: 'webssh2',
-          secret: 'supersecret'
+          secret: TEST_SESSION_SECRET_SUPER
         }
       }
 
       const safe = createClientSafeConfig(config)
-      
+
       expect(safe.user).toBeUndefined()
       expect(safe.session).toBeUndefined()
     })
@@ -356,19 +357,19 @@ describe('Config Transformers', () => {
     it('should validate valid session config', () => {
       const result = validateSessionConfig({
         name: 'webssh2',
-        secret: 'a'.repeat(32)
+        secret: TEST_SESSION_SECRET_VALID
       })
       
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.value.name).toBe('webssh2')
-        expect(result.value.secret).toBe('a'.repeat(32))
+        expect(result.value.secret).toBe(TEST_SESSION_SECRET_VALID)
       }
     })
 
     it('should reject missing name', () => {
       const result = validateSessionConfig({
-        secret: 'a'.repeat(32)
+        secret: TEST_SESSION_SECRET_VALID
       })
       
       expect(result.ok).toBe(false)
@@ -380,7 +381,7 @@ describe('Config Transformers', () => {
     it('should reject empty name', () => {
       const result = validateSessionConfig({
         name: '   ',
-        secret: 'a'.repeat(32)
+        secret: TEST_SESSION_SECRET_VALID
       })
       
       expect(result.ok).toBe(false)
@@ -403,7 +404,7 @@ describe('Config Transformers', () => {
     it('should reject short secret', () => {
       const result = validateSessionConfig({
         name: 'webssh2',
-        secret: 'tooshort'
+        secret: TEST_SESSION_SECRET_SHORT
       })
       
       expect(result.ok).toBe(false)
@@ -415,7 +416,7 @@ describe('Config Transformers', () => {
     it('should trim name whitespace', () => {
       const result = validateSessionConfig({
         name: '  webssh2  ',
-        secret: 'a'.repeat(32)
+        secret: TEST_SESSION_SECRET_VALID
       })
       
       expect(result.ok).toBe(true)

@@ -26,7 +26,7 @@ describe('deepMerge', () => {
 
 describe('getValidatedHost', () => {
   test('returns valid IP unchanged', () => {
-    assert.equal(getValidatedHost('192.168.1.1'), '192.168.1.1')
+    assert.equal(getValidatedHost(TEST_IPS.PRIVATE_192), TEST_IPS.PRIVATE_192)
   })
 
   test('escapes hostname with potential XSS', () => {

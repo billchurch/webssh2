@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
 import { SessionServiceImpl } from '../../../app/services/session/session-service.js'
 import type { SessionParams } from '../../../app/services/interfaces.js'
 import { createSessionId, createUserId, createConnectionId } from '../../../app/types/branded.js'
-import { TEST_USERNAME, TEST_SSH } from '../../test-constants.js'
+import { TEST_USERNAME, TEST_SSH, TEST_IPS } from '../../test-constants.js'
 import { createMockStore, createMockDependencies, setupMockStoreState, setupMockStoreStates, createSessionState } from '../../test-utils.js'
 
 describe('SessionService', () => {
@@ -24,7 +24,7 @@ describe('SessionService', () => {
     it('should create a new session', () => {
       const params: SessionParams = {
         userId: createUserId('test-user'),
-        clientIp: '127.0.0.1',
+        clientIp: TEST_IPS.LOCALHOST,
         userAgent: 'test-agent'
       }
 

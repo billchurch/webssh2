@@ -63,7 +63,7 @@ const stateBuilders = {
     const state = stateBuilders.initial()
     return sessionReducer(
       state,
-      actions.metadata.setClient('192.168.1.100', 'Mozilla/5.0')
+      actions.metadata.setClient(TEST_SSH.IP_ADDRESS, 'Mozilla/5.0')
     )
   }
 }
@@ -262,8 +262,8 @@ describe('metadata selectors', () => {
   it('should get client info', () => {
     const state = stateBuilders.withClientInfo()
     const info = selectors.getClientInfo(state)
-    
-    expect(info.ip).toBe('192.168.1.100')
+
+    expect(info.ip).toBe(TEST_SSH.IP_ADDRESS)
     expect(info.userAgent).toBe('Mozilla/5.0')
     expect(info.userId).toBeNull()
   })

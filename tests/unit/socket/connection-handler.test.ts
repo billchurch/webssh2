@@ -14,7 +14,7 @@ import {
 } from '../../../app/socket/connection-handler.js'
 import { SSHConnectionError } from '../../../app/errors.js'
 import type { Config } from '../../../app/types/config.js'
-import { TEST_PASSWORDS } from '../../test-constants.js'
+import { TEST_PASSWORDS, TEST_SERVER_KEY_CONTENT, TEST_USER_KEY_CONTENT } from '../../test-constants.js'
 
 describe('Connection Handler Pure Functions', () => {
   it('prepareCredentials merges server private key when none provided', () => {
@@ -26,13 +26,13 @@ describe('Connection Handler Pure Functions', () => {
     }
     const config = {
       user: {
-        privateKey: 'server-key-content'
+        privateKey: TEST_SERVER_KEY_CONTENT
       }
     } as Config
-    
+
     const result = prepareCredentials(creds, config)
-    
-    assert.strictEqual(result.privateKey, 'server-key-content')
+
+    assert.strictEqual(result.privateKey, TEST_SERVER_KEY_CONTENT)
     assert.strictEqual(result.host, 'example.com')
     assert.strictEqual(result.username, 'user')
   })
@@ -43,17 +43,17 @@ describe('Connection Handler Pure Functions', () => {
       port: 22,
       username: 'user',
       password: TEST_PASSWORDS.basic,
-      privateKey: 'user-key-content',
+      privateKey: TEST_USER_KEY_CONTENT,
     }
     const config = {
       user: {
-        privateKey: 'server-key-content'
+        privateKey: TEST_SERVER_KEY_CONTENT
       }
     } as Config
-    
+
     const result = prepareCredentials(creds, config)
-    
-    assert.strictEqual(result.privateKey, 'user-key-content')
+
+    assert.strictEqual(result.privateKey, TEST_USER_KEY_CONTENT)
   })
 
   it('createAuthSuccessPayload returns correct structure', () => {

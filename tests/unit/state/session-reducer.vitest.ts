@@ -255,13 +255,13 @@ describe('terminalReducer via sessionReducer', () => {
 describe('metadataReducer via sessionReducer', () => {
   it('should handle METADATA_SET_CLIENT', () => {
     const state = createTestState()
-    const clientIp = '192.168.1.100'
+    const clientIp = TEST_SSH.IP_ADDRESS
     const userAgent = 'Mozilla/5.0'
     const newState = sessionReducer(
       state,
       actions.metadata.setClient(clientIp, userAgent)
     )
-    
+
     expect(newState.metadata.clientIp).toBe(clientIp)
     expect(newState.metadata.userAgent).toBe(userAgent)
   })

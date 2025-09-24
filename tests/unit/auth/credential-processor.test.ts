@@ -10,7 +10,7 @@ import {
   extractReadyTimeout
 } from '../../../app/auth/credential-processor.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
-import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS } from '../../test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS, TEST_SSH } from '../../test-constants.js'
 
 describe('extractPostCredentials', () => {
   it('should extract valid credentials', () => {
@@ -204,7 +204,7 @@ describe('isValidCredentialFormat', () => {
   it('should validate credentials with private key', () => {
     const creds = {
       username: 'user',
-      privateKey: 'ssh-rsa...'
+      privateKey: TEST_SSH.PRIVATE_KEY
     }
     
     expect(isValidCredentialFormat(creds)).toBe(true)

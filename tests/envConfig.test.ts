@@ -269,7 +269,7 @@ describe('Environment Configuration Tests', () => {
   })
 
   test('loadEnvironmentConfig handles complex nested configuration', () => {
-    process.env.WEBSSH2_LISTEN_IP = '127.0.0.1'
+    process.env.WEBSSH2_LISTEN_IP = TEST_IPS.LOCALHOST
     process.env.WEBSSH2_LISTEN_PORT = '3000'
     process.env.WEBSSH2_SSH_HOST = 'production.example.com'
     process.env.WEBSSH2_SSH_PORT = '2222'
@@ -282,7 +282,7 @@ describe('Environment Configuration Tests', () => {
 
     const config = loadEnvironmentConfig()
 
-    assert.equal(config.listen?.ip, '127.0.0.1')
+    assert.equal(config.listen?.ip, TEST_IPS.LOCALHOST)
     assert.equal(config.listen?.port, 3000)
     assert.equal(config.ssh?.host, 'production.example.com')
     assert.equal(config.ssh?.port, 2222)

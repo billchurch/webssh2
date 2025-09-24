@@ -95,12 +95,12 @@ interface TestSSHConstants {
 
 export const TEST_SSH: TestSSHConstants = {
   USERNAME: 'testuser',
-  PASSWORD: 'testpass',
+  PASSWORD: 'testpass', //NOSONAR
   HOST: 'example.com',
-  IP_ADDRESS: '192.168.1.100',
+  IP_ADDRESS: '192.168.1.100', //NOSONAR
   PORT: 22,
   PRIVATE_KEY: 'ssh-rsa...',
-  PASSPHRASE: 'keypass',
+  PASSPHRASE: 'keypass', //NOSONAR
   TERMINAL: {
     TYPE: 'xterm-256color',
     DEFAULT_COLS: 80,
@@ -208,25 +208,25 @@ export const SSO_TEST_VALUES = {
 
 // Network and subnet constants for testing
 export const TEST_SUBNETS = {
-  PRIVATE_10: '10.0.0.0/8',
-  PRIVATE_172: '172.16.0.0/12',
-  PRIVATE_192: '192.168.1.0/24',
-  LOCALHOST: '127.0.0.0/8',
+  PRIVATE_10: '10.0.0.0/8', //NOSONAR
+  PRIVATE_172: '172.16.0.0/12', //NOSONAR
+  PRIVATE_192: '192.168.1.0/24', //NOSONAR
+  LOCALHOST: '127.0.0.0/8', 
   ANY: '0.0.0.0/0'
 } as const
 
 export const TEST_IPS = {
   ANY: '0.0.0.0',
   LOCALHOST: '127.0.0.1',
-  PRIVATE_10: '10.0.0.1',
-  PRIVATE_172: '172.16.0.1',
-  PRIVATE_192: '192.168.1.1'
+  PRIVATE_10: '10.0.0.1', //NOSONAR
+  PRIVATE_172: '172.16.0.1', //NOSONAR
+  PRIVATE_192: '192.168.1.1' //NOSONAR
 } as const
 
 // Test HTTP origins
 export const TEST_HTTP_ORIGINS = {
   SINGLE: 'http://localhost:3000',
-  MULTIPLE: 'http://localhost:3000,http://localhost:8080',
+  MULTIPLE: 'http://localhost:3000,http://localhost:8080', //NOSONAR
   ARRAY: ['http://localhost:3000', 'http://localhost:8080']
 } as const
 
@@ -314,9 +314,31 @@ export const DOCKER_CONFIG = {
 // Invalid test values for negative testing
 export const INVALID_TEST_VALUES = {
   USERNAME: 'invalid_user',
-  PASSWORD: 'invalid_pass',
+  PASSWORD: 'invalid_pass', //NOSONAR
   NON_EXISTENT_HOST: 'nonexistent.invalid.host',
   INVALID_PORT: '9999',
+} as const
+
+// ============================================================================
+// ADDITIONAL TEST KEYS AND SECRETS
+// ============================================================================
+
+// Server and user private keys
+export const TEST_SERVER_DEFAULT_KEY = 'server-default-key' //NOSONAR
+export const TEST_USER_KEY = 'user-key' //NOSONAR
+export const TEST_SERVER_KEY_CONTENT = 'server-key-content' //NOSONAR
+export const TEST_USER_KEY_CONTENT = 'user-key-content' //NOSONAR
+
+// Valid session secrets (32+ chars for security)
+export const TEST_SESSION_SECRET_VALID = 'a'.repeat(32) //NOSONAR
+export const TEST_SESSION_SECRET_SHORT = 'tooshort' //NOSONAR
+export const TEST_SESSION_SECRET_SUPER = 'supersecret' //NOSONAR
+
+// Additional test ports for custom configurations
+export const TEST_CUSTOM_PORTS = {
+  port1: 3333,
+  port2: 5555,
+  port3: 6666,
 } as const
 
 // ============================================================================

@@ -6,7 +6,7 @@ import fs from 'node:fs'
 import { resetConfigForTesting, getConfig } from '../dist/app/config.js'
 import { ConfigError } from '../dist/app/errors.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-utils.js'
-import { TEST_SECRET_LONG } from './test-constants.js'
+import { TEST_SECRET_LONG, TEST_CUSTOM_PORTS } from './test-constants.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -47,7 +47,7 @@ describe('Config Module - Baseline Sync Tests', () => {
   test('loads and merges custom config from config.json', async () => {
     const customConfig = {
       listen: {
-        port: 3333
+        port: TEST_CUSTOM_PORTS.port1
       },
       ssh: {
         host: 'test.example.com'
@@ -63,7 +63,7 @@ describe('Config Module - Baseline Sync Tests', () => {
     const config = await getConfig()
 
     // Custom values should be merged
-    assert.equal(config.listen.port, 3333)
+    assert.equal(config.listen.port, TEST_CUSTOM_PORTS.port1)
     assert.equal(config.ssh.host, 'test.example.com')
     assert.equal(config.header.text, 'Test Header')
     
@@ -76,7 +76,7 @@ describe('Config Module - Baseline Sync Tests', () => {
   test('overrides port with PORT environment variable', async () => {
     const customConfig = {
       listen: {
-        port: 3333
+        port: TEST_CUSTOM_PORTS.port1
       }
     }
 

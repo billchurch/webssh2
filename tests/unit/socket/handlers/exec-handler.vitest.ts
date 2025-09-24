@@ -16,6 +16,7 @@ import {
   type ExecState,
 } from '../../../../app/socket/handlers/exec-handler.js'
 import { DEFAULTS } from '../../../../app/constants.js'
+import { TEST_PASSWORDS } from '../../../test-constants.js'
 
 describe('Exec Handler', () => {
   describe('validateExecPayload', () => {
@@ -484,7 +485,7 @@ describe('Exec Handler', () => {
       const result = filterEnvironmentVariables({
         PATH: '/usr/bin',
         SSH_AUTH_SOCK: '/tmp/ssh-agent',
-        AWS_SECRET_ACCESS_KEY: 'secret',
+        AWS_SECRET_ACCESS_KEY: TEST_PASSWORDS.secret,
         HOME: '/home/user',
       })
       

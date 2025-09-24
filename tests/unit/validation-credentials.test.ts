@@ -7,7 +7,7 @@ import {
   validateCredentialFormat,
   type Credentials
 } from '../../app/validation/credentials.js'
-import { TEST_PASSWORDS, TEST_PASSPHRASE } from '../test-constants.js'
+import { TEST_PASSWORDS, TEST_PASSPHRASE, TEST_PRIVATE_KEY, TEST_IPS } from '../test-constants.js'
 
 describe('Credential Validation Functions', () => {
   describe('isValidCredentials', () => {
@@ -24,7 +24,7 @@ describe('Credential Validation Functions', () => {
     it('should accept valid credentials with private key', () => {
       const creds: Credentials = {
         username: 'user',
-        host: '192.168.1.1',
+        host: TEST_IPS.PRIVATE_192,
         port: 2222,
         privateKey: '-----BEGIN RSA PRIVATE KEY-----'
       }

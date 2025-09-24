@@ -13,42 +13,49 @@ import {
   type SessionState,
 } from '../../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../../app/types/config.js'
+import {
+  TEST_USERNAME,
+  TEST_PASSWORDS,
+  TEST_SSH,
+  TEST_SERVER_DEFAULT_KEY,
+  TEST_USER_KEY,
+} from '@tests/test-constants.js'
 
 describe('Auth Handler', () => {
   describe('validateAuthCredentials', () => {
     it('should validate valid credentials with password', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
-        host: 'example.com',
-        port: 22,
-        password: 'secret123',
+        username: TEST_USERNAME,
+        host: TEST_SSH.HOST,
+        port: TEST_SSH.PORT,
+        password: TEST_PASSWORDS.secret123,
       })
       
       expect(result.valid).toBe(true)
       expect(result.data).toEqual({
-        username: 'testuser',
-        host: 'example.com',
-        port: 22,
-        password: 'secret123',
+        username: TEST_USERNAME,
+        host: TEST_SSH.HOST,
+        port: TEST_SSH.PORT,
+        password: TEST_PASSWORDS.secret123,
       })
     })
 
     it('should validate valid credentials with private key', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
-        host: 'example.com',
+        username: TEST_USERNAME,
+        host: TEST_SSH.HOST,
         port: 2222,
         privateKey: '-----BEGIN OPENSSH PRIVATE KEY-----',
-        passphrase: 'keypass',
+        passphrase: TEST_SSH.PASSPHRASE,
       })
       
       expect(result.valid).toBe(true)
       expect(result.data).toEqual({
-        username: 'testuser',
-        host: 'example.com',
+        username: TEST_USERNAME,
+        host: TEST_SSH.HOST,
         port: 2222,
         privateKey: '-----BEGIN OPENSSH PRIVATE KEY-----',
-        passphrase: 'keypass',
+        passphrase: TEST_SSH.PASSPHRASE,
       })
     })
 
@@ -62,7 +69,7 @@ describe('Auth Handler', () => {
       const result = validateAuthCredentials({
         host: 'example.com',
         port: 22,
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
       expect(result.error).toBe('Username is required')
@@ -70,9 +77,9 @@ describe('Auth Handler', () => {
 
     it('should reject missing host', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
+        username: TEST_USERNAME,
         port: 22,
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
       expect(result.error).toBe('Host is required')
@@ -80,10 +87,10 @@ describe('Auth Handler', () => {
 
     it('should reject invalid port', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
+        username: TEST_USERNAME,
         host: 'example.com',
         port: 99999,
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
       expect(result.error).toBe('Invalid port number')
@@ -91,7 +98,7 @@ describe('Auth Handler', () => {
 
     it('should reject missing authentication method', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
+        username: TEST_USERNAME,
         host: 'example.com',
         port: 22,
       })
@@ -101,10 +108,10 @@ describe('Auth Handler', () => {
 
     it('should handle string port conversion', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
+        username: TEST_USERNAME,
         host: 'example.com',
         port: '2222',
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
       })
       
       expect(result.valid).toBe(true)
@@ -113,10 +120,10 @@ describe('Auth Handler', () => {
 
     it('should include optional terminal settings', () => {
       const result = validateAuthCredentials({
-        username: 'testuser',
+        username: TEST_USERNAME,
         host: 'example.com',
         port: 22,
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
         term: 'xterm-256color',
         cols: 80,
         rows: 24,
@@ -134,7 +141,7 @@ describe('Auth Handler', () => {
   describe('mergeWithServerDefaults', () => {
     const mockConfig: Config = {
       user: {
-        privateKey: 'server-default-key',
+        privateKey: TEST_SERVER_DEFAULT_KEY,
       },
       ssh: {
         term: 'xterm-color',
@@ -156,10 +163,10 @@ describe('Auth Handler', () => {
     it('should use server default private key when not provided', () => {
       const result = mergeWithServerDefaults(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
         },
         mockConfig
       )
@@ -170,10 +177,10 @@ describe('Auth Handler', () => {
     it('should not override user-provided private key', () => {
       const result = mergeWithServerDefaults(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          privateKey: 'user-key',
+          privateKey: TEST_USER_KEY,
         },
         mockConfig
       )
@@ -184,10 +191,10 @@ describe('Auth Handler', () => {
     it('should use server default terminal when not provided', () => {
       const result = mergeWithServerDefaults(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
         },
         mockConfig
       )
@@ -198,10 +205,10 @@ describe('Auth Handler', () => {
     it('should not override user-provided terminal', () => {
       const result = mergeWithServerDefaults(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
           term: 'vt100',
         },
         mockConfig
@@ -216,10 +223,10 @@ describe('Auth Handler', () => {
       const currentState = createInitialSessionState()
       const result = createAuthenticatedSessionState(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 2222,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
           term: 'xterm',
           cols: 120,
           rows: 40,
@@ -229,8 +236,8 @@ describe('Auth Handler', () => {
       
       expect(result).toEqual({
         authenticated: true,
-        username: 'testuser',
-        password: 'secret',
+        username: TEST_USERNAME,
+        password: TEST_PASSWORDS.secret,
         privateKey: null,
         passphrase: null,
         host: 'example.com',
@@ -250,10 +257,10 @@ describe('Auth Handler', () => {
       
       const result = createAuthenticatedSessionState(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
         },
         currentState
       )
@@ -273,10 +280,10 @@ describe('Auth Handler', () => {
       const sessionState = createInitialSessionState()
       const result = handleAuthRequest(
         {
-          username: 'testuser',
+          username: TEST_USERNAME,
           host: 'example.com',
           port: 22,
-          password: 'secret',
+          password: TEST_PASSWORDS.secret,
         },
         sessionState,
         mockConfig
@@ -361,9 +368,9 @@ describe('Auth Handler', () => {
     it('should not require auth if credentials exist', () => {
       const sessionState: SessionState = {
         ...createInitialSessionState(),
-        username: 'testuser',
+        username: TEST_USERNAME,
         host: 'example.com',
-        password: 'secret',
+        password: TEST_PASSWORDS.secret,
       }
       
       expect(requiresInteractiveAuth(sessionState, mockConfig)).toBe(false)
