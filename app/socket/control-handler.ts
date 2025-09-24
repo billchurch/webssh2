@@ -232,7 +232,8 @@ export function handleControlMessage(
       break
       
     default:
-      console.warn('Invalid control message:', message)
+      // V2: Silently ignore invalid control messages without logging
+      debug('Ignoring unknown control message:', message)
       break
   }
 }
