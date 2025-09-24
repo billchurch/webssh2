@@ -79,7 +79,7 @@ describe('hostname-resolver', () => {
       const subnets = [TEST_IPS.PRIVATE_192_100, TEST_IPS.PRIVATE_10]
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192_100, subnets)).toBe(true)
-      expect(isIpInSubnets('192.168.1.101', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_192_101, subnets)).toBe(false)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_10, subnets)).toBe(true)
     })
 
@@ -88,15 +88,15 @@ describe('hostname-resolver', () => {
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192_254, subnets)).toBe(true)
-      expect(isIpInSubnets('192.168.2.1', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_192_2_1, subnets)).toBe(false)
     })
 
     it('should match CIDR /16 notation', () => {
-      const subnets = ['192.168.0.0/16']
+      const subnets = [TEST_SUBNETS.PRIVATE_192_16]
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192, subnets)).toBe(true)
-      expect(isIpInSubnets('192.168.255.254', subnets)).toBe(true)
-      expect(isIpInSubnets('192.169.1.1', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_192_255_254, subnets)).toBe(true)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_169_1_1, subnets)).toBe(false)
     })
 
     it('should match CIDR /8 notation', () => {
@@ -104,7 +104,7 @@ describe('hostname-resolver', () => {
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_10, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_10_ALT, subnets)).toBe(true)
-      expect(isIpInSubnets('11.0.0.1', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_11_0_0_1, subnets)).toBe(false)
     })
 
     it('should match wildcard notation', () => {
@@ -112,18 +112,18 @@ describe('hostname-resolver', () => {
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192_254, subnets)).toBe(true)
-      expect(isIpInSubnets('192.168.2.1', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_192_2_1, subnets)).toBe(false)
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_10, subnets)).toBe(true)
-      expect(isIpInSubnets('10.0.255.254', subnets)).toBe(true)
-      expect(isIpInSubnets('10.1.0.1', subnets)).toBe(false)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_10_0_255_254, subnets)).toBe(true)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_10_1_0_1, subnets)).toBe(false)
     })
 
     it('should handle mixed subnet formats', () => {
-      const subnets = [TEST_IPS.PRIVATE_192_100, '10.0.0.0/24', TEST_WILDCARDS.PRIVATE_172_ALL]
+      const subnets = [TEST_IPS.PRIVATE_192_100, TEST_SUBNETS.PRIVATE_10_24, TEST_WILDCARDS.PRIVATE_172_ALL]
 
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192_100, subnets)).toBe(true)
-      expect(isIpInSubnets('10.0.0.50', subnets)).toBe(true)
+      expect(isIpInSubnets(TEST_IPS.PRIVATE_10_0_50, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_172, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PUBLIC_DNS, subnets)).toBe(false)
     })
@@ -145,7 +145,7 @@ describe('hostname-resolver', () => {
     })
 
     it('should match IPv6 CIDR /64 notation', () => {
-      const subnets = ['2001:db8::/64']
+      const subnets = [TEST_SUBNETS.DOCUMENTATION_V6_64]
 
       expect(isIpInSubnets(TEST_IPS.DOCUMENTATION_V6, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.DOCUMENTATION_V6_FFFF, subnets)).toBe(true)
@@ -164,7 +164,7 @@ describe('hostname-resolver', () => {
       const subnets = [TEST_SUBNETS.LOCALHOST, TEST_SUBNETS.LOCALHOST_V6]
 
       expect(isIpInSubnets(TEST_IPS.LOCALHOST, subnets)).toBe(true)
-      expect(isIpInSubnets('127.0.0.100', subnets)).toBe(true)
+      expect(isIpInSubnets(TEST_IPS.LOCALHOST_100, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.LOCALHOST_V6, subnets)).toBe(true)
       expect(isIpInSubnets(TEST_IPS.PRIVATE_192, subnets)).toBe(false)
       expect(isIpInSubnets(TEST_IPS.LOCALHOST_V6_ALT, subnets)).toBe(false)
@@ -199,7 +199,7 @@ describe('hostname-resolver', () => {
         value: true
       })
 
-      const result2 = await validateConnectionWithDns('192.168.2.100', subnets)
+      const result2 = await validateConnectionWithDns(TEST_IPS.PRIVATE_192_2_100, subnets)
       expect(result2).toEqual({
         ok: true,
         value: false
