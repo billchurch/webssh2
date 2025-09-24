@@ -16,11 +16,11 @@ import {
 } from '../../../app/config/transformers.js'
 import type { Config } from '../../../app/types/config.js'
 import { DEFAULTS } from '../../../app/constants.js'
-import { TEST_SESSION_SECRET_VALID, TEST_SESSION_SECRET_SHORT, TEST_SESSION_SECRET_SUPER, TEST_SSH, TEST_IPS } from '../../test-constants.js'
+import { TEST_SESSION_SECRET_VALID, TEST_SESSION_SECRET_SHORT, TEST_SESSION_SECRET_SUPER, TEST_SSH, TEST_IPS, TEST_USERNAME, TEST_PASSWORD } from '../../test-constants.js'
 
 describe('Config Transformers', () => {
   const baseConfig: Config = {
-    listen: { ip: '0.0.0.0', port: 2222 },
+    listen: { ip: TEST_IPS.ANY, port: 2222 },
     http: { origins: ['*:*'] },
     user: { name: null, password: null, privateKey: null, passphrase: null },
     ssh: {
@@ -137,8 +137,8 @@ describe('Config Transformers', () => {
       const config: Config = {
         ...baseConfig,
         user: {
-          name: 'testuser',
-          password: 'testpass',
+          name: TEST_USERNAME,
+          password: TEST_PASSWORD,
           privateKey: TEST_SSH.PRIVATE_KEY,
           passphrase: TEST_SSH.PASSPHRASE
         }
