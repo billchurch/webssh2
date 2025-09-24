@@ -50,38 +50,47 @@ describe('Socket V2 Exec Edge Cases', () => {
     socketHandler(io, mockConfig, MockSSHConnection)
   })
 
-  it('exec: non-string command → ssherror', async () => {
+  // Helper function to setup authenticated socket
+  const setupAuthenticatedSocket = async () => {
     const onConn = (io.on as any).mock.calls[0][1]
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     onConn(mockSocket)
 
+    // Wait for authentication
     await new Promise((r) => setImmediate(r))
     await new Promise((r) => setImmediate(r))
+  }
 
-    // Track emitted events
+  // Helper function to track emitted events
+  const trackEmittedEvents = () => {
     const emittedEvents: Array<{ event: string; payload?: any }> = []
     const originalEmit = mockSocket.emit
     mockSocket.emit = vi.fn((...args) => {
       emittedEvents.push({ event: args[0], payload: args[1] })
       return originalEmit.apply(mockSocket, args)
     })
+    return emittedEvents
+  }
+
+  // Helper function to wait for async operations
+  const waitForAsync = async () => {
+    await new Promise((r) => setImmediate(r))
+  }
+
+  it('exec: non-string command → ssherror', async () => {
+    await setupAuthenticatedSocket()
+    const emittedEvents = trackEmittedEvents()
 
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 123 })
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     const ssherrorEmits = emittedEvents.filter(e => e.event === 'ssherror')
     expect(ssherrorEmits.length).toBeGreaterThan(0)
   })
 
   it('exec: exit payload contains code and signal', async () => {
-    const onConn = (io.on as any).mock.calls[0][1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
+    await setupAuthenticatedSocket()
 
     // Set up promise to wait for exec-exit event
     const execExitPromise = new Promise<any>((resolve) => {

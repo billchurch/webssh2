@@ -7,70 +7,17 @@
 
 import { test, expect } from '@playwright/test'
 import { TEST_CONFIG, TIMEOUTS } from './constants.js'
-
-// V2 async helpers
-async function waitForV2Terminal(page, timeout = TIMEOUTS.CONNECTION) {
-  await expect(page.locator('.xterm-helper-textarea')).toBeVisible({ timeout })
-
-  await page.waitForFunction(() => {
-    const textarea = document.querySelector('.xterm-helper-textarea')
-    return textarea && !textarea.disabled &&
-           getComputedStyle(textarea).visibility !== 'hidden' &&
-           getComputedStyle(textarea).display !== 'none'
-  }, { timeout })
-}
-
-async function waitForV2Connection(page, timeout = TIMEOUTS.CONNECTION) {
-  try {
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: timeout / 2 })
-  } catch {
-    await waitForV2Terminal(page, timeout)
-  }
-}
-
-async function waitForV2Prompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
-  await page.waitForFunction(
-    () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
-      return /[$#%>]\s*$/.test(terminalContent) ||
-             /testuser@.*[$#%>]/.test(terminalContent) ||
-             terminalContent.includes('$') || terminalContent.includes('#')
-    },
-    { timeout }
-  )
-}
-
-async function executeV2Command(page, command) {
-  await page.locator('.xterm-helper-textarea').click()
-  await page.keyboard.type(command)
-  await page.keyboard.press('Enter')
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-}
-
-async function verifyV2TerminalFunctionality(page, username) {
-  await waitForV2Prompt(page)
-  await executeV2Command(page, 'whoami')
-
-  // Wait for username to appear in terminal
-  await page.waitForFunction(
-    (expectedUser) => {
-      const content = document.querySelector('.xterm-screen')?.textContent || ''
-      return content.includes(expectedUser)
-    },
-    username,
-    { timeout: TIMEOUTS.CONNECTION }
-  )
-
-  await executeV2Command(page, 'echo "V2 Async test successful"')
-
-  await page.waitForFunction(
-    () => {
-      const content = document.querySelector('.xterm-screen')?.textContent || ''
-      return content.includes('V2 Async test successful')
-    },
-    { timeout: TIMEOUTS.CONNECTION }
-  )
-}
+import {
+  waitForV2Terminal,
+  waitForV2Connection,
+  waitForV2Prompt,
+  executeV2Command,
+  verifyV2TerminalFunctionality,
+  connectV2,
+  checkForV2AuthError,
+  waitForCommandOutput,
+  getTerminalContent
+} from './v2-helpers.js'
 
 test.describe('V2 Async/Await Modal Login Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -78,14 +25,13 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
   })
 
   test('should handle async connect with valid credentials (V2)', async ({ page }) => {
-    // Fill in the form
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-
-    // Click connect and verify async operation
-    await page.click('button:has-text("Connect")')
+    // Use shared helper to connect
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // Verify successful async connection with V2
     await waitForV2Connection(page)
@@ -95,34 +41,16 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
   })
 
   test('should handle async authentication error properly (V2)', async ({ page }) => {
-    // Fill in invalid credentials
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.invalidUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.invalidPassword)
+    // Use shared helper to connect with invalid credentials
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.invalidUsername,
+      password: TEST_CONFIG.invalidPassword
+    })
 
-    // Attempt async authentication
-    await page.click('button:has-text("Connect")')
-
-    // V2 should handle async auth errors gracefully
-    const possibleErrors = [
-      page.locator('text=/Authentication failed/'),
-      page.locator('text=/Invalid credentials/'),
-      page.locator('text=/All authentication methods failed/'),
-      page.locator('[role="status"]').filter({ hasText: /failed/i })
-    ]
-
-    let errorFound = false
-    for (const errorLocator of possibleErrors) {
-      try {
-        await expect(errorLocator.first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
-        errorFound = true
-        break
-      } catch {
-        continue
-      }
-    }
-
+    // Use shared helper to check for errors
+    const errorFound = await checkForV2AuthError(page)
     expect(errorFound).toBeTruthy()
 
     // Form should remain available for retry
@@ -130,14 +58,13 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
   })
 
   test('should handle async connection error for non-existent host (V2)', async ({ page }) => {
-    // Fill in non-existent host
-    await page.fill('[name="host"]', TEST_CONFIG.nonExistentHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-
-    // Attempt async connection
-    await page.click('button:has-text("Connect")')
+    // Use shared helper with non-existent host
+    await connectV2(page, {
+      host: TEST_CONFIG.nonExistentHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // V2 should handle network errors asynchronously
     await expect(
@@ -147,11 +74,12 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async shell creation and terminal operations (V2)', async ({ page }) => {
     // Connect first
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-    await page.click('button:has-text("Connect")')
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     await waitForV2Connection(page)
     await waitForV2Terminal(page)
@@ -186,7 +114,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
     }
 
     // Verify all commands executed
-    const finalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    const finalContent = await getTerminalContent(page)
     expect(finalContent).toContain('async test 1')
     expect(finalContent).toContain('async test 2')
   })
@@ -222,7 +150,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
       { timeout: TIMEOUTS.CONNECTION }
     )
 
-    const content = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+    const content = await getTerminalContent(page)
     expect(content).toContain('resize test')
   })
 })

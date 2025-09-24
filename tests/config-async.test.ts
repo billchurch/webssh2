@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path'
 import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
 import { ConfigError } from '../dist/app/errors.js'
-import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-helpers.js'
+import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-utils.js'
 import type { TestEnvironment } from './types/index.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG } from './test-constants.js'
 

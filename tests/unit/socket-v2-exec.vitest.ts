@@ -9,7 +9,7 @@ import {
   createMockSocket,
   createMockSSHConnection,
   createMockSocketConfig
-} from '../test-helpers.js'
+} from '../test-utils.js'
 import { TEST_PASSWORDS } from '../test-constants.js'
 
 describe('Socket V2 Exec Handler', () => {

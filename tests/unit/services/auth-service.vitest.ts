@@ -4,75 +4,30 @@
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
 import { AuthServiceImpl } from '../../../app/services/auth/auth-service.js'
-import type { ServiceDependencies, Credentials } from '../../../app/services/interfaces.js'
-import type { SessionStore } from '../../../app/state/store.js'
+import type { Credentials } from '../../../app/services/interfaces.js'
 import { createSessionId } from '../../../app/types/branded.js'
 import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
+import { createMockStore, createMockDependencies, setupMockStoreState, createAuthState } from '../../test-utils.js'
 
 describe('AuthService', () => {
   let authService: AuthServiceImpl
-  let mockDeps: ServiceDependencies
-  let mockStore: SessionStore
+  let mockDeps: ReturnType<typeof createMockDependencies>
+  let mockStore: ReturnType<typeof createMockStore>
 
   beforeEach(() => {
-    // Create mock store
-    mockStore = {
-      dispatch: vi.fn(),
-      getState: vi.fn(),
-      createSession: vi.fn(),
-      removeSession: vi.fn(),
-      getSessionIds: vi.fn(() => []),
-      hasSession: vi.fn(() => false),
-      getHistory: vi.fn(() => []),
-      clear: vi.fn()
-    } as unknown as SessionStore
-
-    // Create mock dependencies
-    mockDeps = {
-      config: {
-        session: {
-          secret: 'test-secret',
-          name: 'test-session',
-          sessionTimeout: 3600000, // 1 hour
-          maxHistorySize: 100
-        },
-        ssh: {
-          host: null,
-          port: 22,
-          term: 'xterm-256color',
-          readyTimeout: 20000,
-          keepaliveInterval: 30000,
-          keepaliveCountMax: 10,
-          alwaysSendKeyboardInteractivePrompts: false,
-          disableInteractiveAuth: false,
-          algorithms: {
-            cipher: [],
-            compress: [],
-            hmac: [],
-            kex: [],
-            serverHostKey: []
-          }
-        },
-        options: {
-          challengeButton: false,
-          allowReauth: true,
-          allowReplay: false,
-          allowReconnect: false,
-          autoLog: false
-        },
-        algorithms: {},
-        serverlog: { client: false, server: false },
-        terminal: { rows: 24, cols: 80, term: 'xterm-256color' },
-        logging: { namespace: 'webssh2:test' }
-      },
-      logger: {
-        debug: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn()
-      }
+    mockStore = createMockStore()
+    mockDeps = createMockDependencies()
+    // Add extra SSH config properties that auth tests need
+    mockDeps.config.ssh.disableInteractiveAuth = false
+    mockDeps.config.ssh.algorithms = {
+      cipher: [],
+      compress: [],
+      hmac: [],
+      kex: [],
+      serverHostKey: []
     }
-
+    mockDeps.config.terminal = { rows: 24, cols: 80, term: 'xterm-256color' }
+    mockDeps.config.logging = { namespace: 'webssh2:test' }
     authService = new AuthServiceImpl(mockDeps, mockStore)
   })
 

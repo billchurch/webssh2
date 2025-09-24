@@ -4,11 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
 import { SSHServiceImpl } from '../../../app/services/ssh/ssh-service.js'
-import type { ServiceDependencies, SSHConfig, ShellOptions } from '../../../app/services/interfaces.js'
-import type { SessionStore } from '../../../app/state/store.js'
+import type { SSHConfig, ShellOptions } from '../../../app/services/interfaces.js'
 import { createSessionId, createConnectionId } from '../../../app/types/branded.js'
 import { Client as SSH2Client } from 'ssh2'
 import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
+import { createMockStore, createMockDependencies, createMockSSH2Client } from '../../test-utils.js'
 import { Duplex } from 'node:stream'
 
 // Mock SSH2 Client
@@ -26,73 +26,16 @@ vi.mock('ssh2', () => ({
 
 describe('SSHService', () => {
   let sshService: SSHServiceImpl
-  let mockDeps: ServiceDependencies
-  let mockStore: SessionStore
-  let mockClient: any
+  let mockDeps: ReturnType<typeof createMockDependencies>
+  let mockStore: ReturnType<typeof createMockStore>
+  let mockClient: ReturnType<typeof createMockSSH2Client>
 
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Create mock store
-    mockStore = {
-      dispatch: vi.fn(),
-      getState: vi.fn(),
-      createSession: vi.fn(),
-      removeSession: vi.fn(),
-      getSessionIds: vi.fn(() => []),
-      hasSession: vi.fn(() => false),
-      getHistory: vi.fn(() => []),
-      clear: vi.fn()
-    } as unknown as SessionStore
-
-    // Create mock dependencies
-    mockDeps = {
-      config: {
-        session: {
-          secret: 'test-secret',
-          name: 'test-session',
-          sessionTimeout: 3600000,
-          maxHistorySize: 100
-        },
-        ssh: {
-          host: null,
-          port: 22,
-          term: 'xterm-256color',
-          readyTimeout: 20000,
-          keepaliveInterval: 30000,
-          keepaliveCountMax: 10,
-          alwaysSendKeyboardInteractivePrompts: false
-        },
-        options: {
-          challengeButton: false,
-          allowReauth: true,
-          allowReplay: false,
-          allowReconnect: false,
-          autoLog: false
-        },
-        algorithms: {},
-        serverlog: { client: false, server: false },
-        terminal: { cursorBlink: true, scrollback: 10000, tabStopWidth: 8, fontFamily: 'monospace' },
-        logging: { level: 'info', namespace: 'webssh2:test' }
-      },
-      logger: {
-        debug: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn()
-      }
-    }
-
-    // Setup mock SSH2 client
-    mockClient = {
-      connect: vi.fn(),
-      shell: vi.fn(),
-      exec: vi.fn(),
-      end: vi.fn(),
-      on: vi.fn(),
-      once: vi.fn(),
-      removeAllListeners: vi.fn()
-    };
+    mockStore = createMockStore()
+    mockDeps = createMockDependencies()
+    mockClient = createMockSSH2Client();
     (SSH2Client as unknown as Mock).mockReturnValue(mockClient)
 
     sshService = new SSHServiceImpl(mockDeps, mockStore)

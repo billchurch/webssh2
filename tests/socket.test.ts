@@ -2,12 +2,12 @@ import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import socketHandler from '../dist/app/socket-v2.js'
-import { 
-  createMockIO, 
-  createMockSocket, 
-  createMockSSHConnection, 
-  createMockSocketConfig 
-} from './test-helpers.js'
+import {
+  createMockIO,
+  createMockSocket,
+  createMockSSHConnection,
+  createMockSocketConfig
+} from './test-utils.js'
 import { TEST_PASSWORDS } from './test-constants.js'
 
 describe('Socket Handler', () => {

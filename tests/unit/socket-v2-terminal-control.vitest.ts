@@ -7,7 +7,7 @@ import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
 describe('Socket V2 Terminal and Control', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any, lastShellOptions: any
+  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
 
   beforeEach(() => {
     io = new EventEmitter()
@@ -36,7 +36,6 @@ describe('Socket V2 Terminal and Control', () => {
       }
       async connect() { return }
       async shell(options: any) {
-        lastShellOptions = options
         const stream: any = new EventEmitter()
         stream.write = () => {}
         return stream
@@ -51,7 +50,8 @@ describe('Socket V2 Terminal and Control', () => {
     socketHandler(io, mockConfig, MockSSHConnection)
   })
 
-  it('terminal: handles invalid terminal settings gracefully', async () => {
+  // Helper function to setup authenticated socket
+  const setupAuthenticatedSocket = async () => {
     const onConn = (io.on as any).mock.calls[0][1]
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
@@ -60,21 +60,33 @@ describe('Socket V2 Terminal and Control', () => {
     // Wait for authentication
     await new Promise((r) => setImmediate(r))
     await new Promise((r) => setImmediate(r))
+  }
 
-    // Track emitted events
+  // Helper function to track emitted events
+  const trackEmittedEvents = () => {
     const emittedEvents: Array<{ event: string; payload?: any }> = []
     const originalEmit = mockSocket.emit
     mockSocket.emit = vi.fn((...args) => {
       emittedEvents.push({ event: args[0], payload: args[1] })
       return originalEmit.apply(mockSocket, args)
     })
+    return emittedEvents
+  }
+
+  // Helper function to wait for async operations
+  const waitForAsync = async (iterations = 1) => {
+    for (let i = 0; i < iterations; i++) {
+      await new Promise((r) => setImmediate(r))
+    }
+  }
+
+  it('terminal: handles invalid terminal settings gracefully', async () => {
+    await setupAuthenticatedSocket()
+    const emittedEvents = trackEmittedEvents()
 
     // Send terminal settings with invalid values
     EventEmitter.prototype.emit.call(mockSocket, 'terminal', { rows: 'abc', cols: 'xyz' })
-
-    // Wait for terminal processing
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync(2)
 
     // V2 correctly emits an error for invalid terminal settings (improvement over V1)
     const errorEvents = emittedEvents.filter(e => e.event === 'ssherror')
@@ -83,32 +95,19 @@ describe('Socket V2 Terminal and Control', () => {
   })
 
   it('resize: silently ignores invalid resize values', async () => {
-    const onConn = (io.on as any).mock.calls[0][1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
-
-    // Track emitted events
-    const emittedEvents: Array<{ event: string; payload?: any }> = []
-    const originalEmit = mockSocket.emit
-    mockSocket.emit = vi.fn((...args) => {
-      emittedEvents.push({ event: args[0], payload: args[1] })
-      return originalEmit.apply(mockSocket, args)
-    })
+    await setupAuthenticatedSocket()
+    const emittedEvents = trackEmittedEvents()
 
     // First create shell with defaults via terminal event
     EventEmitter.prototype.emit.call(mockSocket, 'terminal', {})
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // Clear previous events
     emittedEvents.length = 0
 
     // Now send invalid resize payload
     EventEmitter.prototype.emit.call(mockSocket, 'resize', { rows: 'NaN', cols: 'oops' })
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // V2 should silently ignore invalid resize values without emitting errors
     const errorEvents = emittedEvents.filter(e => e.event === 'ssherror')
@@ -116,23 +115,17 @@ describe('Socket V2 Terminal and Control', () => {
   })
 
   it('control: silently ignores invalid control commands (V2 improvement)', async () => {
-    const onConn = (io.on as any).mock.calls[0][1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
+    await setupAuthenticatedSocket()
 
     // Mock console.warn to ensure it's NOT called (V2 improvement)
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     EventEmitter.prototype.emit.call(mockSocket, 'terminal', {})
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // Send invalid control command
     EventEmitter.prototype.emit.call(mockSocket, 'control', 'bad-cmd')
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // V2 should silently ignore invalid control commands without logging warnings
     expect(warnSpy).not.toHaveBeenCalled()
@@ -141,31 +134,18 @@ describe('Socket V2 Terminal and Control', () => {
   })
 
   it('control: handles valid control commands (reauth)', async () => {
-    const onConn = (io.on as any).mock.calls[0][1]
-    mockSocket.request.session.usedBasicAuth = true
-    mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
-    onConn(mockSocket)
-
-    await new Promise((r) => setImmediate(r))
-    await new Promise((r) => setImmediate(r))
-
-    // Track emitted events
-    const emittedEvents: Array<{ event: string; payload?: any }> = []
-    const originalEmit = mockSocket.emit
-    mockSocket.emit = vi.fn((...args) => {
-      emittedEvents.push({ event: args[0], payload: args[1] })
-      return originalEmit.apply(mockSocket, args)
-    })
+    await setupAuthenticatedSocket()
+    const emittedEvents = trackEmittedEvents()
 
     EventEmitter.prototype.emit.call(mockSocket, 'terminal', {})
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // Clear previous events
     emittedEvents.length = 0
 
     // Send valid control command
     EventEmitter.prototype.emit.call(mockSocket, 'control', 'reauth')
-    await new Promise((r) => setImmediate(r))
+    await waitForAsync()
 
     // Should emit reauth response
     const authEvents = emittedEvents.filter(e => e.event === 'authentication')

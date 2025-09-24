@@ -1,45 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
+import { waitForV2Terminal, waitForV2Connection, waitForV2Prompt, executeV2Command, waitForCommandOutput } from './v2-helpers.js'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
-
-// V2-specific helpers
-async function waitForV2Terminal(page, timeout = TIMEOUTS.CONNECTION) {
-  // Wait for terminal to be ready and visible
-  await expect(page.locator('.xterm-helper-textarea')).toBeVisible({ timeout })
-
-  // Wait for terminal to be actually interactive
-  await page.waitForFunction(() => {
-    const textarea = document.querySelector('.xterm-helper-textarea')
-    return textarea && !textarea.disabled &&
-           getComputedStyle(textarea).visibility !== 'hidden' &&
-           getComputedStyle(textarea).display !== 'none'
-  }, { timeout })
-}
-
-async function waitForV2Connection(page, timeout = TIMEOUTS.CONNECTION) {
-  // V2 might not show "Connected" status immediately
-  // Instead, wait for terminal to be ready
-  try {
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout: timeout / 2 })
-  } catch {
-    // Fallback: if no "Connected" status, just wait for terminal
-    await waitForV2Terminal(page, timeout)
-  }
-}
-
-async function waitForV2Prompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
-  await page.waitForFunction(
-    () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
-      // Look for shell prompt patterns
-      return /[$#%>]\s*$/.test(terminalContent) ||
-             /testuser@.*[$#%>]/.test(terminalContent) ||
-             terminalContent.includes('$') || terminalContent.includes('#')
-    },
-    { timeout }
-  )
-}
 
 test.describe('V2 E2E: AcceptEnv via containerized SSHD', () => {
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run this test')
@@ -61,21 +24,10 @@ test.describe('V2 E2E: AcceptEnv via containerized SSHD', () => {
     await waitForV2Prompt(page)
 
     // Focus terminal and query the env var
-    await page.locator('.xterm-helper-textarea').click()
-    await page.keyboard.type('printenv FOO')
-    await page.keyboard.press('Enter')
-
-    // Wait for command to execute and output to appear
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    await executeV2Command(page, 'printenv FOO')
 
     // Check terminal content for the environment variable value
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent || ''
-        return content.includes('bar')
-      },
-      { timeout: TIMEOUTS.CONNECTION }
-    )
+    await waitForCommandOutput(page, 'bar')
 
     const content = await page.$eval('.xterm-screen', (el) => el.textContent)
     expect(content).toContain('bar')
@@ -102,31 +54,12 @@ test.describe('V2 E2E: AcceptEnv via containerized SSHD', () => {
     await waitForV2Prompt(page)
 
     // Test first variable
-    await page.locator('.xterm-helper-textarea').click()
-    await page.keyboard.type('printenv VAR1')
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent || ''
-        return content.includes('value1')
-      },
-      { timeout: TIMEOUTS.CONNECTION }
-    )
+    await executeV2Command(page, 'printenv VAR1')
+    await waitForCommandOutput(page, 'value1')
 
     // Test second variable
-    await page.keyboard.type('printenv VAR2')
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent || ''
-        return content.includes('value2')
-      },
-      { timeout: TIMEOUTS.CONNECTION }
-    )
+    await executeV2Command(page, 'printenv VAR2')
+    await waitForCommandOutput(page, 'value2')
 
     const content = await page.$eval('.xterm-screen', (el) => el.textContent)
     expect(content).toContain('value1')
@@ -150,18 +83,8 @@ test.describe('V2 E2E: AcceptEnv via containerized SSHD', () => {
     await waitForV2Terminal(page)
     await waitForV2Prompt(page)
 
-    await page.locator('.xterm-helper-textarea').click()
-    await page.keyboard.type('printenv SPECIAL')
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent || ''
-        return content.includes('hello world with spaces')
-      },
-      { timeout: TIMEOUTS.CONNECTION }
-    )
+    await executeV2Command(page, 'printenv SPECIAL')
+    await waitForCommandOutput(page, 'hello world with spaces')
 
     const content = await page.$eval('.xterm-screen', (el) => el.textContent)
     expect(content).toContain('hello world with spaces')

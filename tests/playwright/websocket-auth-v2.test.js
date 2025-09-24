@@ -7,52 +7,16 @@
 
 import { test, expect } from '@playwright/test'
 import { TEST_CONFIG, TIMEOUTS } from './constants.js'
-
-// V2-specific helper functions
-async function waitForV2Connection(page, timeout = TIMEOUTS.CONNECTION) {
-  // V2 might emit different events or have different timing
-  // Wait for either "Connected" status or successful socket connection
-  try {
-    await expect(page.locator('text=Connected')).toBeVisible({ timeout })
-  } catch {
-    // Fallback: check if terminal is ready (V2 might not show "Connected")
-    await expect(page.locator('.xterm-helper-textarea')).toBeVisible({ timeout })
-  }
-}
-
-async function waitForV2Terminal(page, timeout = TIMEOUTS.CONNECTION) {
-  // Wait for terminal to be ready and visible
-  await expect(page.locator('.xterm-helper-textarea')).toBeVisible({ timeout })
-
-  // Wait for terminal to be actually interactive (V2 improvement)
-  await page.waitForFunction(() => {
-    const textarea = document.querySelector('.xterm-helper-textarea')
-    return textarea && !textarea.disabled &&
-           getComputedStyle(textarea).visibility !== 'hidden' &&
-           getComputedStyle(textarea).display !== 'none'
-  }, { timeout })
-}
-
-async function executeV2Command(page, command) {
-  await page.locator('.xterm-helper-textarea').click()
-  await page.keyboard.type(command)
-  await page.keyboard.press('Enter')
-  // V2 might need different timing
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-}
-
-async function waitForV2Prompt(page, timeout = TIMEOUTS.PROMPT_WAIT) {
-  // V2 might have different prompt patterns
-  await page.waitForFunction(
-    () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
-      // Look for common shell prompts
-      return /[$#%>]\s*$/.test(terminalContent) ||
-             /testuser@.*[$#%>]/.test(terminalContent)
-    },
-    { timeout }
-  )
-}
+import {
+  waitForV2Connection,
+  waitForV2Terminal,
+  executeV2Command,
+  waitForV2Prompt,
+  checkForV2AuthError,
+  fillV2LoginForm,
+  connectV2,
+  getTerminalContent
+} from './v2-helpers.js'
 
 test.describe('V2 WebSocket Interactive Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -60,14 +24,13 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
   })
 
   test('should connect successfully with valid credentials', async ({ page }) => {
-    // Fill in the form
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-
-    // Click connect
-    await page.click('button:has-text("Connect")')
+    // Use shared helper to connect
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // Wait for V2 connection
     await waitForV2Connection(page)
@@ -82,36 +45,16 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
-    // Fill in the form with invalid credentials
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.invalidUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.invalidPassword)
+    // Use shared helper to connect
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.invalidUsername,
+      password: TEST_CONFIG.invalidPassword
+    })
 
-    // Click connect
-    await page.click('button:has-text("Connect")')
-
-    // V2 might show errors differently - check multiple possible locations
-    const possibleErrors = [
-      page.locator('text=/Authentication failed/'),
-      page.locator('text=/Invalid credentials/'),
-      page.locator('text=/SSH connection error/'),
-      page.locator('text=/Connection failed/'),
-      page.locator('[role="status"]').filter({ hasText: /Authentication failed|Invalid credentials/ })
-    ]
-
-    // Wait for any error to appear
-    let errorFound = false
-    for (const errorLocator of possibleErrors) {
-      try {
-        await expect(errorLocator.first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
-        errorFound = true
-        break
-      } catch {
-        // Continue to next error type
-      }
-    }
-
+    // Use shared helper to check for errors
+    const errorFound = await checkForV2AuthError(page)
     expect(errorFound).toBeTruthy()
 
     // Verify form is still visible for retry
@@ -119,14 +62,13 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
   })
 
   test('should show connection error for wrong port', async ({ page }) => {
-    // Fill in the form with wrong port
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.invalidPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-
-    // Click connect
-    await page.click('button:has-text("Connect")')
+    // Use shared helper to connect with wrong port
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.invalidPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // V2 should show connection error
     await expect(page.locator('text=/Authentication failed|Connection refused|ECONNREFUSED/').first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
@@ -134,11 +76,12 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should handle page refresh gracefully', async ({ page }) => {
     // First, establish a connection
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-    await page.click('button:has-text("Connect")')
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     await waitForV2Connection(page)
 
@@ -152,11 +95,12 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
     await expect(page.locator('[name="username"]')).toBeVisible()
 
     // Re-authenticate
-    await page.fill('[name="host"]', TEST_CONFIG.sshHost)
-    await page.fill('[name="port"]', TEST_CONFIG.sshPort)
-    await page.fill('[name="username"]', TEST_CONFIG.validUsername)
-    await page.fill('[name="password"]', TEST_CONFIG.validPassword)
-    await page.click('button:has-text("Connect")')
+    await connectV2(page, {
+      host: TEST_CONFIG.sshHost,
+      port: TEST_CONFIG.sshPort,
+      username: TEST_CONFIG.validUsername,
+      password: TEST_CONFIG.validPassword
+    })
 
     // Verify reconnection works
     await waitForV2Connection(page)

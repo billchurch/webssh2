@@ -2,73 +2,20 @@
  * Unit tests for TerminalService
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, beforeEach, type Mock } from 'vitest'
 import { TerminalServiceImpl } from '../../../app/services/terminal/terminal-service.js'
-import type { ServiceDependencies, TerminalOptions, Dimensions } from '../../../app/services/interfaces.js'
-import type { SessionStore } from '../../../app/state/store.js'
+import type { TerminalOptions, Dimensions } from '../../../app/services/interfaces.js'
 import { createSessionId } from '../../../app/types/branded.js'
+import { createMockStore, createMockDependencies, setupMockStoreState } from '../../test-utils.js'
 
 describe('TerminalService', () => {
   let terminalService: TerminalServiceImpl
-  let mockDeps: ServiceDependencies
-  let mockStore: SessionStore
+  let mockDeps: ReturnType<typeof createMockDependencies>
+  let mockStore: ReturnType<typeof createMockStore>
 
   beforeEach(() => {
-    // Create mock store
-    mockStore = {
-      dispatch: vi.fn(),
-      getState: vi.fn(),
-      createSession: vi.fn(),
-      removeSession: vi.fn(),
-      getSessionIds: vi.fn(() => []),
-      hasSession: vi.fn(() => false),
-      getHistory: vi.fn(() => []),
-      clear: vi.fn()
-    } as unknown as SessionStore
-
-    // Create mock dependencies
-    mockDeps = {
-      config: {
-        session: {
-          secret: 'test-secret',
-          name: 'test-session',
-          sessionTimeout: 3600000,
-          maxHistorySize: 100
-        },
-        ssh: {
-          host: null,
-          port: 22,
-          term: 'xterm-256color',
-          readyTimeout: 20000,
-          keepaliveInterval: 30000,
-          keepaliveCountMax: 10,
-          alwaysSendKeyboardInteractivePrompts: false
-        },
-        options: {
-          challengeButton: false,
-          allowReauth: true,
-          allowReplay: false,
-          allowReconnect: false,
-          autoLog: false
-        },
-        algorithms: {},
-        serverlog: { client: false, server: false },
-        terminal: {
-          cursorBlink: true,
-          scrollback: 10000,
-          tabStopWidth: 8,
-          fontFamily: 'monospace'
-        },
-        logging: { level: 'info', namespace: 'webssh2:test' }
-      },
-      logger: {
-        debug: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn()
-      }
-    }
-
+    mockStore = createMockStore()
+    mockDeps = createMockDependencies()
     terminalService = new TerminalServiceImpl(mockDeps, mockStore)
   })
 
@@ -228,8 +175,8 @@ describe('TerminalService', () => {
         connection: { status: 'connected' },
         terminal: { rows: 24, cols: 80 },
         metadata: { createdAt: Date.now(), updatedAt: Date.now() }
-      };
-      (mockStore.getState as Mock).mockReturnValue(mockState)
+      }
+      setupMockStoreState(mockStore, mockState)
 
       // Create terminal first
       terminalService.create({ sessionId })
@@ -274,8 +221,8 @@ describe('TerminalService', () => {
         connection: { status: 'connected' },
         terminal: { rows: 24, cols: 80 },
         metadata: { createdAt: Date.now(), updatedAt: Date.now() }
-      };
-      (mockStore.getState as Mock).mockReturnValue(mockState)
+      }
+      setupMockStoreState(mockStore, mockState)
 
       // Create terminal first
       terminalService.create({ sessionId })

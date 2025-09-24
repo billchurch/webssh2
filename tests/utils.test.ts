@@ -12,7 +12,8 @@ import {
   validateConfig,
   validateSshTerm,
 } from '../dist/app/utils.js'
-import { TEST_PASSWORDS, TEST_USERNAME, TEST_PASSWORD, MY_SECRET } from './test-constants.js'
+import { TEST_PASSWORDS, TEST_USERNAME, TEST_PASSWORD, MY_SECRET, TEST_SSH, TEST_PORTS, TEST_IPS, TERMINAL } from './test-constants.js'
+import { DEFAULTS } from '../dist/app/constants.js'
 
 describe('deepMerge', () => {
   test('merges nested objects correctly', () => {
@@ -55,18 +56,18 @@ describe('getValidatedPort', () => {
 describe('isValidCredentials', () => {
   test('validates complete credentials', () => {
     const validCreds = {
-      username: 'user',
+      username: TEST_USERNAME,
       password: TEST_PASSWORDS.basic,
-      host: 'localhost',
-      port: 22,
+      host: TEST_SSH.HOST,
+      port: TEST_SSH.PORT,
     }
     assert.equal(isValidCredentials(validCreds), true)
   })
 
   test('rejects incomplete credentials', () => {
     const invalidCreds = {
-      username: 'user',
-      host: 'localhost',
+      username: TEST_USERNAME,
+      host: TEST_SSH.HOST,
     }
     assert.equal(isValidCredentials(invalidCreds), false)
   })
@@ -110,11 +111,11 @@ describe('validateConfig', () => {
   test('validates correct config', () => {
     const validConfig = {
       listen: {
-        ip: '0.0.0.0',
-        port: 2222,
+        ip: TEST_IPS.ANY,
+        port: TEST_PORTS.webssh2,
       },
       http: {
-        origins: ['http://localhost:2222'],
+        origins: [`http://localhost:${TEST_PORTS.webssh2}`],
       },
       user: {
         name: TEST_USERNAME,
@@ -122,12 +123,12 @@ describe('validateConfig', () => {
         privateKey: null,
       },
       ssh: {
-        host: 'localhost',
-        port: 22,
-        term: 'xterm',
-        readyTimeout: 20000,
+        host: TEST_SSH.HOST,
+        port: TEST_SSH.PORT,
+        term: DEFAULTS.SSH_TERM,
+        readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
         keepaliveInterval: 30000,
-        keepaliveCountMax: 10,
+        keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
         algorithms: {
           kex: ['ecdh-sha2-nistp256'],
           cipher: ['aes256-ctr'],
@@ -155,13 +156,13 @@ describe('validateConfig', () => {
 
   test('throws on missing required fields', () => {
     const invalidConfig = {
-      listen: { ip: '0.0.0.0' }, // missing required port
+      listen: { ip: TEST_IPS.ANY }, // missing required port
       http: { origins: [] },
-      user: { name: 'test' }, // missing required password
+      user: { name: TEST_USERNAME }, // missing required password
       ssh: {
-        host: 'localhost',
-        port: 22,
-        term: 'xterm',
+        host: TEST_SSH.HOST,
+        port: TEST_SSH.PORT,
+        term: DEFAULTS.SSH_TERM,
         // missing required fields
       },
       header: {
@@ -225,7 +226,7 @@ describe('validateConfig', () => {
 describe('validateSshTerm', () => {
   test('validates legitimate terminal types', () => {
     assert.equal(validateSshTerm('xterm'), 'xterm')
-    assert.equal(validateSshTerm('xterm-256color'), 'xterm-256color')
+    assert.equal(validateSshTerm(TERMINAL.TYPE), TERMINAL.TYPE)
   })
 
   test('returns null for invalid terminal strings', () => {
