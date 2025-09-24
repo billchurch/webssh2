@@ -484,7 +484,7 @@ describe('Exec Handler', () => {
     it('should filter sensitive variables', () => {
       const result = filterEnvironmentVariables({
         PATH: '/usr/bin',
-        SSH_AUTH_SOCK: '/tmp/ssh-agent',
+        SSH_AUTH_SOCK: '/tmp/ssh-agent', //NOSONAR
         AWS_SECRET_ACCESS_KEY: TEST_PASSWORDS.secret,
         HOME: '/home/user',
       })
