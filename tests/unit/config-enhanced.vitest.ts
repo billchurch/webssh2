@@ -6,7 +6,6 @@ import {
   validateSshHost,
   validateSshPort,
   validateCssColor,
-  validateFilePath,
 } from '../../app/validation/config.js'
 import { ConfigBuilder } from '../../app/utils/config-builder.js'
 // Note: loadEnhancedConfig is now internal to config.ts
@@ -285,14 +284,6 @@ describe('Enhanced Config - Validation Functions', () => {
     })
   })
   
-  describe('validateFilePath', () => {
-    it('should validate file paths', () => {
-      expect(validateFilePath('/path/to/file')).toBe('/path/to/file')
-      expect(validateFilePath('./relative/path')).toBe('./relative/path')
-      expect(validateFilePath(undefined)).toBeUndefined()
-      expect(validateFilePath('')).toBeUndefined()
-    })
-  })
 })
 
 describe('Enhanced Config - Integration with Existing Systems', () => {

@@ -31,9 +31,7 @@ const createKeyboardInteractiveTest = (
       params.name ?? 'SSH Server',
       params.instructions ?? 'Please authenticate',
       params.instructionsLang ?? 'en',
-      params.prompts !== undefined 
-        ? params.prompts 
-        : [{ prompt: 'Password: ', echo: false }],
+      'prompts' in params ? params.prompts : [{ prompt: 'Password: ', echo: false }],
       finishMock
     )
   })
@@ -74,12 +72,11 @@ class MockSSHClient extends EventEmitter {
     
     // Set up keyboard-interactive handler like in app/ssh.ts
     this.conn.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-      const promptCount = Array.isArray(prompts) ? prompts.length : 0
-      
       const password = this.creds?.password
-      if (password != null && typeof password === 'string') {
+
+      if (password != null && typeof password === 'string' && Array.isArray(prompts)) {
         const responses: string[] = []
-        for (let i = 0; i < promptCount; i++) {
+        for (let i = 0; i < prompts.length; i++) {
           responses.push(password)
         }
         if (typeof finish === 'function') {

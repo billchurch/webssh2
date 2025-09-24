@@ -166,7 +166,7 @@ export function parseSSHError(error: unknown): string {
 
   // Use error message if available
   // Note: Error.message is always defined as a string
-  return err.message !== '' ? err.message : 'SSH connection failed'
+  return err.message === '' ? 'SSH connection failed' : err.message
 }
 
 /**
@@ -383,7 +383,7 @@ export class SSHConnectionAdapter {
    * Get connection status
    */
   getConnection(): Connection | null {
-    return this.connection != null ? { ...this.connection } : null
+    return this.connection == null ? null : { ...this.connection }
   }
 
   /**

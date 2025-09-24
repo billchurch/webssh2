@@ -62,11 +62,11 @@ export const actions = {
   auth: {
     request: (method: string, username?: string): AuthAction => ({
       type: 'AUTH_REQUEST',
-      payload: username !== undefined ? { method, username } : { method }
+      payload: username === undefined ? { method } : { method, username }
     }),
     success: (username: string, method: string, userId?: UserId): AuthAction => ({
       type: 'AUTH_SUCCESS',
-      payload: userId !== undefined ? { username, method, userId } : { username, method }
+      payload: userId === undefined ? { username, method } : { username, method, userId }
     }),
     failure: (error: string, method: string): AuthAction => ({
       type: 'AUTH_FAILURE',
@@ -91,7 +91,7 @@ export const actions = {
     }),
     closed: (reason?: string): ConnectionAction => ({
       type: 'CONNECTION_CLOSED',
-      payload: reason !== undefined ? { reason } : {}
+      payload: reason === undefined ? {} : { reason }
     }),
     activity: (): ConnectionAction => ({ type: 'CONNECTION_ACTIVITY' })
   },

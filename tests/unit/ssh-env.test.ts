@@ -28,7 +28,7 @@ describe('SSH getEnvironment (filtered)', () => {
   })
 
   it('respects allowlist', () => {
-    const cfg = JSON.parse(JSON.stringify(baseConfig)) as Config
+    const cfg = structuredClone(baseConfig) as Config
     ;(cfg as any).ssh.envAllowlist = ['ONLY']
     const ssh = new SSHConnection(cfg)
     const env = (ssh as any).getEnvironment({ ONLY: 'v', OK: 'ignored' })

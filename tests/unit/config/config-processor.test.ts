@@ -83,8 +83,8 @@ describe('mergeConfigs', () => {
   it('should be pure - not mutate inputs', () => {
     const defaultConfig = createDefaultConfig()
     const fileConfig: Partial<Config> = { listen: { port: 3000 } as Config['listen'] }
-    const originalDefault = JSON.parse(JSON.stringify(defaultConfig))
-    const originalFile = JSON.parse(JSON.stringify(fileConfig))
+    const originalDefault = structuredClone(defaultConfig)
+    const originalFile = structuredClone(fileConfig)
     
     mergeConfigs(defaultConfig, fileConfig)
     

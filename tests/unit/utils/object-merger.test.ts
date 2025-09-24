@@ -67,8 +67,8 @@ describe('deepMergePure', () => {
   it('should not mutate the original objects', () => {
     const target = { a: 1, nested: { x: 10 } }
     const source = { nested: { y: 20 } }
-    const originalTarget = JSON.parse(JSON.stringify(target))
-    const originalSource = JSON.parse(JSON.stringify(source))
+    const originalTarget = structuredClone(target)
+    const originalSource = structuredClone(source)
     
     const result = deepMergePure(target, source)
     

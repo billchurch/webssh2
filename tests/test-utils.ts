@@ -10,7 +10,7 @@ import * as path from 'node:path'
 import type { SessionStore } from '../app/state/store.js'
 import type { ServiceDependencies } from '../app/services/interfaces.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME, TEST_SSH, TEST_PASSWORDS, TEST_SECRET } from './test-constants.js'
+import { TEST_USERNAME, TEST_SSH, TEST_SECRET } from './test-constants.js'
 import { DEFAULTS } from '../app/constants.js'
 
 // Dynamic import for vitest when available
@@ -137,8 +137,8 @@ export function createAuthState(status: 'pending' | 'authenticated' | 'failed' =
 function createBaseConnectionState(status: 'idle' | 'connecting' | 'connected' | 'closed') {
   return {
     status,
-    host: status !== 'idle' ? TEST_SSH.HOST : null,
-    port: status !== 'idle' ? TEST_SSH.PORT : null,
+    host: status === 'idle' ? null : TEST_SSH.HOST,
+    port: status === 'idle' ? null : TEST_SSH.PORT,
     connectionId: status === 'connected' ? 'test-conn-id' : null,
     errorMessage: null
   }
@@ -351,10 +351,10 @@ export function createMockSSHConnection(options: MockSSHConnectionOptions = {}):
   if (options.withExecMethods) {
     return class extends EventEmitter {
       connect() {
-        return options.connectResolves !== false ? Promise.resolve() : Promise.reject(new Error('Connection failed'))
+        return options.connectResolves === false ? Promise.reject(new Error('Connection failed')) : Promise.resolve()
       }
       shell() {
-        return options.shellResolves !== false ? Promise.resolve(new EventEmitter()) : Promise.reject(new Error('Shell failed'))
+        return options.shellResolves === false ? Promise.reject(new Error('Shell failed')) : Promise.resolve(new EventEmitter())
       }
       exec(command: string, _options: any, _envVars: any) {
         const stream: any = new EventEmitter()

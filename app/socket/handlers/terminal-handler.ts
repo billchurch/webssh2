@@ -188,7 +188,7 @@ export function createTerminalState(
   // Note: serverConfig.ssh.term is always defined as a string in config
   const term = config.term ?? serverConfig.ssh.term
   return {
-    term: term !== '' ? term : DEFAULTS.SSH_TERM,
+    term: term === '' ? DEFAULTS.SSH_TERM : term,
     cols: config.cols ?? DEFAULTS.TERM_COLS,
     rows: config.rows ?? DEFAULTS.TERM_ROWS,
   }

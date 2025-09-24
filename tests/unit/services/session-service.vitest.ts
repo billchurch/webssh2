@@ -7,7 +7,7 @@ import { SessionServiceImpl } from '../../../app/services/session/session-servic
 import type { SessionParams } from '../../../app/services/interfaces.js'
 import { createSessionId, createUserId, createConnectionId } from '../../../app/types/branded.js'
 import { TEST_USERNAME, TEST_SSH, TEST_IPS } from '../../test-constants.js'
-import { createMockStore, createMockDependencies, setupMockStoreState, setupMockStoreStates, createSessionState } from '../../test-utils.js'
+import { createMockStore, createMockDependencies } from '../../test-utils.js'
 
 describe('SessionService', () => {
   let sessionService: SessionServiceImpl

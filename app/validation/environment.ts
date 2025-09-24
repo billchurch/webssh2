@@ -167,7 +167,7 @@ export function filterEnvironmentVariables(
     return {}
   }
 
-  const allowSet = allowlist != null ? new Set(allowlist) : null
+  const allowSet = allowlist == null ? null : new Set(allowlist)
   const result: Record<string, string> = {}
   let count = 0
 

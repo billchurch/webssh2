@@ -125,9 +125,9 @@ export const prepareExecOptions = (
   env?: Record<string, string>,
   allowlist?: string[]
 ): ExecOptions => {
-  const filteredEnv = env != null 
-    ? filterEnvironmentVariables(env, allowlist)
-    : undefined
+  const filteredEnv = env == null
+    ? undefined
+    : filterEnvironmentVariables(env, allowlist)
 
   const options: ExecOptions = {
     command

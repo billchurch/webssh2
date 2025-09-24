@@ -6,7 +6,6 @@
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { TIMEOUTS } from './constants.js'
-import { TEST_SSH, TEST_PORTS } from '../test-constants.js'
 
 /**
  * Waits for V2 terminal to be ready and interactive

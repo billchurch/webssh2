@@ -306,7 +306,7 @@ describe('createSessionData', () => {
       usedBasicAuth: true,
       source: 'basicAuth'
     }
-    const originalAuth = JSON.parse(JSON.stringify(authResult)) as AuthResult
+    const originalAuth = structuredClone(authResult) as AuthResult
     
     createSessionData(authResult)
     
