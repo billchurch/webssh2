@@ -51,6 +51,94 @@ const createMockService = (container: Container, configToken: ReturnType<typeof 
   getName: () => 'TestService'
 })
 
+// Async factory helpers
+const createAsyncFactory = (value: string, delay: number = 10) => async () => {
+  await new Promise(resolve => setTimeout(resolve, delay))
+  return value
+}
+
+const createAsyncCounterFactory = () => {
+  let counter = 0
+  return async () => {
+    await new Promise(resolve => setTimeout(resolve, 10))
+    return { value: ++counter }
+  }
+}
+
+// Circular dependency setup helpers
+const setupCircularDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken> } => {
+  const tokenA = createToken<unknown>('A')
+  const tokenB = createToken<unknown>('B')
+
+  container.register(tokenA, () => container.resolve(tokenB))
+  container.register(tokenB, () => container.resolve(tokenA))
+
+  return { tokenA, tokenB }
+}
+
+const setupIndirectCircularDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken>; tokenC: ReturnType<typeof createToken> } => {
+  const tokenA = createToken<unknown>('A')
+  const tokenB = createToken<unknown>('B')
+  const tokenC = createToken<unknown>('C')
+
+  container.register(tokenA, () => container.resolve(tokenB))
+  container.register(tokenB, () => container.resolve(tokenC))
+  container.register(tokenC, () => container.resolve(tokenA))
+
+  return { tokenA, tokenB, tokenC }
+}
+
+const setupValidDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken>; tokenC: ReturnType<typeof createToken> } => {
+  const tokenA = createToken<{ name: string }>('A')
+  const tokenB = createToken<{ value: number }>('B')
+  const tokenC = createToken<{ a: { name: string }; b: { value: number } }>('C')
+
+  container.register(tokenA, () => ({ name: 'Service A' }))
+  container.register(tokenB, () => ({ value: 42 }))
+
+  const factoryC = (): { a: { name: string }; b: { value: number } } => ({
+    a: container.resolve(tokenA),
+    b: container.resolve(tokenB)
+  })
+  container.register(tokenC, factoryC)
+
+  return { tokenA, tokenB, tokenC }
+}
+
+// Service dependency setup helpers
+const setupServiceDependencies = (): {
+  configToken: ReturnType<typeof createToken>
+  loggerToken: ReturnType<typeof createToken>
+  serviceToken: ReturnType<typeof createToken>
+} => {
+  const configToken = createToken<Config>('Config')
+  const loggerToken = createToken<{ log: (msg: string) => void }>('Logger')
+  const serviceToken = createToken<{
+    config: Config
+    logger: { log: (msg: string) => void }
+    getName: () => string
+  }>('Service')
+
+  return { configToken, loggerToken, serviceToken }
+}
+
+// Parent-child container setup helpers
+const setupParentChild = (container: Container): { token: ReturnType<typeof createToken>; child: Container } => {
+  const token = createToken<string>('parent-value')
+  container.registerSingleton(token, 'Parent Value')
+  const child = container.createChild()
+  return { token, child }
+}
+
+// Error factory helpers
+const createErrorFactory = (): (() => never) => (): never => {
+  throw new Error('Factory error')
+}
+
+const createAsyncErrorFactory = (): (() => Promise<never>) => (): Promise<never> => {
+  return Promise.reject(new Error('Async factory error'))
+}
+
 // Test suite
 describe('Container', () => {
   let container: Container
@@ -105,19 +193,6 @@ describe('Container', () => {
   })
 
   describe('async registration and resolution', () => {
-    const createAsyncFactory = (value: string, delay: number = 10) => async () => {
-      await new Promise(resolve => setTimeout(resolve, delay))
-      return value
-    }
-
-    const createAsyncCounterFactory = () => {
-      let counter = 0
-      return async () => {
-        await new Promise(resolve => setTimeout(resolve, 10))
-        return { value: ++counter }
-      }
-    }
-
     it('should register and resolve async factory', async () => {
       const token = createToken<string>('async-string')
       const asyncFactory = createAsyncFactory('Async Result')
@@ -153,45 +228,6 @@ describe('Container', () => {
   })
 
   describe('circular dependency detection', () => {
-    const setupCircularDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken> } => {
-      const tokenA = createToken<unknown>('A')
-      const tokenB = createToken<unknown>('B')
-
-      container.register(tokenA, () => container.resolve(tokenB))
-      container.register(tokenB, () => container.resolve(tokenA))
-
-      return { tokenA, tokenB }
-    }
-
-    const setupIndirectCircularDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken>; tokenC: ReturnType<typeof createToken> } => {
-      const tokenA = createToken<unknown>('A')
-      const tokenB = createToken<unknown>('B')
-      const tokenC = createToken<unknown>('C')
-
-      container.register(tokenA, () => container.resolve(tokenB))
-      container.register(tokenB, () => container.resolve(tokenC))
-      container.register(tokenC, () => container.resolve(tokenA))
-
-      return { tokenA, tokenB, tokenC }
-    }
-
-    const setupValidDependencies = (container: Container): { tokenA: ReturnType<typeof createToken>; tokenB: ReturnType<typeof createToken>; tokenC: ReturnType<typeof createToken> } => {
-      const tokenA = createToken<{ name: string }>('A')
-      const tokenB = createToken<{ value: number }>('B')
-      const tokenC = createToken<{ a: { name: string }; b: { value: number } }>('C')
-
-      container.register(tokenA, () => ({ name: 'Service A' }))
-      container.register(tokenB, () => ({ value: 42 }))
-
-      const factoryC = (): { a: { name: string }; b: { value: number } } => ({
-        a: container.resolve(tokenA),
-        b: container.resolve(tokenB)
-      })
-      container.register(tokenC, factoryC)
-
-      return { tokenA, tokenB, tokenC }
-    }
-
     it('should detect direct circular dependency', () => {
       const { tokenA } = setupCircularDependencies(container)
 
@@ -215,15 +251,8 @@ describe('Container', () => {
   })
 
   describe('child containers', () => {
-    const setupParentChild = (): { token: ReturnType<typeof createToken>; child: Container } => {
-      const token = createToken<string>('parent-value')
-      container.registerSingleton(token, 'Parent Value')
-      const child = container.createChild()
-      return { token, child }
-    }
-
     it('should create child container with parent fallback', () => {
-      const { token, child } = setupParentChild()
+      const { token, child } = setupParentChild(container)
       const result = child.resolve(token)
 
       expect(result).toBe('Parent Value')
@@ -306,22 +335,6 @@ describe('Container', () => {
   })
 
   describe('real-world usage', () => {
-    const setupServiceDependencies = (): {
-      configToken: ReturnType<typeof createToken>
-      loggerToken: ReturnType<typeof createToken>
-      serviceToken: ReturnType<typeof createToken>
-    } => {
-      const configToken = createToken<Config>('Config')
-      const loggerToken = createToken<{ log: (msg: string) => void }>('Logger')
-      const serviceToken = createToken<{
-        config: Config
-        logger: { log: (msg: string) => void }
-        getName: () => string
-      }>('Service')
-
-      return { configToken, loggerToken, serviceToken }
-    }
-
     it('should resolve complex service dependencies', () => {
       const { configToken, loggerToken, serviceToken } = setupServiceDependencies()
       const mockConfig = createMockConfig()
@@ -350,14 +363,6 @@ describe('Container', () => {
   })
 
   describe('error handling', () => {
-    const createErrorFactory = (): (() => never) => (): never => {
-      throw new Error('Factory error')
-    }
-
-    const createAsyncErrorFactory = (): (() => Promise<never>) => (): Promise<never> => {
-      return Promise.reject(new Error('Async factory error'))
-    }
-
     it('should provide helpful error messages', () => {
       const token = createToken<unknown>('missing-dependency')
 
