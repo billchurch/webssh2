@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { loadEnvironmentConfig, getEnvironmentVariableMap, getAlgorithmPresets } from '../app/envConfig.js'
 import { cleanupEnvironmentVariables, storeEnvironmentVariables, restoreEnvironmentVariables } from './test-utils.js'
 import type { TestEnvironment } from './types/index.js'
-import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS, TEST_PRIVATE_KEY, TEST_PASSPHRASE } from './test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD_ALT, MY_SESSION_SECRET, TEST_SUBNETS, TEST_PRIVATE_KEY, TEST_PASSPHRASE, TEST_IPS } from './test-constants.js'
 
 describe('Environment Configuration Tests', () => {
   let originalEnv: TestEnvironment = {}
