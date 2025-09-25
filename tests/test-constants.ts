@@ -251,6 +251,7 @@ export const TEST_IPS = {
   PRIVATE_11_0_0_1: '11.0.0.1', //NOSONAR
   LOCALHOST_100: '127.0.0.100', //NOSONAR
   PUBLIC_DNS: '8.8.8.8', //NOSONAR
+  NONROUTABLE: '240.0.0.0', //NOSONAR - Non-routable IP for timeout tests
   // IPv6 addresses
   LOCALHOST_V6: '::1', //NOSONAR
   LOCALHOST_V6_ALT: '::2', //NOSONAR
@@ -280,7 +281,9 @@ export const TEST_HTTP_ORIGINS = {
 export const TEST_PORTS = {
   webssh2: 2288,
   sshServer: 2289,
+  sshServerUnit: 2222,  // Unit test SSH server port
   alternateWebssh2: 2290,
+  invalid: 9999,  // Non-existent port for failure tests
   // E2E test ports (different to avoid conflicts)
   e2eWeb: Number(process.env.E2E_WEB_PORT ?? 4444),
   e2eSsh: Number(process.env.E2E_SSH_PORT ?? 4422),

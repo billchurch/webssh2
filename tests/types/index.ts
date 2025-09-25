@@ -85,6 +85,11 @@ export function isError<T, E>(result: Result<T, E>): result is { ok: false; erro
 }
 
 /**
+ * Authentication status type for session state
+ */
+export type AuthStatus = 'pending' | 'authenticated' | 'failed'
+
+/**
  * Socket event types for testing
  */
 export interface SocketTestEvents {

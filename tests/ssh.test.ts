@@ -4,14 +4,14 @@ import { test, describe, beforeEach, afterEach } from 'node:test'
 import { strict as assert } from 'node:assert'
 import type { Server as SSH2Server, AuthContext, Session, ClientChannel } from 'ssh2'
 import SSHConnection from '../dist/app/ssh.js'
-import { TEST_USERNAME, TEST_PASSWORD, INVALID_USERNAME, INVALID_PASSWORD } from './test-constants.js'
+import { TEST_USERNAME, TEST_PASSWORD, INVALID_USERNAME, INVALID_PASSWORD, TEST_IPS, TEST_PORTS } from './test-constants.js'
 
 const { Server } = ssh2
 
 void describe('SSHConnection', () => {
   let sshServer: SSH2Server
   let sshConnection: SSHConnection
-  const TEST_PORT = 2222
+  const TEST_PORT = TEST_PORTS.sshServerUnit
   const TEST_CREDENTIALS = {
     username: TEST_USERNAME,
     password: TEST_PASSWORD,
@@ -91,7 +91,7 @@ void describe('SSHConnection', () => {
   beforeEach(() => {
     createBasicServer()
     // Bind explicitly to loopback to avoid sandbox restrictions on 0.0.0.0
-    sshServer.listen(TEST_PORT, '127.0.0.1')
+    sshServer.listen(TEST_PORT, TEST_IPS.LOCALHOST)
     sshConnection = new SSHConnection(mockConfig)
   })
 
@@ -105,7 +105,7 @@ void describe('SSHConnection', () => {
 
   void test('should connect with valid credentials', async () => {
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,
@@ -117,7 +117,7 @@ void describe('SSHConnection', () => {
 
   void test('should reject connection with invalid credentials', async () => {
     const invalidCredentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: INVALID_USERNAME,
       password: INVALID_PASSWORD,
@@ -134,7 +134,7 @@ void describe('SSHConnection', () => {
 
   void test('should connect using private key authentication', async () => {
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       privateKey: privateKey,
@@ -169,7 +169,7 @@ void describe('SSHConnection', () => {
   void test('should reject invalid private key format', async () => {
     const invalidPrivateKey = 'not-a-valid-private-key-format'
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       privateKey: invalidPrivateKey,
@@ -186,7 +186,7 @@ void describe('SSHConnection', () => {
 
   void test('should resize terminal when stream exists', async () => {
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,
@@ -246,7 +246,7 @@ void describe('SSHConnection', () => {
     sshServer.on('connection', setupMultiAuthServer)
 
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       privateKey: privateKey,
@@ -263,8 +263,8 @@ void describe('SSHConnection', () => {
 
   void test('should handle connection failures', async () => {
     const credentials = {
-      host: 'localhost',
-      port: 9999,
+      host: TEST_IPS.LOCALHOST,
+      port: TEST_PORTS.invalid,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,
     }
@@ -280,7 +280,7 @@ void describe('SSHConnection', () => {
 
   void test('should handle connection timeout', async () => {
     const credentials = {
-      host: '240.0.0.0',
+      host: TEST_IPS.NONROUTABLE,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,
@@ -329,7 +329,7 @@ void describe('SSHConnection', () => {
     sshServer.on('connection', setupExecServer)
 
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,
@@ -398,7 +398,7 @@ void describe('SSHConnection', () => {
     sshServer.on('connection', setupPtyExecServer)
 
     const credentials = {
-      host: 'localhost',
+      host: TEST_IPS.LOCALHOST,
       port: TEST_PORT,
       username: TEST_CREDENTIALS.username,
       password: TEST_CREDENTIALS.password,

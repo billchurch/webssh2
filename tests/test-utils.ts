@@ -17,7 +17,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { SessionStore } from '../app/state/store.js'
 import type { ServiceDependencies } from '../app/services/interfaces.js'
-import type { TestEnvironment } from './types/index.js'
+import type { TestEnvironment, AuthStatus } from './types/index.js'
 import { TEST_USERNAME, TEST_SSH, TEST_SECRET } from './test-constants.js'
 import { DEFAULTS } from '../app/constants.js'
 
@@ -120,7 +120,7 @@ export function createMockSSH2Client(): unknown {
 /**
  * Create base auth state properties
  */
-function createBaseAuthState(status: 'pending' | 'authenticated' | 'failed') {
+function createBaseAuthState(status: AuthStatus) {
   return {
     status,
     username: status === 'authenticated' ? TEST_USERNAME : null,
@@ -133,7 +133,7 @@ function createBaseAuthState(status: 'pending' | 'authenticated' | 'failed') {
 /**
  * Creates a standard auth state for testing
  */
-export function createAuthState(status: 'pending' | 'authenticated' | 'failed' = 'authenticated') {
+export function createAuthState(status: AuthStatus = 'authenticated') {
   return {
     auth: createBaseAuthState(status)
   }
@@ -182,7 +182,7 @@ function createBaseMetadataState() {
  * Creates a standard session state for testing
  */
 export function createSessionState(overrides?: {
-  authStatus?: 'pending' | 'authenticated' | 'failed'
+  authStatus?: AuthStatus
   connectionStatus?: 'idle' | 'connecting' | 'connected' | 'closed'
   terminalRows?: number
   terminalCols?: number
