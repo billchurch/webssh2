@@ -190,8 +190,8 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
         // Look for a new stty output (different from initial)
         return lines.some((line) => /\b\d+\s+\d+\b/.test(line) && !line.includes(initialSizeValue))
       },
-      { timeout: TIMEOUTS.CONNECTION },
       initialSize,
+      { timeout: TIMEOUTS.CONNECTION },
     )
 
     const newOut = await page.evaluate(

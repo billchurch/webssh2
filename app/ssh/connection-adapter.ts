@@ -293,7 +293,7 @@ export class SSHConnectionAdapter {
     try {
       debug('Creating shell with options:', options)
       
-      const stream = await this.sshClient.shell(options, env) as Stream
+      const stream = await this.sshClient.shell(options, env)
       
       debug('Shell created successfully')
       
@@ -330,7 +330,7 @@ export class SSHConnectionAdapter {
     try {
       debug(`Executing command: ${command}`)
 
-      const stream = await this.sshClient.exec(command, options, env) as Stream
+      const stream = await this.sshClient.exec(command, options, env)
       
       debug('Command execution started')
       
