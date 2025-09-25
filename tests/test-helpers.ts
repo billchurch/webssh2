@@ -13,7 +13,8 @@ import type { TestEnvironment } from './types/index.js'
 export function cleanupEnvironmentVariables(): void {
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('WEBSSH2_') || key === 'PORT') {
-      delete process.env[key]
+      // eslint-disable-next-line security/detect-object-injection
+      delete process.env[key] // Safe: only deleting specific env vars
     }
   })
 }
@@ -36,7 +37,8 @@ export function storeEnvironmentVariables(): TestEnvironment {
   const originalEnv: TestEnvironment = {}
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('WEBSSH2_') || key === 'PORT') {
-      originalEnv[key] = process.env[key]
+      // eslint-disable-next-line security/detect-object-injection
+      originalEnv[key] = process.env[key] // Safe: only reading specific env vars
     }
   })
   return originalEnv
@@ -49,12 +51,14 @@ export function storeEnvironmentVariables(): TestEnvironment {
 export function restoreEnvironmentVariables(originalEnv: TestEnvironment): void {
   // First clean up current env vars
   cleanupEnvironmentVariables()
-  
+
   // Then restore original values
   Object.keys(originalEnv).forEach(key => {
+    // eslint-disable-next-line security/detect-object-injection
     const value = originalEnv[key]
     if (value !== undefined) {
-      process.env[key] = value
+      // eslint-disable-next-line security/detect-object-injection
+      process.env[key] = value // Safe: restoring only previously stored env vars
     }
   })
 }
@@ -85,17 +89,31 @@ export interface MockSSHConnectionOptions {
 /**
  * Create a mock Socket.IO server instance
  */
-export function createMockIO(): unknown {
-  const io: unknown = new EventEmitter()
+export function createMockIO(): EventEmitter & { on: ReturnType<typeof mock.fn> } {
+  const io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof mock.fn> }
   io.on = mock.fn(io.on)
   return io
+}
+
+interface MockSocket extends EventEmitter {
+  id: string
+  request: {
+    session: {
+      save: ReturnType<typeof mock.fn>
+      sshCredentials: MockSocketOptions['sessionCredentials']
+      usedBasicAuth: boolean
+      authMethod?: string
+    }
+  }
+  emit: ReturnType<typeof mock.fn>
+  disconnect: ReturnType<typeof mock.fn>
 }
 
 /**
  * Create a mock Socket instance with standard test configuration
  */
-export function createMockSocket(options: MockSocketOptions = {}): unknown {
-  const mockSocket: unknown = new EventEmitter()
+export function createMockSocket(options: MockSocketOptions = {}): MockSocket {
+  const mockSocket = new EventEmitter() as MockSocket
   mockSocket.id = options.id ?? 'test-socket-id'
   mockSocket.request = {
     session: {
@@ -110,27 +128,31 @@ export function createMockSocket(options: MockSocketOptions = {}): unknown {
   return mockSocket
 }
 
+interface MockStream extends EventEmitter {
+  stderr: EventEmitter
+}
+
 /**
  * Create a mock SSH Connection class for testing
  */
-export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): unknown {
-  if (options.withExecMethods) {
+export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): typeof EventEmitter {
+  if (options.withExecMethods !== undefined && options.withExecMethods) {
     return class extends EventEmitter {
-      connect() {
+      connect(): Promise<void> {
         return options.connectResolves !== false ? Promise.resolve() : Promise.reject(new Error('Connection failed'))
       }
-      shell() {
+      shell(): Promise<EventEmitter> {
         return options.shellResolves !== false ? Promise.resolve(new EventEmitter()) : Promise.reject(new Error('Shell failed'))
       }
-      exec(command: string, _options: unknown, _envVars: unknown) {
-        const stream: unknown = new EventEmitter()
+      exec(command: string, _options: unknown, _envVars: unknown): MockStream {
+        const stream = new EventEmitter() as MockStream
         stream.stderr = new EventEmitter()
         process.nextTick(() => {
           stream.emit('data', Buffer.from(`OUT:${command}`))
           stream.stderr.emit('data', Buffer.from('ERR:warn'))
           stream.emit('close', 0, null)
         })
-        return Promise.resolve(stream)
+        return stream
       }
       end(): void {
         // no-op - mock connection cleanup
@@ -143,7 +165,7 @@ export function createMockSSHConnection(options: MockSSHConnectionOptions = {}):
 /**
  * Create a standard mock config object for socket tests
  */
-export function createMockSocketConfig(overrides: Record<string, any> = {}): unknown {
+export function createMockSocketConfig(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     ssh: {
       term: 'xterm-color',
@@ -151,13 +173,13 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
       keepaliveInterval: 120000,
       keepaliveCountMax: 10,
       disableInteractiveAuth: false,
-      ...overrides.ssh,
+      ...(overrides.ssh as Record<string, unknown>),
     },
     options: {
       allowReauth: true,
       allowReplay: true,
       allowReconnect: true,
-      ...overrides.options,
+      ...(overrides.options as Record<string, unknown>),
     },
     user: overrides.user ?? {},
     header: overrides.header ?? null,
@@ -190,26 +212,33 @@ export function createConfigFileManager(configFileName = 'config.json'): ConfigF
     
     setup(): void {
       // Backup existing config if it exists
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       if (fs.existsSync(configPath)) {
         fs.copyFileSync(configPath, backupPath)
       }
     },
-    
+
     cleanup(): void {
       // Restore original config or clean up test config
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       if (fs.existsSync(backupPath)) {
         fs.copyFileSync(backupPath, configPath)
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
         fs.unlinkSync(backupPath)
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       } else if (fs.existsSync(configPath)) {
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
         fs.unlinkSync(configPath)
       }
     },
-    
+
     writeConfig(config: unknown): void {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     },
-    
+
     configExists(): boolean {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       return fs.existsSync(configPath)
     }
   }
@@ -228,7 +257,7 @@ export function setupTestEnvironment(options: { withConfigFile?: boolean } = {})
   
   let configManager: ConfigFileManager | undefined
   
-  if (options.withConfigFile) {
+  if (options.withConfigFile === true) {
     configManager = createConfigFileManager()
     configManager.setup()
   }
@@ -238,7 +267,7 @@ export function setupTestEnvironment(options: { withConfigFile?: boolean } = {})
     configManager,
     cleanup: () => {
       restoreEnvironmentVariables(originalEnv)
-      if (configManager) {
+      if (configManager !== undefined) {
         configManager.cleanup()
       }
     }

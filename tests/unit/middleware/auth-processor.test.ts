@@ -306,7 +306,7 @@ void describe('createSessionData', () => {
       usedBasicAuth: true,
       source: 'basicAuth'
     }
-    const originalAuth = structuredClone(authResult)
+    const originalAuth = globalThis.structuredClone(authResult)
     
     createSessionData(authResult)
     

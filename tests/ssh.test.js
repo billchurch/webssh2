@@ -1,7 +1,7 @@
 import ssh2 from 'ssh2'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { test, describe, beforeEach, afterEach } from 'node:test'
-import { strict as assert } from 'assert'
+import { strict as assert } from 'node:assert'
 const { Server } = ssh2
 import SSHConnection from '../dist/app/ssh.js'
 import { TEST_USERNAME, TEST_PASSWORD, INVALID_USERNAME, INVALID_PASSWORD } from './test-constants.js'

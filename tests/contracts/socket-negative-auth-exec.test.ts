@@ -21,7 +21,7 @@ void describe('Socket.IO Negative: authenticate + exec env', () => {
 
   beforeEach(() => {
     io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof mock.fn> }
-    io.on = mock.fn(io.on.bind(io))
+    io.on = mock.fn(io.on.bind(io)) as ReturnType<typeof mock.fn>
 
     mockSocket = new EventEmitter() as EventEmitter & {
       id: string

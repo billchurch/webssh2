@@ -139,7 +139,7 @@ describe('SessionService', () => {
       const result = sessionService.get(sessionId)
 
       expect(result.ok).toBe(true)
-      if (result.ok && result.value) {
+      if (result.ok && result.value !== null) {
         expect(result.value.id).toBe(sessionId)
         expect(result.value.state).toBe(mockState)
       }
@@ -322,7 +322,7 @@ describe('SessionService', () => {
 
       (mockStore.getState as Mock).mockImplementation((id: unknown) => {
         const index = sessionIds.indexOf(id as typeof sessionIds[number])
-        return index >= 0 ? mockStates[index] : undefined
+        return index >= 0 ? mockStates[Number(index)] : undefined
       })
 
       const result = sessionService.list()
@@ -382,7 +382,7 @@ describe('SessionService', () => {
       }
 
       // Trigger the callback
-      if (storeCallback) {
+      if (storeCallback !== undefined) {
         storeCallback(newState)
       }
 
@@ -430,7 +430,7 @@ describe('SessionService', () => {
 
       (mockStore.getState as Mock).mockImplementation((id: unknown) => {
         const index = sessionIds.indexOf(id as typeof sessionIds[number])
-        return index >= 0 ? mockStates[index] : undefined
+        return index >= 0 ? mockStates[Number(index)] : undefined
       })
 
       const stats = sessionService.getStats()

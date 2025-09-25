@@ -26,7 +26,7 @@ test.describe('WebSocket Basic Tests', () => {
     // Wait for terminal to be ready
     await waitForPrompt(page)
     
-    console.log('✓ WebSocket connection established successfully')
+    // WebSocket connection established successfully
   })
 
   test('should execute commands over WebSocket', async ({ page }) => {
@@ -48,11 +48,12 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Wait for output
     await page.waitForFunction(() => {
+      // eslint-disable-next-line no-undef
       const terminalContent = document.querySelector('.xterm-rows')?.textContent || ''
       return terminalContent.includes('WebSocket Test OK')
     }, { timeout: TIMEOUTS.CONNECTION })
     
-    console.log('✓ Command execution over WebSocket successful')
+    // Command execution over WebSocket successful
   })
 
   test('should handle disconnection gracefully', async ({ page }) => {
@@ -76,6 +77,7 @@ test.describe('WebSocket Basic Tests', () => {
     await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
     
     // Check if the connection status changed or if we see logout/exit message
+    // eslint-disable-next-line no-undef
     const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
     const statusElement = await page.locator('#status').textContent().catch(() => '')
     
@@ -88,7 +90,7 @@ test.describe('WebSocket Basic Tests', () => {
     
     expect(isDisconnected).toBeTruthy()
     
-    console.log('✓ Disconnection handled gracefully')
+    // Disconnection handled gracefully
   })
 
 })

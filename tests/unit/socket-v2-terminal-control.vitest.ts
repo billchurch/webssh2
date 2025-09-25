@@ -29,13 +29,14 @@ describe('Socket V2 Terminal and Control', () => {
         super()
         this.resizeTerminal = vi.fn()
       }
-      connect() { return Promise.resolve() }
-      shell(options: unknown) {
-        const stream: unknown = new EventEmitter()
-        stream.write = () => { /* no-op for mock */ }
+      connect(): Promise<void> { return Promise.resolve() }
+      shell(_options: unknown): Promise<unknown> {
+        const stream = new EventEmitter() as EventEmitter & { write: (...args: unknown[]) => void }
+
+        stream.write = (): void => { /* no-op for mock */ }
         return Promise.resolve(stream)
       }
-      exec() { return Promise.resolve(new EventEmitter()) }
+      exec(): Promise<EventEmitter> { return Promise.resolve(new EventEmitter()) }
       end(): void {
         // no-op - mock connection cleanup
       }
@@ -78,6 +79,7 @@ describe('Socket V2 Terminal and Control', () => {
     await setupAuthenticatedSocket(io, mockSocket)
 
     // Mock console.warn to ensure it's NOT called (V2 improvement)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     await createTerminalSession(mockSocket)

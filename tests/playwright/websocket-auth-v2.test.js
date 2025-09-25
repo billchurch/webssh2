@@ -80,6 +80,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
     // Disable beforeunload handler and refresh
     await page.evaluate(() => {
+      // eslint-disable-next-line no-undef
       window.onbeforeunload = null
     })
     await page.reload()

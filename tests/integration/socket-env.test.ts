@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import { describe, it, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import initSockets from '../../app/socket.js'
@@ -68,13 +71,13 @@ void describe('socket env propagation', () => {
     }
 
     const fakeSocket = new FakeSocket(session)
-    const io = { on: (_evt: string, cb: (socket: FakeSocket) => void): void => { cb(fakeSocket) } } as any
-    const SSHClass = class extends MockSSH {
+    const io = { on: (_evt: string, cb: (socket: FakeSocket) => void): void => { cb(fakeSocket) } } as unknown as Parameters<typeof initSockets>[0]
+    const SSHClass = (class extends MockSSH {
       constructor(cfg: Config) {
         super(cfg)
         instances.push(this)
       }
-    } as unknown as SSHCtor
+    }) as unknown as SSHCtor
 
     initSockets(io, config, SSHClass)
 

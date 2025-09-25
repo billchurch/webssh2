@@ -230,12 +230,13 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Wait for the response showing the password was received
     await page.waitForFunction(
-      () => {
+      (expectedPassword) => {
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const content = rows.map((row) => row.textContent || '').join('\n')
         // Check if we got the confirmation message
-        return content !== '' && (content.includes('Got: testpass') || content.includes(`Got: ${PASSWORD}`))
+        return content !== '' && (content.includes('Got: testpass') || content.includes(`Got: ${expectedPassword}`))
       },
+      PASSWORD,
       { timeout: TIMEOUTS.CONNECTION },
     )
 

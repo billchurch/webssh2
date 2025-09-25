@@ -8,60 +8,62 @@ import {
   validatePostCredentials,
   validateSessionCredentials,
   createConnectionParams,
-  createSanitizedCredentials
-} from '../../../app/routes/route-validators.js'
-import { createDefaultConfig } from '../../../app/config/config-processor.js'
+  createSanitizedCredentials,
+  type RouteParams
+} from '../../../dist/app/routes/route-validators.js'
+import { createDefaultConfig } from '../../../dist/app/config/config-processor.js'
+import type { Config } from '../../../dist/app/types/config.js'
 import { TEST_PASSWORDS } from '../../test-constants.js'
-import { PASSWORD_MASK } from '../../../app/constants/security.js'
+import { PASSWORD_MASK } from '../../../dist/app/constants/security.js'
 
 void describe('extractHost', () => {
-  const config = createDefaultConfig()
-  
+  const config: Config = createDefaultConfig()
+
   it('prioritizes body.host over other sources', () => {
-    const body = { host: 'body.com' }
-    const query = { host: 'query.com', hostname: 'hostname.com' }
+    const body: RouteParams = { host: 'body.com' }
+    const query: RouteParams = { host: 'query.com', hostname: 'hostname.com' }
     config.ssh.host = 'config.com'
-    
+
     const result = extractHost(body, query, config)
     
     expect(result).toBe('body.com')
   })
   
   it('falls back to query.host when body.host missing', () => {
-    const body = {}
-    const query = { host: 'query.com', hostname: 'hostname.com' }
+    const body: RouteParams = {}
+    const query: RouteParams = { host: 'query.com', hostname: 'hostname.com' }
     config.ssh.host = 'config.com'
-    
+
     const result = extractHost(body, query, config)
     
     expect(result).toBe('query.com')
   })
   
   it('falls back to query.hostname when host missing', () => {
-    const body = {}
-    const query = { hostname: 'hostname.com' }
+    const body: RouteParams = {}
+    const query: RouteParams = { hostname: 'hostname.com' }
     config.ssh.host = 'config.com'
-    
+
     const result = extractHost(body, query, config)
     
     expect(result).toBe('hostname.com')
   })
   
   it('falls back to config default', () => {
-    const body = {}
-    const query = {}
+    const body: RouteParams = {}
+    const query: RouteParams = {}
     config.ssh.host = 'config.com'
-    
+
     const result = extractHost(body, query, config)
     
     expect(result).toBe('config.com')
   })
   
   it('returns null when no host available', () => {
-    const body = {}
-    const query = {}
+    const body: RouteParams = {}
+    const query: RouteParams = {}
     config.ssh.host = ''
-    
+
     const result = extractHost(body, query, config)
     
     expect(result).toBe(null)
@@ -70,36 +72,36 @@ void describe('extractHost', () => {
 
 void describe('extractPort', () => {
   it('prioritizes body.port over query.port', () => {
-    const body = { port: 2222 }
-    const query = { port: 3333 }
-    
+    const body: RouteParams = { port: 2222 }
+    const query: RouteParams = { port: 3333 }
+
     const result = extractPort(body, query)
     
     expect(result).toBe(2222)
   })
   
   it('falls back to query.port', () => {
-    const body = {}
-    const query = { port: '3333' }
-    
+    const body: RouteParams = {}
+    const query: RouteParams = { port: '3333' }
+
     const result = extractPort(body, query)
     
     expect(result).toBe(3333)
   })
   
   it('returns default port when none provided', () => {
-    const body = {}
-    const query = {}
-    
+    const body: RouteParams = {}
+    const query: RouteParams = {}
+
     const result = extractPort(body, query)
     
     expect(result).toBe(22)
   })
   
   it('handles string port values', () => {
-    const body = { port: '8022' }
-    const query = {}
-    
+    const body: RouteParams = { port: '8022' }
+    const query: RouteParams = {}
+
     const result = extractPort(body, query)
     
     expect(result).toBe(8022)
@@ -108,27 +110,27 @@ void describe('extractPort', () => {
 
 void describe('extractTerm', () => {
   it('prioritizes body.sshterm over query.sshterm', () => {
-    const body = { sshterm: 'xterm' }
-    const query = { sshterm: 'vt100' }
-    
+    const body: RouteParams = { sshterm: 'xterm' }
+    const query: RouteParams = { sshterm: 'vt100' }
+
     const result = extractTerm(body, query)
     
     expect(result).toBe('xterm')
   })
   
   it('falls back to query.sshterm', () => {
-    const body = {}
-    const query = { sshterm: 'xterm-256color' }
-    
+    const body: RouteParams = {}
+    const query: RouteParams = { sshterm: 'xterm-256color' }
+
     const result = extractTerm(body, query)
     
     expect(result).toBe('xterm-256color')
   })
   
   it('returns null for invalid term', () => {
-    const body = { sshterm: 'invalid<script>' }
-    const query = {}
-    
+    const body: RouteParams = { sshterm: 'invalid<script>' }
+    const query: RouteParams = {}
+
     const result = extractTerm(body, query)
     
     expect(result).toBe(null)
@@ -137,11 +139,11 @@ void describe('extractTerm', () => {
 
 void describe('validatePostCredentials', () => {
   it('validates complete credentials', () => {
-    const body = {
+    const body: RouteParams = {
       username: 'user',
       password: TEST_PASSWORDS.basic
     }
-    
+
     const result = validatePostCredentials(body)
     
     expect(result).toEqual({
@@ -152,10 +154,10 @@ void describe('validatePostCredentials', () => {
   })
   
   it('rejects missing username', () => {
-    const body = {
+    const body: RouteParams = {
       password: TEST_PASSWORDS.basic
     }
-    
+
     const result = validatePostCredentials(body)
     
     expect(result).toEqual({
@@ -165,7 +167,7 @@ void describe('validatePostCredentials', () => {
   })
   
   it('rejects missing password', () => {
-    const body = {
+    const body: RouteParams = {
       username: 'user'
     }
     
@@ -178,11 +180,11 @@ void describe('validatePostCredentials', () => {
   })
   
   it('rejects empty username', () => {
-    const body = {
+    const body: RouteParams = {
       username: '',
       password: TEST_PASSWORDS.basic
     }
-    
+
     const result = validatePostCredentials(body)
     
     expect(result.valid).toBe(false)
@@ -191,7 +193,7 @@ void describe('validatePostCredentials', () => {
 
 void describe('validateSessionCredentials', () => {
   it('validates complete credentials', () => {
-    const creds = {
+    const creds: { username?: string; password?: string } = {
       username: 'user',
       password: TEST_PASSWORDS.basic
     }
@@ -204,7 +206,7 @@ void describe('validateSessionCredentials', () => {
   })
   
   it('rejects missing username', () => {
-    const creds = {
+    const creds: { username?: string; password?: string } = {
       password: TEST_PASSWORDS.basic
     }
     
@@ -212,7 +214,7 @@ void describe('validateSessionCredentials', () => {
   })
   
   it('rejects empty password', () => {
-    const creds = {
+    const creds: { username?: string; password?: string } = {
       username: 'user',
       password: ''
     }

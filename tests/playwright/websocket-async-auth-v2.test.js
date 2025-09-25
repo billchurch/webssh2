@@ -20,7 +20,8 @@ import {
   connectAndWaitForTerminal,
   fillFormDirectly,
   executeCommandsWithExpectedOutput,
-  executeCommandList
+  executeCommandList,
+  getTerminalContent
 } from './v2-helpers.js'
 
 test.describe('V2 Async/Await Modal Login Authentication', () => {
@@ -124,6 +125,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
     await page.waitForFunction(
       () => {
+        // eslint-disable-next-line no-undef
         const content = document.querySelector('.xterm-screen')?.textContent || ''
         return content.includes('resize test')
       },
@@ -146,7 +148,7 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
       TEST_CONFIG.sshPort
     )
 
-    console.log('V2 Basic Auth URL:', url)
+    // Navigate to V2 Basic Auth URL
     await page.goto(url)
 
     // V2 should handle async auto-connection

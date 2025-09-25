@@ -1,5 +1,8 @@
 // tests/unit/routes/session-handler.test.ts
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import { describe, it, expect } from 'vitest'
 import {
   createSessionCredentials,
@@ -57,7 +60,7 @@ void describe('createSessionCredentials', () => {
       ''
     )
     
-    expect(result?.term).toBeUndefined()
+    expect((result as { term?: string }).term).toBeUndefined()
   })
 })
 
@@ -132,13 +135,13 @@ void describe('hasValidSessionCredentials', () => {
       }
     }
     
-    expect(hasValidSessionCredentials(session)).toBe(true)
+    expect(hasValidSessionCredentials(session) as boolean).toBe(true)
   })
   
   it('rejects missing credentials', () => {
     const session: SessionData = {}
     
-    expect(hasValidSessionCredentials(session)).toBe(false)
+    expect(hasValidSessionCredentials(session) as boolean).toBe(false)
   })
   
   it('rejects empty username', () => {
@@ -149,7 +152,7 @@ void describe('hasValidSessionCredentials', () => {
       }
     }
     
-    expect(hasValidSessionCredentials(session)).toBe(false)
+    expect(hasValidSessionCredentials(session) as boolean).toBe(false)
   })
   
   it('rejects undefined password', () => {
@@ -159,7 +162,7 @@ void describe('hasValidSessionCredentials', () => {
       }
     }
     
-    expect(hasValidSessionCredentials(session)).toBe(false)
+    expect(hasValidSessionCredentials(session) as boolean).toBe(false)
   })
 })
 
@@ -193,8 +196,8 @@ void describe('mergeSessionData', () => {
       authMethod: 'GET'
     }
     const originalCopy = { ...existing }
-    
-    mergeSessionData(existing, { authMethod: 'POST' })
+
+    void mergeSessionData(existing, { authMethod: 'POST' })
     
     expect(existing).toEqual(originalCopy)
   })

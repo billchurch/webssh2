@@ -289,7 +289,7 @@ describe('metadataReducer via sessionReducer', () => {
 describe('state immutability', () => {
   it('should not mutate the original state', () => {
     const originalState = createTestState()
-    const stateCopy = structuredClone(originalState)
+    const stateCopy = globalThis.structuredClone(originalState)
     
     sessionReducer(originalState, actions.auth.success(TEST_USERNAME, 'manual'))
     
@@ -298,7 +298,7 @@ describe('state immutability', () => {
 
   it('should return the same state reference if no changes', () => {
     const state = createTestState()
-    const newState = sessionReducer(state, { type: 'UNKNOWN_ACTION' } as any)
+    const newState = sessionReducer(state, { type: 'UNKNOWN_ACTION' } as unknown as Parameters<typeof sessionReducer>[1])
     
     // For unknown actions, sub-reducers should return same references
     expect(newState.auth).toBe(state.auth)

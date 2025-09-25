@@ -11,7 +11,6 @@ import {
   handleTerminalResize,
   mergeTerminalConfig,
   type TerminalConfig,
-  type TerminalState,
 } from '../../../../app/socket/handlers/terminal-handler.js'
 import { DEFAULTS } from '../../../../app/constants.js'
 import type { Config } from '../../../../app/types/config.js'

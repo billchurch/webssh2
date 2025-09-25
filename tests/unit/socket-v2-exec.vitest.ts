@@ -1,5 +1,11 @@
 // tests/unit/socket-v2-exec.test.ts
 // Vitest rewrite of socket exec functionality test
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'

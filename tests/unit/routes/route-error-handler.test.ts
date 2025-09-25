@@ -5,7 +5,8 @@ import {
   createSshValidationErrorResponse,
   createRouteErrorMessage,
   getErrorStatusCode,
-  type SshValidationResult
+  type SshValidationResult,
+  type ErrorResponse
 } from '../../../app/routes/route-error-handler.js'
 import { HTTP } from '../../../app/constants.js'
 
@@ -16,7 +17,7 @@ void describe('createSshValidationErrorResponse', () => {
       errorMessage: 'Invalid credentials'
     }
     
-    const response = createSshValidationErrorResponse(result, 'host.com', 22)
+    const response: ErrorResponse = createSshValidationErrorResponse(result, 'host.com', 22)
     
     expect(response.status).toBe(HTTP.UNAUTHORIZED)
     expect(response.headers).toEqual({
@@ -31,7 +32,7 @@ void describe('createSshValidationErrorResponse', () => {
       errorMessage: 'Connection refused'
     }
     
-    const response = createSshValidationErrorResponse(result, 'host.com', 22)
+    const response: ErrorResponse = createSshValidationErrorResponse(result, 'host.com', 22)
     
     expect(response.status).toBe(502)
     expect(response.headers).toBeUndefined()
@@ -46,7 +47,7 @@ void describe('createSshValidationErrorResponse', () => {
       errorMessage: 'Operation timed out'
     }
     
-    const response = createSshValidationErrorResponse(result, 'host.com', 22)
+    const response: ErrorResponse = createSshValidationErrorResponse(result, 'host.com', 22)
     
     expect(response.status).toBe(504)
     expect(response.message).toContain('Gateway Timeout')
@@ -59,7 +60,7 @@ void describe('createSshValidationErrorResponse', () => {
       errorMessage: 'Something went wrong'
     }
     
-    const response = createSshValidationErrorResponse(result, 'host.com', 22)
+    const response: ErrorResponse = createSshValidationErrorResponse(result, 'host.com', 22)
     
     expect(response.status).toBe(502)
     expect(response.message).toContain('SSH connection failed')
@@ -71,7 +72,7 @@ void describe('createSshValidationErrorResponse', () => {
       errorMessage: 'Generic error'
     }
     
-    const response = createSshValidationErrorResponse(result, 'host.com', 22)
+    const response: ErrorResponse = createSshValidationErrorResponse(result, 'host.com', 22)
     
     expect(response.status).toBe(502)
     expect(response.message).toContain('SSH connection failed')

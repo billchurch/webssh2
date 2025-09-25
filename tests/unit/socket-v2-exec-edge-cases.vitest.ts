@@ -1,5 +1,9 @@
 // tests/unit/socket-v2-exec-edge-cases.vitest.ts
 // Vitest rewrite of socket exec edge cases test
+ 
+ 
+ 
+ 
 
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
@@ -48,11 +52,11 @@ describe('Socket V2 Exec Edge Cases', () => {
 
     // Set up promise to wait for exec-exit event
     const execExitPromise = new Promise<{ code: number; signal: string | null }>((resolve) => {
-      const originalEmit = (mockSocket as any).emit
-      ;(mockSocket as any).emit = vi.fn((...args: any[]) => {
+      const originalEmit = (mockSocket as { emit: (...args: unknown[]) => void }).emit
+      ;(mockSocket as { emit: (...args: unknown[]) => void }).emit = vi.fn((...args: unknown[]) => {
         ;(originalEmit).apply(mockSocket, args)
         if (args[0] === 'exec-exit') {
-          resolve(args[1])
+          resolve(args[1] as { code: number; signal: string | null })
         }
       })
     })

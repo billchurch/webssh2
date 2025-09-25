@@ -29,6 +29,7 @@ void describe('Config Module - Async Tests', () => {
     const configManager = testEnv.configManager!
     // Ensure config.json doesn't exist
     if (configManager.configExists()) {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       fs.unlinkSync(configManager.configPath)
     }
 
@@ -87,6 +88,7 @@ void describe('Config Module - Async Tests', () => {
 
   void test('loadConfigAsync throws error for malformed JSON', async () => {
     // Write invalid JSON
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     fs.writeFileSync(testEnv.configManager!.configPath, '{ invalid json }')
 
     // Should throw ConfigError for malformed JSON

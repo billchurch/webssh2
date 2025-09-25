@@ -1,10 +1,50 @@
 // tests/unit/socket-v2-test-utils.ts
 // Shared test utilities for socket-v2 tests - Vitest specific
 
-import { vi } from 'vitest'
+import { vi, type Mock } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 import { DEFAULTS } from '../../app/constants.js'
+
+// Type definitions for mock objects
+interface MockSession {
+  save: Mock
+  sshCredentials: unknown
+  usedBasicAuth: boolean
+  envVars: unknown
+}
+
+interface MockRequest {
+  session: MockSession
+}
+
+interface MockSocket extends EventEmitter {
+  id: string
+  request: MockRequest
+  emit: Mock
+  disconnect: Mock
+}
+
+interface MockIO extends EventEmitter {
+  on: Mock
+}
+
+interface MockConfig {
+  ssh: {
+    term: string
+    disableInteractiveAuth: boolean
+    readyTimeout: number
+    keepaliveInterval: number
+    keepaliveCountMax: number
+  }
+  options: {
+    allowReauth: boolean
+    allowReplay: boolean
+    allowReconnect: boolean
+  }
+  user: Record<string, unknown>
+  header: null
+}
 
 // Re-export common utilities from main test-utils
 export {
@@ -16,8 +56,12 @@ export {
 /**
  * Sets up an authenticated socket for testing (Vitest version)
  */
-export const setupAuthenticatedSocket = async (io: unknown, mockSocket: unknown): Promise<void> => {
-  const onConn = (io.on).mock.calls[0][1]
+export const setupAuthenticatedSocket = async (io: MockIO, mockSocket: MockSocket): Promise<void> => {
+  const mockCalls = (io.on).mock.calls
+  if (mockCalls.length === 0) {
+    throw new Error('No mock calls found on io.on')
+  }
+  const onConn = mockCalls[0][1] as (socket: MockSocket) => void
   mockSocket.request.session.usedBasicAuth = true
   mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
   onConn(mockSocket)
@@ -30,13 +74,13 @@ export const setupAuthenticatedSocket = async (io: unknown, mockSocket: unknown)
 /**
  * Tracks events emitted by the socket (Vitest version)
  */
-export const trackEmittedEvents = (mockSocket: unknown): Array<{ event: string; payload?: unknown }> => {
+export const trackEmittedEvents = (mockSocket: MockSocket): Array<{ event: string; payload?: unknown }> => {
   const emittedEvents: Array<{ event: string; payload?: unknown }> = []
   const originalEmit = mockSocket.emit
-  mockSocket.emit = vi.fn((...args) => {
-    emittedEvents.push({ event: args[0], payload: args[1] })
-    return originalEmit.apply(mockSocket, args)
-  })
+  mockSocket.emit = vi.fn((...args: unknown[]) => {
+    emittedEvents.push({ event: args[0] as string, payload: args[1] })
+    return originalEmit(...args) as unknown
+  }) as Mock
   return emittedEvents
 }
 
@@ -52,12 +96,12 @@ export const waitForAsync = async (iterations = 1): Promise<void> => {
 /**
  * Creates a mock socket for Vitest testing
  */
-export const createMockSocket = (id = 'test-socket-id'): unknown => {
-  const mockSocket = new EventEmitter() as any
+export const createMockSocket = (id = 'test-socket-id'): MockSocket => {
+  const mockSocket = new EventEmitter() as MockSocket
   mockSocket.id = id
   mockSocket.request = {
     session: {
-      save: vi.fn((cb: () => void) => cb()),
+      save: vi.fn((cb: () => void) => cb()) as Mock,
       sshCredentials: null,
       usedBasicAuth: false,
       envVars: null
@@ -71,16 +115,17 @@ export const createMockSocket = (id = 'test-socket-id'): unknown => {
 /**
  * Creates a mock IO instance for Vitest testing
  */
-export const createMockIO = (): unknown => {
-  const io = new EventEmitter() as any
-  io.on = vi.fn(io.on.bind(io))
+export const createMockIO = (): MockIO => {
+  const io = new EventEmitter() as MockIO
+  const originalOn = io.on.bind(io)
+  io.on = vi.fn(originalOn) as Mock
   return io
 }
 
 /**
  * Creates default mock config for testing
  */
-export const createMockConfig = (): { ssh: unknown; options: unknown; user: unknown; header: null } => ({
+export const createMockConfig = (): MockConfig => ({
   ssh: {
     term: DEFAULTS.SSH_TERM,
     disableInteractiveAuth: false,
@@ -107,7 +152,7 @@ export const filterEventsByType = (events: Array<{ event: string; payload?: unkn
 /**
  * Emits an event on the mock socket and waits for processing
  */
-export const emitSocketEvent = async (mockSocket: unknown, event: string, payload: unknown = {}, waitIterations = 1): Promise<void> => {
+export const emitSocketEvent = async (mockSocket: MockSocket, event: string, payload: unknown = {}, waitIterations = 1): Promise<void> => {
   EventEmitter.prototype.emit.call(mockSocket, event, payload)
   await waitForAsync(waitIterations)
 }
@@ -115,7 +160,7 @@ export const emitSocketEvent = async (mockSocket: unknown, event: string, payloa
 /**
  * Sets up an authenticated socket with event tracking
  */
-export const setupAuthenticatedSocketWithTracking = async (io: unknown, mockSocket: unknown): Promise<Array<{ event: string; payload?: unknown }>> => {
+export const setupAuthenticatedSocketWithTracking = async (io: MockIO, mockSocket: MockSocket): Promise<Array<{ event: string; payload?: unknown }>> => {
   await setupAuthenticatedSocket(io, mockSocket)
   return trackEmittedEvents(mockSocket)
 }
@@ -123,6 +168,6 @@ export const setupAuthenticatedSocketWithTracking = async (io: unknown, mockSock
 /**
  * Creates a terminal session on the mock socket
  */
-export const createTerminalSession = async (mockSocket: unknown): Promise<void> => {
+export const createTerminalSession = async (mockSocket: MockSocket): Promise<void> => {
   await emitSocketEvent(mockSocket, 'terminal', {})
 }

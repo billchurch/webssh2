@@ -127,7 +127,7 @@ describe('TerminalService', () => {
       // Verify terminal was updated
       const terminal = terminalService.getTerminal(sessionId)
       expect(terminal.ok).toBe(true)
-      if (terminal.ok && terminal.value) {
+      if (terminal.ok && terminal.value !== null) {
         expect(terminal.value.rows).toBe(40)
         expect(terminal.value.cols).toBe(120)
       }
@@ -191,10 +191,12 @@ describe('TerminalService', () => {
         sessionId,
         expect.objectContaining({
           type: 'METADATA_UPDATE',
+           
           payload: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             updatedAt: expect.any(Number)
-          })
-        })
+          }) as unknown
+        }) as unknown
       )
     })
 
@@ -281,7 +283,7 @@ describe('TerminalService', () => {
       const getResult = terminalService.getTerminal(sessionId)
 
       expect(getResult.ok).toBe(true)
-      if (getResult.ok && getResult.value) {
+      if (getResult.ok && getResult.value !== null) {
         expect(getResult.value.sessionId).toBe(sessionId)
         expect(getResult.value.term).toBe('vt100')
         expect(getResult.value.rows).toBe(25)
@@ -358,7 +360,7 @@ describe('TerminalService', () => {
       // Final state should be last resize
       const terminal = terminalService.getTerminal(sessionId)
       expect(terminal.ok).toBe(true)
-      if (terminal.ok && terminal.value) {
+      if (terminal.ok && terminal.value !== null) {
         expect(terminal.value.rows).toBe(40)
         expect(terminal.value.cols).toBe(100)
       }

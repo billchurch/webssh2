@@ -19,7 +19,7 @@ export async function waitForV2Terminal(page: Page, timeout = TIMEOUTS.CONNECTIO
   // Wait for terminal to be actually interactive
   await page.waitForFunction(() => {
     const textarea = document.querySelector('.xterm-helper-textarea')
-    return textarea !== null && textarea !== undefined && !textarea.disabled &&
+    return textarea !== null && !(textarea as HTMLTextAreaElement).disabled &&
            getComputedStyle(textarea).visibility !== 'hidden' &&
            getComputedStyle(textarea).display !== 'none'
   }, { timeout })
@@ -242,7 +242,7 @@ export async function executeCommandList(page: Page, commands: string[]): Promis
     // Wait for command to complete - check for echo output
     if (command.startsWith('echo ')) {
       const expectedOutput = command.match(/"([^"]+)"/)?.[1]
-      if (expectedOutput) {
+      if (expectedOutput !== undefined && expectedOutput !== '') {
         await waitForCommandOutput(page, expectedOutput, TIMEOUTS.SHORT_WAIT * 2)
       }
     }

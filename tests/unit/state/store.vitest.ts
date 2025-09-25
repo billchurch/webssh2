@@ -5,12 +5,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SessionStore, resetStore } from '../../../app/state/store.js'
 import { actions } from '../../../app/state/actions.js'
-import { createSessionId, createConnectionId } from '../../../app/types/branded.js'
+import { createSessionId } from '../../../app/types/branded.js'
 import { TEST_USERNAME, TEST_SSH } from '../../test-constants.js'
-import type { SessionState } from '../../../app/state/types.js'
 
 // Test helpers
-const createTestStore = () => new SessionStore({ maxHistorySize: 10 })
+const createTestStore = (): SessionStore => new SessionStore({ maxHistorySize: 10 })
 
 describe('SessionStore', () => {
   let store: SessionStore
@@ -123,8 +122,10 @@ describe('SessionStore', () => {
       
       expect(listener).toHaveBeenCalledTimes(1)
       expect(listener).toHaveBeenCalledWith(
-        expect.objectContaining({ auth: expect.objectContaining({ username: TEST_USERNAME }) }),
-        expect.objectContaining({ auth: expect.objectContaining({ username: null }) })
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        expect.objectContaining({ auth: expect.objectContaining({ username: TEST_USERNAME }) }) as unknown,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        expect.objectContaining({ auth: expect.objectContaining({ username: null }) }) as unknown
       )
     })
 
@@ -136,7 +137,7 @@ describe('SessionStore', () => {
       store.subscribe(sessionId, listener)
       
       // Dispatch unknown action that doesn't change state
-      store.dispatch(sessionId, { type: 'UNKNOWN' } as any)
+      store.dispatch(sessionId, { type: 'UNKNOWN' } as unknown as Parameters<typeof store.dispatch>[1])
       
       expect(listener).not.toHaveBeenCalled()
     })
@@ -279,9 +280,11 @@ describe('SessionStore', () => {
       
       // Check that SESSION_END was dispatched
       expect(listener).toHaveBeenCalledWith(
+         
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           connection: expect.objectContaining({ status: 'closed' })
-        }),
+        }) as unknown,
         expect.anything()
       )
     })

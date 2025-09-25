@@ -10,7 +10,7 @@ import {
   createCorsConfig
 } from '../../../app/config/config-processor.js'
 import type { Config } from '../../../app/types/config.js'
-import { TEST_SECRET_123, TEST_PASSWORDS } from '../../test-constants.js'
+import { TEST_SECRET_123, TEST_PASSWORDS, TEST_IPS, TEST_SECRET } from '../../test-constants.js'
 
 void describe('createDefaultConfig', () => {
   it('should create default config without session secret', () => {
@@ -83,8 +83,8 @@ void describe('mergeConfigs', () => {
   it('should be pure - not mutate inputs', () => {
     const defaultConfig = createDefaultConfig()
     const fileConfig: Partial<Config> = { listen: { port: 3000 } as Config['listen'] }
-    const originalDefault = structuredClone(defaultConfig)
-    const originalFile = structuredClone(fileConfig)
+    const originalDefault = globalThis.structuredClone(defaultConfig)
+    const originalFile = globalThis.structuredClone(fileConfig)
     
     mergeConfigs(defaultConfig, fileConfig)
     
