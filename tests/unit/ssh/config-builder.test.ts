@@ -12,7 +12,7 @@ import {
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
 import { TEST_PASSWORDS, TEST_PASSPHRASE } from '../../test-constants.js'
 
-describe('extractHost', () => {
+void describe('extractHost', () => {
   it('extracts string host', () => {
     expect(extractHost({ host: 'example.com' })).toBe('example.com')
   })
@@ -34,7 +34,7 @@ describe('extractHost', () => {
   })
 })
 
-describe('extractPort', () => {
+void describe('extractPort', () => {
   it('extracts number port', () => {
     expect(extractPort({ port: 2222 })).toBe(2222)
   })
@@ -51,7 +51,7 @@ describe('extractPort', () => {
   })
 })
 
-describe('extractAuthCredentials', () => {
+void describe('extractAuthCredentials', () => {
   it('extracts username and password', () => {
     const result = extractAuthCredentials({
       username: 'user',
@@ -117,7 +117,7 @@ encrypted content
   })
 })
 
-describe('buildSshConfig', () => {
+void describe('buildSshConfig', () => {
   const config = createDefaultConfig()
   
   it('builds complete SSH config', () => {
@@ -143,7 +143,7 @@ describe('buildSshConfig', () => {
   })
   
   it('includes debug function when provided', () => {
-    const debugFn = (msg: string) => console.log(msg)
+    const debugFn = (msg: string): void => { console.info(msg) }
     const result = buildSshConfig({}, config, false, debugFn)
     
     expect(result.debug).toBe(debugFn)
@@ -156,7 +156,7 @@ describe('buildSshConfig', () => {
   })
 })
 
-describe('createPtyOptions', () => {
+void describe('createPtyOptions', () => {
   it('creates PTY options with all fields', () => {
     const options = {
       term: 'xterm',
@@ -199,7 +199,7 @@ describe('createPtyOptions', () => {
   })
 })
 
-describe('createExecOptions', () => {
+void describe('createExecOptions', () => {
   it('creates options with environment', () => {
     const envVars = { FOO: 'bar', BAZ: 'qux' }
     

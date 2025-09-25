@@ -7,7 +7,7 @@ import { AuthServiceImpl } from '../../../app/services/auth/auth-service.js'
 import type { Credentials } from '../../../app/services/interfaces.js'
 import { createSessionId } from '../../../app/types/branded.js'
 import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
-import { createMockStore, createMockDependencies, setupMockStoreState, createAuthState } from '../../test-utils.js'
+import { createMockStore, createMockDependencies } from '../../test-utils.js'
 
 describe('AuthService', () => {
   let authService: AuthServiceImpl

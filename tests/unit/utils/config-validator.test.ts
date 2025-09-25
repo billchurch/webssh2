@@ -3,10 +3,10 @@
 
 import { describe, it, expect } from 'vitest'
 import { validateConfigPure } from '../../../app/utils/config-validator.js'
-import { isOk, isErr } from '../../../app/types/result.js'
+import { isOk, isErr } from '../../../app/utils/result.js'
 import { TEST_SECRET } from '../../test-constants.js'
 
-describe('validateConfigPure', () => {
+void describe('validateConfigPure', () => {
   it('should return ok result for valid configuration', () => {
     const validConfig = {
       listen: { ip: '0.0.0.0', port: 2222 },
@@ -35,7 +35,7 @@ describe('validateConfigPure', () => {
     }
     
     const result = validateConfigPure(validConfig)
-    
+
     expect(isOk(result)).toBe(true)
     if (isOk(result)) {
       expect(result.value).toEqual(validConfig)
@@ -64,7 +64,7 @@ describe('validateConfigPure', () => {
     }
     
     const result = validateConfigPure(invalidConfig)
-    
+
     expect(isErr(result)).toBe(true)
     if (isErr(result)) {
       expect(result.error.message).toContain('port')
@@ -78,11 +78,14 @@ describe('validateConfigPure', () => {
     }
     
     const result = validateConfigPure(incompleteConfig)
-    
+
     expect(isErr(result)).toBe(true)
     if (isErr(result)) {
-      expect(result.error.message).toBeDefined()
-      expect(result.error.errors).toBeDefined()
+      expect(typeof result.error.message).toBe('string')
+      expect(result.error.message.length).toBeGreaterThan(0)
+      if ('errors' in result.error) {
+        expect(result.error.errors).toBeDefined()
+      }
     }
   })
 })

@@ -8,15 +8,12 @@
 import { test, expect } from '@playwright/test'
 import { TEST_CONFIG, TIMEOUTS } from './constants.js'
 import {
-  waitForV2Terminal,
   waitForV2Connection,
   waitForV2Prompt,
   executeV2Command,
   verifyV2TerminalFunctionality,
   connectV2,
   checkForV2AuthError,
-  waitForCommandOutput,
-  getTerminalContent,
   buildBasicAuthUrl,
   connectWithBasicAuth,
   executeAndVerifyCommand,

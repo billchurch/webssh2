@@ -23,7 +23,7 @@ import {
   SSH_USERNAME
 } from '../../test-constants.js'
 
-describe('hasConfigCredentials', () => {
+void describe('hasConfigCredentials', () => {
   it('should return false for empty config credentials', () => {
     const config = createDefaultConfig()
     
@@ -62,7 +62,7 @@ describe('hasConfigCredentials', () => {
   })
 })
 
-describe('extractConfigCredentials', () => {
+void describe('extractConfigCredentials', () => {
   it('should return null for invalid config', () => {
     const config = createDefaultConfig()
     
@@ -113,7 +113,7 @@ describe('extractConfigCredentials', () => {
   })
 })
 
-describe('processBasicAuthCredentials', () => {
+void describe('processBasicAuthCredentials', () => {
   it('should process valid credentials', () => {
     const basicAuth = {
       name: TEST_USERNAME,
@@ -167,7 +167,7 @@ describe('processBasicAuthCredentials', () => {
   })
 })
 
-describe('processAuthentication', () => {
+void describe('processAuthentication', () => {
   it('should prefer config credentials over basic auth', () => {
     const config = createDefaultConfig()
     config.user.name = CONFIG_USERNAME
@@ -232,7 +232,7 @@ describe('processAuthentication', () => {
   })
 })
 
-describe('createSessionData', () => {
+void describe('createSessionData', () => {
   it('should create session data from auth result', () => {
     const authResult: AuthResult = {
       credentials: {
@@ -306,7 +306,7 @@ describe('createSessionData', () => {
       usedBasicAuth: true,
       source: 'basicAuth'
     }
-    const originalAuth = structuredClone(authResult) as AuthResult
+    const originalAuth = structuredClone(authResult)
     
     createSessionData(authResult)
     

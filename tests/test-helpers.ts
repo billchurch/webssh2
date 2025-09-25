@@ -85,8 +85,8 @@ export interface MockSSHConnectionOptions {
 /**
  * Create a mock Socket.IO server instance
  */
-export function createMockIO(): any {
-  const io: any = new EventEmitter()
+export function createMockIO(): unknown {
+  const io: unknown = new EventEmitter()
   io.on = mock.fn(io.on)
   return io
 }
@@ -94,8 +94,8 @@ export function createMockIO(): any {
 /**
  * Create a mock Socket instance with standard test configuration
  */
-export function createMockSocket(options: MockSocketOptions = {}): any {
-  const mockSocket: any = new EventEmitter()
+export function createMockSocket(options: MockSocketOptions = {}): unknown {
+  const mockSocket: unknown = new EventEmitter()
   mockSocket.id = options.id ?? 'test-socket-id'
   mockSocket.request = {
     session: {
@@ -113,7 +113,7 @@ export function createMockSocket(options: MockSocketOptions = {}): any {
 /**
  * Create a mock SSH Connection class for testing
  */
-export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): any {
+export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): unknown {
   if (options.withExecMethods) {
     return class extends EventEmitter {
       connect() {
@@ -122,8 +122,8 @@ export function createMockSSHConnection(options: MockSSHConnectionOptions = {}):
       shell() {
         return options.shellResolves !== false ? Promise.resolve(new EventEmitter()) : Promise.reject(new Error('Shell failed'))
       }
-      exec(command: string, _options: any, _envVars: any) {
-        const stream: any = new EventEmitter()
+      exec(command: string, _options: unknown, _envVars: unknown) {
+        const stream: unknown = new EventEmitter()
         stream.stderr = new EventEmitter()
         process.nextTick(() => {
           stream.emit('data', Buffer.from(`OUT:${command}`))
@@ -143,7 +143,7 @@ export function createMockSSHConnection(options: MockSSHConnectionOptions = {}):
 /**
  * Create a standard mock config object for socket tests
  */
-export function createMockSocketConfig(overrides: Record<string, any> = {}): any {
+export function createMockSocketConfig(overrides: Record<string, any> = {}): unknown {
   return {
     ssh: {
       term: 'xterm-color',
@@ -173,7 +173,7 @@ export interface ConfigFileManager {
   backupPath: string
   setup(): void
   cleanup(): void
-  writeConfig(config: any): void
+  writeConfig(config: unknown): void
   configExists(): boolean
 }
 
@@ -205,7 +205,7 @@ export function createConfigFileManager(configFileName = 'config.json'): ConfigF
       }
     },
     
-    writeConfig(config: any): void {
+    writeConfig(config: unknown): void {
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     },
     

@@ -474,8 +474,8 @@ describe('Config Transformers', () => {
 
       const result = mergeMultipleConfigs(config1, config2)
       
-      expect(result.ssh?.algorithms?.cipher).toEqual(['aes256-ctr'])
-      expect(result.ssh?.algorithms?.kex).toEqual(['curve25519-sha256'])
+      expect(result.ssh.algorithms.cipher).toEqual(['aes256-ctr'])
+      expect(result.ssh.algorithms.kex).toEqual(['curve25519-sha256'])
     })
   })
 })

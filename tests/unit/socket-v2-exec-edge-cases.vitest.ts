@@ -15,7 +15,7 @@ import {
 import { createMockSSHConnection } from '../test-utils.js'
 
 describe('Socket V2 Exec Edge Cases', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, MockSSHConnection: unknown
 
   beforeEach(() => {
     io = createMockIO()
@@ -47,10 +47,10 @@ describe('Socket V2 Exec Edge Cases', () => {
     await setupAuthenticatedSocket(io, mockSocket)
 
     // Set up promise to wait for exec-exit event
-    const execExitPromise = new Promise<any>((resolve) => {
-      const originalEmit = mockSocket.emit
-      mockSocket.emit = vi.fn((...args) => {
-        originalEmit.apply(mockSocket, args)
+    const execExitPromise = new Promise<{ code: number; signal: string | null }>((resolve) => {
+      const originalEmit = (mockSocket as any).emit
+      ;(mockSocket as any).emit = vi.fn((...args: any[]) => {
+        ;(originalEmit).apply(mockSocket, args)
         if (args[0] === 'exec-exit') {
           resolve(args[1])
         }

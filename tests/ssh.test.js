@@ -354,7 +354,7 @@ describe('SSHConnection', () => {
             ptyRequested = true
             accept && accept()
           })
-          session.on('exec', (accept, _reject) => {
+          session.on('exec', (accept) => {
             const stream = accept()
             stream.write('pty-exec\n')
             stream.exit(0)

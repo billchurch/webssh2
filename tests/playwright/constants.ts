@@ -1,3 +1,5 @@
+/* eslint-env browser */
+/* global document */
 /**
  * Playwright-specific test constants and helper functions
  * Common constants are imported from test-constants.ts
@@ -24,8 +26,8 @@ export const CLIENT_DEV_URL = `http://localhost:${CLIENT_DEV_PORT}`
 
 // SSH test server configuration
 export const SSH_HOST = 'localhost'
-export const USERNAME = process.env.E2E_SSH_USER || TEST_SSH.USERNAME
-export const PASSWORD = process.env.E2E_SSH_PASS || TEST_SSH.PASSWORD
+export const USERNAME = process.env.E2E_SSH_USER ?? TEST_SSH.USERNAME
+export const PASSWORD = process.env.E2E_SSH_PASS ?? TEST_SSH.PASSWORD
 
 // Re-export from test-constants for backward compatibility
 export const INVALID_USERNAME = INVALID_TEST_VALUES.USERNAME
@@ -85,7 +87,7 @@ export const TEST_CONFIG = {
 export async function waitForPrompt(page: Page, timeout: number = TIMEOUTS.PROMPT_WAIT): Promise<void> {
   await page.waitForFunction(
     () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-screen')?.textContent ?? ''
       return /[$#]\s*$/.test(terminalContent)
     },
     { timeout }
@@ -104,7 +106,7 @@ export async function verifyTerminalFunctionality(page: Page, username: string):
   await executeCommand(page, 'whoami')
   await page.waitForFunction(
     (expectedUser: string) => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-screen')?.textContent ?? ''
       return terminalContent.includes(expectedUser)
     },
     username,

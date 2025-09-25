@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import SSHConnection from '../../app/ssh'
-import type { Config } from '../../app/types/config'
+import type { Config } from '../../app/types/config.ts'
 
 const baseConfig = {
   ssh: {
@@ -14,7 +14,7 @@ const baseConfig = {
   },
 } as unknown as Config
 
-describe('SSH getEnvironment (filtered)', () => {
+void describe('SSH getEnvironment (filtered)', () => {
   it('includes TERM and merges valid env', () => {
     const ssh = new SSHConnection(baseConfig)
     const env = (ssh as any).getEnvironment({ FOO: 'bar', BAR: 123 }) as Record<string, string>
@@ -28,7 +28,7 @@ describe('SSH getEnvironment (filtered)', () => {
   })
 
   it('respects allowlist', () => {
-    const cfg = structuredClone(baseConfig) as Config
+    const cfg = structuredClone(baseConfig)
     ;(cfg as any).ssh.envAllowlist = ['ONLY']
     const ssh = new SSHConnection(cfg)
     const env = (ssh as any).getEnvironment({ ONLY: 'v', OK: 'ignored' })

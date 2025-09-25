@@ -16,8 +16,8 @@ export {
 /**
  * Sets up an authenticated socket for testing (Vitest version)
  */
-export const setupAuthenticatedSocket = async (io: any, mockSocket: any) => {
-  const onConn = (io.on as any).mock.calls[0][1]
+export const setupAuthenticatedSocket = async (io: unknown, mockSocket: unknown): Promise<void> => {
+  const onConn = (io.on).mock.calls[0][1]
   mockSocket.request.session.usedBasicAuth = true
   mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
   onConn(mockSocket)
@@ -30,8 +30,8 @@ export const setupAuthenticatedSocket = async (io: any, mockSocket: any) => {
 /**
  * Tracks events emitted by the socket (Vitest version)
  */
-export const trackEmittedEvents = (mockSocket: any) => {
-  const emittedEvents: Array<{ event: string; payload?: any }> = []
+export const trackEmittedEvents = (mockSocket: unknown): Array<{ event: string; payload?: unknown }> => {
+  const emittedEvents: Array<{ event: string; payload?: unknown }> = []
   const originalEmit = mockSocket.emit
   mockSocket.emit = vi.fn((...args) => {
     emittedEvents.push({ event: args[0], payload: args[1] })
@@ -43,7 +43,7 @@ export const trackEmittedEvents = (mockSocket: any) => {
 /**
  * Waits for async operations to complete
  */
-export const waitForAsync = async (iterations = 1) => {
+export const waitForAsync = async (iterations = 1): Promise<void> => {
   for (let i = 0; i < iterations; i++) {
     await new Promise((r) => setImmediate(r))
   }
@@ -52,7 +52,7 @@ export const waitForAsync = async (iterations = 1) => {
 /**
  * Creates a mock socket for Vitest testing
  */
-export const createMockSocket = (id = 'test-socket-id') => {
+export const createMockSocket = (id = 'test-socket-id'): unknown => {
   const mockSocket = new EventEmitter() as any
   mockSocket.id = id
   mockSocket.request = {
@@ -71,7 +71,7 @@ export const createMockSocket = (id = 'test-socket-id') => {
 /**
  * Creates a mock IO instance for Vitest testing
  */
-export const createMockIO = () => {
+export const createMockIO = (): unknown => {
   const io = new EventEmitter() as any
   io.on = vi.fn(io.on.bind(io))
   return io
@@ -80,7 +80,7 @@ export const createMockIO = () => {
 /**
  * Creates default mock config for testing
  */
-export const createMockConfig = () => ({
+export const createMockConfig = (): { ssh: unknown; options: unknown; user: unknown; header: null } => ({
   ssh: {
     term: DEFAULTS.SSH_TERM,
     disableInteractiveAuth: false,
@@ -100,14 +100,14 @@ export const createMockConfig = () => ({
 /**
  * Filters events by type from the emitted events array
  */
-export const filterEventsByType = (events: Array<{ event: string; payload?: any }>, eventType: string) => {
+export const filterEventsByType = (events: Array<{ event: string; payload?: unknown }>, eventType: string): Array<{ event: string; payload?: unknown }> => {
   return events.filter(e => e.event === eventType)
 }
 
 /**
  * Emits an event on the mock socket and waits for processing
  */
-export const emitSocketEvent = async (mockSocket: any, event: string, payload: any = {}, waitIterations = 1) => {
+export const emitSocketEvent = async (mockSocket: unknown, event: string, payload: unknown = {}, waitIterations = 1): Promise<void> => {
   EventEmitter.prototype.emit.call(mockSocket, event, payload)
   await waitForAsync(waitIterations)
 }
@@ -115,7 +115,7 @@ export const emitSocketEvent = async (mockSocket: any, event: string, payload: a
 /**
  * Sets up an authenticated socket with event tracking
  */
-export const setupAuthenticatedSocketWithTracking = async (io: any, mockSocket: any) => {
+export const setupAuthenticatedSocketWithTracking = async (io: unknown, mockSocket: unknown): Promise<Array<{ event: string; payload?: unknown }>> => {
   await setupAuthenticatedSocket(io, mockSocket)
   return trackEmittedEvents(mockSocket)
 }
@@ -123,6 +123,6 @@ export const setupAuthenticatedSocketWithTracking = async (io: any, mockSocket: 
 /**
  * Creates a terminal session on the mock socket
  */
-export const createTerminalSession = async (mockSocket: any) => {
+export const createTerminalSession = async (mockSocket: unknown): Promise<void> => {
   await emitSocketEvent(mockSocket, 'terminal', {})
 }

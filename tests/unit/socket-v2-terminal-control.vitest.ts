@@ -9,8 +9,6 @@ import {
   createMockIO,
   createMockConfig,
   setupAuthenticatedSocket,
-  trackEmittedEvents,
-  waitForAsync,
   filterEventsByType,
   emitSocketEvent,
   setupAuthenticatedSocketWithTracking,
@@ -18,7 +16,7 @@ import {
 } from './socket-v2-test-utils.js'
 
 describe('Socket V2 Terminal and Control', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, MockSSHConnection: unknown
 
   beforeEach(() => {
     io = createMockIO()
@@ -26,18 +24,18 @@ describe('Socket V2 Terminal and Control', () => {
     mockConfig = createMockConfig()
 
     class SSH extends EventEmitter {
-      resizeTerminal: any
+      resizeTerminal: unknown
       constructor() {
         super()
         this.resizeTerminal = vi.fn()
       }
-      async connect() { return }
-      async shell(options: any) {
-        const stream: any = new EventEmitter()
-        stream.write = () => {}
-        return stream
+      connect() { return Promise.resolve() }
+      shell(options: unknown) {
+        const stream: unknown = new EventEmitter()
+        stream.write = () => { /* no-op for mock */ }
+        return Promise.resolve(stream)
       }
-      async exec() { return new EventEmitter() }
+      exec() { return Promise.resolve(new EventEmitter()) }
       end(): void {
         // no-op - mock connection cleanup
       }

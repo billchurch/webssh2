@@ -8,7 +8,7 @@ describe('logger.ts', () => {
   })
 
   it('logError prints message and error', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => { /* no-op for mock */ })
     logError('msg')
     logError('msg2', new Error('boom'))
     expect(spy).toHaveBeenCalled()

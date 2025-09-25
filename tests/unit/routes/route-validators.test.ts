@@ -14,7 +14,7 @@ import { createDefaultConfig } from '../../../app/config/config-processor.js'
 import { TEST_PASSWORDS } from '../../test-constants.js'
 import { PASSWORD_MASK } from '../../../app/constants/security.js'
 
-describe('extractHost', () => {
+void describe('extractHost', () => {
   const config = createDefaultConfig()
   
   it('prioritizes body.host over other sources', () => {
@@ -68,7 +68,7 @@ describe('extractHost', () => {
   })
 })
 
-describe('extractPort', () => {
+void describe('extractPort', () => {
   it('prioritizes body.port over query.port', () => {
     const body = { port: 2222 }
     const query = { port: 3333 }
@@ -106,7 +106,7 @@ describe('extractPort', () => {
   })
 })
 
-describe('extractTerm', () => {
+void describe('extractTerm', () => {
   it('prioritizes body.sshterm over query.sshterm', () => {
     const body = { sshterm: 'xterm' }
     const query = { sshterm: 'vt100' }
@@ -135,7 +135,7 @@ describe('extractTerm', () => {
   })
 })
 
-describe('validatePostCredentials', () => {
+void describe('validatePostCredentials', () => {
   it('validates complete credentials', () => {
     const body = {
       username: 'user',
@@ -189,7 +189,7 @@ describe('validatePostCredentials', () => {
   })
 })
 
-describe('validateSessionCredentials', () => {
+void describe('validateSessionCredentials', () => {
   it('validates complete credentials', () => {
     const creds = {
       username: 'user',
@@ -221,7 +221,7 @@ describe('validateSessionCredentials', () => {
   })
 })
 
-describe('createConnectionParams', () => {
+void describe('createConnectionParams', () => {
   it('creates params with all values', () => {
     const result = createConnectionParams('host.com', 2222, 'xterm')
     
@@ -253,7 +253,7 @@ describe('createConnectionParams', () => {
   })
 })
 
-describe('createSanitizedCredentials', () => {
+void describe('createSanitizedCredentials', () => {
   it('masks password', () => {
     const result = createSanitizedCredentials('host.com', 22, 'user')
     

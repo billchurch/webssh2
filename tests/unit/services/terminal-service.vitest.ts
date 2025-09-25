@@ -2,7 +2,7 @@
  * Unit tests for TerminalService
  */
 
-import { describe, it, expect, beforeEach, type Mock } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { TerminalServiceImpl } from '../../../app/services/terminal/terminal-service.js'
 import type { TerminalOptions, Dimensions } from '../../../app/services/interfaces.js'
 import { createSessionId } from '../../../app/types/branded.js'
@@ -33,7 +33,7 @@ describe('TerminalService', () => {
       const result = terminalService.create(options)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value).toHaveProperty('id')
         expect(result.value.sessionId).toBe(options.sessionId)
         expect(result.value.term).toBe('xterm-256color')
@@ -66,7 +66,7 @@ describe('TerminalService', () => {
       const result = terminalService.create(options)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value.term).toBe('xterm-256color')
         expect(result.value.rows).toBe(24)
         expect(result.value.cols).toBe(80)
@@ -244,7 +244,7 @@ describe('TerminalService', () => {
       // Verify terminal is gone
       const getResult = terminalService.getTerminal(sessionId)
       expect(getResult.ok).toBe(true)
-      if (getResult.ok) {
+      if (getResult.ok === true) {
         expect(getResult.value).toBeNull()
       }
     })
@@ -295,7 +295,7 @@ describe('TerminalService', () => {
       const result = terminalService.getTerminal(sessionId)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value).toBeNull()
       }
     })

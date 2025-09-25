@@ -37,29 +37,29 @@ const createTestSSHConfig = (overrides?: Partial<SSHConfig>): SSHConfig => ({
 })
 
 // Event handler factories
-const createReadyHandler = (client: any) => (event: string, handler: Function) => {
-  if (event === 'ready') setTimeout(() => handler(), 0)
+const createReadyHandler = (client: unknown) => (event: string, handler: Function) => {
+  if (event === 'ready') {setTimeout(() => handler(), 0)}
   return client
 }
 
-const createErrorHandler = (client: any, error: Error) => (event: string, handler: Function) => {
-  if (event === 'error') setTimeout(() => handler(error), 0)
+const createErrorHandler = (client: unknown, error: Error) => (event: string, handler: Function) => {
+  if (event === 'error') {setTimeout(() => handler(error), 0)}
   return client
 }
 
-const createShellCallback = (stream: Duplex | null, error?: Error) => (opts: any, callback: Function) => {
+const createShellCallback = (stream: Duplex | null, error?: Error) => (opts: unknown, callback: Function) => {
   callback(error ?? undefined, stream)
 }
 
-const createExecCallback = (mockStream: any, error?: Error) => (cmd: string, callback: Function) => {
+const createExecCallback = (mockStream: unknown, error?: Error) => (cmd: string, callback: Function) => {
   callback(error ?? undefined, mockStream)
 }
 
 // Mock stream factory
 const createMockExecStream = (stdout: string, exitCode: number = 0) => ({
   on: vi.fn((event: string, handler: Function) => {
-    if (event === 'data') setTimeout(() => handler(Buffer.from(stdout)), 0)
-    if (event === 'close') setTimeout(() => handler(exitCode), 10)
+    if (event === 'data') {setTimeout(() => handler(Buffer.from(stdout)), 0)}
+    if (event === 'close') {setTimeout(() => handler(exitCode), 10)}
     return createMockExecStream(stdout, exitCode)
   }),
   stderr: { on: vi.fn() }

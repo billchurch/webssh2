@@ -12,7 +12,7 @@ import {
 import type { Config } from '../../../app/types/config.js'
 import { TEST_SECRET_123, TEST_PASSWORDS } from '../../test-constants.js'
 
-describe('createDefaultConfig', () => {
+void describe('createDefaultConfig', () => {
   it('should create default config without session secret', () => {
     const config = createDefaultConfig()
     
@@ -34,13 +34,13 @@ describe('createDefaultConfig', () => {
   it('should include default SSH algorithms', () => {
     const config = createDefaultConfig()
     
-    expect(config.ssh.algorithms?.cipher).toContain('chacha20-poly1305@openssh.com')
-    expect(config.ssh.algorithms?.kex).toContain('curve25519-sha256')
-    expect(config.ssh.algorithms?.serverHostKey).toContain('ssh-ed25519')
+    expect(config.ssh.algorithms.cipher).toContain('chacha20-poly1305@openssh.com')
+    expect(config.ssh.algorithms.kex).toContain('curve25519-sha256')
+    expect(config.ssh.algorithms.serverHostKey).toContain('ssh-ed25519')
   })
 })
 
-describe('mergeConfigs', () => {
+void describe('mergeConfigs', () => {
   it('should return default config when no overrides provided', () => {
     const defaultConfig = createDefaultConfig(TEST_PASSWORDS.secret)
     
@@ -93,7 +93,7 @@ describe('mergeConfigs', () => {
   })
 })
 
-describe('processConfig', () => {
+void describe('processConfig', () => {
   it('should return ok result for valid configuration', () => {
     const defaultConfig = createDefaultConfig(TEST_SECRET)
     
@@ -135,7 +135,7 @@ describe('processConfig', () => {
   })
 })
 
-describe('parseConfigJson', () => {
+void describe('parseConfigJson', () => {
   it('should parse valid JSON', () => {
     const json = '{"listen": {"port": 3000}, "ssh": {"host": "example.com"}}'
     
@@ -174,7 +174,7 @@ describe('parseConfigJson', () => {
   })
 })
 
-describe('createCorsConfig', () => {
+void describe('createCorsConfig', () => {
   it('should create CORS config from application config', () => {
     const config = createDefaultConfig()
     config.http.origins = ['http://localhost:3000', 'https://example.com']

@@ -1,4 +1,9 @@
 // tests/unit/types/result.test.ts
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 
 import { describe, it, expect } from 'vitest'
 import {
@@ -21,7 +26,7 @@ import {
   type Result
 } from '../../../app/types/result.js'
 
-describe('Result type', () => {
+void describe('Result type', () => {
   describe('ok and err constructors', () => {
     it('creates success result', () => {
       const result = ok(42)
@@ -210,7 +215,7 @@ describe('Result type', () => {
     })
     
     it('returns first error', () => {
-      const results: Result<number, string>[] = [
+      const results: Array<Result<number, string>> = [
         ok(1),
         err('first error'),
         err('second error')
@@ -228,7 +233,7 @@ describe('Result type', () => {
     })
     
     it('collects all errors', () => {
-      const results: Result<number, string>[] = [
+      const results: Array<Result<number, string>> = [
         ok(1),
         err('error1'),
         ok(2),

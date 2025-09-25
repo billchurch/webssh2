@@ -15,8 +15,8 @@ import {
 import { TEST_PASSWORDS, TEST_USERNAME, TEST_PASSWORD, MY_SECRET, TEST_SSH, TEST_PORTS, TEST_IPS, TERMINAL } from './test-constants.js'
 import { DEFAULTS } from '../dist/app/constants.js'
 
-describe('deepMerge', () => {
-  test('merges nested objects correctly', () => {
+void describe('deepMerge', () => {
+  void test('merges nested objects correctly', () => {
     const target = { a: { b: 1 }, c: 3 }
     const source = { a: { d: 2 }, e: 4 }
     const result = deepMerge(target, source)
@@ -24,12 +24,12 @@ describe('deepMerge', () => {
   })
 })
 
-describe('getValidatedHost', () => {
-  test('returns valid IP unchanged', () => {
+void describe('getValidatedHost', () => {
+  void test('returns valid IP unchanged', () => {
     assert.equal(getValidatedHost(TEST_IPS.PRIVATE_192), TEST_IPS.PRIVATE_192)
   })
 
-  test('escapes hostname with potential XSS', () => {
+  void test('escapes hostname with potential XSS', () => {
     assert.equal(
       getValidatedHost('host<script>alert(1)</script>'),
       'host&lt;script&gt;alert(1)&lt;&#x2F;script&gt;'
@@ -37,14 +37,14 @@ describe('getValidatedHost', () => {
   })
 })
 
-describe('getValidatedPort', () => {
-  test('returns valid port number', () => {
+void describe('getValidatedPort', () => {
+  void test('returns valid port number', () => {
     assert.equal(getValidatedPort(22), 22)
     assert.equal(getValidatedPort(2222), 2222)
     assert.equal(getValidatedPort(65535), 65535)
   })
 
-  test('returns default port for invalid input', () => {
+  void test('returns default port for invalid input', () => {
     assert.equal(getValidatedPort(0), 22)
     assert.equal(getValidatedPort(65536), 22)
     assert.equal(getValidatedPort(-1), 22)
@@ -53,8 +53,8 @@ describe('getValidatedPort', () => {
   })
 })
 
-describe('isValidCredentials', () => {
-  test('validates complete credentials', () => {
+void describe('isValidCredentials', () => {
+  void test('validates complete credentials', () => {
     const validCreds = {
       username: TEST_USERNAME,
       password: TEST_PASSWORDS.basic,
@@ -64,7 +64,7 @@ describe('isValidCredentials', () => {
     assert.equal(isValidCredentials(validCreds), true)
   })
 
-  test('rejects incomplete credentials', () => {
+  void test('rejects incomplete credentials', () => {
     const invalidCreds = {
       username: TEST_USERNAME,
       host: TEST_SSH.HOST,
@@ -73,15 +73,17 @@ describe('isValidCredentials', () => {
   })
 })
 
-describe('maskSensitiveData', () => {
-  test('masks password in object', () => {
+void describe('maskSensitiveData', () => {
+  void test('masks password in object', () => {
     const input = { username: 'user', password: TEST_PASSWORDS.secret }
     const masked = maskSensitiveData(input)
-    assert.equal(masked.password?.includes('*'), true)
-    assert.equal(masked.username, 'user')
+    assert.ok(typeof masked === 'object' && masked !== null)
+    const maskedObj = masked as { username: string; password: string }
+    assert.equal(typeof maskedObj.password === 'string' && maskedObj.password.includes('*'), true)
+    assert.equal(maskedObj.username, 'user')
   })
 
-  test('masks nested sensitive data', () => {
+  void test('masks nested sensitive data', () => {
     const input = {
       user: {
         credentials: {
@@ -90,12 +92,21 @@ describe('maskSensitiveData', () => {
       },
     }
     const masked = maskSensitiveData(input)
-    assert.equal(masked.user?.credentials?.password?.includes('*'), true)
+    assert.ok(typeof masked === 'object' && masked !== null)
+    const maskedObj = masked as {
+      user: {
+        credentials: {
+          password: string
+        }
+      }
+    }
+    assert.ok(typeof maskedObj.user.credentials.password === 'string')
+    assert.ok(maskedObj.user.credentials.password.includes('*'))
   })
 })
 
-describe('modifyHtml', () => {
-  test('injects config and modifies asset paths', () => {
+void describe('modifyHtml', () => {
+  void test('injects config and modifies asset paths', () => {
     const html = `
       <script src="script.js"></script>
       <script>window.webssh2Config = null;</script>
@@ -107,8 +118,8 @@ describe('modifyHtml', () => {
   })
 })
 
-describe('validateConfig', () => {
-  test('validates correct config', () => {
+void describe('validateConfig', () => {
+  void test('validates correct config', () => {
     const validConfig = {
       listen: {
         ip: TEST_IPS.ANY,
@@ -154,7 +165,7 @@ describe('validateConfig', () => {
     assert.doesNotThrow(() => validateConfig(validConfig))
   })
 
-  test('throws on missing required fields', () => {
+  void test('throws on missing required fields', () => {
     const invalidConfig = {
       listen: { ip: TEST_IPS.ANY }, // missing required port
       http: { origins: [] },
@@ -177,7 +188,7 @@ describe('validateConfig', () => {
     assert.throws(() => validateConfig(invalidConfig))
   })
 
-  test('throws on invalid field types', () => {
+  void test('throws on invalid field types', () => {
     const invalidTypeConfig = {
       listen: {
         ip: 123, // should be string
@@ -219,17 +230,17 @@ describe('validateConfig', () => {
         name: [], // should be string
       },
     }
-    assert.throws(() => validateConfig(invalidTypeConfig as any))
+    assert.throws(() => validateConfig(invalidTypeConfig as unknown))
   })
 })
 
-describe('validateSshTerm', () => {
-  test('validates legitimate terminal types', () => {
+void describe('validateSshTerm', () => {
+  void test('validates legitimate terminal types', () => {
     assert.equal(validateSshTerm('xterm'), 'xterm')
     assert.equal(validateSshTerm(TERMINAL.TYPE), TERMINAL.TYPE)
   })
 
-  test('returns null for invalid terminal strings', () => {
+  void test('returns null for invalid terminal strings', () => {
     assert.equal(validateSshTerm('<script>alert(1)</script>'), null)
     assert.equal(validateSshTerm(''), null)
   })

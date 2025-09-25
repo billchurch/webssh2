@@ -282,8 +282,8 @@ export const TEST_PORTS = {
   sshServer: 2289,
   alternateWebssh2: 2290,
   // E2E test ports (different to avoid conflicts)
-  e2eWeb: Number(process.env.E2E_WEB_PORT || 4444),
-  e2eSsh: Number(process.env.E2E_SSH_PORT || 4422),
+  e2eWeb: Number(process.env.E2E_WEB_PORT ?? 4444),
+  e2eSsh: Number(process.env.E2E_SSH_PORT ?? 4422),
   clientDev: 3000
 } as const
 

@@ -12,7 +12,7 @@ import {
 } from '../../../app/routes/session-handler.js'
 import { TEST_PASSWORDS } from '../../test-constants.js'
 
-describe('createSessionCredentials', () => {
+void describe('createSessionCredentials', () => {
   it('creates credentials with all fields', () => {
     const result = createSessionCredentials(
       'host.com',
@@ -61,7 +61,7 @@ describe('createSessionCredentials', () => {
   })
 })
 
-describe('createPostAuthSession', () => {
+void describe('createPostAuthSession', () => {
   it('creates session with POST auth method', () => {
     const credentials = {
       host: 'host.com',
@@ -79,7 +79,7 @@ describe('createPostAuthSession', () => {
   })
 })
 
-describe('getAuthRelatedKeys', () => {
+void describe('getAuthRelatedKeys', () => {
   it('identifies SSH-related keys', () => {
     const keys = [
       'sshCredentials',
@@ -111,7 +111,7 @@ describe('getAuthRelatedKeys', () => {
   })
 })
 
-describe('getReauthClearKeys', () => {
+void describe('getReauthClearKeys', () => {
   it('returns standard reauth keys', () => {
     const result = getReauthClearKeys()
     
@@ -123,7 +123,7 @@ describe('getReauthClearKeys', () => {
   })
 })
 
-describe('hasValidSessionCredentials', () => {
+void describe('hasValidSessionCredentials', () => {
   it('validates complete credentials', () => {
     const session: SessionData = {
       sshCredentials: {
@@ -163,7 +163,7 @@ describe('hasValidSessionCredentials', () => {
   })
 })
 
-describe('mergeSessionData', () => {
+void describe('mergeSessionData', () => {
   it('merges session updates', () => {
     const existing: SessionData = {
       sshCredentials: {

@@ -1,3 +1,5 @@
+/* eslint-env browser */
+/* global document, getComputedStyle */
 /**
  * Shared V2 helper functions for Playwright tests
  * Centralizes common V2-specific test operations
@@ -16,8 +18,8 @@ export async function waitForV2Terminal(page: Page, timeout = TIMEOUTS.CONNECTIO
 
   // Wait for terminal to be actually interactive
   await page.waitForFunction(() => {
-    const textarea = document.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null
-    return textarea && !textarea.disabled &&
+    const textarea = document.querySelector('.xterm-helper-textarea')
+    return textarea !== null && textarea !== undefined && !textarea.disabled &&
            getComputedStyle(textarea).visibility !== 'hidden' &&
            getComputedStyle(textarea).display !== 'none'
   }, { timeout })
@@ -43,7 +45,7 @@ export async function waitForV2Connection(page: Page, timeout = TIMEOUTS.CONNECT
 export async function waitForV2Prompt(page: Page, timeout = TIMEOUTS.PROMPT_WAIT): Promise<void> {
   await page.waitForFunction(
     () => {
-      const terminalContent = document.querySelector('.xterm-screen')?.textContent || ''
+      const terminalContent = document.querySelector('.xterm-screen')?.textContent ?? ''
       // Look for shell prompt patterns
       return /[$#%>]\s*$/.test(terminalContent) ||
              /testuser@.*[$#%>]/.test(terminalContent) ||
@@ -73,7 +75,7 @@ export async function verifyV2TerminalFunctionality(page: Page, username: string
   // Wait for username to appear in terminal
   await page.waitForFunction(
     (expectedUser: string) => {
-      const content = document.querySelector('.xterm-screen')?.textContent || ''
+      const content = document.querySelector('.xterm-screen')?.textContent ?? ''
       return content.includes(expectedUser)
     },
     username,
@@ -84,7 +86,7 @@ export async function verifyV2TerminalFunctionality(page: Page, username: string
 
   await page.waitForFunction(
     () => {
-      const content = document.querySelector('.xterm-screen')?.textContent || ''
+      const content = document.querySelector('.xterm-screen')?.textContent ?? ''
       return content.includes('V2 test successful')
     },
     { timeout: TIMEOUTS.CONNECTION }
@@ -97,7 +99,7 @@ export async function verifyV2TerminalFunctionality(page: Page, username: string
 export async function waitForCommandOutput(page: Page, expectedOutput: string, timeout = TIMEOUTS.CONNECTION): Promise<void> {
   await page.waitForFunction(
     (expected: string) => {
-      const content = document.querySelector('.xterm-screen')?.textContent || ''
+      const content = document.querySelector('.xterm-screen')?.textContent ?? ''
       return content.includes(expected)
     },
     expectedOutput,
@@ -109,7 +111,7 @@ export async function waitForCommandOutput(page: Page, expectedOutput: string, t
  * Gets the current terminal content
  */
 export async function getTerminalContent(page: Page): Promise<string> {
-  return await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')
+  return page.evaluate(() => document.querySelector('.xterm-screen')?.textContent ?? '')
 }
 
 /**

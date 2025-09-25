@@ -11,7 +11,7 @@ import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from '
 // Ensure clean state at module load
 resetConfigForTesting()
 
-describe('Config Module - Async Tests', () => {
+void describe('Config Module - Async Tests', () => {
   let testEnv: ReturnType<typeof setupTestEnvironment>
 
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('Config Module - Async Tests', () => {
     testEnv.cleanup()
   })
 
-  test('loadConfigAsync loads default config when config.json is missing', async () => {
+  void test('loadConfigAsync loads default config when config.json is missing', async () => {
     const configManager = testEnv.configManager!
     // Ensure config.json doesn't exist
     if (configManager.configExists()) {
@@ -39,10 +39,10 @@ describe('Config Module - Async Tests', () => {
     assert.equal(config.ssh.port, 22)
     assert.equal(config.ssh.term, 'xterm-color')
     assert.equal(config.session.name, 'webssh2.sid')
-    assert.ok(config.session.secret)
+    assert.ok(typeof config.session.secret === 'string' && config.session.secret !== '')
   })
 
-  test('loadConfigAsync loads and merges custom config from config.json', async () => {
+  void test('loadConfigAsync loads and merges custom config from config.json', async () => {
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port1
@@ -70,7 +70,7 @@ describe('Config Module - Async Tests', () => {
     assert.equal(config.ssh.term, 'xterm-color')
   })
 
-  test('loadConfigAsync overrides port with PORT environment variable', async () => {
+  void test('loadConfigAsync overrides port with PORT environment variable', async () => {
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port1
@@ -85,22 +85,22 @@ describe('Config Module - Async Tests', () => {
     assert.equal(config.listen.port, 4444)
   })
 
-  test('loadConfigAsync throws error for malformed JSON', async () => {
+  void test('loadConfigAsync throws error for malformed JSON', async () => {
     // Write invalid JSON
     fs.writeFileSync(testEnv.configManager!.configPath, '{ invalid json }')
 
     // Should throw ConfigError for malformed JSON
     await assert.rejects(
-      async () => await loadConfigAsync(),
+      async () => loadConfigAsync(),
       (err: Error) => {
         assert(err instanceof ConfigError)
-        assert(err.message.includes('Configuration validation failed'))
+        assert((err as Error).message.includes('Configuration validation failed'))
         return true
       }
     )
   })
 
-  test('getConfig returns the same config instance on multiple calls', async () => {
+  void test('getConfig returns the same config instance on multiple calls', async () => {
     const config1 = await getConfig()
     const config2 = await getConfig()
 
@@ -108,7 +108,7 @@ describe('Config Module - Async Tests', () => {
     assert.ok(typeof config1.getCorsConfig === 'function')
   })
 
-  test('getConfig works with custom configuration file', async () => {
+  void test('getConfig works with custom configuration file', async () => {
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port2
@@ -125,11 +125,11 @@ describe('Config Module - Async Tests', () => {
     const config = await getConfig()
 
     assert.equal(config.listen.port, TEST_CUSTOM_PORTS.port2)
-    assert.ok(config.ssh.algorithms?.cipher?.includes('aes256-gcm@openssh.com'))
+    assert.ok(config.ssh.algorithms.cipher.includes('aes256-gcm@openssh.com') === true)
     assert.ok(typeof config.getCorsConfig === 'function')
   })
 
-  test('async config loading uses literal JSON values (no env var substitution)', async () => {
+  void test('async config loading uses literal JSON values (no env var substitution)', async () => {
     // Native JSON parsing doesn't support environment variable substitution
     // This tests that literal values are preserved
     process.env.TEST_SECRET = TEST_SECRET_LONG
@@ -152,7 +152,7 @@ describe('Config Module - Async Tests', () => {
     }
   })
 
-  test('async config loading validates configuration schema', async () => {
+  void test('async config loading validates configuration schema', async () => {
     const validConfig = {
       listen: {
         ip: TEST_IPS.LOCALHOST,
@@ -174,7 +174,7 @@ describe('Config Module - Async Tests', () => {
     assert.equal(config.ssh.term, 'xterm-256color')
   })
 
-  test('async config preserves all SSH algorithms', async () => {
+  void test('async config preserves all SSH algorithms', async () => {
     const customConfig = {
       ssh: {
         algorithms: {
@@ -189,17 +189,17 @@ describe('Config Module - Async Tests', () => {
 
     const config = await loadConfigAsync()
 
-    assert.ok(config.ssh.algorithms?.cipher?.includes('aes256-gcm@openssh.com'))
-    assert.ok(config.ssh.algorithms?.cipher?.includes('aes128-ctr'))
-    assert.ok(config.ssh.algorithms?.kex?.includes('ecdh-sha2-nistp256'))
-    assert.ok(config.ssh.algorithms?.hmac?.includes('hmac-sha2-512'))
+    assert.ok(config.ssh.algorithms.cipher.includes('aes256-gcm@openssh.com') === true)
+    assert.ok(config.ssh.algorithms.cipher.includes('aes128-ctr') === true)
+    assert.ok(config.ssh.algorithms.kex.includes('ecdh-sha2-nistp256') === true)
+    assert.ok(config.ssh.algorithms.hmac.includes('hmac-sha2-512') === true)
     
     // Should still have other default algorithms
-    assert.ok(config.ssh.algorithms?.serverHostKey && config.ssh.algorithms.serverHostKey.length > 0)
-    assert.ok(config.ssh.algorithms?.compress && config.ssh.algorithms.compress.length > 0)
+    assert.ok(config.ssh.algorithms.serverHostKey.length > 0)
+    assert.ok(config.ssh.algorithms.compress.length > 0)
   })
 
-  test('concurrent calls to getConfig return the same instance', async () => {
+  void test('concurrent calls to getConfig return the same instance', async () => {
     const customConfig = {
       listen: { port: TEST_CUSTOM_PORTS.port3 }
     }

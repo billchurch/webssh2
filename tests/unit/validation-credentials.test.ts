@@ -9,9 +9,9 @@ import {
 } from '../../app/validation/credentials.js'
 import { TEST_PASSWORDS, TEST_PASSPHRASE, TEST_PRIVATE_KEY, TEST_IPS } from '../test-constants.js'
 
-describe('Credential Validation Functions', () => {
-  describe('isValidCredentials', () => {
-    it('should accept valid credentials with password', () => {
+void describe('Credential Validation Functions', () => {
+  void describe('isValidCredentials', () => {
+    void it('should accept valid credentials with password', () => {
       const creds: Credentials = {
         username: 'user',
         host: 'example.com',
@@ -21,7 +21,7 @@ describe('Credential Validation Functions', () => {
       assert.equal(isValidCredentials(creds), true)
     })
 
-    it('should accept valid credentials with private key', () => {
+    void it('should accept valid credentials with private key', () => {
       const creds: Credentials = {
         username: 'user',
         host: TEST_IPS.PRIVATE_192,
@@ -31,7 +31,7 @@ describe('Credential Validation Functions', () => {
       assert.equal(isValidCredentials(creds), true)
     })
 
-    it('should accept credentials with both password and key', () => {
+    void it('should accept credentials with both password and key', () => {
       const creds: Credentials = {
         username: 'user',
         host: 'host.local',
@@ -43,7 +43,7 @@ describe('Credential Validation Functions', () => {
       assert.equal(isValidCredentials(creds), true)
     })
 
-    it('should reject missing required fields', () => {
+    void it('should reject missing required fields', () => {
       assert.equal(isValidCredentials(undefined), false)
       assert.equal(isValidCredentials({}), false)
       assert.equal(isValidCredentials({ username: 'user' }), false)
@@ -55,9 +55,9 @@ describe('Credential Validation Functions', () => {
       }), false) // No auth method
     })
 
-    it('should reject invalid field types', () => {
+    void it('should reject invalid field types', () => {
       assert.equal(isValidCredentials({
-        username: 123 as any,
+        username: 123 as unknown as string,
         host: 'host',
         port: 22,
         password: TEST_PASSWORDS.basic
@@ -66,14 +66,14 @@ describe('Credential Validation Functions', () => {
       assert.equal(isValidCredentials({
         username: 'user',
         host: 'host',
-        port: '22' as any,
+        port: '22' as unknown as number,
         password: TEST_PASSWORDS.basic
       }), false)
     })
   })
 
-  describe('validateCredentialFormat', () => {
-    it('should validate correct credential format', () => {
+  void describe('validateCredentialFormat', () => {
+    void it('should validate correct credential format', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',
@@ -84,7 +84,7 @@ describe('Credential Validation Functions', () => {
       assert.equal(result.errors.length, 0)
     })
 
-    it('should detect missing username', () => {
+    void it('should detect missing username', () => {
       const result = validateCredentialFormat({
         host: 'example.com',
         port: 22,
@@ -94,7 +94,7 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('Username')))
     })
 
-    it('should detect empty username', () => {
+    void it('should detect empty username', () => {
       const result = validateCredentialFormat({
         username: '',
         host: 'example.com',
@@ -105,7 +105,7 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('empty')))
     })
 
-    it('should detect missing host', () => {
+    void it('should detect missing host', () => {
       const result = validateCredentialFormat({
         username: 'user',
         port: 22,
@@ -115,7 +115,7 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('Host')))
     })
 
-    it('should detect invalid port', () => {
+    void it('should detect invalid port', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',
@@ -126,7 +126,7 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('Port')))
     })
 
-    it('should detect missing authentication', () => {
+    void it('should detect missing authentication', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',
@@ -136,13 +136,13 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('password or privateKey')))
     })
 
-    it('should validate non-object input', () => {
+    void it('should validate non-object input', () => {
       const result = validateCredentialFormat('not an object')
       assert.equal(result.valid, false)
       assert.ok(result.errors.some(e => e.includes('must be an object')))
     })
 
-    it('should validate passphrase type', () => {
+    void it('should validate passphrase type', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',
@@ -153,7 +153,7 @@ describe('Credential Validation Functions', () => {
       assert.ok(result.errors.some(e => e.includes('Passphrase')))
     })
 
-    it('should allow optional passphrase', () => {
+    void it('should allow optional passphrase', () => {
       const result = validateCredentialFormat({
         username: 'user',
         host: 'example.com',

@@ -66,7 +66,7 @@ describe('SessionService', () => {
       const result = sessionService.create(params)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value.state).toBe(mockState)
         expect(result.value.createdAt).toBe(mockState.metadata.createdAt)
         expect(result.value.updatedAt).toBe(mockState.metadata.updatedAt)
@@ -92,7 +92,7 @@ describe('SessionService', () => {
       const result = sessionService.create(params)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value.id).toBe(sessionId)
         expect(result.value.state).toBe(mockState)
       }
@@ -116,7 +116,7 @@ describe('SessionService', () => {
       const result = sessionService.create(params)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         // UUID v4 format
         expect(result.value.id).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/)
       }
@@ -152,7 +152,7 @@ describe('SessionService', () => {
       const result = sessionService.get(sessionId)
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value).toBeNull()
       }
     })
@@ -328,7 +328,7 @@ describe('SessionService', () => {
       const result = sessionService.list()
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value).toHaveLength(3)
         expect(result.value[0].id).toBe(sessionIds[0])
         expect(result.value[1].id).toBe(sessionIds[1])
@@ -342,7 +342,7 @@ describe('SessionService', () => {
       const result = sessionService.list()
 
       expect(result.ok).toBe(true)
-      if (result.ok) {
+      if (result.ok === true) {
         expect(result.value).toEqual([])
       }
     })

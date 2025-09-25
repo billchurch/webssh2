@@ -37,17 +37,24 @@ const createKeyboardInteractiveTest = (
   })
 }
 
+interface KeyboardInteractiveEventData {
+  name: string
+  instructions: string
+  instructionsLang: string
+  prompts: KeyboardInteractivePrompt[]
+}
+
 const expectKeyboardInteractiveEvent = (
   client: MockSSHClient
-): Promise<any> => {
-  return new Promise<any>((resolve) => {
+): Promise<KeyboardInteractiveEventData> => {
+  return new Promise<KeyboardInteractiveEventData>((resolve) => {
     client.on('keyboard-interactive', resolve)
   })
 }
 
 // Mock SSH2 connection
 class MockConnection extends EventEmitter {
-  shell = vi.fn((callback: (err: Error | null, stream?: any) => void) => {
+  shell = vi.fn((callback: (err: Error | null, stream?: unknown) => void) => {
     const stream = new EventEmitter()
     callback(null, stream)
     return stream
@@ -55,7 +62,7 @@ class MockConnection extends EventEmitter {
   
   end = vi.fn()
   
-  on(event: string, listener: (...args: any[]) => void): this {
+  on(event: string, listener: (...args: unknown[]) => void): this {
     super.on(event, listener)
     return this
   }
@@ -71,8 +78,14 @@ class MockSSHClient extends EventEmitter {
     this.conn = new MockConnection()
     
     // Set up keyboard-interactive handler like in app/ssh.ts
-    this.conn.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
-      const password = this.creds?.password
+    this.conn.on('keyboard-interactive', (
+      name: string,
+      instructions: string,
+      instructionsLang: string,
+      prompts: KeyboardInteractivePrompt[] | null,
+      finish: ((responses: string[]) => void) | undefined
+    ) => {
+      const password = this.creds.password
 
       if (password != null && typeof password === 'string' && Array.isArray(prompts)) {
         const responses: string[] = []
@@ -91,7 +104,7 @@ class MockSSHClient extends EventEmitter {
     })
   }
   
-  connect(creds: { username: string; password?: string }) {
+  connect(creds: { username: string; password?: string }): void {
     this.creds = creds
     // Simulate connection and keyboard-interactive auth flow
     setImmediate(() => {
@@ -155,9 +168,9 @@ describe('Keyboard-Interactive Authentication', () => {
     const responsePromise = createKeyboardInteractiveTest(client, {
       instructions: 'Please enter your password'
     })
-    
+
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])
-    
+
     expect(eventData.name).toBe('SSH Server')
     expect(eventData.prompts).toHaveLength(1)
     expect(responses).toHaveLength(0)
@@ -267,16 +280,16 @@ describe('Keyboard-Interactive Authentication', () => {
     // Set password to non-string value
     client.creds = {
       username: TEST_USERNAME,
-      password: 123 as any // Invalid type
+      password: 123 as unknown as string // Invalid type for testing
     }
     
     const eventPromise = expectKeyboardInteractiveEvent(client)
     const responsePromise = createKeyboardInteractiveTest(client, {
       instructions: 'Enter password'
     })
-    
+
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])
-    
+
     expect(eventData.name).toBe('SSH Server')
     expect(responses).toHaveLength(0)
   })
@@ -294,7 +307,7 @@ describe('Keyboard-Interactive Authentication', () => {
         'Test',
         'en',
         [{ prompt: 'Password: ', echo: false }],
-        'not-a-function' as any
+        'not-a-function' as unknown
       )
     }).not.toThrow()
   })
@@ -337,9 +350,9 @@ describe('Keyboard-Interactive Auth Regression Tests', () => {
       instructions: 'Manual authentication required',
       prompts: [{ prompt: 'Token: ', echo: true }]
     })
-    
+
     const [eventData, responses] = await Promise.all([eventPromise, responsePromise])
-    
+
     // Without password, should emit event but still call finish
     expect(responses).toHaveLength(0)
     expect(eventData).toBeDefined()

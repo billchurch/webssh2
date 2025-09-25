@@ -9,8 +9,8 @@ import {
 } from '../dist/app/auth/auth-utils.js'
 import { TEST_PASSWORDS } from './test-constants.js'
 
-test('processHeaderParameters sets session overrides from GET-like source', () => {
-  const session: any = {}
+void test('processHeaderParameters sets session overrides from GET-like source', () => {
+  const session: { headerOverride?: { text: string; background: string; style: string } } = {}
   processHeaderParameters(
     { header: 'Hello', headerBackground: 'blue', headerStyle: 'color: white' },
     session
@@ -22,14 +22,17 @@ test('processHeaderParameters sets session overrides from GET-like source', () =
   })
 })
 
-test('processEnvironmentVariables parses env var string into session.envVars', () => {
-  const session: any = {}
+void test('processEnvironmentVariables parses env var string into session.envVars', () => {
+  const session: { envVars?: Record<string, string> } = {}
   processEnvironmentVariables({ env: 'FOO:bar,BAZ:qux' }, session)
   assert.deepStrictEqual(session.envVars, { FOO: 'bar', BAZ: 'qux' })
 })
 
-test('setupSshCredentials sets and masks credentials', () => {
-  const session: any = {}
+void test('setupSshCredentials sets and masks credentials', () => {
+  const session: {
+    usedBasicAuth?: boolean
+    sshCredentials?: { host: string; port: number; username: string }
+  } = {}
   const sanitized = setupSshCredentials(session, {
     host: 'example.com',
     port: 22,
@@ -45,8 +48,12 @@ test('setupSshCredentials sets and masks credentials', () => {
   assert.notStrictEqual(JSON.stringify(sanitized).includes(TEST_PASSWORDS.secret), true)
 })
 
-test('processSessionRecordingParams toggles replay and sets extras', () => {
-  const session: any = {}
+void test('processSessionRecordingParams toggles replay and sets extras', () => {
+  const session: {
+    allowReplay?: boolean
+    mrhSession?: string
+    readyTimeout?: number
+  } = {}
   processSessionRecordingParams(
     { allowreplay: 'true', mrhsession: 'abc', readyTimeout: '3000' },
     session

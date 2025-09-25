@@ -13,7 +13,7 @@ import {
 import { TEST_PASSWORDS } from '../test-constants.js'
 
 describe('Socket V2 Exec Handler', () => {
-  let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, MockSSHConnection: unknown
 
   beforeEach(() => {
     io = createMockIO()
@@ -26,7 +26,7 @@ describe('Socket V2 Exec Handler', () => {
   })
 
   it('should handle exec requests and emit typed output and exit', async () => {
-    const connectionHandler = (io.on as any).mock.calls[0].arguments[1]
+    const connectionHandler = (io.on).mock.calls[0].arguments[1]
 
     // Configure session to auto-authenticate on connect
     mockSocket = createMockSocket({
@@ -46,7 +46,7 @@ describe('Socket V2 Exec Handler', () => {
     await new Promise((resolve) => setImmediate(resolve))
 
     // Store calls for verification
-    const emittedEvents: Array<{ event: string; payload?: any }> = []
+    const emittedEvents: Array<{ event: string; payload?: unknown }> = []
 
     // Create a promise to wait for exec stream events
     const execEventsPromise = new Promise<void>((resolve) => {
@@ -102,8 +102,8 @@ describe('Socket V2 Exec Handler', () => {
       .filter(e => e.event === 'exec-data')
       .map(e => e.payload)
 
-    expect(typedPayloads.some((p: any) => p?.type === 'stdout' && /OUT:echo 123/.test(p?.data))).toBe(true)
-    expect(typedPayloads.some((p: any) => p?.type === 'stderr' && /ERR:warn/.test(p?.data))).toBe(true)
+    expect(typedPayloads.some((p: unknown) => p?.type === 'stdout' && /OUT:echo 123/.test(p?.data))).toBe(true)
+    expect(typedPayloads.some((p: unknown) => p?.type === 'stderr' && /ERR:warn/.test(p?.data))).toBe(true)
 
     const exitPayloads = emittedEvents
       .filter(e => e.event === 'exec-exit')
@@ -112,7 +112,7 @@ describe('Socket V2 Exec Handler', () => {
   })
 
   it('should emit error when exec payload is invalid', async () => {
-    const connectionHandler = (io.on as any).mock.calls[0].arguments[1]
+    const connectionHandler = (io.on).mock.calls[0].arguments[1]
 
     mockSocket = createMockSocket({
       usedBasicAuth: true,
@@ -134,7 +134,7 @@ describe('Socket V2 Exec Handler', () => {
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { })
     await new Promise((resolve) => setImmediate(resolve))
 
-    const ssherrorEmits = (mockSocket.emit as any).mock.calls.filter((c: any) => c.arguments[0] === 'ssherror')
+    const ssherrorEmits = (mockSocket.emit).mock.calls.filter((c: unknown) => c.arguments[0] === 'ssherror')
     expect(ssherrorEmits.length).toBeGreaterThan(0)
   })
 })
