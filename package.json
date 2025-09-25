@@ -54,7 +54,7 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "node dist/index.js",
-    "lint": "eslint app tests",
+    "lint": "eslint app",
     "lint:fix": "eslint app --fix",
     "lint:tests": "eslint tests --fix",
     "lint:fix:strict": "eslint 'app/**/*.ts' --fix --rule '@typescript-eslint/prefer-nullish-coalescing:warn' --rule '@typescript-eslint/no-unnecessary-condition:warn'",
