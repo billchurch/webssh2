@@ -1,12 +1,20 @@
 // tests/unit/socket-v2-test-utils.ts
-// Shared test utilities for socket-v2 tests
+// Shared test utilities for socket-v2 tests - Vitest specific
 
 import { vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
+import { DEFAULTS } from '../../app/constants.js'
+
+// Re-export common utilities from main test-utils
+export {
+  createMockSocket as createBaseMockSocket,
+  createMockIO as createBaseMockIO,
+  createMockSocketConfig
+} from '../test-utils.js'
 
 /**
- * Sets up an authenticated socket for testing
+ * Sets up an authenticated socket for testing (Vitest version)
  */
 export const setupAuthenticatedSocket = async (io: any, mockSocket: any) => {
   const onConn = (io.on as any).mock.calls[0][1]
@@ -20,7 +28,7 @@ export const setupAuthenticatedSocket = async (io: any, mockSocket: any) => {
 }
 
 /**
- * Tracks events emitted by the socket
+ * Tracks events emitted by the socket (Vitest version)
  */
 export const trackEmittedEvents = (mockSocket: any) => {
   const emittedEvents: Array<{ event: string; payload?: any }> = []
@@ -42,7 +50,7 @@ export const waitForAsync = async (iterations = 1) => {
 }
 
 /**
- * Creates a mock socket for testing
+ * Creates a mock socket for Vitest testing
  */
 export const createMockSocket = (id = 'test-socket-id') => {
   const mockSocket = new EventEmitter() as any
@@ -61,7 +69,7 @@ export const createMockSocket = (id = 'test-socket-id') => {
 }
 
 /**
- * Creates a mock IO instance for testing
+ * Creates a mock IO instance for Vitest testing
  */
 export const createMockIO = () => {
   const io = new EventEmitter() as any
@@ -73,8 +81,18 @@ export const createMockIO = () => {
  * Creates default mock config for testing
  */
 export const createMockConfig = () => ({
-  ssh: { term: 'xterm-color', disableInteractiveAuth: false },
-  options: { allowReauth: true, allowReplay: true, allowReconnect: true },
+  ssh: {
+    term: DEFAULTS.SSH_TERM,
+    disableInteractiveAuth: false,
+    readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
+    keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
+    keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX
+  },
+  options: {
+    allowReauth: true,
+    allowReplay: true,
+    allowReconnect: true
+  },
   user: {},
   header: null
 })

@@ -263,50 +263,38 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
 
   // Validate required fields
   const usernameResult = validateStringField(creds, 'username', true, 'Username is required and must be a non-empty string')
-  if (usernameResult.ok) {
-    // Continue with other validations
-  } else {
+  if (!usernameResult.ok) {
     return usernameResult as Result<AuthCredentials>
   }
 
   const hostResult = validateStringField(creds, 'host', true, 'Host is required and must be a non-empty string')
-  if (hostResult.ok) {
-    // Continue with other validations
-  } else {
+  if (!hostResult.ok) {
     return hostResult as Result<AuthCredentials>
   }
 
   // Validate port
-  const port = creds['port'] != null
-    ? validatePort(creds['port'])
-    : { ok: true, value: 22 } as Result<number>
-  if (port.ok) {
-    // Continue with other validations
-  } else {
-    return port as Result<AuthCredentials>
+  const portResult = creds['port'] != null ? validatePort(creds['port']) : { ok: true, value: 22 } as Result<number>
+  if (!portResult.ok) {
+    return portResult as Result<AuthCredentials>
   }
 
   // Validate all optional string fields at once
   const optionalStrings = validateOptionalFields(creds, ['password', 'privateKey', 'passphrase', 'term'])
-  if (optionalStrings.ok) {
-    // Continue with other validations
-  } else {
+  if (!optionalStrings.ok) {
     return optionalStrings as Result<AuthCredentials>
   }
 
   // Validate optional dimensions
   const optionalDimensions = validateOptionalDimensions(creds, ['cols', 'rows'])
-  if (optionalDimensions.ok) {
-    // Continue with building validated credentials
-  } else {
+  if (!optionalDimensions.ok) {
     return optionalDimensions as Result<AuthCredentials>
   }
 
-  // Build validated credentials
+  // Build validated credentials - all results are guaranteed to be ok here
   const validated: AuthCredentials = {
     username: (usernameResult.value as string).trim(),
     host: (hostResult.value as string).trim(),
-    port: port.value
+    port: portResult.value
   }
 
   // Add optional fields if present

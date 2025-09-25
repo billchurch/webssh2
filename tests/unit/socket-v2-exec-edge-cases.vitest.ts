@@ -12,6 +12,7 @@ import {
   trackEmittedEvents,
   waitForAsync
 } from './socket-v2-test-utils.js'
+import { createMockSSHConnection } from '../test-utils.js'
 
 describe('Socket V2 Exec Edge Cases', () => {
   let io: any, mockSocket: any, mockConfig: any, MockSSHConnection: any
@@ -21,24 +22,12 @@ describe('Socket V2 Exec Edge Cases', () => {
     mockSocket = createMockSocket('neg-exec-more')
     mockConfig = createMockConfig()
 
-    class SSH extends EventEmitter {
-      async connect() { return }
-      async shell() { const s: any = new EventEmitter(); s.write = () => {}; return s }
-      async exec(_cmd: string, _options: any) {
-        const s: any = new EventEmitter()
-        s.stderr = new EventEmitter()
-        process.nextTick(() => {
-          s.emit('data', Buffer.from('X'))
-          s.stderr.emit('data', Buffer.from('E'))
-          s.emit('close', 0, null)
-        })
-        return s
-      }
-      end(): void {
-        // no-op - mock connection cleanup
-      }
-    }
-    MockSSHConnection = SSH
+    // Use shared mock SSH connection with exec methods
+    MockSSHConnection = createMockSSHConnection({
+      withExecMethods: true,
+      connectResolves: true,
+      shellResolves: true
+    })
 
     socketHandler(io, mockConfig, MockSSHConnection)
   })
