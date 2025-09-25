@@ -88,10 +88,7 @@ class MockSSHClient extends EventEmitter {
       const password = this.creds.password
 
       if (password != null && typeof password === 'string' && Array.isArray(prompts)) {
-        const responses: string[] = []
-        for (let i = 0; i < prompts.length; i++) {
-          responses.push(password)
-        }
+        const responses: string[] = prompts.map(() => password)
         if (typeof finish === 'function') {
           finish(responses)
         }

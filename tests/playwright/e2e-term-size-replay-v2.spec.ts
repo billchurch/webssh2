@@ -162,44 +162,78 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Get initial size
     await executeV2Command(page, 'stty size')
-    await page.waitForFunction(
-      () => {
-        const content = document.querySelector('.xterm-screen')?.textContent ?? ''
-        return /\b\d+\s+\d+\b/.test(content)
-      },
-      { timeout: TIMEOUTS.CONNECTION },
-    )
 
-    const initialOut = await page.evaluate(
-      () => document.querySelector('.xterm-screen')?.textContent ?? '',
-    )
-    const initialMatch = initialOut.match(/\b(\d+)\s+(\d+)\b/)
-    expect(initialMatch).toBeTruthy()
+    // Wait for output and check initial size
+    await page.waitForTimeout(1000)
+
+    // Try to get text content from the terminal rows instead
+    const getTerminalText = async (): Promise<string> => {
+      return page.evaluate(() => {
+        // Try different selectors to find the actual text content
+        const terminal = document.querySelector('.xterm')
+        const rows = terminal?.querySelector('.xterm-rows') as HTMLElement | null
+        const screen = terminal?.querySelector('.xterm-screen') as HTMLElement | null
+
+        // First try innerText which should give visible text
+        let text = rows?.innerText ?? screen?.innerText ?? ''
+
+        // Fallback to textContent if innerText is empty
+        if (text === '') {
+          text = rows?.textContent ?? screen?.textContent ?? ''
+        }
+
+        return text
+      })
+    }
+
+    const initialOut: string = await getTerminalText()
+    console.log('Initial terminal text:', initialOut)
+
+    // Extract size from output
+    const sizeMatches: RegExpMatchArray[] = [...initialOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
+    const initialSizeMatch: RegExpMatchArray | undefined = sizeMatches[sizeMatches.length - 1]
+
+    if (initialSizeMatch === undefined) {
+      throw new Error(`No initial size found in terminal output: ${initialOut.substring(0, 500)}`)
+    }
+
+    const initialSize: string = initialSizeMatch[0]
+    console.log('Initial size:', initialSize)
 
     // Resize browser window (this should trigger terminal resize in V2)
     await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
 
-    // Check size again
+    // Check size again (don't clear to preserve history)
     await executeV2Command(page, 'stty size')
-    const initialSize = initialMatch![0]
-    await page.waitForFunction(
-      (initialSizeValue) => {
-        const content = document.querySelector('.xterm-screen')?.textContent ?? ''
-        const lines = content.split('\\n')
-        // Look for a new stty output (different from initial)
-        return lines.some((line) => /\b\d+\s+\d+\b/.test(line) && !line.includes(initialSizeValue))
-      },
-      initialSize,
-      { timeout: TIMEOUTS.CONNECTION },
-    )
 
-    const newOut = await page.evaluate(
-      () => document.querySelector('.xterm-screen')?.textContent ?? '',
-    )
+    // Wait for command output
+    await page.waitForTimeout(1500)
 
-    // Should have terminal size output
-    expect(newOut).toMatch(/\b\d+\s+\d+\b/)
+    // Get the new content after resize
+    const newOut: string = await getTerminalText()
+    console.log('Terminal text after resize:', newOut)
+
+    // Find all size patterns in the output
+    const newSizeMatches: RegExpMatchArray[] = [...newOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
+    console.log('All size patterns found:', newSizeMatches.map((m: RegExpMatchArray) => m[0]))
+
+    // The last match should be our new size
+    const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches[newSizeMatches.length - 1]
+
+    if (lastSizeMatch === undefined) {
+      throw new Error(`No size found after resize. Terminal output: ${newOut.substring(0, 500)}`)
+    }
+
+    const newSize: string = lastSizeMatch[0]
+    console.log('New size:', newSize)
+
+    // Verify it's different from initial
+    expect(newSize).not.toBe(initialSize)
+
+    // Verify we got reasonable values (not 0 0)
+    expect(newSize).not.toBe('0 0')
+    expect(initialSize).not.toBe('0 0')
 
     await context.close()
   })
