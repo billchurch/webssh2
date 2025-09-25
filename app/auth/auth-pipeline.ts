@@ -18,7 +18,6 @@ const debug = createNamespacedDebug('auth-pipeline')
 
 // Re-export types for backward compatibility
 export type { AuthMethod, AuthProvider } from './providers/index.js'
-export { BasicAuthProvider, PostAuthProvider } from './providers/index.js'
 
 type ExtendedRequest = IncomingMessage & {
   session?: AuthSession

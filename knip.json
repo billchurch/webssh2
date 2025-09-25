@@ -1,0 +1,90 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{ts,mts,mjs}",
+        "app/app.ts"
+      ],
+      "project": [
+        "app/**/*.ts",
+        "!app/**/*.test.ts",
+        "!app/**/*.vitest.ts",
+        "!tests/**"
+      ],
+      "ignore": [
+        "dist/**",
+        "node_modules/**",
+        ".tsbuild/**",
+        "coverage/**",
+        "**/*.d.ts",
+        "app/config/index.ts",
+        "app/envConfig.ts",
+        "app/services/index.ts",
+        "app/routes/route-error-handler.ts",
+        "app/routes/route-validators.ts",
+        "app/routes/session-handler.ts",
+        "app/socket/connection-handler.ts",
+        "app/socket/credential-manager.ts",
+        "app/socket/exec-handler.ts",
+        "app/socket/shell-handler.ts",
+        "app/ssh/connection-factory.ts",
+        "app/utils/error-handling.ts",
+        "app/utils/type-coercion.ts",
+        "app/validation/session.ts",
+        "app/validators/exec-validate.ts",
+        "app/validators/execSchema.ts"
+      ],
+      "ignoreDependencies": [],
+      "playwright": {
+        "entry": [
+          "playwright.config.ts",
+          "tests/playwright/global-setup.ts",
+          "tests/playwright/global-teardown.ts"
+        ],
+        "config": ["playwright.config.ts"]
+      },
+      "vitest": {
+        "config": ["vitest.config.ts"],
+        "entry": ["tests/**/*.vitest.{ts,js}"]
+      },
+      "eslint": {
+        "config": ["eslint.config.mjs"]
+      },
+      "typescript": {
+        "config": [
+          "tsconfig.json",
+          "tsconfig.build.json",
+          "tsconfig.js-check.json"
+        ]
+      },
+      "node": {
+        "entry": [
+          "tests/**/*.test.{ts,js}",
+          "!tests/**/*.vitest.{ts,js}"
+        ]
+      }
+    }
+  },
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "optionalPeerDependencies": "error",
+    "unlisted": "error",
+    "binaries": "error",
+    "unresolved": "error",
+    "exports": "error",
+    "types": "error",
+    "nsExports": "error",
+    "classMembers": "error",
+    "duplicates": "error"
+  },
+  "exclude": [
+    "unresolved"
+  ],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  }
+}
