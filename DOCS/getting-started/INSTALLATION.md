@@ -106,10 +106,10 @@ See [Docker Setup Guide](./DOCKER.md) for advanced Docker configuration.
 
 ```bash
 # Install globally (coming soon)
-npm install -g webssh2
+npm install -g webssh2-server
 
 # Run
-webssh2
+webssh2-server
 ```
 
 **Note:** Global npm installation is planned for future releases.
