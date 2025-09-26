@@ -13,6 +13,8 @@
 * consolidate changelog to CHANGELOG.md ([f62b5e5](https://github.com/billchurch/webssh2/commit/f62b5e5031d9efda268c1481399bd46af5e5caf3))
 * replace custom basic-auth types with official package ([ab5a22f](https://github.com/billchurch/webssh2/commit/ab5a22faf4cbc2204959a0e506a7d9d596f2fae8)), closes [#405](https://github.com/billchurch/webssh2/issues/405)
 * update misleading config.json missing message ([#407](https://github.com/billchurch/webssh2/issues/407)) ([fae7d8a](https://github.com/billchurch/webssh2/commit/fae7d8a394e3361f7b69eeb7fd48dbe284a48ee6))
+* fix: add missing allowedSubnets field to SSH config, closes [#409](https://github.com/billchurch/webssh2/issues/409)
+* fix: handle keyboard-interactive auth to prevent timeout, closes [#409](https://github.com/billchurch/webssh2/issues/409)
 
 ## [2.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.0.0...webssh2-server-v2.0.0) (2025-09-15)
 
