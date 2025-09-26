@@ -50,23 +50,21 @@ void test('router registers expected paths and methods', () => {
     return path in byPath && byPath[path] !== undefined
   }
 
-  assert.ok(hasPath('/'), 'GET / present')
-  assert.ok(byPath['/']!.includes('get'))
+  // Helper to assert route exists with expected method
+  const assertRoute = (path: string, method: string): void => {
+    assert.ok(hasPath(path), `${method.toUpperCase()} ${path} present`)
+    // eslint-disable-next-line security/detect-object-injection
+    assert.ok(byPath[path]!.includes(method))
+  }
 
-  assert.ok(hasPath('/host/'), 'GET /host/ present')
-  assert.ok(byPath['/host/']!.includes('get'))
-
-  assert.ok(hasPath('/host/:host'), 'GET /host/:host present')
-  assert.ok(byPath['/host/:host']!.includes('get'))
+  assertRoute('/', 'get')
+  assertRoute('/host/', 'get')
+  assertRoute('/host/:host', 'get')
 
   // POST endpoints
-  assert.ok(hasPath('/'), 'POST / present')
-  assert.ok(byPath['/']!.includes('post'))
+  assertRoute('/', 'post')
 
   // Utility endpoints
-  assert.ok(hasPath('/clear-credentials'), 'GET /clear-credentials present')
-  assert.ok(byPath['/clear-credentials']!.includes('get'))
-
-  assert.ok(hasPath('/force-reconnect'), 'GET /force-reconnect present')
-  assert.ok(byPath['/force-reconnect']!.includes('get'))
+  assertRoute('/clear-credentials', 'get')
+  assertRoute('/force-reconnect', 'get')
 })

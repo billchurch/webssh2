@@ -21,7 +21,8 @@ import {
   fillFormDirectly,
   executeCommandsWithExpectedOutput,
   executeCommandList,
-  getTerminalContent
+  getTerminalContent,
+  testBasicAuthErrorResponse
 } from './v2-helpers.js'
 
 test.describe('V2 Async/Await Modal Login Authentication', () => {
@@ -159,37 +160,35 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
   })
 
   test('should handle async auth failure with invalid Basic Auth (V2)', async ({ page }) => {
-    // Use helper to build URL with invalid credentials
-    const url = buildBasicAuthUrl(
+    // Use helper to test Basic Auth with invalid credentials - expect 401
+    const response = await testBasicAuthErrorResponse(
+      page,
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.invalidUsername,
       TEST_CONFIG.invalidPassword,
       TEST_CONFIG.sshHost,
-      TEST_CONFIG.sshPort
+      TEST_CONFIG.sshPort,
+      401
     )
 
-    // Expect navigation to fail with 401
-    const response = await page.goto(url, { waitUntil: 'commit' })
-
-    expect(response?.status()).toBe(401)
+    // Verify WWW-Authenticate header for proper Basic Auth behavior
     const wwwAuthHeader = response?.headers()['www-authenticate']
     expect(wwwAuthHeader).toContain('Basic')
   })
 
   test('should return 502 for async connection with Basic Auth to non-existent host (V2)', async ({ page }) => {
-    // Use helper to build URL with non-existent host
-    const url = buildBasicAuthUrl(
+    // Use helper to test Basic Auth with non-existent host - expect 502
+    const response = await testBasicAuthErrorResponse(
+      page,
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.validUsername,
       TEST_CONFIG.validPassword,
       TEST_CONFIG.nonExistentHost,
-      TEST_CONFIG.sshPort
+      TEST_CONFIG.sshPort,
+      502
     )
 
-    // Expect 502 for network connectivity issues
-    const response = await page.goto(url, { waitUntil: 'commit' })
-
-    expect(response?.status()).toBe(502)
+    // Verify response body indicates connectivity issue
     const responseText = await response?.text()
     expect(responseText).toContain('Bad Gateway')
   })

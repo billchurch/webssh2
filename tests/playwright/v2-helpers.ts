@@ -5,7 +5,7 @@
  * Centralizes common V2-specific test operations
  */
 
-import type { Page } from '@playwright/test'
+import type { Page, Response } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { TIMEOUTS } from './constants.js'
 
@@ -247,4 +247,23 @@ export async function executeCommandList(page: Page, commands: string[]): Promis
       }
     }
   }
+}
+
+/**
+ * Tests Basic Auth error responses with expected status codes
+ * Used to reduce duplication in Basic Auth error testing scenarios
+ */
+export async function testBasicAuthErrorResponse(
+  page: Page,
+  baseUrl: string,
+  username: string,
+  password: string,
+  host: string,
+  port: string | number,
+  expectedStatus: number
+): Promise<Response | null> {
+  const url = buildBasicAuthUrl(baseUrl, username, password, host, port)
+  const response = await page.goto(url, { waitUntil: 'commit' })
+  expect(response?.status()).toBe(expectedStatus)
+  return response
 }

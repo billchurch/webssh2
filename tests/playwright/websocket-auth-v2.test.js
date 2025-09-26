@@ -14,11 +14,11 @@ import {
   waitForV2Prompt,
   checkForV2AuthError,
   connectV2,
-  buildBasicAuthUrl,
   connectWithBasicAuth,
   executeAndVerifyCommand,
   connectAndWaitForTerminal,
-  fillFormDirectly
+  fillFormDirectly,
+  testBasicAuthErrorResponse
 } from './v2-helpers.js'
 
 test.describe('V2 WebSocket Interactive Authentication', () => {
@@ -116,20 +116,16 @@ test.describe('V2 WebSocket Basic Authentication', () => {
   })
 
   test('should return 401 for invalid Basic Auth credentials', async ({ page }) => {
-    // Build URL with invalid credentials
-    const url = buildBasicAuthUrl(
+    // Use helper to test Basic Auth with invalid credentials - expect 401
+    const response = await testBasicAuthErrorResponse(
+      page,
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.invalidUsername,
       TEST_CONFIG.invalidPassword,
       TEST_CONFIG.sshHost,
-      TEST_CONFIG.sshPort
+      TEST_CONFIG.sshPort,
+      401
     )
-
-    // Expect navigation to fail with 401 due to immediate SSH validation
-    const response = await page.goto(url, { waitUntil: 'commit' })
-
-    // Verify we get a 401 Unauthorized response
-    expect(response?.status()).toBe(401)
 
     // Verify the WWW-Authenticate header is set for proper HTTP Basic Auth behavior
     const wwwAuthHeader = response?.headers()['www-authenticate']
@@ -137,20 +133,16 @@ test.describe('V2 WebSocket Basic Authentication', () => {
   })
 
   test('should return 502 for Basic Auth with non-existent host', async ({ page }) => {
-    // Build URL with non-existent host
-    const url = buildBasicAuthUrl(
+    // Use helper to test Basic Auth with non-existent host - expect 502
+    const response = await testBasicAuthErrorResponse(
+      page,
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.validUsername,
       TEST_CONFIG.validPassword,
       TEST_CONFIG.nonExistentHost,
-      TEST_CONFIG.sshPort
+      TEST_CONFIG.sshPort,
+      502
     )
-
-    // Expect navigation to fail with 502 Bad Gateway (network/connectivity issue)
-    const response = await page.goto(url, { waitUntil: 'commit' })
-
-    // Verify we get a 502 Bad Gateway response (SSH connection to non-existent host is a network issue)
-    expect(response?.status()).toBe(502)
 
     // Response body should indicate it's a connectivity issue
     const responseText = await response?.text()
