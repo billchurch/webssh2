@@ -16,6 +16,8 @@ export interface TerminalSettings {
   term?: string
   cols?: number
   rows?: number
+  cwd?: string
+  env?: Record<string, string>
 }
 
 // Client → Server: exec request

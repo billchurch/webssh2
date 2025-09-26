@@ -54,7 +54,7 @@ export function parseEnvValue(
     case 'boolean':
       return value === 'true' || value === '1'
     case 'number':
-      return parseInt(value, 10)
+      return Number.parseInt(value, 10)
     case 'array':
       return parseArrayValue(value)
     case 'string':
@@ -98,8 +98,8 @@ export function parseNumberEnv(
     return defaultValue
   }
   
-  const parsed = parseInt(value, 10)
-  if (isNaN(parsed)) {
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed)) {
     return defaultValue
   }
   

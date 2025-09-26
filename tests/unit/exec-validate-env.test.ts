@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { validateExecPayload } from '../../app/validators/exec-validate'
+import { validateExecPayload } from '../../app/socket/handlers/exec-handler.js'
 
-describe('validateExecPayload env handling', () => {
+void describe('validateExecPayload env handling', () => {
   it('accepts env as object with valid keys/values', () => {
     const out = validateExecPayload({ command: 'echo', env: { FOO: 'bar', BAR: 1 } })
     expect(out.env).toEqual({ FOO: 'bar', BAR: '1' })

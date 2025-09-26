@@ -54,3 +54,7 @@ client/public
 .vscode/settings.json
 
 dist/
+.migration/
+
+.regression/
+config.json.backup

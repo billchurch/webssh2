@@ -56,11 +56,17 @@
     "start": "node dist/index.js",
     "lint": "eslint app",
     "lint:fix": "eslint app --fix",
+    "lint:tests": "eslint tests --fix",
     "lint:fix:strict": "eslint 'app/**/*.ts' --fix --rule '@typescript-eslint/prefer-nullish-coalescing:warn' --rule '@typescript-eslint/no-unnecessary-condition:warn'",
     "dev": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "dev:ts": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "watch": "npm run dev",
-    "test": "npm run build && WEBSSH2_SKIP_NETWORK=1 npx tsx scripts/run-node-tests.mts",
+    "test": "npm run test:node && npm run test:vitest",
+    "test:node": "npm run build && WEBSSH2_SKIP_NETWORK=1 npx tsx scripts/run-node-tests.mts",
+    "test:vitest": "vitest run",
+    "test:vitest:watch": "vitest",
+    "test:vitest:coverage": "vitest run --coverage",
+    "test:quick": "vitest run",
     "test:js": "npm run build && WEBSSH2_SKIP_NETWORK=1 node scripts/run-node-tests.mjs",
     "test:ts": "npm run build && WEBSSH2_SKIP_NETWORK=1 npx tsx scripts/run-node-tests.mts",
     "check": "npm run lint && npm run typecheck && npm run test",
@@ -68,7 +74,9 @@
     "verify": "npm run check",
     "progress": "echo 'Migration progress script removed; see DOCS/CONSTANTS.md and ts-migration-progress.md if present.'",
     "test:all": "npm run build && WEBSSH2_SKIP_NETWORK=0 npx tsx scripts/run-node-tests.mts",
+    "test:all:with-network": "npm run build && WEBSSH2_SKIP_NETWORK=0 npx tsx scripts/run-node-tests.mts && npm run test:vitest",
     "test:e2e": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
+    "test:e2e:v1": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
     "test:e2e:debug": "npm run build && ENABLE_E2E_SSH=1 E2E_DEBUG=webssh2:* playwright test -c playwright.config.ts tests/playwright",
     "test:performance": "echo 'Performance tests archived - see tests/playwright/performance/PERFORMANCE_TESTS.md'",
     "test:performance:report": "echo 'Performance reporting will be available after test reimplementation'",
@@ -100,12 +108,8 @@
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
-    "husky": "^9.1.7",
-    "prettier": "^3.6.2",
     "supertest": "^7.1.4",
-    "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
@@ -122,5 +126,8 @@
     "test": "tests"
   },
   "author": "",
-  "type": "module"
+  "type": "module",
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.50.2"
+  }
 }

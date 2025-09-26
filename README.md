@@ -113,6 +113,7 @@ docker run --rm -it \
 - 🐳 **Docker Ready** - Official Docker images available
 - 🔧 **Exec Channel** - Run commands without opening a shell
 - 🌍 **Environment Variables** - Pass custom environment to SSH sessions
+- 🛡️ **Subnet Restrictions** - IPv4/IPv6 CIDR subnet validation for access control
 
 ## Support
 

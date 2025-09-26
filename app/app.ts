@@ -3,8 +3,9 @@ import type { Server as HttpServer } from 'node:http'
 import type { Server as IOServer } from 'socket.io'
 import { getConfig } from './config.js'
 import SSHConnection from './ssh.js'
-import socketHandler, { type SSHCtor } from './socket.js'
-import { createRoutes } from './routes.js'
+import initSocket from './socket-v2.js'
+import type { SSHCtor } from './types/ssh.js'
+import { createRoutesV2 as createRoutes } from './routes/routes-v2.js'
 import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
 import { configureSocketIO } from './io.js'
@@ -13,6 +14,9 @@ import { createNamespacedDebug } from './logger.js'
 import { MESSAGES } from './constants.js'
 import { getClientPublicPath } from './client-path.js'
 import type { Config } from './types/config.js'
+import { initializeGlobalContainer } from './services/setup.js'
+import { TOKENS } from './services/container.js'
+import type { Services } from './services/interfaces.js'
 
 const debug = createNamespacedDebug('app')
 
@@ -44,10 +48,17 @@ export async function initializeServerAsync(): Promise<{
   io: IOServer
   app: Application
   config: Config
+  services: Services
 }> {
   try {
     const appConfig = await getConfig()
     debug('Configuration loaded asynchronously')
+
+    // Initialize DI container and services
+    const container = initializeGlobalContainer(appConfig)
+    const services = container.resolve<Services>(TOKENS.Services)
+    const store = container.resolve(TOKENS.SessionStore)
+    debug('Services initialized with DI container')
 
     const { app, sessionMiddleware } = createAppAsync(appConfig)
     const server = createServer(app)
@@ -55,10 +66,13 @@ export async function initializeServerAsync(): Promise<{
       getCorsConfig: () => { origin: string[]; methods: string[]; credentials: boolean }
     }
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
-    socketHandler(io as Parameters<typeof socketHandler>[0], appConfig, SSHConnection as SSHCtor)
+
+    // Pass services to socket initialization
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor, services, store)
+    
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
-    return { server, io, app, config: appConfig }
+    return { server, io, app, config: appConfig, services }
   } catch (err) {
     if (err instanceof Error) {
       handleError(err)

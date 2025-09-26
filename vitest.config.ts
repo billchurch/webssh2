@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import path from 'node:path'
 
 export default defineConfig({
   test: {
@@ -10,6 +11,11 @@ export default defineConfig({
       all: false,
       include: ['dist/**/*.js'],
       exclude: ['**/node_modules/**', '**/test/**'],
+    },
+  },
+  resolve: {
+    alias: {
+      '@tests': path.resolve(__dirname, './tests'),
     },
   },
 })

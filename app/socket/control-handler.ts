@@ -1,11 +1,12 @@
 // app/socket/control-handler.ts
 // Control message handler for WebSocket connections
 
-import type { EventEmitter } from 'events'
+import type { EventEmitter } from 'node:events'
 import { createNamespacedDebug } from '../logger.js'
 import type { Credentials } from '../validation/credentials.js'
 import type { Config } from '../types/config.js'
 import type { Socket } from 'socket.io'
+import { SOCKET_EVENTS, VALIDATION_MESSAGES, LINE_ENDINGS } from '../constants/index.js'
 
 const debug = createNamespacedDebug('socket:control')
 
@@ -73,15 +74,15 @@ export function validateReplayRequest(
   shellStream: (EventEmitter & { write?: (data: string) => void }) | null
 ): { valid: boolean; error?: string } {
   if (!isReplayAllowedByConfig(config)) {
-    return { valid: false, error: 'Replay disabled by server configuration' }
+    return { valid: false, error: VALIDATION_MESSAGES.REPLAY_DISABLED }
   }
-  
+
   if (password == null || password === '') {
-    return { valid: false, error: 'No password available to replay' }
+    return { valid: false, error: VALIDATION_MESSAGES.NO_REPLAY_PASSWORD }
   }
-  
+
   if (shellStream == null || typeof shellStream.write !== 'function') {
-    return { valid: false, error: 'No active terminal to receive replayed credentials' }
+    return { valid: false, error: VALIDATION_MESSAGES.NO_ACTIVE_TERMINAL }
   }
   
   return { valid: true }
@@ -95,7 +96,7 @@ export function validateReplayRequest(
  * @pure
  */
 export function formatReplayData(password: string, useCRLF: boolean): string {
-  const lineEnd = useCRLF ? '\\r\\n' : '\\r'
+  const lineEnd = useCRLF ? LINE_ENDINGS.CRLF : LINE_ENDINGS.CR
   return `${password}${lineEnd}`
 }
 
@@ -171,9 +172,11 @@ export function handleReplayCredentials(
   
   // Validate replay request
   const validation = validateReplayRequest(config, password, shellStream)
-  if (!validation.valid) {
+  if (validation.valid) {
+    // Validation passed, continue with replay
+  } else {
     debug(`Replay credentials denied: ${validation.error}`)
-    socket.emit('ssherror', validation.error)
+    socket.emit(SOCKET_EVENTS.SSH_ERROR, validation.error)
     return
   }
   
@@ -190,8 +193,10 @@ export function handleReplayCredentials(
   }
   
   const result = writeCredentialsToShell(shellStream, replayOptions)
-  if (!result.success) {
-    socket.emit('ssherror', result.error)
+  if (result.success) {
+    // Successfully wrote credentials
+  } else {
+    socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error)
   }
 }
 
@@ -231,7 +236,8 @@ export function handleControlMessage(
       break
       
     default:
-      console.warn('Invalid control message:', message)
+      // V2: Silently ignore invalid control messages without logging
+      debug('Ignoring unknown control message:', message)
       break
   }
 }

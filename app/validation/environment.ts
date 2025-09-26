@@ -56,8 +56,13 @@ export function parseEnvVars(envString?: string): Record<string, string> | null 
       added < ENV_LIMITS.MAX_PAIRS
     ) {
       // Key is validated above to be a safe environment variable name
-      // eslint-disable-next-line security/detect-object-injection
-      envVars[key] = value
+      // Using Object.defineProperty for safe property assignment
+      Object.defineProperty(envVars, key, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      })
       added++
     }
   }
@@ -162,7 +167,7 @@ export function filterEnvironmentVariables(
     return {}
   }
 
-  const allowSet = allowlist != null ? new Set(allowlist) : null
+  const allowSet = allowlist == null ? null : new Set(allowlist)
   const result: Record<string, string> = {}
   let count = 0
 
@@ -174,7 +179,13 @@ export function filterEnvironmentVariables(
     const processed = processEnvEntry(key, value, allowSet)
     if (processed != null) {
       // Key is validated above via isKeyValid -> isValidEnvKey
-      result[processed.key] = processed.value
+      // Using Object.defineProperty for safe property assignment
+      Object.defineProperty(result, processed.key, {
+        value: processed.value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      })
       count++
     }
   }

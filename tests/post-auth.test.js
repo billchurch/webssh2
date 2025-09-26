@@ -5,7 +5,7 @@ import assert from 'node:assert'
 import express from 'express'
 import request from 'supertest'
 import session from 'express-session'
-import { createRoutes } from '../dist/app/routes.js'
+import { createRoutesV2 as createRoutes } from '../dist/app/routes/routes-v2.js'
 import { createBodyParserMiddleware } from '../dist/app/middleware.js'
 import { TEST_SECRET, SSO_HEADERS, TEST_USERNAME, TEST_PASSWORD, SSO_TEST_VALUES, TEST_FORM_DATA } from './test-constants.js'
 

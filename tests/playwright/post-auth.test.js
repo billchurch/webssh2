@@ -115,8 +115,8 @@ test.describe('HTTP POST Authentication', () => {
     )
 
     expect(response.status()).toBe(400)
-    const body = await response.text()
-    expect(body).toContain('Missing required fields in body: username, password')
+    const body = await response.json()
+    expect(body.error).toBe('Missing required fields: username and password')
   })
 
   test('should fail with missing password', async ({ request }) => {
@@ -130,8 +130,8 @@ test.describe('HTTP POST Authentication', () => {
     )
 
     expect(response.status()).toBe(400)
-    const body = await response.text()
-    expect(body).toContain('Missing required fields in body: username, password')
+    const body = await response.json()
+    expect(body.error).toBe('Missing required fields: username and password')
   })
 
   test('should fail with missing host (not in body or query)', async ({ request }) => {
@@ -143,8 +143,8 @@ test.describe('HTTP POST Authentication', () => {
     })
 
     expect(response.status()).toBe(400)
-    const body = await response.text()
-    expect(body).toContain('Missing required field: host (in body or query params)')
+    const body = await response.json()
+    expect(body.error).toBe('Missing required field: host')
   })
 
   test('should use default port when not specified', async ({ request }) => {
