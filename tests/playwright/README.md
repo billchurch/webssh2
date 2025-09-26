@@ -5,7 +5,9 @@ End-to-end tests for WebSSH2, covering authentication, WebSocket connections, te
 ## Prerequisites
 
 1. **Node.js** - Version 22 or higher
-2. **Docker** - Required for the test SSH server (automatically managed)
+2. **Container Runtime** - One of the following (automatically detected):
+   - **Docker** - Standard container runtime
+   - **Apple Container Runtime** - macOS-native container runtime (command: `container`)
 3. **Playwright** - Install with `npm run e2e:setup`
 
 ## Test Structure
@@ -76,6 +78,50 @@ Tests are configured in `playwright.config.ts`:
 - `ENABLE_E2E_SSH=1` - Enables SSH container for E2E tests (automatically managed)
 - `DEBUG=webssh2:*` - Enable debug logging
 - `E2E_DEBUG=webssh2:*` - Enable debug logging for E2E tests
+
+## Container Runtime Support
+
+WebSSH2 E2E tests support both Docker and Apple Container Runtime with automatic detection:
+
+### Automatic Detection
+
+The test suite automatically detects which container runtime is available:
+1. First checks for `container` (Apple Container Runtime)
+2. Falls back to `docker` if Apple Container is not found
+3. Throws an error if neither is available
+
+### Apple Container Runtime
+
+To use Apple Container Runtime on macOS:
+
+```bash
+# Install Apple Container Runtime
+# See: https://github.com/apple/container
+# Requires: macOS 26+ and Apple Silicon
+
+# Start the container system service
+container system start
+
+# Run tests (container will be auto-detected)
+npm run test:e2e
+```
+
+The test output will show which runtime was detected:
+- `✓ Detected Apple Container Runtime (container)`
+- `✓ Detected Docker runtime`
+
+### Docker
+
+Standard Docker installation works as before:
+
+```bash
+# Run tests with Docker
+npm run test:e2e
+```
+
+### Manual Container Runtime Selection
+
+Both runtimes use the same container image and configuration. The abstraction layer in `tests/playwright/container-runtime.ts` handles the runtime-specific commands automatically.
 
 ## Test Categories
 
@@ -166,8 +212,15 @@ npm run test:e2e:debug
 If you need to run tests with a manual SSH server:
 
 ```bash
-# Start test SSH container
+# Start test SSH container with Docker
 docker run --rm -d \
+  -p 2289:22 \
+  -e SSH_USER=testuser \
+  -e SSH_PASSWORD=testpassword \
+  ghcr.io/billchurch/ssh_test:alpine
+
+# Or with Apple Container Runtime
+container run --rm -d \
   -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \
@@ -201,14 +254,23 @@ pkill -f "node.*webssh2"
 ### SSH Container Issues
 
 ```bash
-# Check if container is running
+# Check if container is running (Docker)
 docker ps | grep ssh
 
-# View container logs
+# Check if container is running (Apple Container)
+container ps | grep ssh
+
+# View container logs (Docker)
 docker logs $(docker ps -q --filter ancestor=ghcr.io/billchurch/ssh_test:alpine)
 
-# Remove stale containers
+# View container logs (Apple Container)
+container logs $(container ps -q --filter ancestor=ghcr.io/billchurch/ssh_test:alpine)
+
+# Remove stale containers (Docker)
 docker rm -f $(docker ps -aq --filter name=webssh2)
+
+# Remove stale containers (Apple Container)
+container rm -f $(container ps -aq --filter name=webssh2)
 ```
 
 ### WebSocket Connection Fails
