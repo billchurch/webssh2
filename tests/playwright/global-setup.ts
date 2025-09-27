@@ -33,7 +33,7 @@ export default async function globalSetup() {
     image: DOCKER_IMAGE,
     ports: [{ host: SSH_PORT, container: 22 }],
     cpus: 1,
-    memory: '256m',
+    memory: '128m',
     env: {
       SSH_USER: USERNAME,
       SSH_PASSWORD: PASSWORD,
