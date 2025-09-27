@@ -354,7 +354,9 @@ export const CONTROL_ACTIONS: ControlActionsConstants = {
 // DOCKER & E2E
 // ============================================================================
 
-// Docker configuration for E2E tests
+// Container configuration for E2E tests
+// Supports both Docker and Apple Container Runtime (command: container)
+// The container runtime is auto-detected at test startup
 export const DOCKER_CONFIG = {
   CONTAINER: 'webssh2-e2e-sshd',
   IMAGE: 'ghcr.io/billchurch/ssh_test:alpine',
