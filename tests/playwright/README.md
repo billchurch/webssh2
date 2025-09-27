@@ -123,6 +123,14 @@ npm run test:e2e
 
 Both runtimes use the same container image and configuration. The abstraction layer in `tests/playwright/container-runtime.ts` handles the runtime-specific commands automatically.
 
+### Resource Limits
+
+The SSH test container runs with minimal resource allocation:
+- **CPU**: 1 core
+- **Memory**: 256MB
+
+These limits are sufficient for SSH testing and reduce resource consumption on the host system. Both Docker and Apple Container Runtime support these limits using the `--cpus` and `--memory` flags.
+
 ## Test Categories
 
 ### Authentication Tests
@@ -214,6 +222,7 @@ If you need to run tests with a manual SSH server:
 ```bash
 # Start test SSH container with Docker
 docker run --rm -d \
+  --cpus 1 --memory 256m \
   -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \
@@ -221,6 +230,7 @@ docker run --rm -d \
 
 # Or with Apple Container Runtime
 container run --rm -d \
+  --cpus 1 --memory 256m \
   -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \

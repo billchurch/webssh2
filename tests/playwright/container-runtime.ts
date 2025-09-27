@@ -7,6 +7,8 @@ export interface ContainerConfig {
   image: string
   ports: Array<{ host: number; container: number }>
   env: Record<string, string>
+  cpus?: number
+  memory?: string
 }
 
 export interface ContainerRuntime {
@@ -29,8 +31,14 @@ class DockerRuntime implements ContainerRuntime {
       'run', '--rm', '-d', '--name', config.name,
       ...config.ports.flatMap(p => ['-p', `${p.host}:${p.container}`]),
       ...Object.entries(config.env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
-      config.image,
     ]
+    if (config.cpus !== undefined) {
+      args.push('--cpus', String(config.cpus))
+    }
+    if (config.memory !== undefined) {
+      args.push('--memory', config.memory)
+    }
+    args.push(config.image)
     return spawnSync('docker', args, { stdio: 'inherit' })
   }
 
@@ -56,8 +64,14 @@ class AppleContainerRuntime implements ContainerRuntime {
       'run', '--rm', '-d', '--name', config.name,
       ...config.ports.flatMap(p => ['-p', `${p.host}:${p.container}`]),
       ...Object.entries(config.env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
-      config.image,
     ]
+    if (config.cpus !== undefined) {
+      args.push('--cpus', String(config.cpus))
+    }
+    if (config.memory !== undefined) {
+      args.push('--memory', config.memory)
+    }
+    args.push(config.image)
     return spawnSync('container', args, { stdio: 'inherit' })
   }
 
