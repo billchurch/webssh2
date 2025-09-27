@@ -56,7 +56,7 @@ class AppleContainerRuntime implements ContainerRuntime {
   readonly type: ContainerRuntimeType = 'apple'
 
   isAvailable(): boolean {
-    return spawnSync('container', ['version'], { stdio: 'ignore' }).status === 0
+    return spawnSync('container', ['--version'], { stdio: 'ignore' }).status === 0
   }
 
   run(config: ContainerConfig): SpawnSyncReturns<Buffer> {
