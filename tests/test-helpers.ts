@@ -95,7 +95,7 @@ export function createMockIO(): EventEmitter & { on: ReturnType<typeof mock.fn> 
   return io
 }
 
-interface MockSocket extends EventEmitter {
+export interface MockSocket {
   id: string
   request: {
     session: {
@@ -105,6 +105,8 @@ interface MockSocket extends EventEmitter {
       authMethod?: string
     }
   }
+  on: ReturnType<typeof mock.fn>
+  once: ReturnType<typeof mock.fn>
   emit: ReturnType<typeof mock.fn>
   disconnect: ReturnType<typeof mock.fn>
 }
@@ -113,18 +115,22 @@ interface MockSocket extends EventEmitter {
  * Create a mock Socket instance with standard test configuration
  */
 export function createMockSocket(options: MockSocketOptions = {}): MockSocket {
-  const mockSocket = new EventEmitter() as MockSocket
-  mockSocket.id = options.id ?? 'test-socket-id'
-  mockSocket.request = {
-    session: {
-      save: mock.fn((cb: () => void) => cb()),
-      sshCredentials: options.sessionCredentials ?? null,
-      usedBasicAuth: options.usedBasicAuth ?? false,
-      authMethod: options.authMethod,
+  const baseEmitter = new EventEmitter()
+  const mockSocket: MockSocket = {
+    id: options.id ?? 'test-socket-id',
+    request: {
+      session: {
+        save: mock.fn((cb: () => void) => cb()),
+        sshCredentials: options.sessionCredentials ?? null,
+        usedBasicAuth: options.usedBasicAuth ?? false,
+        authMethod: options.authMethod,
+      },
     },
+    on: mock.fn(baseEmitter.on.bind(baseEmitter)),
+    once: mock.fn(baseEmitter.once.bind(baseEmitter)),
+    emit: mock.fn(),
+    disconnect: mock.fn(),
   }
-  mockSocket.emit = mock.fn()
-  mockSocket.disconnect = mock.fn()
   return mockSocket
 }
 
@@ -135,7 +141,8 @@ interface MockStream extends EventEmitter {
 /**
  * Create a mock SSH Connection class for testing
  */
-export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): typeof EventEmitter {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock returns class constructor with dynamic methods
+export function createMockSSHConnection(options: MockSSHConnectionOptions = {}): any {
   if (options.withExecMethods !== undefined && options.withExecMethods) {
     return class extends EventEmitter {
       connect(): Promise<void> {
@@ -254,14 +261,14 @@ export function setupTestEnvironment(options: { withConfigFile?: boolean } = {})
 } {
   const originalEnv = storeEnvironmentVariables()
   cleanupEnvironmentVariables()
-  
+
   let configManager: ConfigFileManager | undefined
-  
+
   if (options.withConfigFile === true) {
     configManager = createConfigFileManager()
     configManager.setup()
   }
-  
+
   return {
     originalEnv,
     configManager,
@@ -272,4 +279,424 @@ export function setupTestEnvironment(options: { withConfigFile?: boolean } = {})
       }
     }
   }
+}
+
+// =============================================================================
+// SSH Server Helpers (for ssh.test.ts migration)
+// =============================================================================
+
+import ssh2 from 'ssh2'
+import type { Server as SSH2Server, AuthContext, Session, ClientChannel } from 'ssh2'
+
+const { Server: SSH2ServerClass } = ssh2
+
+export interface SSHCredentials {
+  username: string
+  password: string
+}
+
+export interface SSHServerOptions {
+  allowPasswordAuth?: boolean
+  allowPublicKeyAuth?: boolean
+  allowedUsername?: string
+  privateKeyFormat?: 'openssh' | 'rsa' | 'ec'
+}
+
+interface SSHHandlers {
+  handlePty: (acceptPty: () => void) => void
+  handleShell: (acceptShell: () => ClientChannel) => void
+  handleSession: (accept: () => Session) => void
+}
+
+function createSSHHandlers(shellMessage: string): SSHHandlers {
+  const handlePty = (acceptPty: () => void): void => {
+    acceptPty()
+  }
+
+  const handleShell = (acceptShell: () => ClientChannel): void => {
+    const stream = acceptShell()
+    stream.write(shellMessage)
+  }
+
+  const handleSession = (accept: () => Session): void => {
+    const session = accept()
+    session.once('pty', handlePty)
+    session.once('shell', handleShell)
+  }
+
+  return { handlePty, handleShell, handleSession }
+}
+
+export function createBasicSSHServer(
+  hostPrivateKey: string,
+  credentials: SSHCredentials,
+  options: SSHServerOptions = {}
+): SSH2Server {
+  const handleAuthentication = (ctx: AuthContext): void => {
+    if (options.allowPasswordAuth === false) {
+      ctx.reject()
+      return
+    }
+
+    if (
+      ctx.method === 'password' &&
+      ctx.username === credentials.username &&
+      ctx.password === credentials.password
+    ) {
+      ctx.accept()
+    } else {
+      ctx.reject()
+    }
+  }
+
+  const { handleSession } = createSSHHandlers('Connected to test server\r\n')
+
+  const handleClientReady = (client: ssh2.Connection): void => {
+    client.on('session', handleSession)
+  }
+
+  const handleClientConnection = (client: ssh2.Connection): void => {
+    client.on('authentication', handleAuthentication)
+    client.on('ready', () => handleClientReady(client))
+  }
+
+  return new SSH2ServerClass({ hostKeys: [hostPrivateKey] }, handleClientConnection)
+}
+
+export function createSSHServerWithPrivateKey(
+  hostPrivateKey: string,
+  username: string,
+  clientPublicKey?: string
+): SSH2Server {
+  const handleAuthentication = (ctx: AuthContext): void => {
+    if (ctx.method === 'publickey' && ctx.username === username) {
+      if (clientPublicKey === undefined || ctx.key.data.equals(Buffer.from(clientPublicKey))) {
+        ctx.accept()
+      } else {
+        ctx.reject()
+      }
+    } else {
+      ctx.reject()
+    }
+  }
+
+  const { handleSession } = createSSHHandlers('Connected via private key\r\n')
+
+  const handleClientReady = (client: ssh2.Connection): void => {
+    client.on('session', handleSession)
+  }
+
+  const handleClientConnection = (client: ssh2.Connection): void => {
+    client.on('authentication', handleAuthentication)
+    client.on('ready', () => handleClientReady(client))
+  }
+
+  return new SSH2ServerClass({ hostKeys: [hostPrivateKey] }, handleClientConnection)
+}
+
+export function createSSHServerWithExec(
+  hostPrivateKey: string,
+  credentials: SSHCredentials,
+  execHandler?: (command: string, stream: ClientChannel) => void
+): SSH2Server {
+  const handleAuthentication = (ctx: AuthContext): void => {
+    if (
+      ctx.method === 'password' &&
+      ctx.username === credentials.username &&
+      ctx.password === credentials.password
+    ) {
+      ctx.accept()
+    } else {
+      ctx.reject()
+    }
+  }
+
+  const handleExec = (accept: (usePTY?: boolean) => ClientChannel, _reject: () => boolean, info: { command: string }): void => {
+    const stream = accept()
+    if (execHandler !== undefined) {
+      execHandler(info.command, stream)
+    } else {
+      stream.write(`Command output: ${info.command}\r\n`)
+      stream.exit(0)
+      stream.end()
+    }
+  }
+
+  const { handlePty, handleShell } = createSSHHandlers('Connected to test server with exec support\r\n')
+
+  const handleSession = (accept: () => Session): void => {
+    const session = accept()
+    session.once('pty', handlePty)
+    session.once('shell', handleShell)
+    session.once('exec', handleExec)
+  }
+
+  const handleClientReady = (client: ssh2.Connection): void => {
+    client.on('session', handleSession)
+  }
+
+  const handleClientConnection = (client: ssh2.Connection): void => {
+    client.on('authentication', handleAuthentication)
+    client.on('ready', () => handleClientReady(client))
+  }
+
+  return new SSH2ServerClass({ hostKeys: [hostPrivateKey] }, handleClientConnection)
+}
+
+export function createSSHServerWithPTY(
+  hostPrivateKey: string,
+  credentials: SSHCredentials
+): SSH2Server {
+  return createBasicSSHServer(hostPrivateKey, credentials)
+}
+
+export async function withSSHServerCleanup(
+  server: SSH2Server,
+  connection: { end: () => void }
+): Promise<void> {
+  connection.end()
+  return new Promise((resolve) => {
+    server.close(resolve as () => void)
+  })
+}
+
+// =============================================================================
+// Credential Builder Helpers
+// =============================================================================
+
+import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH, INVALID_USERNAME, INVALID_PASSWORD, TEST_SECRET } from './test-constants.js'
+
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+}
+
+export interface Credentials {
+  host: string
+  port: number
+  username: string
+  password?: string
+  privateKey?: string
+  passphrase?: string
+}
+
+export function buildTestCredentials(overrides?: Partial<Credentials>): Credentials {
+  return {
+    host: TEST_SSH.HOST,
+    port: TEST_SSH.PORT,
+    username: TEST_USERNAME,
+    password: TEST_PASSWORD,
+    ...overrides
+  }
+}
+
+export function buildInvalidCredentials(overrides?: Partial<Credentials>): Credentials {
+  return {
+    host: TEST_SSH.HOST,
+    port: TEST_SSH.PORT,
+    username: INVALID_USERNAME,
+    password: INVALID_PASSWORD,
+    ...overrides
+  }
+}
+
+// =============================================================================
+// Socket Event Helpers (for contract test migration)
+// =============================================================================
+
+export interface MockCall {
+  arguments: [string, unknown]
+}
+
+export function findSocketEvent(
+  mockCalls: MockCall[],
+  eventName: string
+): MockCall | undefined {
+  return mockCalls.find((call) => call.arguments[0] === eventName)
+}
+
+export function findAllSocketEvents(
+  mockCalls: MockCall[],
+  eventName: string
+): MockCall[] {
+  return mockCalls.filter((call) => call.arguments[0] === eventName)
+}
+
+export function expectSocketEvent(
+  mockCalls: MockCall[],
+  eventName: string,
+  payload?: unknown
+): void {
+  const event = findSocketEvent(mockCalls, eventName)
+  if (event === undefined) {
+    throw new Error(`Expected socket event '${eventName}' not found`)
+  }
+  if (payload !== undefined) {
+    const actualPayload = event.arguments[1]
+    if (JSON.stringify(actualPayload) !== JSON.stringify(payload)) {
+      throw new Error(
+        `Socket event '${eventName}' payload mismatch.\nExpected: ${JSON.stringify(payload)}\nActual: ${JSON.stringify(actualPayload)}`
+      )
+    }
+  }
+}
+
+export function expectAuthSuccess(
+  mockCalls: MockCall[],
+  expectedPermissions?: string[]
+): void {
+  const authEvents = findAllSocketEvents(mockCalls, 'authentication')
+  if (authEvents.length === 0) {
+    throw new Error('Expected authentication event not found')
+  }
+
+  const lastAuth = authEvents[authEvents.length - 1].arguments[1] as { success?: boolean }
+  if (lastAuth.success !== true) {
+    throw new Error('Expected authentication success')
+  }
+
+  if (expectedPermissions !== undefined) {
+    const permissionsEvent = findSocketEvent(mockCalls, 'permissions')
+    if (permissionsEvent === undefined) {
+      throw new Error('Expected permissions event not found')
+    }
+    const actualPermissions = permissionsEvent.arguments[1] as string[]
+    if (JSON.stringify(actualPermissions) !== JSON.stringify(expectedPermissions)) {
+      throw new Error(`Permissions mismatch.\nExpected: ${JSON.stringify(expectedPermissions)}\nActual: ${JSON.stringify(actualPermissions)}`)
+    }
+  }
+}
+
+export function expectAuthFailure(
+  mockCalls: MockCall[],
+  messagePattern?: RegExp
+): void {
+  const authEvents = findAllSocketEvents(mockCalls, 'authentication')
+  if (authEvents.length === 0) {
+    throw new Error('Expected authentication event not found')
+  }
+
+  const lastAuth = authEvents[authEvents.length - 1].arguments[1] as { success?: boolean; message?: string }
+  if (lastAuth.success !== false) {
+    throw new Error('Expected authentication failure')
+  }
+
+  if (messagePattern !== undefined && lastAuth.message !== undefined) {
+    if (!messagePattern.test(lastAuth.message)) {
+      throw new Error(`Auth failure message '${lastAuth.message}' does not match pattern ${messagePattern}`)
+    }
+  }
+}
+
+// =============================================================================
+// Config Builder Helpers
+// =============================================================================
+
+export interface TestConfig {
+  ssh: {
+    host: string
+    port: number
+    term: string
+    readyTimeout: number
+    keepaliveInterval: number
+    keepaliveCountMax: number
+  }
+  user: {
+    name: string | null
+    password: string | null
+    privateKey: string | null
+  }
+  session: {
+    secret: string
+    name: string
+  }
+  sso: {
+    enabled: boolean
+    csrfProtection: boolean
+    trustedProxies: string[]
+    headerMapping: Record<string, string>
+  }
+  options: {
+    challengeButton: boolean
+    allowReauth: boolean
+    allowReplay: boolean
+  }
+}
+
+export function createMinimalConfig(overrides?: DeepPartial<TestConfig>): TestConfig {
+  const base: TestConfig = {
+    ssh: {
+      host: TEST_SSH.HOST,
+      port: TEST_SSH.PORT,
+      term: 'xterm-256color',
+      readyTimeout: 20000,
+      keepaliveInterval: 120000,
+      keepaliveCountMax: 10,
+    },
+    user: {
+      name: null,
+      password: null,
+      privateKey: null,
+    },
+    session: {
+      secret: TEST_SECRET,
+      name: 'webssh2.sid',
+    },
+    sso: {
+      enabled: false,
+      csrfProtection: false,
+      trustedProxies: [],
+      headerMapping: {},
+    },
+    options: {
+      challengeButton: false,
+      allowReauth: true,
+      allowReplay: true,
+    },
+  }
+
+  return overrides !== undefined ? deepMergeConfigs(base, overrides) : base
+}
+
+export function createTestConfigWithSSO(
+  enabled: boolean,
+  headers?: Record<string, string>
+): TestConfig {
+  return createMinimalConfig({
+    sso: {
+      enabled,
+      headerMapping: headers ?? {},
+    },
+  })
+}
+
+export function createSSHTestConfig(
+  host: string,
+  port: number,
+  overrides?: Partial<TestConfig['ssh']>
+): TestConfig['ssh'] {
+  return {
+    host,
+    port,
+    term: 'xterm-256color',
+    readyTimeout: 20000,
+    keepaliveInterval: 120000,
+    keepaliveCountMax: 10,
+    ...overrides,
+  }
+}
+
+function deepMergeConfigs<T>(target: T, source: DeepPartial<T>): T {
+  const result = { ...target }
+  for (const key in source) {
+    // eslint-disable-next-line security/detect-object-injection
+    const sourceValue = source[key]
+    if (sourceValue !== undefined && typeof sourceValue === 'object' && !Array.isArray(sourceValue)) {
+      // eslint-disable-next-line security/detect-object-injection
+      result[key] = deepMergeConfigs(result[key] as unknown, sourceValue) as T[Extract<keyof T, string>]
+    } else if (sourceValue !== undefined) {
+      // eslint-disable-next-line security/detect-object-injection
+      result[key] = sourceValue as T[Extract<keyof T, string>]
+    }
+  }
+  return result
 }

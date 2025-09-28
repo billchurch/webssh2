@@ -1,17 +1,17 @@
-import { describe, it, beforeEach, mock } from 'node:test'
-import assert from 'node:assert/strict'
+import { describe, it, beforeEach, vi } from 'vitest'
+import { expect } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Config } from '../../app/types/config.js'
 import socketHandler from '../../dist/app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
-void describe('Socket.IO Negative: authenticate + exec env', () => {
-  let io: EventEmitter & { on: ReturnType<typeof mock.fn> }
+describe('Socket.IO Negative: authenticate + exec env', () => {
+  let io: EventEmitter & { on: ReturnType<typeof vi.fn> }
   let mockSocket: EventEmitter & {
     id: string
-    request: { session: { save: ReturnType<typeof mock.fn>; sshCredentials: unknown; usedBasicAuth: boolean; envVars: unknown } }
-    emit: ReturnType<typeof mock.fn>
-    disconnect: ReturnType<typeof mock.fn>
+    request: { session: { save: ReturnType<typeof vi.fn>; sshCredentials: unknown; usedBasicAuth: boolean; envVars: unknown } }
+    emit: ReturnType<typeof vi.fn>
+    disconnect: ReturnType<typeof vi.fn>
   }
   let mockConfig: Partial<Config>
   let MockSSHConnection: typeof EventEmitter
@@ -20,21 +20,21 @@ void describe('Socket.IO Negative: authenticate + exec env', () => {
   let execResolve: (() => void) | undefined
 
   beforeEach(() => {
-    io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof mock.fn> }
-    io.on = mock.fn(io.on.bind(io)) as ReturnType<typeof mock.fn>
+    io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof vi.fn> }
+    io.on = vi.fn(io.on.bind(io)) as ReturnType<typeof vi.fn>
 
     mockSocket = new EventEmitter() as EventEmitter & {
       id: string
-      request: { session: { save: ReturnType<typeof mock.fn>; sshCredentials: unknown; usedBasicAuth: boolean; envVars: unknown } }
-      emit: ReturnType<typeof mock.fn>
-      disconnect: ReturnType<typeof mock.fn>
+      request: { session: { save: ReturnType<typeof vi.fn>; sshCredentials: unknown; usedBasicAuth: boolean; envVars: unknown } }
+      emit: ReturnType<typeof vi.fn>
+      disconnect: ReturnType<typeof vi.fn>
     }
     mockSocket.id = 'neg-auth-exec'
     mockSocket.request = {
-      session: { save: mock.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },
+      session: { save: vi.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },
     }
-    mockSocket.emit = mock.fn()
-    mockSocket.disconnect = mock.fn()
+    mockSocket.emit = vi.fn()
+    mockSocket.disconnect = vi.fn()
 
     mockConfig = {
       ssh: { term: 'xterm-color', disableInteractiveAuth: false },
@@ -71,26 +71,26 @@ void describe('Socket.IO Negative: authenticate + exec env', () => {
     socketHandler(io, mockConfig, MockSSHConnection)
   })
 
-  void it('authenticate: string port and missing secrets → invalid credentials', () => {
-    const onConn = io.on.mock.calls[0]?.arguments[1] as (socket: typeof mockSocket) => void
+  it('authenticate: string port and missing secrets → invalid credentials', () => {
+    const onConn = io.on.mock.calls[0]?.[1] as (socket: typeof mockSocket) => void
     onConn(mockSocket)
-    mockSocket.emit = mock.fn()
+    mockSocket.emit = vi.fn()
 
     // Port provided as string, no password/privateKey
     EventEmitter.prototype.emit.call(mockSocket, 'authenticate', {
       username: 'u', host: 'h', port: '22'
     })
 
-    const authEvents = mockSocket.emit.mock.calls.filter((c: { arguments: unknown[] }) => c.arguments[0] === 'authentication')
-    assert.ok(authEvents.length > 0)
+    const authEvents = mockSocket.emit.mock.calls.filter((c: unknown[]) => c[0] === 'authentication')
+    expect(authEvents.length > 0).toBeTruthy()
     const lastAuthEvent = authEvents[authEvents.length - 1]
-    const lastAuth = lastAuthEvent?.arguments[1] as { success: boolean; message?: string }
-    assert.equal(lastAuth.success, false)
-    assert.match(String(lastAuth.message ?? ''), /Invalid credentials/i)
+    const lastAuth = lastAuthEvent?.[1] as { success: boolean; message?: string }
+    expect(lastAuth.success).toBe(false)
+    expect(String(lastAuth.message ?? '')).toMatch(/Invalid credentials/i)
   })
 
-  void it('exec: env passes session.envVars for AcceptEnv support', async () => {
-    const onConn = io.on.mock.calls[0]?.arguments[1] as (socket: typeof mockSocket) => void
+  it('exec: env passes session.envVars for AcceptEnv support', async () => {
+    const onConn = io.on.mock.calls[0]?.[1] as (socket: typeof mockSocket) => void
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     mockSocket.request.session.envVars = { FOO: 'bar' }
@@ -106,6 +106,6 @@ void describe('Socket.IO Negative: authenticate + exec env', () => {
     // Wait for the mock exec to be called
     await execPromise
 
-    assert.deepEqual(capturedEnv, { FOO: 'bar' }, 'session.envVars passed to exec')
+    expect(capturedEnv).toEqual({ FOO: 'bar' })
   })
 })

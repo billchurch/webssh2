@@ -1,6 +1,5 @@
 // Contract test: verify expected HTTP routes are registered without invoking handlers
-import test from 'node:test'
-import assert from 'node:assert'
+import { it, expect } from 'vitest'
 import { createRoutesV2 as createRoutes } from '../../dist/app/routes/routes-v2.js'
 import { TEST_SECRET } from '../test-constants.js'
 
@@ -40,7 +39,7 @@ function getRouteMap(router: unknown): Record<string, string[] | undefined> {
   return Object.fromEntries(Object.entries(byPath).map(([p, s]) => [p, Array.from(s).sort()]))
 }
 
-void test('router registers expected paths and methods', () => {
+it('router registers expected paths and methods', () => {
   const router = createRoutes(minimalConfig)
   const byPath = getRouteMap(router)
 
@@ -52,9 +51,9 @@ void test('router registers expected paths and methods', () => {
 
   // Helper to assert route exists with expected method
   const assertRoute = (path: string, method: string): void => {
-    assert.ok(hasPath(path), `${method.toUpperCase()} ${path} present`)
+    expect(hasPath(path)).toBeTruthy()
     // eslint-disable-next-line security/detect-object-injection
-    assert.ok(byPath[path]!.includes(method))
+    expect(byPath[path]!.includes(method)).toBeTruthy()
   }
 
   assertRoute('/', 'get')

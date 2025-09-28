@@ -32,7 +32,7 @@ describe('Socket V2 Exec Handler', () => {
   })
 
   it('should handle exec requests and emit typed output and exit', async () => {
-    const connectionHandler = (io.on).mock.calls[0].arguments[1]
+    const connectionHandler = (io.on).mock.calls[0][1]
 
     // Configure session to auto-authenticate on connect
     mockSocket = createMockSocket({
@@ -118,7 +118,7 @@ describe('Socket V2 Exec Handler', () => {
   })
 
   it('should emit error when exec payload is invalid', async () => {
-    const connectionHandler = (io.on).mock.calls[0].arguments[1]
+    const connectionHandler = (io.on).mock.calls[0][1]
 
     mockSocket = createMockSocket({
       usedBasicAuth: true,
@@ -140,7 +140,7 @@ describe('Socket V2 Exec Handler', () => {
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { })
     await new Promise((resolve) => setImmediate(resolve))
 
-    const ssherrorEmits = (mockSocket.emit).mock.calls.filter((c: unknown) => c.arguments[0] === 'ssherror')
+    const ssherrorEmits = (mockSocket.emit).mock.calls.filter((c: unknown[]) => c[0] === 'ssherror')
     expect(ssherrorEmits.length).toBeGreaterThan(0)
   })
 })

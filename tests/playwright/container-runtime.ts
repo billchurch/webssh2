@@ -88,13 +88,13 @@ class AppleContainerRuntime implements ContainerRuntime {
 export function detectContainerRuntime(): ContainerRuntime {
   const appleContainer = new AppleContainerRuntime()
   if (appleContainer.isAvailable()) {
-    console.log('✓ Detected Apple Container Runtime (container)')
+    console.info('✓ Detected Apple Container Runtime (container)')
     return appleContainer
   }
 
   const docker = new DockerRuntime()
   if (docker.isAvailable()) {
-    console.log('✓ Detected Docker runtime')
+    console.info('✓ Detected Docker runtime')
     return docker
   }
 
@@ -104,8 +104,6 @@ export function detectContainerRuntime(): ContainerRuntime {
 let cachedRuntime: ContainerRuntime | null = null
 
 export function getContainerRuntime(): ContainerRuntime {
-  if (cachedRuntime === null) {
-    cachedRuntime = detectContainerRuntime()
-  }
+  cachedRuntime ??= detectContainerRuntime()
   return cachedRuntime
 }
