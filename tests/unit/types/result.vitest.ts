@@ -22,9 +22,9 @@ import {
   fromNullable,
   tryCatch,
   combine,
-  combineAll,
-  type Result
-} from '../../../app/types/result.js'
+  combineAll
+} from '../../../app/utils/result.js'
+import type { Result } from '../../../app/types/result.js'
 
 void describe('Result type', () => {
   describe('ok and err constructors', () => {

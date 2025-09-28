@@ -1,6 +1,6 @@
 /**
  * Consolidated test utilities for all test files
- * Combines utilities from test-utils.ts and test-helpers.ts
+ * Uses Vitest framework exclusively
  */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -12,7 +12,7 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
 
 import { EventEmitter } from 'node:events'
-import { mock } from 'node:test'
+import { vi } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { SessionStore } from '../app/state/store.js'
@@ -21,35 +21,20 @@ import type { TestEnvironment, AuthStatus } from './types/index.js'
 import { TEST_USERNAME, TEST_SSH, TEST_SECRET } from './test-constants.js'
 import { DEFAULTS } from '../app/constants.js'
 
-// Dynamic import for vitest when available
-let vi: unknown
-let Mock: unknown
-try {
-  const vitest = await import('vitest')
-  vi = vitest.vi
-  Mock = vitest.Mock
-} catch {
-  // vitest not available - we're in node test runner mode
-  vi = null
-  Mock = null
-}
-
 /**
  * Creates a mock SessionStore for testing
  */
 export function createMockStore(): SessionStore {
-  const mockFn = vi ? vi.fn : mock.fn
-
   return {
-    dispatch: mockFn(),
-    getState: mockFn(),
-    createSession: mockFn(),
-    removeSession: mockFn(),
-    getSessionIds: mockFn(() => []),
-    hasSession: mockFn(() => false),
-    getHistory: mockFn(() => []),
-    clear: mockFn(),
-    subscribe: mockFn()
+    dispatch: vi.fn(),
+    getState: vi.fn(),
+    createSession: vi.fn(),
+    removeSession: vi.fn(),
+    getSessionIds: vi.fn(() => []),
+    hasSession: vi.fn(() => false),
+    getHistory: vi.fn(() => []),
+    clear: vi.fn(),
+    subscribe: vi.fn()
   } as unknown as SessionStore
 }
 
@@ -57,7 +42,6 @@ export function createMockStore(): SessionStore {
  * Creates mock ServiceDependencies for testing
  */
 export function createMockDependencies(): ServiceDependencies {
-  const mockFn = vi ? vi.fn : mock.fn
   return {
     config: {
       session: {
@@ -93,10 +77,10 @@ export function createMockDependencies(): ServiceDependencies {
       logging: { level: 'info', namespace: 'webssh2:test' }
     },
     logger: {
-      debug: mockFn(),
-      info: mockFn(),
-      warn: mockFn(),
-      error: mockFn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
     }
   }
 }
@@ -105,15 +89,14 @@ export function createMockDependencies(): ServiceDependencies {
  * Creates a mock SSH2 client for testing
  */
 export function createMockSSH2Client(): unknown {
-  const mockFn = vi ? vi.fn : mock.fn
   return {
-    connect: mockFn(),
-    shell: mockFn(),
-    exec: mockFn(),
-    end: mockFn(),
-    on: mockFn(),
-    once: mockFn(),
-    removeAllListeners: mockFn()
+    connect: vi.fn(),
+    shell: vi.fn(),
+    exec: vi.fn(),
+    end: vi.fn(),
+    on: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn()
   }
 }
 
@@ -206,17 +189,7 @@ export function createSessionState(overrides?: {
  * Helper to set up mock store state
  */
 export function setupMockStoreState(mockStore: SessionStore, state: unknown) {
-  if (vi) {
-    // Vitest environment
-    (mockStore.getState as any).mockReturnValue(state)
-  } else if ((mockStore.getState as any).mock) {
-    // Node test environment - getState is already a mock function
-    const mockGetState = mockStore.getState as any
-    mockGetState.mockImplementation = () => state
-  } else {
-    // Fallback for other test environments
-    ;(mockStore as any).getState = () => state
-  }
+  (mockStore.getState as any).mockReturnValue(state)
   return mockStore
 }
 
@@ -224,23 +197,12 @@ export function setupMockStoreState(mockStore: SessionStore, state: unknown) {
  * Helper to set up multiple mock store states (for sequential calls)
  */
 export function setupMockStoreStates(mockStore: SessionStore, ...states: unknown[]) {
-  if (Mock) {
-    const mockObj = mockStore.getState as any
-    states.forEach((state) => {
-      mockObj.mockReturnValueOnce(state)
-    })
-    if (states.length > 0) {
-      mockObj.mockReturnValue(states[states.length - 1])
-    }
-  } else {
-    // Node test environment - simplified implementation
-    let callIndex = 0
-    const mockGetState = mockStore.getState as any
-    mockGetState.mockImplementation = () => {
-      const state = callIndex < states.length ? states[callIndex] : states[states.length - 1]
-      callIndex++
-      return state
-    }
+  const mockObj = mockStore.getState as any
+  states.forEach((state) => {
+    mockObj.mockReturnValueOnce(state)
+  })
+  if (states.length > 0) {
+    mockObj.mockReturnValue(states[states.length - 1])
   }
   return mockStore
 }
@@ -328,9 +290,8 @@ export interface MockSSHConnectionOptions {
  * Create a mock Socket.IO server instance
  */
 export function createMockIO(): unknown {
-  const mockFn = vi ? vi.fn : mock.fn
   const io: unknown = new EventEmitter()
-  io.on = mockFn(io.on)
+  io.on = vi.fn(io.on)
   return io
 }
 
@@ -338,19 +299,18 @@ export function createMockIO(): unknown {
  * Create a mock Socket instance with standard test configuration
  */
 export function createMockSocket(options: MockSocketOptions = {}): unknown {
-  const mockFn = vi ? vi.fn : mock.fn
   const mockSocket: unknown = new EventEmitter()
   mockSocket.id = options.id ?? 'test-socket-id'
   mockSocket.request = {
     session: {
-      save: mockFn((cb: () => void) => cb()),
+      save: vi.fn((cb: () => void) => cb()),
       sshCredentials: options.sessionCredentials ?? null,
       usedBasicAuth: options.usedBasicAuth ?? false,
       authMethod: options.authMethod,
     },
   }
-  mockSocket.emit = mockFn()
-  mockSocket.disconnect = mockFn()
+  mockSocket.emit = vi.fn()
+  mockSocket.disconnect = vi.fn()
   return mockSocket
 }
 
