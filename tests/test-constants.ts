@@ -54,9 +54,53 @@ export const TEST_SSH_KEY = 'ssh-rsa-key' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_VALID = '-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_INVALID = 'not-a-valid-private-key-format' //NOSONAR
 
+// Private key test data for validation tests
+export const TEST_KEY_OPENSSH = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+-----END OPENSSH PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_RSA = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr
+-----END RSA PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_EC = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIIGLlamZU9Z83D3g8VsZqsMpLMgCuRXmZrdWpBfxHdaPoAoGCCqGSM49
+-----END EC PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_RSA = `-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,2AF25325A9B286F4CBD8AB0C4C3CDB3A` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_PKCS8 = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIFLTBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQITo1O0b8YrS0CAggA` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_OPENSSH = `-----BEGIN OPENSSH PRIVATE KEY-----
+aes256-ctr
+bcrypt
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBB
+-----END OPENSSH PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_PLAIN = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr` //NOSONAR
+
 // ============================================================================
 // SSH CONFIGURATION
 // ============================================================================
+
+// Terminal configuration (defined early so TEST_SSH can reference it)
+export const TERMINAL = {
+  TYPE: 'xterm-256color',
+  DEFAULT_ROWS: 24,
+  DEFAULT_COLS: 80,
+  TEST_ROWS: 50,
+  TEST_COLS: 120,
+  LARGE_COLS: 120,
+  LARGE_ROWS: 40,
+  MEDIUM_COLS: 100,
+  MEDIUM_ROWS: 30,
+  INPUT_SELECTOR: 'textbox',
+  INPUT_NAME: 'Terminal input',
+} as const
 
 interface TestSSHConstants {
   readonly USERNAME: string
@@ -94,21 +138,21 @@ interface TestSSHConstants {
 }
 
 export const TEST_SSH: TestSSHConstants = {
-  USERNAME: 'testuser',
-  PASSWORD: 'testpass', //NOSONAR
+  USERNAME: TEST_USERNAME,
+  PASSWORD: TEST_PASSWORD, //NOSONAR
   HOST: 'example.com',
   IP_ADDRESS: '192.168.1.100', //NOSONAR
   PORT: 22,
   PRIVATE_KEY: 'ssh-rsa...',
   PASSPHRASE: 'keypass', //NOSONAR
   TERMINAL: {
-    TYPE: 'xterm-256color',
-    DEFAULT_COLS: 80,
-    DEFAULT_ROWS: 24,
-    LARGE_COLS: 120,
-    LARGE_ROWS: 40,
-    MEDIUM_COLS: 100,
-    MEDIUM_ROWS: 30
+    TYPE: TERMINAL.TYPE,
+    DEFAULT_COLS: TERMINAL.DEFAULT_COLS,
+    DEFAULT_ROWS: TERMINAL.DEFAULT_ROWS,
+    LARGE_COLS: TERMINAL.LARGE_COLS,
+    LARGE_ROWS: TERMINAL.LARGE_ROWS,
+    MEDIUM_COLS: TERMINAL.MEDIUM_COLS,
+    MEDIUM_ROWS: TERMINAL.MEDIUM_ROWS
   },
   COMMANDS: {
     LIST_FILES: 'ls -la',
@@ -116,7 +160,7 @@ export const TEST_SSH: TestSSHConstants = {
   },
   ENV_VARS: {
     PATH: '/usr/bin',
-    USER: 'testuser'
+    USER: TEST_USERNAME
   },
   TIMEOUT_MS: 5000,
   INVALID_VALUES: {
@@ -156,13 +200,13 @@ export const MOCK_CREDENTIALS = {
     password: 'p', //NOSONAR
   },
   full: {
-    host: 'example.com',
+    host: TEST_SSH.HOST,
     port: 22,
     username: 'user',
     password: TEST_PASSWORDS.basic,
   },
   withSession: {
-    host: 'example.com',
+    host: TEST_SSH.HOST,
     username: 'user',
     password: TEST_PASSWORDS.session,
   },
@@ -313,24 +357,6 @@ export const TEST_TIMEOUTS = {
   DOCKER_WAIT: 20000,
   DOCKER_RETRY: 250,
   WEB_SERVER: 120000,
-} as const
-
-// ============================================================================
-// TERMINAL CONFIGURATION
-// ============================================================================
-
-export const TERMINAL = {
-  TYPE: 'xterm-256color',
-  DEFAULT_ROWS: 24,
-  DEFAULT_COLS: 80,
-  TEST_ROWS: 50,
-  TEST_COLS: 120,
-  LARGE_COLS: 120,
-  LARGE_ROWS: 40,
-  MEDIUM_COLS: 100,
-  MEDIUM_ROWS: 30,
-  INPUT_SELECTOR: 'textbox',
-  INPUT_NAME: 'Terminal input',
 } as const
 
 // ============================================================================

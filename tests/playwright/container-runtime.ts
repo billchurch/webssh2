@@ -86,16 +86,27 @@ class AppleContainerRuntime implements ContainerRuntime {
 }
 
 export function detectContainerRuntime(): ContainerRuntime {
-  const appleContainer = new AppleContainerRuntime()
-  if (appleContainer.isAvailable()) {
-    console.log('✓ Detected Apple Container Runtime (container)')
-    return appleContainer
+  const preferredRuntime = process.env.CONTAINER_RUNTIME?.toLowerCase()
+
+  if (preferredRuntime === 'apple') {
+    const appleContainer = new AppleContainerRuntime()
+    if (appleContainer.isAvailable()) {
+      console.info('✓ Using Apple Container Runtime (container) - explicitly requested')
+      return appleContainer
+    }
+    console.warn('⚠ Apple Container Runtime requested but not available, falling back to Docker')
   }
 
   const docker = new DockerRuntime()
   if (docker.isAvailable()) {
-    console.log('✓ Detected Docker runtime')
+    console.info('✓ Using Docker runtime (default)')
     return docker
+  }
+
+  const appleContainer = new AppleContainerRuntime()
+  if (appleContainer.isAvailable()) {
+    console.info('✓ Using Apple Container Runtime (container) - Docker not available')
+    return appleContainer
   }
 
   throw new Error('No container runtime found. Please install Docker or Apple Container Runtime (container)')
@@ -104,8 +115,6 @@ export function detectContainerRuntime(): ContainerRuntime {
 let cachedRuntime: ContainerRuntime | null = null
 
 export function getContainerRuntime(): ContainerRuntime {
-  if (cachedRuntime === null) {
-    cachedRuntime = detectContainerRuntime()
-  }
+  cachedRuntime ??= detectContainerRuntime()
   return cachedRuntime
 }

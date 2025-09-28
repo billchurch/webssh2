@@ -328,8 +328,9 @@ export interface MockSSHConnectionOptions {
  * Create a mock Socket.IO server instance
  */
 export function createMockIO(): unknown {
+  const mockFn = vi ? vi.fn : mock.fn
   const io: unknown = new EventEmitter()
-  io.on = mock.fn(io.on)
+  io.on = mockFn(io.on)
   return io
 }
 
@@ -337,18 +338,19 @@ export function createMockIO(): unknown {
  * Create a mock Socket instance with standard test configuration
  */
 export function createMockSocket(options: MockSocketOptions = {}): unknown {
+  const mockFn = vi ? vi.fn : mock.fn
   const mockSocket: unknown = new EventEmitter()
   mockSocket.id = options.id ?? 'test-socket-id'
   mockSocket.request = {
     session: {
-      save: mock.fn((cb: () => void) => cb()),
+      save: mockFn((cb: () => void) => cb()),
       sshCredentials: options.sessionCredentials ?? null,
       usedBasicAuth: options.usedBasicAuth ?? false,
       authMethod: options.authMethod,
     },
   }
-  mockSocket.emit = mock.fn()
-  mockSocket.disconnect = mock.fn()
+  mockSocket.emit = mockFn()
+  mockSocket.disconnect = mockFn()
   return mockSocket
 }
 
