@@ -2,11 +2,11 @@
 
 [![Contributors Guide](https://img.shields.io/badge/Contributors-Guide-blue?logo=github)](./DOCS/development/CONTRIBUTING.md)
 
-![Orthrus Mascot](images/orthrus2.png)
+![Orthrus Mascot](DOCS/images/orthrus2.png)
 
 WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as a client on a host to proxy a Websocket / Socket.io connection to an SSH2 server.
 
-![WebSSH2 Screenshot](images/Screenshot_sm.png)
+![WebSSH2 Screenshot](DOCS/images/Screenshot_sm.png)
 
 ## Quick Start
 
