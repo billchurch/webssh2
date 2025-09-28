@@ -63,7 +63,7 @@ describe('Socket.IO Contracts', () => {
     EventEmitter.prototype.emit.call(mockSocket, 'authenticate', { host: 'h' })
     const authEvents = mockSocket.emit.mock.calls.filter((c) => c[0] === 'authentication')
     expect(authEvents.length > 0).toBeTruthy()
-    const last = authEvents[authEvents.length - 1][1] as { success?: boolean; message?: string }
+    const last = authEvents.at(-1)![1] as { success?: boolean; message?: string }
     expect(last.success).toBe(false)
     expect(String(last.message ?? '')).toMatch(/Invalid credentials/i)
   })

@@ -82,7 +82,7 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
 
     const authEvents = mockSocket.emit.mock.calls.filter((c: unknown[]) => c[0] === 'authentication')
     expect(authEvents.length > 0).toBeTruthy()
-    const lastAuthEvent = authEvents[authEvents.length - 1]
+    const lastAuthEvent = authEvents.at(-1)
     const lastAuth = lastAuthEvent?.[1] as { success: boolean; message?: string }
     expect(lastAuth.success).toBe(false)
     expect(String(lastAuth.message ?? '')).toMatch(/Invalid credentials/i)

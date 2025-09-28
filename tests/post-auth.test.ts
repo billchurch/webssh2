@@ -68,9 +68,9 @@ function createAuthenticatedPOST(app: express.Application, endpoint: string, for
   const req: Test = request(app).post(endpoint).set('Content-Type', 'application/x-www-form-urlencoded')
 
   // Add custom headers
-  Object.entries(headers).forEach(([key, value]) => {
+  for (const [key, value] of Object.entries(headers)) {
     req.set(key, value)
-  })
+  }
 
   return req.send(formData)
 }

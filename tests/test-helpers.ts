@@ -413,12 +413,12 @@ export function createSSHServerWithExec(
 
   const handleExec = (accept: (usePTY?: boolean) => ClientChannel, _reject: () => boolean, info: { command: string }): void => {
     const stream = accept()
-    if (execHandler !== undefined) {
-      execHandler(info.command, stream)
-    } else {
+    if (execHandler === undefined) {
       stream.write(`Command output: ${info.command}\r\n`)
       stream.exit(0)
       stream.end()
+    } else {
+      execHandler(info.command, stream)
     }
   }
 
@@ -549,7 +549,7 @@ export function expectAuthSuccess(
     throw new Error('Expected authentication event not found')
   }
 
-  const lastAuth = authEvents[authEvents.length - 1].arguments[1] as { success?: boolean }
+  const lastAuth = authEvents.at(-1)!.arguments[1] as { success?: boolean }
   if (lastAuth.success !== true) {
     throw new Error('Expected authentication success')
   }
@@ -575,7 +575,7 @@ export function expectAuthFailure(
     throw new Error('Expected authentication event not found')
   }
 
-  const lastAuth = authEvents[authEvents.length - 1].arguments[1] as { success?: boolean; message?: string }
+  const lastAuth = authEvents.at(-1)!.arguments[1] as { success?: boolean; message?: string }
   if (lastAuth.success !== false) {
     throw new Error('Expected authentication failure')
   }
@@ -654,7 +654,7 @@ export function createMinimalConfig(overrides?: DeepPartial<TestConfig>): TestCo
     },
   }
 
-  return overrides !== undefined ? deepMergeConfigs(base, overrides) : base
+  return overrides === undefined ? base : deepMergeConfigs(base, overrides)
 }
 
 export function createTestConfigWithSSO(
