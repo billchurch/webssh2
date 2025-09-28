@@ -8,10 +8,10 @@
 
 ## Current State (Repo Review)
 
-- Entrypoint: `index.js` → `app/app.js` creates Express app, HTTP server, and Socket.IO.
-- Routes: `app/routes.js` mounts under `/ssh` (no REST API yet).
-- Sockets: `app/socket.js` creates a `WebSSH2Socket` per connection; maintains per‑socket `sessionState` and an `SSHConnection` instance (`app/ssh.js`).
-- Sessions: No global registry of active sessions; state is only on each Socket.IO `socket` instance.
+- Entrypoint: `index.js` → `app/app.ts` creates Express app, HTTP server, and Socket.IO.
+- Routes: `app/routes-v2.ts` mounts under `/ssh` (no REST API yet).
+- Sockets: `app/socket-v2.ts` uses `ServiceSocketAdapter` per connection; maintains session state via `SessionStore` and uses `SSHServiceImpl` (`app/services/ssh/ssh-service.ts`).
+- Sessions: Global session state managed through `SessionStore` with dependency injection pattern.
 - Useful data available today:
   - `socket.id` (session id surrogate)
   - Client IP: `socket.handshake.address` or `socket.request.connection.remoteAddress`
@@ -33,13 +33,13 @@ Introduce an in‑memory registry keyed by `socket.id`:
 - state flags: { authenticated, hasStream }
 - handles (internal, not exported): socket ref, ssh ref
 
-Update points in `app/socket.js`:
+Update points in `app/socket-v2.ts` (ServiceSocketAdapter):
 
 - On `io.on('connection')`: register basic entry with source IP/UA, connectedAt.
-- On successful `initializeConnection`: update with username/dest; mark authenticated.
-- On `createShell` success: mark hasStream, store term/size.
+- On successful authentication via `SSHService.connect()`: update with username/dest; mark authenticated.
+- On shell creation via `SSHService.shell()`: mark hasStream, store term/size.
 - On data/resize events: update `lastActivityAt`.
-- On `disconnect`/`handleConnectionClose`: remove from registry.
+- On `disconnect`: remove from registry.
 
 ## Proposed API Surface
 
@@ -89,13 +89,13 @@ Notes
 
 Phase 1 – Minimal, Safe, Useful
 
-- Add `app/session-registry.js` with:
+- Add `app/session-registry.ts` with:
   - register(socket), update(id, patch), remove(id), get(id), list(), terminate(id, opts), message(id, text), stats().
-- Wire registry in `app/socket.js` lifecycle points.
-- Add `app/api-routes.js` (mount at `/api` in `createAppAsync` and `createApp` when `config.api.enabled`).
+- Wire registry in `app/socket-v2.ts` lifecycle points.
+- Add `app/api-routes.ts` (mount at `/api` in `createAppAsync` and `createApp` when `config.api.enabled`).
 - Endpoints: `GET /sessions`, `GET /sessions/:id`, `DELETE /sessions/:id`, `POST /sessions/:id/message`, `GET /stats`, `GET /health`.
 - Auth: simple API key check middleware.
-- Tests: Node test runner specs for registry and routes under `tests/api.test.js` (mock io/socket, inject fake sessions, verify JSON shape, and termination flow).
+- Tests: Vitest specs for registry and routes under `tests/api.vitest.ts` (mock io/socket, inject fake sessions, verify JSON shape, and termination flow).
 
 Phase 2 – Hardening & Quality
 
@@ -134,7 +134,7 @@ ENV (examples)
 - `WEBSSH2_API_ALLOWLIST=10.0.0.0/8,127.0.0.1/32`
 - `WEBSSH2_HTTP_API_ORIGINS=https://admin.example.com:443`
 
-Notes: Update `app/envConfig.js` and `app/configSchema.js` to validate/merge these.
+Notes: Update `app/envConfig.ts` and `app/configSchema.ts` to validate/merge these.
 
 ## Data Shapes (examples)
 
