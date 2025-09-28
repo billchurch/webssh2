@@ -38,7 +38,6 @@
     "ChangeLog.md"
   ],
   "dependencies": {
-    "@esbuild/darwin-arm64": "^0.25.10",
     "basic-auth": "^2.0.1",
     "body-parser": "^2.2.0",
     "debug": "^4.4.3",
