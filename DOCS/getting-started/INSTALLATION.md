@@ -24,11 +24,13 @@ cd webssh2
 ### Step 2: Install Dependencies
 
 For production deployment:
+
 ```bash
 npm install --production
 ```
 
 For development (includes dev dependencies):
+
 ```bash
 npm install
 ```
@@ -36,6 +38,7 @@ npm install
 ### Step 3: Build (Optional)
 
 If you're using TypeScript or need to build assets:
+
 ```bash
 npm run build
 ```
@@ -51,6 +54,7 @@ export WEBSSH2_SSH_HOST=default.server.com
 ```
 
 Or create `config.json`:
+
 ```json
 {
   "listen": {
@@ -212,6 +216,7 @@ WantedBy=multi-user.target
 ```
 
 Enable and start:
+
 ```bash
 sudo systemctl enable webssh2
 sudo systemctl start webssh2
@@ -252,6 +257,7 @@ services:
 ```
 
 Start with:
+
 ```bash
 docker-compose up -d
 ```
@@ -313,7 +319,7 @@ rm -rf /path/to/webssh2
 sudo rm /etc/systemd/system/webssh2.service
 ```
 
-### Docker
+### Docker Install
 
 ```bash
 docker stop webssh2
