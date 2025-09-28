@@ -1,5 +1,4 @@
 /* eslint-disable no-undef */
-/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { test, expect, type Page, type Browser, type BrowserContext } from '@playwright/test'
@@ -109,16 +108,11 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
       return rows.map((row) => row.textContent ?? '').join('\n')
     })
-    console.log('Terminal output:', out)
 
     // Look for any digit pair that looks like terminal dimensions (rows cols)
     // The output might be on a new line after the command
     const dimensionMatches = out.matchAll(/(\d+)\s+(\d+)/g) //NOSONAR
     const matches = Array.from(dimensionMatches)
-    console.log(
-      'All dimension matches found:',
-      matches.map((m) => `${m[1]} ${m[2]}`),
-    )
 
     // Find the match that looks like terminal dimensions (not timestamps or other numbers)
     const sttyMatch = matches.find((m) => {
@@ -133,11 +127,9 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     if (sttyMatch !== undefined) {
       rows = Number(sttyMatch[1])
       cols = Number(sttyMatch[2])
-      console.log('Stty match found:', rows, cols)
     } else {
       // Fallback to any number pair
       const match = out.match(/\b(\d+)\s+(\d+)\b/)
-      console.log('Fallback match:', match)
       expect(match).toBeTruthy()
       rows = Number(match![1])
       cols = Number(match![2])
@@ -187,7 +179,6 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     }
 
     const initialOut: string = await getTerminalText()
-    console.log('Initial terminal text:', initialOut)
 
     // Extract size from output
     const sizeMatches: RegExpMatchArray[] = [...initialOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
@@ -198,7 +189,6 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     }
 
     const initialSize: string = initialSizeMatch[0]
-    console.log('Initial size:', initialSize)
 
     // Resize browser window (this should trigger terminal resize in V2)
     await page.setViewportSize({ width: 1200, height: 800 })
@@ -212,11 +202,9 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Get the new content after resize
     const newOut: string = await getTerminalText()
-    console.log('Terminal text after resize:', newOut)
 
     // Find all size patterns in the output
     const newSizeMatches: RegExpMatchArray[] = [...newOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
-    console.log('All size patterns found:', newSizeMatches.map((m: RegExpMatchArray) => m[0]))
 
     // The last match should be our new size
     const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches[newSizeMatches.length - 1]
@@ -226,7 +214,6 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     }
 
     const newSize: string = lastSizeMatch[0]
-    console.log('New size:', newSize)
 
     // Verify it's different from initial
     expect(newSize).not.toBe(initialSize)
@@ -258,7 +245,6 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     )
 
     // Type the password (simulating credential replay)
-    console.log('V2 credential replay test - typing password')
     await page.keyboard.type(PASSWORD)
     await page.keyboard.press('Enter')
 

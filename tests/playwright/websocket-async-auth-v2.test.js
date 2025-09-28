@@ -255,9 +255,10 @@ test.describe('V2 Async Error Recovery and Edge Cases', () => {
     await fillFormDirectly(page, '192.0.2.1', '22', TEST_CONFIG.validUsername, TEST_CONFIG.validPassword)
 
     // V2 should handle timeout errors gracefully
+    // Use 20s timeout instead of TEST_EXTENDED (60s) to speed up test suite
     await expect(
       page.locator('text=/Authentication failed|Connection failed|timeout|ETIMEDOUT/').first()
-    ).toBeVisible({ timeout: TIMEOUTS.TEST_EXTENDED })
+    ).toBeVisible({ timeout: 20000 })
 
     // Form should still be usable
     await expect(page.locator('[name="username"]')).toBeVisible()
