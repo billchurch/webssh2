@@ -103,11 +103,9 @@ export {
   extractAuthCredentials,
   extractOptionalTerminalSettings,
   validateRequiredFields,
-  extractAuthMethod,
   convertToAuthCredentials,
   CredentialError,
-  type TerminalSettings,
-  type AuthMethod
+  type TerminalSettings
 } from './credential-extractor.js'
 
 // ============================================================================
