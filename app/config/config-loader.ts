@@ -3,7 +3,7 @@
 
 import { promises as fs } from 'node:fs'
 import type { Result } from '../types/result.js'
-import { ok, err } from '../utils/result.js'
+import { ok, err } from '../utils/index.js'
 
 /**
  * Read configuration file

@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
-import { modifyHtml } from './utils.js'
+import { transformHtml } from './utils/html-transformer.js'
 import { getClientPublicPath } from './client-path.js'
 import type { AuthSession } from './auth/auth-utils.js'
 
@@ -26,7 +26,8 @@ async function sendClient(filePath: string, config: unknown, res: Response): Pro
     // File path is from internal client module resolution, not user input
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     const data = await fs.readFile(filePath, 'utf8')
-    const modifiedHtml = modifyHtml(data, config)
+    debug('Transforming HTML with config')
+    const modifiedHtml = transformHtml(data, config)
     res.send(modifiedHtml)
   } catch {
     res.status(HTTP.INTERNAL_SERVER_ERROR).send(MESSAGES.CLIENT_FILE_ERROR)

@@ -4,11 +4,10 @@
 import path, { dirname } from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { generateSecureSecret } from './utils.js'
+import { generateSecureSecret, enhanceConfig, err } from './utils/index.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
-import { enhanceConfig } from './utils/config-builder.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
 import { readConfigFile } from './config/config-loader.js'
 import {
@@ -17,9 +16,8 @@ import {
   parseConfigJson,
   createCorsConfig as createCorsConfigPure
 } from './config/config-processor.js'
-import { maskSensitiveConfig } from './config/transformers.js'
+import { maskSensitiveConfig } from './config/safe-logging.js'
 import type { Result } from './types/result.js'
-import { err } from './utils/result.js'
 
 const debug = createNamespacedDebug('config')
 

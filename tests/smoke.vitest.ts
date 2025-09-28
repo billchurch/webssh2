@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deepMerge, validateSshTerm } from '../app/utils.js'
+import { deepMerge } from '../app/utils/index.js'
+import { validateSshTerm } from '../app/validation/index.js'
 import { MESSAGES, DEFAULTS } from '../app/constants.js'
 
 describe('smoke', () => {

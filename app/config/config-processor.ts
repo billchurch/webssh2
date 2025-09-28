@@ -3,9 +3,7 @@
 
 import type { Config } from '../types/config.js'
 import type { Result } from '../types/result.js'
-import { ok, err } from '../utils/result.js'
-import { deepMergePure } from '../utils/object-merger.js'
-import { validateConfigPure } from '../utils/config-validator.js'
+import { ok, err, deepMerge, validateConfigPure } from '../utils/index.js'
 import { createCompleteDefaultConfig } from './default-config.js'
 
 /**
@@ -36,11 +34,11 @@ export function mergeConfigs(
   let merged = defaultConfig
   
   if (fileConfig != null) {
-    merged = deepMergePure(merged, fileConfig)
+    merged = deepMerge(merged, fileConfig)
   }
   
   if (envConfig != null) {
-    merged = deepMergePure(merged, envConfig)
+    merged = deepMerge(merged, envConfig)
   }
   
   return merged

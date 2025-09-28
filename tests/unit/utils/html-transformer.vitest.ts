@@ -2,11 +2,11 @@
 // Tests for pure HTML transformation functions
 
 import { describe, it, expect } from 'vitest'
-import { 
+import {
   transformAssetPaths,
   injectConfig,
   transformHtml
-} from '../../../app/utils/html-transformer.js'
+} from '../../../app/utils/index.js'
 
 describe('transformAssetPaths', () => {
   it('should transform relative asset paths', () => {

@@ -86,6 +86,7 @@ export class SSHServiceImpl implements SSHService {
   private readonly pool = new ConnectionPool()
   private readonly connectionTimeout: number
   private readonly keepaliveInterval: number
+  private readonly keepaliveCountMax: number
 
   constructor(
     private readonly deps: ServiceDependencies,
@@ -93,6 +94,7 @@ export class SSHServiceImpl implements SSHService {
   ) {
     this.connectionTimeout = deps.config.ssh.readyTimeout
     this.keepaliveInterval = deps.config.ssh.keepaliveInterval
+    this.keepaliveCountMax = deps.config.ssh.keepaliveCountMax
   }
 
   /**
@@ -105,6 +107,7 @@ export class SSHServiceImpl implements SSHService {
       username: config.username,
       readyTimeout: config.readyTimeout ?? this.connectionTimeout,
       keepaliveInterval: config.keepaliveInterval ?? this.keepaliveInterval,
+      keepaliveCountMax: config.keepaliveCountMax ?? this.keepaliveCountMax,
       tryKeyboard: true // Enable keyboard-interactive authentication
     }
 
@@ -298,6 +301,7 @@ export class SSHServiceImpl implements SSHService {
           algorithms: connectConfig.algorithms === undefined ? 'default' : 'configured',
           readyTimeout: connectConfig.readyTimeout,
           keepaliveInterval: connectConfig.keepaliveInterval,
+          keepaliveCountMax: connectConfig.keepaliveCountMax,
           tryKeyboard: connectConfig.tryKeyboard
         })
 

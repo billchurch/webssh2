@@ -6,7 +6,7 @@ import basicAuth from 'basic-auth'
 import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
 import { processAuthentication, createSessionData } from './auth-processor.js'
-import { isErr } from '../utils/result.js'
+import { isErr } from '../utils/index.js'
 
 /**
  * Create authentication middleware that handles basic auth

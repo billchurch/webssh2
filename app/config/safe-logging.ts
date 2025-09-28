@@ -1,0 +1,98 @@
+// app/config/safe-logging.ts
+// Safe masking of configuration data for logging
+
+import type { Config } from '../types/config.js'
+
+export interface MaskedConfig {
+  listen: Config['listen']
+  http: {
+    origins: string
+  }
+  user: {
+    name: string | null
+    password: string | null
+    privateKey: string | null
+    passphrase: string | null
+  }
+  ssh: {
+    host: Config['ssh']['host']
+    port: Config['ssh']['port']
+    localAddress?: Config['ssh']['localAddress']
+    localPort?: Config['ssh']['localPort']
+    term: Config['ssh']['term']
+    readyTimeout: Config['ssh']['readyTimeout']
+    keepaliveInterval: Config['ssh']['keepaliveInterval']
+    keepaliveCountMax: Config['ssh']['keepaliveCountMax']
+    allowedSubnets: number
+    algorithms: {
+      cipher: number
+      kex: number
+      hmac: number
+      compress: number
+      serverHostKey: number
+    }
+  }
+  header: Config['header']
+  options: Config['options']
+  session: {
+    name: string
+    secret: string
+  }
+  sso: {
+    enabled: boolean
+    csrfProtection: boolean
+    trustedProxies: number
+  }
+}
+
+/**
+ * Masks sensitive configuration data for logging
+ * @param config - Configuration to mask
+ * @returns Masked configuration safe for logging
+ * @pure
+ */
+export const maskSensitiveConfig = (config: Config): MaskedConfig => {
+  return {
+    listen: config.listen,
+    http: {
+      origins: config.http.origins.length > 0 
+        ? `${config.http.origins.length} origin(s)` 
+        : 'none'
+    },
+    user: {
+      name: config.user.name != null && config.user.name !== '' ? '***' : null,
+      password: config.user.password != null && config.user.password !== '' ? '***' : null,
+      privateKey: config.user.privateKey != null && config.user.privateKey !== '' ? '***' : null,
+      passphrase: config.user.passphrase != null && config.user.passphrase !== '' ? '***' : null
+    },
+    ssh: {
+      host: config.ssh.host,
+      port: config.ssh.port,
+      localAddress: config.ssh.localAddress,
+      localPort: config.ssh.localPort,
+      term: config.ssh.term,
+      readyTimeout: config.ssh.readyTimeout,
+      keepaliveInterval: config.ssh.keepaliveInterval,
+      keepaliveCountMax: config.ssh.keepaliveCountMax,
+      allowedSubnets: config.ssh.allowedSubnets?.length ?? 0,
+      algorithms: {
+        cipher: config.ssh.algorithms.cipher.length,
+        kex: config.ssh.algorithms.kex.length,
+        hmac: config.ssh.algorithms.hmac.length,
+        compress: config.ssh.algorithms.compress.length,
+        serverHostKey: config.ssh.algorithms.serverHostKey.length
+      }
+    },
+    header: config.header,
+    options: config.options,
+    session: {
+      name: config.session.name,
+      secret: config.session.secret === '' ? 'not set' : '***'
+    },
+    sso: {
+      enabled: config.sso.enabled,
+      csrfProtection: config.sso.csrfProtection,
+      trustedProxies: config.sso.trustedProxies.length
+    }
+  }
+}

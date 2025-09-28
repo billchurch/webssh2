@@ -7,10 +7,10 @@ import {
   validateSshPort,
   validateCssColor,
 } from '../../app/validation/config.js'
-import { ConfigBuilder } from '../../app/utils/config-builder.js'
-// Note: loadEnhancedConfig is now internal to config.ts
-// We'll test through the public API instead
+import { enhanceConfig } from '../../app/utils/index.js'
+import { createDefaultConfig } from '../../app/config/config-processor.js'
 import { mapEnvironmentVariables, ENV_VAR_MAPPING } from '../../app/config/env-mapper.js'
+import type { Config } from '../../app/types/config.js'
 import {
   TEST_USERNAME,
   TEST_PASSWORD,
@@ -94,7 +94,7 @@ describe('Enhanced Config - Environment Variable Support', () => {
   it('should support all environment variables from ENV_VAR_MAPPING', () => {
     const testEnv = createTestEnvironment()
     const config = mapEnvironmentVariables(testEnv)
-    
+
     // Verify all mapped values are present
     verifyListenConfig(config)
     verifySshConfig(config)
@@ -102,7 +102,7 @@ describe('Enhanced Config - Environment Variable Support', () => {
     verifyOptionsConfig(config)
     verifySsoConfig(config)
   })
-  
+
   it('should have mapping for all core environment variables', () => {
     const envVarCount = Object.keys(ENV_VAR_MAPPING).length
     // Current implementation has 42 environment variables mapped
@@ -112,142 +112,162 @@ describe('Enhanced Config - Environment Variable Support', () => {
 
 describe('Enhanced Config - SSH Configuration Fields', () => {
   it('should support localAddress and localPort fields', () => {
-    const builder = new ConfigBuilder()
-    builder
-      .withSessionSecret(TEST_SECRET) // Required for validation
-      .withSshHost('example.com')
-      .withSshPort(22)
-      .withSshLocalAddress(TEST_IPS.PRIVATE_192)
-      .withSshLocalPort(2223)
-    
-    const result = builder.validate()
-    if (!result.ok) {
-      console.error('Validation failed:', result.error)
+    const config: Config = createDefaultConfig(TEST_SECRET)
+    config.ssh.host = 'example.com'
+    config.ssh.port = 22
+    config.ssh.localAddress = TEST_IPS.PRIVATE_192
+    config.ssh.localPort = 2223
+
+    const result = enhanceConfig(config)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const enhancedConfig = result.value
+      expect(enhancedConfig.ssh).toMatchObject({
+        host: 'example.com',
+        port: 22,
+        localAddress: TEST_IPS.PRIVATE_192,
+        localPort: 2223,
+      })
     }
-    
-    const config = builder.build()
-    
-    expect(config).toBeDefined()
-    expect(config?.ssh).toMatchObject({
-      host: 'example.com',
-      port: 22,
-      localAddress: TEST_IPS.PRIVATE_192,
-      localPort: 2223,
-    })
   })
-  
+
   it('should support allowedSubnets field', () => {
-    const builder = new ConfigBuilder()
-    const config = builder
-      .withSessionSecret(TEST_SECRET) // Required for validation
-      .withSshAllowedSubnets([TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
-      .build()
-    
-    expect(config?.ssh.allowedSubnets).toEqual([TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
+    const config: Config = createDefaultConfig(TEST_SECRET)
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10]
+
+    const result = enhanceConfig(config)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const enhancedConfig = result.value
+      expect(enhancedConfig.ssh.allowedSubnets).toEqual([TEST_SUBNETS.PRIVATE_192, TEST_SUBNETS.PRIVATE_10])
+    }
   })
-  
+
   it('should support SSH algorithms configuration', () => {
-    const builder = new ConfigBuilder()
-    builder
-      .withSessionSecret(TEST_SECRET) // Required for validation
-      .withSshAlgorithms({
+    const config: Config = createDefaultConfig(TEST_SECRET)
+    config.ssh.algorithms = {
+      cipher: ['aes256-gcm'],
+      kex: ['curve25519-sha256'],
+      hmac: ['hmac-sha2-256'],
+      serverHostKey: [],
+      compress: []
+    }
+
+    const result = enhanceConfig(config)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const enhancedConfig = result.value
+      expect(enhancedConfig.ssh.algorithms).toMatchObject({
         cipher: ['aes256-gcm'],
         kex: ['curve25519-sha256'],
         hmac: ['hmac-sha2-256'],
       })
-    
-    const result = builder.validate()
-    if (!result.ok) {
-      console.error('Algorithm test validation failed:', result.error)
     }
-    const config = builder.build()
-    
-    expect(config).toBeDefined()
-    expect(config?.ssh.algorithms).toMatchObject({
-      cipher: ['aes256-gcm'],
-      kex: ['curve25519-sha256'],
-      hmac: ['hmac-sha2-256'],
-    })
   })
 })
 
-describe('Enhanced Config - ConfigBuilder Completeness', () => {
-  it('should support all configuration sections', () => {
-    const builder = new ConfigBuilder()
-    builder
-      .withSessionSecret(TEST_SECRET_123) // Add session secret first for validation
-      .withListenConfig(TEST_IPS.LOCALHOST, 3000)
-      .withHttpOrigins([TEST_HTTP_ORIGINS.SINGLE])
-      .withUserCredentials({
+describe('Enhanced Config - Config Validation', () => {
+  it('should validate all configuration sections', () => {
+    const config: Config = createDefaultConfig(TEST_SECRET_123)
+
+    // Update all config sections
+    config.listen = { ip: TEST_IPS.LOCALHOST, port: 3000 }
+    config.http = { origins: [TEST_HTTP_ORIGINS.SINGLE] }
+    config.user = {
+      name: TEST_USERNAME,
+      password: TEST_PASSWORD,
+      privateKey: null,
+      passphrase: null,
+    }
+    config.ssh.host = 'ssh.example.com'
+    config.ssh.port = 22
+    config.ssh.localAddress = TEST_IPS.LOCALHOST
+    config.ssh.localPort = 2223
+    config.ssh.algorithms = {
+      cipher: ['aes256-ctr'],
+      hmac: ['hmac-sha256'],
+      kex: [],
+      serverHostKey: [],
+      compress: []
+    }
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_192]
+    config.header = { text: 'Test Header', background: 'blue' }
+    config.options = {
+      challengeButton: true,
+      autoLog: true,
+      allowReauth: false,
+      allowReconnect: true,
+      allowReplay: false,
+      replayCRLF: false,
+    }
+    config.session.name = 'test-session'
+    config.sso = {
+      enabled: true,
+      csrfProtection: true,
+      trustedProxies: [TEST_IPS.LOCALHOST],
+      headerMapping: {
+        username: SSO_AUTH_HEADERS.username,
+        password: SSO_AUTH_HEADERS.password,
+        sessionId: SSO_AUTH_HEADERS.session,
+        host: 'x-ssh-host',
+        port: 'x-ssh-port',
+        algorithm: 'x-ssh-algorithm',
+      },
+    }
+
+    const result = enhanceConfig(config)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const enhancedConfig = result.value
+      expect(enhancedConfig.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 3000 })
+      expect(enhancedConfig.http.origins).toEqual([TEST_HTTP_ORIGINS.SINGLE])
+      expect(enhancedConfig.user).toMatchObject({
         name: TEST_USERNAME,
         password: TEST_PASSWORD,
       })
-      .withSshHost('ssh.example.com')
-      .withSshPort(22)
-      .withHeader('Test Header', 'blue')
-      .withOptions({
+      expect(enhancedConfig.ssh.host).toBe('ssh.example.com')
+      expect(enhancedConfig.header).toEqual({
+        text: 'Test Header',
+        background: 'blue',
+      })
+      expect(enhancedConfig.options).toMatchObject({
         challengeButton: true,
         autoLog: true,
         allowReauth: false,
       })
-      .withSessionName('test-session')
-      .withSsoConfig({
+      expect(enhancedConfig.session).toMatchObject({
+        secret: TEST_SECRET_123,
+        name: 'test-session',
+      })
+      expect(enhancedConfig.sso).toMatchObject({
         enabled: true,
         csrfProtection: true,
       })
-    
-    const result = builder.validate()
-    if (!result.ok) {
-      console.error('Complete config validation failed:', JSON.stringify(result.error, null, 2))
     }
-    
-    const config = builder.build()
-    
-    expect(config).toBeDefined()
-    expect(config?.listen).toEqual({ ip: TEST_IPS.LOCALHOST, port: 3000 })
-    expect(config?.http.origins).toEqual([TEST_HTTP_ORIGINS.SINGLE])
-    expect(config?.user).toMatchObject({
-      name: TEST_USERNAME,
-      password: TEST_PASSWORD,
-    })
-    expect(config?.ssh.host).toBe('ssh.example.com')
-    expect(config?.header).toEqual({
-      text: 'Test Header',
-      background: 'blue',
-    })
-    expect(config?.options).toMatchObject({
-      challengeButton: true,
-      autoLog: true,
-      allowReauth: false,
-    })
-    expect(config?.session).toMatchObject({
-      secret: TEST_SECRET_123,
-      name: 'test-session',
-    })
-    expect(config?.sso).toMatchObject({
-      enabled: true,
-      csrfProtection: true,
-    })
   })
 })
 
 describe('Enhanced Config - CORS Configuration', () => {
   it('should generate CORS config from enhanced config', async () => {
-    const builder = new ConfigBuilder()
-    const config = builder
-      .withSessionSecret(TEST_SECRET) // Required for validation
-      .withHttpOrigins(TEST_HTTP_ORIGINS.ARRAY)
-      .build()
-    
-    expect(config).toBeDefined()
-    // Import createCorsConfig from config-processor
-    const { createCorsConfig } = await import('../../app/config/config-processor.js')
-    const corsConfig = createCorsConfig(config!)
-    expect(corsConfig).toEqual({
-      origin: TEST_HTTP_ORIGINS.ARRAY,
-      methods: ['GET', 'POST'],
-      credentials: true,
-    })
+    const config: Config = createDefaultConfig(TEST_SECRET)
+    config.http.origins = TEST_HTTP_ORIGINS.ARRAY
+
+    const result = enhanceConfig(config)
+    expect(result.ok).toBe(true)
+
+    if (result.ok) {
+      const enhancedConfig = result.value
+      expect(enhancedConfig.http.origins).toEqual(TEST_HTTP_ORIGINS.ARRAY)
+
+      // Import createCorsConfig from config-processor
+      const { createCorsConfig } = await import('../../app/config/config-processor.js')
+      const corsConfig = createCorsConfig(enhancedConfig)
+      expect(corsConfig).toEqual({
+        origin: TEST_HTTP_ORIGINS.ARRAY,
+        methods: ['GET', 'POST'],
+        credentials: true,
+      })
+    }
   })
 })
 
@@ -262,7 +282,7 @@ describe('Enhanced Config - Validation Functions', () => {
       expect(() => validateSshHost('invalid host')).toThrow('contains spaces')
     })
   })
-  
+
   describe('validateSshPort', () => {
     it('should validate SSH ports correctly', () => {
       expect(validateSshPort(22)).toBe(22)
@@ -273,7 +293,7 @@ describe('Enhanced Config - Validation Functions', () => {
       expect(() => validateSshPort(3.14)).toThrow('Invalid SSH port')
     })
   })
-  
+
   describe('validateCssColor', () => {
     it('should validate CSS colors', () => {
       expect(validateCssColor('red')).toBe('red')
@@ -283,7 +303,7 @@ describe('Enhanced Config - Validation Functions', () => {
       expect(validateCssColor('')).toBeUndefined()
     })
   })
-  
+
 })
 
 describe('Enhanced Config - Integration with Existing Systems', () => {
@@ -292,7 +312,7 @@ describe('Enhanced Config - Integration with Existing Systems', () => {
     // Import the public API from config.ts
     const { getConfig } = await import('../../app/config.js')
     const config = await getConfig()
-    
+
     // Should have all required config fields
     expect(config).toHaveProperty('listen')
     expect(config).toHaveProperty('http')
