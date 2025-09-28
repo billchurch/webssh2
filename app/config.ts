@@ -17,7 +17,7 @@ import {
   parseConfigJson,
   createCorsConfig as createCorsConfigPure
 } from './config/config-processor.js'
-import { maskSensitiveConfig } from './config/transformers.js'
+import { maskSensitiveConfig } from './config/safe-logging.js'
 import type { Result } from './types/result.js'
 import { err } from './utils/result.js'
 
