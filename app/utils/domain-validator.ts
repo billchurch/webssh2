@@ -11,6 +11,45 @@ import {
 } from '../validation/config.js'
 
 /**
+ * Helper to validate a field and collect errors
+ */
+function validateField(
+  validator: () => void,
+  path: string,
+  value: unknown,
+  errors: ConfigValidationError[]
+): void {
+  try {
+    validator()
+  } catch (e) {
+    errors.push({
+      path,
+      message: (e as Error).message,
+      value
+    })
+  }
+}
+
+/**
+ * Check if authentication is properly configured
+ */
+function checkAuthConfiguration(config: Config, errors: ConfigValidationError[]): void {
+  const hasHost = config.ssh.host != null && config.ssh.host !== ''
+  const hasUsername = config.user.name != null && config.user.name !== ''
+  const hasPassword = config.user.password != null && config.user.password !== ''
+  const hasPrivateKey = config.user.privateKey != null && config.user.privateKey !== ''
+  const hasAuth = hasPassword || hasPrivateKey
+
+  if (hasHost && hasUsername && !hasAuth) {
+    errors.push({
+      path: 'user',
+      message: 'SSH host is configured but no authentication method (password or private key) is provided',
+      value: config.user
+    })
+  }
+}
+
+/**
  * Validates business rules and domain constraints on configuration
  * This includes branded type validations and domain-specific rules
  *
@@ -22,80 +61,52 @@ export function validateBusinessRules(config: Config): Result<Config, ConfigVali
 
   // Validate SSH host (if provided)
   if (config.ssh.host != null) {
-    try {
-      validateSshHost(config.ssh.host)
-    } catch (e) {
-      errors.push({
-        path: 'ssh.host',
-        message: (e as Error).message,
-        value: config.ssh.host
-      })
-    }
+    validateField(
+      () => validateSshHost(config.ssh.host),
+      'ssh.host',
+      config.ssh.host,
+      errors
+    )
   }
 
   // Validate SSH port
-  try {
-    validateSshPort(config.ssh.port)
-  } catch (e) {
-    errors.push({
-      path: 'ssh.port',
-      message: (e as Error).message,
-      value: config.ssh.port
-    })
-  }
+  validateField(
+    () => validateSshPort(config.ssh.port),
+    'ssh.port',
+    config.ssh.port,
+    errors
+  )
 
   // Validate CSS color for header background
   if (config.header.background !== '') {
-    try {
-      validateCssColor(config.header.background)
-    } catch (e) {
-      errors.push({
-        path: 'header.background',
-        message: (e as Error).message,
-        value: config.header.background
-      })
-    }
+    validateField(
+      () => validateCssColor(config.header.background),
+      'header.background',
+      config.header.background,
+      errors
+    )
   }
 
   // Validate local SSH port if provided
   if (config.ssh.localPort !== undefined) {
-    try {
-      validateSshPort(config.ssh.localPort)
-    } catch (e) {
-      errors.push({
-        path: 'ssh.localPort',
-        message: (e as Error).message,
-        value: config.ssh.localPort
-      })
-    }
+    validateField(
+      () => validateSshPort(config.ssh.localPort),
+      'ssh.localPort',
+      config.ssh.localPort,
+      errors
+    )
   }
 
   // Validate listen port
-  try {
-    validateSshPort(config.listen.port)
-  } catch (e) {
-    errors.push({
-      path: 'listen.port',
-      message: (e as Error).message,
-      value: config.listen.port
-    })
-  }
+  validateField(
+    () => validateSshPort(config.listen.port),
+    'listen.port',
+    config.listen.port,
+    errors
+  )
 
-  // Additional business rules
-  // Check that at least one auth method is configured if host is provided
-  if (config.ssh.host != null && config.ssh.host !== '') {
-    const hasAuth =
-      (config.user.password != null && config.user.password !== '') ||
-      (config.user.privateKey != null && config.user.privateKey !== '')
-
-    if (!hasAuth && config.user.name != null && config.user.name !== '') {
-      errors.push({
-        path: 'user',
-        message: 'SSH host is configured but no authentication method (password or private key) is provided',
-        value: config.user
-      })
-    }
-  }
+  // Check authentication configuration
+  checkAuthConfiguration(config, errors)
 
   // Validate session secret strength
   if (config.session.secret.length < 32) {
@@ -106,11 +117,7 @@ export function validateBusinessRules(config: Config): Result<Config, ConfigVali
     })
   }
 
-  if (errors.length > 0) {
-    return err(errors)
-  }
-
-  return ok(config)
+  return errors.length > 0 ? err(errors) : ok(config)
 }
 
 /**

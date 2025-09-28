@@ -14,11 +14,11 @@ function isValidIPv4(ip: string): boolean {
   }
 
   for (const part of parts) {
-    const num = parseInt(part, 10)
-    if (isNaN(num) || num < 0 || num > 255) {
+    const num = Number.parseInt(part, 10)
+    if (Number.isNaN(num) || num < 0 || num > 255) {
       return false
     }
-    if (part.length > 1 && part[0] === '0') {
+    if (part.length > 1 && part.startsWith('0')) {
       return false // no leading zeros
     }
   }
