@@ -11,8 +11,21 @@ import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
 import { createMockStore, createMockDependencies } from '../../test-utils.js'
 import { Duplex } from 'node:stream'
 
+// Mock client type with event handling capability
+interface MockClientWithTrigger {
+  connect: Mock
+  shell: Mock
+  exec: Mock
+  end: Mock
+  on: Mock
+  once: Mock
+  removeAllListeners: Mock
+  _trigger: (event: string, ...args: unknown[]) => void
+  _handlers: Map<string, Array<(...args: unknown[]) => void>>
+}
+
 // Factory function to create mock SSH2 client
-const createMockClient = () => {
+const createMockClient = (): MockClientWithTrigger => {
   const handlers = new Map<string, Array<(...args: unknown[]) => void>>()
   return {
     connect: vi.fn(),
@@ -55,15 +68,6 @@ const createTestSSHConfig = (overrides?: Partial<SSHConfig>): SSHConfig => ({
 })
 
 // Helper to trigger events on mock client
-interface MockClientWithTrigger {
-  _trigger: (event: string, ...args: unknown[]) => void
-  connect: Mock
-  shell: Mock
-  exec: Mock
-  end: Mock
-  on: Mock
-}
-
 const triggerClientEvent = (client: unknown, event: string, ...args: unknown[]): void => {
   const mockClient = client as MockClientWithTrigger
   mockClient._trigger(event, ...args)
