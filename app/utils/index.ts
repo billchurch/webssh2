@@ -97,13 +97,18 @@ export {
 // ============================================================================
 
 /**
- * Build and extract SSH credentials from various sources.
+ * Extract and validate SSH credentials from various sources.
  */
 export {
-  buildCredentials,
-  extractSessionCredentials,
-  hasRequiredCredentials
-} from './credential-builder.js'
+  extractAuthCredentials,
+  extractOptionalTerminalSettings,
+  validateRequiredFields,
+  extractAuthMethod,
+  convertToAuthCredentials,
+  CredentialError,
+  type TerminalSettings,
+  type AuthMethod
+} from './credential-extractor.js'
 
 // ============================================================================
 // Config Validation Utilities
