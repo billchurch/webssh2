@@ -2,8 +2,8 @@
 
 import { describe, it, beforeEach, afterEach, expect } from 'vitest'
 import fs from 'node:fs'
-import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
-import { ConfigError } from '../dist/app/errors.js'
+import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
+import { ConfigError } from '../app/errors.js'
 import { setupTestEnvironment } from './test-utils.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
 

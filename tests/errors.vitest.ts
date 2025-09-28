@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../dist/app/errors.js'
+import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../app/errors.js'
 
 describe('errors.ts', () => {
   it('derives WebSSH2Error correctly', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateSecureSecret } from '../dist/app/utils/crypto.js'
+import { generateSecureSecret } from '../app/utils/crypto.js'
 
 describe('utils/crypto.ts', () => {
   it('generates a 64-char hex secret', () => {

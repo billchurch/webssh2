@@ -5,7 +5,7 @@ import {
   processEnvironmentVariables,
   setupSshCredentials,
   processSessionRecordingParams,
-} from '../dist/app/auth/auth-utils.js'
+} from '../app/auth/auth-utils.js'
 import { TEST_PASSWORDS } from './test-constants.js'
 
 it('processHeaderParameters sets session overrides from GET-like source', () => {
