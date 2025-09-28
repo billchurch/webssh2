@@ -11,6 +11,7 @@ import { isErr } from './utils/result.js'
 const debug = createNamespacedDebug('utils')
 
 // Re-export using export...from syntax for better tree-shaking and clarity
+export { generateSecureSecret } from './utils/crypto.js'
 export { deepMergePure as deepMerge } from './utils/object-merger.js'
 export { validateHost as getValidatedHost, validatePort as getValidatedPort, validateTerm as validateSshTerm, normalizeDimension } from './validation/ssh.js'
 export { isValidCredentials, type Credentials } from './validation/credentials.js'
