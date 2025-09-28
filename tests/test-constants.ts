@@ -38,14 +38,16 @@ export const TEST_PASSWORDS = {
 } as const
 
 // Session and secrets
-export const TEST_SECRET = 'test-secret' //NOSONAR
+// Note: Business rules now require 32+ character secrets for security
+export const TEST_SECRET = 'test-secret-that-is-at-least-32-characters-long' //NOSONAR
 export const TEST_SECRET_KEY = 'test-secret-key' //NOSONAR
-export const TEST_SECRET_LONG = 'test-secret-key-12345' //NOSONAR
-export const TEST_SECRET_123 = 'test-secret-123' //NOSONAR
+export const TEST_SECRET_LONG = 'test-secret-key-12345-extended-to-32-characters' //NOSONAR
+export const TEST_SECRET_123 = 'test-secret-123-that-is-at-least-32-characters' //NOSONAR
 export const MY_SECRET = 'mysecret' //NOSONAR
-export const MY_SESSION_SECRET = 'my-session-secret' //NOSONAR
-export const TEST_SESSION_SECRET = 'test-session-secret' //NOSONAR
+export const MY_SESSION_SECRET = 'my-session-secret-extended-to-meet-32-char-min' //NOSONAR
+export const TEST_SESSION_SECRET = 'test-session-secret-extended-for-32-char-minimum' //NOSONAR
 export const TEST_MINIMAL_SECRET = 's' //NOSONAR
+export const TEST_SECRET_SHORT = 'test-secret' //NOSONAR - Intentionally short for validation tests
 
 // Keys and passphrases
 export const TEST_PRIVATE_KEY = 'test-key' //NOSONAR
@@ -219,7 +221,7 @@ export const TEST_FORM_DATA = {
 
 // Environment variable test values
 export const ENV_TEST_VALUES = {
-  secret: '%TEST_SECRET%',
+  secret: '%TEST_SECRET_THAT_IS_AT_LEAST_32_CHARACTERS_LONG%',
 } as const
 
 // ============================================================================

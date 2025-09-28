@@ -13,14 +13,16 @@ import type { Config } from '../../../app/types/config.js'
 import { TEST_SECRET_123, TEST_PASSWORDS, TEST_IPS, TEST_SECRET } from '../../test-constants.js'
 
 void describe('createDefaultConfig', () => {
-  it('should create default config without session secret', () => {
+  it('should create default config with auto-generated session secret', () => {
     const config = createDefaultConfig()
-    
+
     expect(config.listen.ip).toBe('0.0.0.0')
     expect(config.listen.port).toBe(2222)
     expect(config.ssh.port).toBe(22)
     expect(config.ssh.term).toBe('xterm-256color')
-    expect(config.session.secret).toBe('')
+    // Should auto-generate a secure secret (64 hex chars = 32 bytes)
+    expect(config.session.secret).toBeDefined()
+    expect(config.session.secret.length).toBe(64)
     expect(config.session.name).toBe('webssh2.sid')
   })
   

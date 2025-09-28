@@ -60,13 +60,18 @@ export function processConfig(
 ): Result<Config, { message: string; originalConfig: Config }> {
   const merged = mergeConfigs(defaultConfig, fileConfig, envConfig)
   const validationResult = validateConfigPure(merged)
-  
+
   if (validationResult.ok) {
-    return ok(validationResult.value as Config)
+    return ok(validationResult.value)
   }
-  
+
+  // Handle both old and new error formats
+  const errorMessage = Array.isArray(validationResult.error)
+    ? validationResult.error.map(e => `${e.path}: ${e.message}`).join('; ')
+    : (validationResult.error as { message: string }).message
+
   return err({
-    message: validationResult.error.message,
+    message: errorMessage,
     originalConfig: merged
   })
 }
