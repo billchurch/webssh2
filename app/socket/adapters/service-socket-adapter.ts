@@ -64,20 +64,6 @@ function mapOptionalCredentials(credentials: OptionalCredentials): Partial<Optio
 }
 
 /**
- * Builds auth service credentials from socket auth credentials
- */
-function buildAuthCredentials(
-  credentials: AuthCredentials
-): Parameters<Services['auth']['authenticate']>[0] {
-  return {
-    username: credentials.username,
-    host: credentials.host,
-    port: credentials.port,
-    ...mapOptionalCredentials(credentials)
-  }
-}
-
-/**
  * Builds SSH service config from credentials and session info
  */
 function buildSSHConfig(
@@ -406,8 +392,7 @@ export class ServiceSocketAdapter {
   }
 
   private async performAuthentication(authCredentials: AuthCredentials): Promise<{ sessionId: SessionId } | null> {
-    const authCreds = buildAuthCredentials(authCredentials)
-    const authResult = await this.services.auth.authenticate(authCreds)
+    const authResult = await this.services.auth.authenticate(authCredentials)
 
     if (authResult.ok) {
       return authResult.value

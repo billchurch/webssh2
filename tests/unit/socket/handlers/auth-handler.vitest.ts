@@ -74,7 +74,7 @@ describe('Auth Handler', () => {
         password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
-      expect(result.error).toBe('Username is required')
+      expect(result.error).toBe('Username is required and must be a non-empty string')
     })
 
     it('should reject missing host', () => {
@@ -84,7 +84,7 @@ describe('Auth Handler', () => {
         password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
-      expect(result.error).toBe('Host is required')
+      expect(result.error).toBe('Host is required and must be a non-empty string')
     })
 
     it('should reject invalid port', () => {
@@ -95,7 +95,7 @@ describe('Auth Handler', () => {
         password: TEST_PASSWORDS.secret,
       })
       expect(result.valid).toBe(false)
-      expect(result.error).toBe('Invalid port number')
+      expect(result.error).toBe('Port must be a number between 1 and 65535')
     })
 
     it('should reject missing authentication method', () => {
@@ -105,7 +105,7 @@ describe('Auth Handler', () => {
         port: 22,
       })
       expect(result.valid).toBe(false)
-      expect(result.error).toBe('Either password or private key is required')
+      expect(result.error).toBe('Either password or privateKey is required for authentication')
     })
 
     it('should handle string port conversion', () => {
