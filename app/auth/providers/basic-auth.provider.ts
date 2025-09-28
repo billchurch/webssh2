@@ -28,7 +28,7 @@ export class BasicAuthProvider implements AuthProvider {
       return null
     }
 
-    return convertToAuthCredentials(session.sshCredentials)
+    return convertToAuthCredentials(session.sshCredentials as Record<string, unknown>)
   }
 
   getAuthMethod(): AuthMethod {
