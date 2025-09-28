@@ -13,8 +13,12 @@ describe('errors.ts', () => {
   })
 
   it('handleError writes to response', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn())
+
     const status = vi.fn().mockReturnValue({ json: vi.fn() })
     handleError(new ConfigError('bad'), { status })
     expect(status).toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
   })
 })

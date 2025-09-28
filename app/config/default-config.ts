@@ -94,13 +94,34 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
 
 /**
  * Create a complete default configuration with session secret
+ * Deep clones nested objects to prevent mutation
  */
 export function createCompleteDefaultConfig(sessionSecret = ''): Config {
   return {
-    ...DEFAULT_CONFIG_BASE,
+    listen: { ...DEFAULT_CONFIG_BASE.listen },
+    http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
+    user: { ...DEFAULT_CONFIG_BASE.user },
+    ssh: {
+      ...DEFAULT_CONFIG_BASE.ssh,
+      algorithms: {
+        cipher: [...DEFAULT_CONFIG_BASE.ssh.algorithms.cipher],
+        compress: [...DEFAULT_CONFIG_BASE.ssh.algorithms.compress],
+        hmac: [...DEFAULT_CONFIG_BASE.ssh.algorithms.hmac],
+        kex: [...DEFAULT_CONFIG_BASE.ssh.algorithms.kex],
+        serverHostKey: [...DEFAULT_CONFIG_BASE.ssh.algorithms.serverHostKey],
+      },
+      allowedSubnets: DEFAULT_CONFIG_BASE.ssh.allowedSubnets != null ? [...DEFAULT_CONFIG_BASE.ssh.allowedSubnets] : [],
+    },
+    header: { ...DEFAULT_CONFIG_BASE.header },
+    options: { ...DEFAULT_CONFIG_BASE.options },
     session: {
       ...DEFAULT_CONFIG_BASE.session,
       secret: sessionSecret,
+    },
+    sso: {
+      ...DEFAULT_CONFIG_BASE.sso,
+      trustedProxies: [...DEFAULT_CONFIG_BASE.sso.trustedProxies],
+      headerMapping: { ...DEFAULT_CONFIG_BASE.sso.headerMapping },
     },
   }
 }

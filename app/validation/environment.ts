@@ -20,7 +20,7 @@ export function isValidEnvKey(key: string): boolean {
  * @pure
  */
 export function isValidEnvValue(value: string): boolean {
-  return !/[;&|`$]/.test(value)
+  return value !== '' && !/[;&|`$]/.test(value)
 }
 
 /**
