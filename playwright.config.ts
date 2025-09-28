@@ -34,8 +34,9 @@ export default defineConfig({
     url: `${BASE_URL}/ssh`,
     reuseExistingServer: true,
     timeout: TIMEOUTS.WEB_SERVER,
-    env: { 
-      DEBUG: process.env.E2E_DEBUG ?? ''
+    env: {
+      DEBUG: process.env.E2E_DEBUG ?? '',
+      WEBSSH2_SSH_READY_TIMEOUT: '10000' // Faster timeout for test suite
     },
   },
   ...(enableE2E
