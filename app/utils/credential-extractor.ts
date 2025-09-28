@@ -51,7 +51,7 @@ export function validateRequiredFields(raw: Record<string, unknown>): Result<Req
 
   // Convert string port to number if needed
   if (typeof port === 'string') {
-    port = parseInt(port, 10)
+    port = Number.parseInt(port, 10)
   }
 
   // Validate username
@@ -65,7 +65,7 @@ export function validateRequiredFields(raw: Record<string, unknown>): Result<Req
   }
 
   // Validate port
-  if (typeof port !== 'number' || isNaN(port) || port <= 0 || port > 65535) {
+  if (typeof port !== 'number' || Number.isNaN(port) || port <= 0 || port > 65535) {
     return err(new CredentialError('Port must be a number between 1 and 65535', 'port'))
   }
 
