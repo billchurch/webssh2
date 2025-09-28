@@ -14,7 +14,7 @@ Welcome! This guide explains how to set up a dev environment, coding standards, 
 - Install deps: `npm install`
 - Dev server (with watch + debug): `DEBUG=webssh2:* npm run dev`
 - Build: `npm run build`
-- Lint: `npm run lint` (autofix: `npm run lint:fix`)
+- Lint: `npm run lint` (lints app + tests, autofix: `npm run lint:fix`)
 - Tests: `npm run test` (includes unit + integration)
 - Typecheck only: `npm run typecheck`
 
@@ -52,7 +52,7 @@ Welcome! This guide explains how to set up a dev environment, coding standards, 
 ## PR Checklist (copy into PR description)
 
 - [ ] Build succeeds (`npm run build`)
-- [ ] Lint passes (`npm run lint`)
+- [ ] Lint passes (app + tests): `npm run lint`
 - [ ] Tests pass locally (`npm run test`)
 - [ ] No new `any`, no disabled rules without justification
 - [ ] Constants used (no magic literals); docs updated as needed

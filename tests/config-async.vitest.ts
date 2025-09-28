@@ -2,8 +2,8 @@
 
 import { describe, it, beforeEach, afterEach, expect } from 'vitest'
 import fs from 'node:fs'
-import { getConfig, loadConfigAsync, resetConfigForTesting } from '../dist/app/config.js'
-import { ConfigError } from '../dist/app/errors.js'
+import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
+import { ConfigError } from '../app/errors.js'
 import { setupTestEnvironment } from './test-utils.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
 
@@ -37,7 +37,7 @@ describe('Config Module - Async Tests', () => {
     expect(config.listen.ip).toBe('0.0.0.0')
     expect(config.listen.port).toBe(2222)
     expect(config.ssh.port).toBe(22)
-    expect(config.ssh.term).toBe('xterm-color')
+    expect(config.ssh.term).toBe('xterm-256color')
     expect(config.session.name).toBe('webssh2.sid')
     expect(typeof config.session.secret === 'string' && config.session.secret !== '').toBeTruthy()
   })
@@ -67,7 +67,7 @@ describe('Config Module - Async Tests', () => {
     // Default values should still be present
     expect(config.listen.ip).toBe('0.0.0.0')
     expect(config.ssh.port).toBe(22)
-    expect(config.ssh.term).toBe('xterm-color')
+    expect(config.ssh.term).toBe('xterm-256color')
   })
 
   it('loadConfigAsync overrides port with PORT environment variable', async () => {

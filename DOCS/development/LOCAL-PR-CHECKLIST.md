@@ -16,7 +16,7 @@ This doc tracks the local work for the environment allowlist feature, safer env 
 
 ### Done
 
-- [x] Lint passes locally: `npm run lint`
+- [x] Lint passes locally (app + tests): `npm run lint`
 - [x] Tests pass locally: `npm run test`
 - [x] Build succeeds: `npm run build`
 - [x] Docs updated (README, DOCS/CONFIG.md, DOCS/ENV_VARIABLES.md)

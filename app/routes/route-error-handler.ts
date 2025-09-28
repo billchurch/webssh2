@@ -60,10 +60,10 @@ export function createSshValidationErrorResponse(
     case undefined:
     case 'unknown':
     default:
-      // Generic server error
+      // Generic SSH connection error
       return {
-        status: 500,
-        message: validationResult.errorMessage ?? 'Internal server error during SSH validation'
+        status: 502,
+        message: `SSH connection failed: ${validationResult.errorMessage ?? 'Unknown error'}`
       }
   }
 }

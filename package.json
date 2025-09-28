@@ -54,15 +54,13 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "node dist/index.js",
-    "lint": "eslint app",
-    "lint:fix": "eslint app --fix",
-    "lint:test": "eslint tests",
+    "lint": "eslint app tests",
+    "lint:fix": "eslint app tests --fix",
     "dev": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "watch": "npm run dev",
-    "test": "npm run build && npm run test:vitest",
-    "test:vitest": "vitest run",
-    "test:vitest:watch": "vitest",
-    "test:vitest:coverage": "vitest run --coverage",
+    "test": "npm run build && vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "check": "npm run lint && npm run typecheck && npm run test",
     "check:fix": "npm run lint:fix && npm run typecheck && npm run test",
     "verify": "npm run check",
@@ -71,9 +69,8 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "publish:npm": "npm publish",
-    "pretest": "npm run lint:fix",
     "ci": "npm run test",
-    "security:audit": "npm audit && echo 'Consider running: trivy fs .'"
+    "security:audit": "npm audit"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

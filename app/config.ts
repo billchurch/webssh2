@@ -4,7 +4,7 @@
 import path, { dirname } from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { generateSecureSecret } from './crypto-utils.js'
+import { generateSecureSecret } from './utils.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'

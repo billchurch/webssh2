@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../dist/app/errors.js'
+import { WebSSH2Error, ConfigError, SSHConnectionError, handleError } from '../app/errors.js'
 
 describe('errors.ts', () => {
   it('derives WebSSH2Error correctly', () => {
@@ -13,8 +13,12 @@ describe('errors.ts', () => {
   })
 
   it('handleError writes to response', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn())
+
     const status = vi.fn().mockReturnValue({ json: vi.fn() })
     handleError(new ConfigError('bad'), { status })
     expect(status).toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
   })
 })

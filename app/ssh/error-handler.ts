@@ -93,15 +93,15 @@ export function categorizeError(err: unknown): SshErrorType {
   if (message.includes('authentication') || message.includes('permission') || message.includes('denied')) {
     return SshErrorType.AUTHENTICATION
   }
-  
+
   if (message.includes('timeout') || message.includes('timed out')) {
     return SshErrorType.TIMEOUT
   }
-  
-  if (message.includes('connect') || message.includes('network') || message.includes('refused')) {
+
+  if (message.includes('refused') || message.includes('network') || message.includes('unreachable')) {
     return SshErrorType.NETWORK
   }
-  
+
   if (message.includes('connection')) {
     return SshErrorType.CONNECTION
   }
@@ -121,22 +121,25 @@ export function categorizeError(err: unknown): SshErrorType {
 export function createErrorInfo(err: unknown): SshErrorInfo {
   const message = extractErrorMessage(err)
   const type = categorizeError(err)
-  const errorObj = err as { code?: string; level?: string }
-  
+
   const info: SshErrorInfo = {
     type,
     message,
     originalError: err
   }
-  
-  if (errorObj.code != null) {
-    info.code = errorObj.code
+
+  if (err != null && typeof err === 'object') {
+    const errorObj = err as { code?: string; level?: string }
+
+    if (errorObj.code != null) {
+      info.code = errorObj.code
+    }
+
+    if (errorObj.level != null) {
+      info.level = errorObj.level
+    }
   }
-  
-  if (errorObj.level != null) {
-    info.level = errorObj.level
-  }
-  
+
   return info
 }
 

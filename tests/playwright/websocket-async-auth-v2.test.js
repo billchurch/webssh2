@@ -25,6 +25,24 @@ import {
   testBasicAuthErrorResponse
 } from './v2-helpers.js'
 
+test.describe('V2 Async Error Recovery and Edge Cases', () => {
+  test('should handle async timeout gracefully (V2)', async ({ page }) => {
+    await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
+
+    // Fill form with very slow/unresponsive host to test timeout
+    await fillFormDirectly(page, '192.0.2.1', '22', TEST_CONFIG.validUsername, TEST_CONFIG.validPassword)
+
+    // V2 should handle timeout errors gracefully
+    // SSH timeout is 10s (WEBSSH2_SSH_READY_TIMEOUT), so 15s is plenty
+    await expect(
+      page.locator('text=/Authentication failed|Connection failed|timeout|ETIMEDOUT/').first()
+    ).toBeVisible({ timeout: 15000 })
+
+    // Form should still be usable
+    await expect(page.locator('[name="username"]')).toBeVisible()
+  })
+})
+
 test.describe('V2 Async/Await Modal Login Authentication', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
@@ -244,22 +262,5 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
 
     const content = await getTerminalContent(page)
     expect(content).toContain('V2 session persistence')
-  })
-})
-
-test.describe('V2 Async Error Recovery and Edge Cases', () => {
-  test('should handle async timeout gracefully (V2)', async ({ page }) => {
-    await page.goto(`${TEST_CONFIG.baseUrl}/ssh`)
-
-    // Fill form with very slow/unresponsive host to test timeout
-    await fillFormDirectly(page, '192.0.2.1', '22', TEST_CONFIG.validUsername, TEST_CONFIG.validPassword)
-
-    // V2 should handle timeout errors gracefully
-    await expect(
-      page.locator('text=/Authentication failed|Connection failed|timeout|ETIMEDOUT/').first()
-    ).toBeVisible({ timeout: TIMEOUTS.TEST_EXTENDED })
-
-    // Form should still be usable
-    await expect(page.locator('[name="username"]')).toBeVisible()
   })
 })

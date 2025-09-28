@@ -2,9 +2,7 @@ import express, { type Application, type RequestHandler } from 'express'
 import type { Server as HttpServer } from 'node:http'
 import type { Server as IOServer } from 'socket.io'
 import { getConfig } from './config.js'
-import SSHConnection from './ssh.js'
 import initSocket from './socket-v2.js'
-import type { SSHCtor } from './types/ssh.js'
 import { createRoutesV2 as createRoutes } from './routes/routes-v2.js'
 import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
@@ -68,7 +66,7 @@ export async function initializeServerAsync(): Promise<{
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
 
     // Pass services to socket initialization
-    initSocket(io as Parameters<typeof initSocket>[0], appConfig, SSHConnection as SSHCtor, services, store)
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, services, store)
     
     startServer(server, appConfig)
     debug('Server initialized asynchronously')

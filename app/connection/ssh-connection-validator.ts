@@ -1,10 +1,14 @@
 // app/connection/ssh-connection-validator.ts
 // SSH connection validation service
 
+import { randomUUID } from 'node:crypto'
 import { createNamespacedDebug } from '../logger.js'
 import { analyzeConnectionError } from './ssh-validator.js'
 import type { Config } from '../types/config.js'
-import SSHConnection from '../ssh.js'
+import type { SSHService, SSHConfig } from '../services/interfaces.js'
+import { getGlobalContainer } from '../services/setup.js'
+import { TOKENS } from '../services/container.js'
+import { createSessionId } from '../types/branded.js'
 
 const debug = createNamespacedDebug('connection:validator')
 
@@ -28,38 +32,54 @@ export async function validateSshCredentials(
   port: number,
   username: string,
   password: string,
-  config: Config
+  _config: Config
 ): Promise<SshValidationResult> {
   debug(`Validating SSH credentials for ${username}@${host}:${port}`)
-  
-  const ssh = new SSHConnection(config)
-  try {
-    await ssh.connect({
-      host,
-      port,
-      username,
-      password,
-    })
-    
-    // If we get here, authentication succeeded
-    ssh.end() // Clean up the connection
-    debug(`SSH validation successful for ${username}@${host}:${port}`)
-    return { success: true }
-  } catch (error) {
-    const err = error as Error & { code?: string; level?: string }
-    debug(`SSH validation failed for ${username}@${host}:${port}:`, err.message)
-    debug(`Error details - code: ${err.code}, level: ${err.level}`)
-    
-    const errorType = analyzeConnectionError(err)
-    debug(`Determined error type: ${errorType}`)
-    
+
+  // Get SSHService from DI container
+  const container = getGlobalContainer()
+  if (container === null) {
+    debug('Container not initialized, cannot validate credentials')
     return {
       success: false,
-      errorType,
-      errorMessage: err.message,
+      errorType: 'unknown',
+      errorMessage: 'Service container not initialized',
     }
-  } finally {
-    // Ensure connection is always cleaned up
-    ssh.end()
+  }
+
+  const sshService = container.resolve<SSHService>(TOKENS.SSHService)
+
+  const sessionId = createSessionId(randomUUID())
+
+  const sshConfig: SSHConfig = {
+    sessionId,
+    host,
+    port,
+    username,
+    password,
+  }
+
+  // Attempt connection
+  const result = await sshService.connect(sshConfig)
+
+  if (result.ok) {
+    debug(`SSH validation successful for ${username}@${host}:${port}`)
+    // Clean up immediately
+    await sshService.disconnect(result.value.id)
+    return { success: true }
+  }
+
+  // Connection failed - categorize error
+  const err = result.error as Error & { code?: string; level?: string }
+  debug(`SSH validation failed for ${username}@${host}:${port}:`, err.message)
+  debug(`Error details - code: ${err.code}, level: ${err.level}`)
+
+  const errorType = analyzeConnectionError(err)
+  debug(`Determined error type: ${errorType}`)
+
+  return {
+    success: false,
+    errorType,
+    errorMessage: err.message,
   }
 }

@@ -21,7 +21,7 @@ void describe('createDefaultConfig', () => {
     expect(config.ssh.port).toBe(22)
     expect(config.ssh.term).toBe('xterm-256color')
     expect(config.session.secret).toBe('')
-    expect(config.session.name).toBe('webssh2')
+    expect(config.session.name).toBe('webssh2.sid')
   })
   
   it('should create default config with provided session secret', () => {

@@ -22,7 +22,7 @@ export const MESSAGES = {
 export const DEFAULTS = {
   SSH_PORT: 22,
   LISTEN_PORT: 2222,
-  SSH_TERM: 'xterm-color',
+  SSH_TERM: 'xterm-256color',
   TERM_ROWS: 24,
   TERM_COLS: 80,
   IO_PING_TIMEOUT_MS: 60_000,

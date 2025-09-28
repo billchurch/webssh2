@@ -1,9 +1,4 @@
 // tests/unit/types/result.test.ts
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 
 import { describe, it, expect } from 'vitest'
 import {
@@ -192,7 +187,7 @@ void describe('Result type', () => {
       })
       expect(isErr(result)).toBe(true)
       if (isErr(result)) {
-        expect((result.error as Error).message).toBe('boom')
+        expect(result.error.message).toBe('boom')
       }
     })
     

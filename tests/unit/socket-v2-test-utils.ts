@@ -23,6 +23,8 @@ interface MockSocket extends EventEmitter {
   request: MockRequest
   emit: Mock
   disconnect: Mock
+  onAny: Mock
+  offAny: Mock
 }
 
 interface MockIO extends EventEmitter {
@@ -109,6 +111,8 @@ export const createMockSocket = (id = 'test-socket-id'): MockSocket => {
   }
   mockSocket.emit = vi.fn()
   mockSocket.disconnect = vi.fn()
+  mockSocket.onAny = vi.fn() as unknown as MockSocket['onAny']
+  mockSocket.offAny = vi.fn() as unknown as MockSocket['offAny']
   return mockSocket
 }
 

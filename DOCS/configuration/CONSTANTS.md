@@ -33,7 +33,7 @@ Location: `app/constants.ts`
 Applied in:
 
 - URL parsing: `parseEnvVars()` (utils)
-- Session → SSH transform: `SSHConnection#getEnvironment()` (ssh)
+- Session → SSH transform: `SSHServiceImpl` (services/ssh/ssh-service)
 
 ## HTTP
 
@@ -58,10 +58,10 @@ Used in:
 
 ## Where These Are Used
 
-- Routing and connection setup: `app/routes.ts`, `app/connectionHandler.ts`
+- Routing and connection setup: `app/routes-v2.ts`, `app/connection/connectionHandler.ts`
 - Middleware and security: `app/middleware.ts`, `app/security-headers.ts`
-- SSH behavior and env handling: `app/ssh.ts`
-- Socket behavior: `app/socket.ts`
+- SSH behavior and env handling: `app/services/ssh/ssh-service.ts`
+- Socket behavior: `app/socket-v2.ts`, `app/socket/adapters/service-socket-adapter.ts`
 
 ## Conventions
 
