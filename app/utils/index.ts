@@ -110,13 +110,27 @@ export {
 // ============================================================================
 
 /**
- * Pure configuration validation functions.
+ * Schema validation using Zod.
  */
 export {
-  validateConfigPure,
-  enhanceConfig,
-  type ValidationError
-} from './config-validator.js'
+  validateConfigSchema,
+  validatePartialConfigSchema
+} from './schema-validator.js'
+
+/**
+ * Business rules and domain validation.
+ */
+export {
+  validateBusinessRules,
+  validateConfig
+} from './domain-validator.js'
+
+/**
+ * Legacy exports for backward compatibility.
+ * @deprecated Use validateConfigSchema and validateBusinessRules instead
+ */
+export { validateConfigSchema as validateConfigPure } from './schema-validator.js'
+export { validateBusinessRules as enhanceConfig } from './domain-validator.js'
 
 // ============================================================================
 // Safe Property Access Utilities

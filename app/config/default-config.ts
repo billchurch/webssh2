@@ -1,6 +1,7 @@
 // app/config/default-config.ts
 // Shared default configuration object
 
+import crypto from 'node:crypto'
 import type { Config } from '../types/config.js'
 import { DEFAULTS } from '../constants.js'
 
@@ -95,8 +96,11 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
 /**
  * Create a complete default configuration with session secret
  * Deep clones nested objects to prevent mutation
+ * If no sessionSecret is provided, generates a secure one
  */
-export function createCompleteDefaultConfig(sessionSecret = ''): Config {
+export function createCompleteDefaultConfig(sessionSecret?: string): Config {
+  // Generate a secure secret if none provided
+  const secret = sessionSecret ?? crypto.randomBytes(32).toString('hex')
   return {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
@@ -116,7 +120,7 @@ export function createCompleteDefaultConfig(sessionSecret = ''): Config {
     options: { ...DEFAULT_CONFIG_BASE.options },
     session: {
       ...DEFAULT_CONFIG_BASE.session,
-      secret: sessionSecret,
+      secret,
     },
     sso: {
       ...DEFAULT_CONFIG_BASE.sso,
