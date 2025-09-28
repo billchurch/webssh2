@@ -229,25 +229,6 @@ describe('SSHService', () => {
         }),
       )
     })
-
-    it.skip('should handle connection timeout', async () => {
-      const config = createTestSSHConfig({ readyTimeout: 100 })
-
-      vi.useFakeTimers()
-      try {
-        const resultPromise = sshService.connect(config)
-
-        await vi.advanceTimersByTimeAsync(150)
-        const result = await resultPromise
-
-        expect(result.ok).toBe(false)
-        if (!result.ok) {
-          expect(result.error.message).toContain('Connection timeout')
-        }
-      } finally {
-        vi.useRealTimers()
-      }
-    })
   })
 
   describe('shell', () => {

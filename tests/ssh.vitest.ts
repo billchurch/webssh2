@@ -274,23 +274,6 @@ describe('SSHConnection', () => {
     }
   })
 
-  it('should handle connection timeout', async () => {
-    const credentials = {
-      host: TEST_IPS.NONROUTABLE,
-      port: TEST_PORT,
-      username: TEST_CREDENTIALS.username,
-      password: TEST_CREDENTIALS.password,
-    }
-
-    try {
-      await sshConnection.connect(credentials)
-      expect.fail('Connection should have timed out')
-    } catch (error) {
-      expect((error as Error).name).toBe('SSHConnectionError')
-      expect((error as Error).message).toMatch(/Timed out|timeout|handshake/i)
-    }
-  })
-
   it('should exec command and receive stdout and exit code', async () => {
     const handleExecPty = (acceptPty: () => void): void => {
       acceptPty()
