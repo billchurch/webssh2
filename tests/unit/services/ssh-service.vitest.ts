@@ -11,32 +11,35 @@ import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
 import { createMockStore, createMockDependencies } from '../../test-utils.js'
 import { Duplex } from 'node:stream'
 
+// Factory function to create mock SSH2 client
+const createMockClient = () => {
+  const handlers = new Map<string, Array<(...args: unknown[]) => void>>()
+  return {
+    connect: vi.fn(),
+    shell: vi.fn(),
+    exec: vi.fn(),
+    end: vi.fn(),
+    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      const eventHandlers = handlers.get(event) ?? []
+      eventHandlers.push(handler)
+      handlers.set(event, eventHandlers)
+      return undefined
+    }),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
+    _trigger: (event: string, ...args: unknown[]) => {
+      const eventHandlers = handlers.get(event) ?? []
+      for (const handler of eventHandlers) {
+        handler(...args)
+      }
+    },
+    _handlers: handlers,
+  }
+}
+
 // Mock SSH2 Client
 vi.mock('ssh2', () => ({
-  Client: vi.fn(() => {
-    const handlers = new Map<string, Array<(...args: unknown[]) => void>>()
-    return {
-      connect: vi.fn(),
-      shell: vi.fn(),
-      exec: vi.fn(),
-      end: vi.fn(),
-      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
-        const eventHandlers = handlers.get(event) ?? []
-        eventHandlers.push(handler)
-        handlers.set(event, eventHandlers)
-        return undefined
-      }),
-      once: vi.fn(),
-      removeAllListeners: vi.fn(),
-      _trigger: (event: string, ...args: unknown[]) => {
-        const eventHandlers = handlers.get(event) ?? []
-        for (const handler of eventHandlers) {
-          handler(...args)
-        }
-      },
-      _handlers: handlers,
-    }
-  }),
+  Client: vi.fn(() => createMockClient()),
 }))
 
 // Helper functions defined outside describe block to reduce nesting
@@ -135,28 +138,7 @@ describe('SSHService', () => {
     mockDeps = createMockDependencies()
 
     // Create mock client with event handling capability
-    const handlers = new Map<string, Array<(...args: unknown[]) => void>>()
-    mockClient = {
-      connect: vi.fn(),
-      shell: vi.fn(),
-      exec: vi.fn(),
-      end: vi.fn(),
-      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
-        const eventHandlers = handlers.get(event) ?? []
-        eventHandlers.push(handler)
-        handlers.set(event, eventHandlers)
-        return undefined
-      }),
-      once: vi.fn(),
-      removeAllListeners: vi.fn(),
-      _trigger: (event: string, ...args: unknown[]) => {
-        const eventHandlers = handlers.get(event) ?? []
-        for (const handler of eventHandlers) {
-          handler(...args)
-        }
-      },
-      _handlers: handlers,
-    }
+    mockClient = createMockClient()
     ;(SSH2Client as unknown as Mock).mockReturnValue(mockClient)
 
     sshService = new SSHServiceImpl(mockDeps, mockStore)
