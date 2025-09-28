@@ -87,6 +87,21 @@ MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr` //NOSONAR
 // SSH CONFIGURATION
 // ============================================================================
 
+// Terminal configuration (defined early so TEST_SSH can reference it)
+export const TERMINAL = {
+  TYPE: 'xterm-256color',
+  DEFAULT_ROWS: 24,
+  DEFAULT_COLS: 80,
+  TEST_ROWS: 50,
+  TEST_COLS: 120,
+  LARGE_COLS: 120,
+  LARGE_ROWS: 40,
+  MEDIUM_COLS: 100,
+  MEDIUM_ROWS: 30,
+  INPUT_SELECTOR: 'textbox',
+  INPUT_NAME: 'Terminal input',
+} as const
+
 interface TestSSHConstants {
   readonly USERNAME: string
   readonly PASSWORD: string
@@ -123,21 +138,21 @@ interface TestSSHConstants {
 }
 
 export const TEST_SSH: TestSSHConstants = {
-  USERNAME: 'testuser',
-  PASSWORD: 'testpass', //NOSONAR
+  USERNAME: TEST_USERNAME,
+  PASSWORD: TEST_PASSWORD, //NOSONAR
   HOST: 'example.com',
   IP_ADDRESS: '192.168.1.100', //NOSONAR
   PORT: 22,
   PRIVATE_KEY: 'ssh-rsa...',
   PASSPHRASE: 'keypass', //NOSONAR
   TERMINAL: {
-    TYPE: 'xterm-256color',
-    DEFAULT_COLS: 80,
-    DEFAULT_ROWS: 24,
-    LARGE_COLS: 120,
-    LARGE_ROWS: 40,
-    MEDIUM_COLS: 100,
-    MEDIUM_ROWS: 30
+    TYPE: TERMINAL.TYPE,
+    DEFAULT_COLS: TERMINAL.DEFAULT_COLS,
+    DEFAULT_ROWS: TERMINAL.DEFAULT_ROWS,
+    LARGE_COLS: TERMINAL.LARGE_COLS,
+    LARGE_ROWS: TERMINAL.LARGE_ROWS,
+    MEDIUM_COLS: TERMINAL.MEDIUM_COLS,
+    MEDIUM_ROWS: TERMINAL.MEDIUM_ROWS
   },
   COMMANDS: {
     LIST_FILES: 'ls -la',
@@ -145,7 +160,7 @@ export const TEST_SSH: TestSSHConstants = {
   },
   ENV_VARS: {
     PATH: '/usr/bin',
-    USER: 'testuser'
+    USER: TEST_USERNAME
   },
   TIMEOUT_MS: 5000,
   INVALID_VALUES: {
@@ -185,13 +200,13 @@ export const MOCK_CREDENTIALS = {
     password: 'p', //NOSONAR
   },
   full: {
-    host: 'example.com',
+    host: TEST_SSH.HOST,
     port: 22,
     username: 'user',
     password: TEST_PASSWORDS.basic,
   },
   withSession: {
-    host: 'example.com',
+    host: TEST_SSH.HOST,
     username: 'user',
     password: TEST_PASSWORDS.session,
   },
@@ -342,24 +357,6 @@ export const TEST_TIMEOUTS = {
   DOCKER_WAIT: 20000,
   DOCKER_RETRY: 250,
   WEB_SERVER: 120000,
-} as const
-
-// ============================================================================
-// TERMINAL CONFIGURATION
-// ============================================================================
-
-export const TERMINAL = {
-  TYPE: 'xterm-256color',
-  DEFAULT_ROWS: 24,
-  DEFAULT_COLS: 80,
-  TEST_ROWS: 50,
-  TEST_COLS: 120,
-  LARGE_COLS: 120,
-  LARGE_ROWS: 40,
-  MEDIUM_COLS: 100,
-  MEDIUM_ROWS: 30,
-  INPUT_SELECTOR: 'textbox',
-  INPUT_NAME: 'Terminal input',
 } as const
 
 // ============================================================================

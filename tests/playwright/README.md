@@ -76,6 +76,7 @@ Tests are configured in `playwright.config.ts`:
 ## Environment Variables
 
 - `ENABLE_E2E_SSH=1` - Enables SSH container for E2E tests (automatically managed)
+- `CONTAINER_RUNTIME=apple` - Force use of Apple Container Runtime (default: auto-detect with Docker preferred)
 - `DEBUG=webssh2:*` - Enable debug logging
 - `E2E_DEBUG=webssh2:*` - Enable debug logging for E2E tests
 
@@ -86,13 +87,21 @@ WebSSH2 E2E tests support both Docker and Apple Container Runtime with automatic
 ### Automatic Detection
 
 The test suite automatically detects which container runtime is available:
-1. First checks for `container` (Apple Container Runtime)
-2. Falls back to `docker` if Apple Container is not found
-3. Throws an error if neither is available
+
+1. **Default**: Uses Docker if available (most compatible)
+2. **Opt-in**: Set `CONTAINER_RUNTIME=apple` to explicitly use Apple Container Runtime
+3. **Fallback**: If Docker is unavailable, automatically tries Apple Container Runtime
+4. **Error**: Throws an error if neither runtime is available
+
+Test output indicates which runtime was selected:
+
+- `✓ Using Docker runtime (default)`
+- `✓ Using Apple Container Runtime (container) - explicitly requested`
+- `✓ Using Apple Container Runtime (container) - Docker not available`
 
 ### Apple Container Runtime
 
-To use Apple Container Runtime on macOS:
+To explicitly use Apple Container Runtime on macOS:
 
 ```bash
 # Install Apple Container Runtime
@@ -102,13 +111,11 @@ To use Apple Container Runtime on macOS:
 # Start the container system service
 container system start
 
-# Run tests (container will be auto-detected)
-npm run test:e2e
+# Run tests with Apple Container Runtime (opt-in)
+CONTAINER_RUNTIME=apple npm run test:e2e
 ```
 
-The test output will show which runtime was detected:
-- `✓ Detected Apple Container Runtime (container)`
-- `✓ Detected Docker runtime`
+**Note**: Apple Container Runtime is automatically used as a fallback if Docker is not installed.
 
 ### Docker
 
@@ -119,13 +126,28 @@ Standard Docker installation works as before:
 npm run test:e2e
 ```
 
-### Manual Container Runtime Selection
+### Container Runtime Selection
+
+You can explicitly choose which runtime to use:
+
+```bash
+# Use Docker (default behavior)
+npm run test:e2e
+
+# Explicitly use Apple Container Runtime
+CONTAINER_RUNTIME=apple npm run test:e2e
+```
 
 Both runtimes use the same container image and configuration. The abstraction layer in `tests/playwright/container-runtime.ts` handles the runtime-specific commands automatically.
+
+**Why Docker is Default**:
+
+Docker has broader compatibility and more mature tooling. Apple Container Runtime is a newer alternative that can be explicitly enabled when needed.
 
 ### Resource Limits
 
 The SSH test container runs with minimal resource allocation:
+
 - **CPU**: 1 core
 - **Memory**: 128MB
 
@@ -161,6 +183,7 @@ Performance tests have been temporarily archived during the TypeScript migration
 See `performance/PERFORMANCE_TESTS.md` for detailed specifications and future implementation plans.
 
 Key test categories:
+
 - Connection establishment latency
 - Large data transfer handling
 - Rapid command execution
