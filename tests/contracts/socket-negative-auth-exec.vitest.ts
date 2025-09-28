@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Config } from '../../app/types/config.js'
-import socketHandler from '../../dist/app/socket-v2.js'
+import socketHandler from '../../app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 import { createMockServices, createMockStore, createMockSocketConfig } from '../test-utils.js'
 

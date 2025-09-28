@@ -2,7 +2,7 @@
 // Vitest rewrite of socket terminal and control functionality tests
 
 import { describe, it, beforeEach, expect, vi } from 'vitest'
-import socketHandler from '../../dist/app/socket-v2.js'
+import socketHandler from '../../app/socket-v2.js'
 import {
   createMockSocket,
   createMockIO,

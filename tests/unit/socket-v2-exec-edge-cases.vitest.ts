@@ -3,7 +3,7 @@
 
 import { describe, it, beforeEach, expect } from 'vitest'
 import { EventEmitter } from 'node:events'
-import socketHandler from '../../dist/app/socket-v2.js'
+import socketHandler from '../../app/socket-v2.js'
 import {
   createMockSocket,
   createMockIO,
