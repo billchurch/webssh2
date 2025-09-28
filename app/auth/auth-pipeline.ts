@@ -134,7 +134,7 @@ export class UnifiedAuthPipeline {
    */
   getMaskedCredentials(): unknown {
     const creds = this.getCredentials()
-    return creds != null ? maskSensitive(creds) : null
+    return creds == null ? null : maskSensitive(creds)
   }
 
   /**
