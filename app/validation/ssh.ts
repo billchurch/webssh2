@@ -84,28 +84,3 @@ export function isEncryptedKey(key: string): boolean {
       (key.includes('bcrypt') || key.includes('aes') || key.includes('3des')))
   )
 }
-
-/**
- * Normalizes terminal dimensions
- * @param value - Input dimension value
- * @param sessionValue - Session stored value
- * @param defaultValue - Default value to use
- * @returns Normalized dimension
- * @pure
- */
-export function normalizeDimension(
-  value: number | string | undefined | null,
-  sessionValue: number | null,
-  defaultValue: number
-): number {
-  // First try the provided value (non-zero finite numbers, including negative)
-  if (typeof value === 'number' && Number.isFinite(value) && value !== 0) {
-    return value
-  }
-  // Then try session value (non-zero finite numbers, including negative)
-  if (typeof sessionValue === 'number' && Number.isFinite(sessionValue) && sessionValue !== 0) {
-    return sessionValue
-  }
-  // Finally use default
-  return defaultValue
-}

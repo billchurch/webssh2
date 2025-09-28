@@ -1,12 +1,12 @@
 // app/auth/credential-processor.ts
 // Pure functions for processing SSH credentials
 
-import { 
+import {
   getValidatedHost,
   getValidatedPort,
-  validateSshTerm,
-  maskSensitiveData
-} from '../utils.js'
+  validateSshTerm
+} from '../validation/index.js'
+import { maskSensitive } from '../utils/data-masker.js'
 import type { Config } from '../types/config.js'
 
 /**
@@ -138,7 +138,7 @@ export function createSshCredentials(
  * Pure function wrapper
  */
 export function maskCredentials(credentials: SshCredentials): unknown {
-  return maskSensitiveData(credentials)
+  return maskSensitive(credentials)
 }
 
 /**

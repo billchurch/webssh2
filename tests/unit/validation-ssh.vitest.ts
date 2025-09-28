@@ -6,8 +6,7 @@ import {
   validatePort,
   validateTerm,
   validatePrivateKey,
-  isEncryptedKey,
-  normalizeDimension
+  isEncryptedKey
 } from '../../app/validation/ssh.js'
 import { DEFAULTS } from '../../app/constants.js'
 import {
@@ -100,34 +99,6 @@ describe('SSH Validation Functions', () => {
 
     it('should detect unencrypted keys', () => {
       expect(isEncryptedKey(TEST_KEY_PLAIN)).toBe(false)
-    })
-  })
-
-  describe('normalizeDimension', () => {
-    it('should prefer provided value when valid', () => {
-      expect(normalizeDimension(100, 50, 80)).toBe(100)
-      expect(normalizeDimension(100, null, 80)).toBe(100)
-      expect(normalizeDimension(-5, 50, 80)).toBe(-5) // Negative values pass through
-    })
-
-    it('should use session value when provided value invalid', () => {
-      expect(normalizeDimension(0, 50, 80)).toBe(50)
-      expect(normalizeDimension(null, 50, 80)).toBe(50)
-      expect(normalizeDimension(undefined, 50, 80)).toBe(50)
-      expect(normalizeDimension('invalid', 50, 80)).toBe(50) // Invalid types use session
-    })
-
-    it('should use default when both values invalid', () => {
-      expect(normalizeDimension(0, 0, 80)).toBe(80)
-      expect(normalizeDimension(null, null, 80)).toBe(80)
-      expect(normalizeDimension(undefined, null, 80)).toBe(80)
-      expect(normalizeDimension(0, null, 80)).toBe(80)
-    })
-
-    it('should handle edge cases correctly', () => {
-      expect(normalizeDimension(Number.NaN, 50, 80)).toBe(50) // NaN uses session
-      expect(normalizeDimension(Infinity, 50, 80)).toBe(50) // Infinity uses session
-      expect(normalizeDimension(-Infinity, 50, 80)).toBe(50) // -Infinity uses session
     })
   })
 })

@@ -1,7 +1,7 @@
 // app/auth/session-processor.ts
 // Pure functions for processing session data
 
-import { parseEnvVars } from '../utils.js'
+import { parseEnvVars } from '../validation/index.js'
 import { createNamespacedDebug } from '../logger.js'
 
 const debug = createNamespacedDebug('auth:session')

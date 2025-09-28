@@ -4,7 +4,7 @@
 import type { IncomingMessage } from 'node:http'
 import { createNamespacedDebug } from '../../logger.js'
 import type { Credentials } from '../../validation/credentials.js'
-import { buildCredentials } from '../../utils/credential-builder.js'
+import { buildCredentials } from '../../utils/index.js'
 import type { AuthSession } from '../auth-utils.js'
 import type { AuthProvider, AuthMethod } from './auth-provider.interface.js'
 

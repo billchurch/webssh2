@@ -6,7 +6,7 @@ import {
   createMaskingOptions,
   maskSensitive,
   DEFAULT_MASK_PROPERTIES
-} from '../../../app/utils/data-masker.js'
+} from '../../../app/utils/index.js'
 import { TEST_PASSWORDS, TEST_SSH_KEY } from '../../test-constants.js'
 
 describe('createMaskingOptions', () => {

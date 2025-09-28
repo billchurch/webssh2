@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseEnvVars } from '../../app/utils.js'
+import { parseEnvVars } from '../../app/validation/index.js'
 
 void describe('parseEnvVars', () => {
   it('parses valid pairs', () => {

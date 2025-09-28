@@ -3,8 +3,9 @@
 
 import type { IncomingMessage } from 'node:http'
 import { createNamespacedDebug } from '../logger.js'
-import { isValidCredentials, maskSensitiveData } from '../utils.js'
-import type { Credentials } from '../utils.js'
+import { isValidCredentials } from '../validation/index.js'
+import { maskSensitive } from '../utils/data-masker.js'
+import type { Credentials } from '../validation/index.js'
 import type { Config } from '../types/config.js'
 import type { AuthSession } from './auth-utils.js'
 import {
@@ -122,7 +123,7 @@ export class UnifiedAuthPipeline {
       const manualProvider = new ManualAuthProvider()
       manualProvider.setCredentials(creds as Credentials)
       this.provider = manualProvider
-      debug('Manual credentials set: %O', maskSensitiveData(creds))
+      debug('Manual credentials set: %O', maskSensitive(creds))
       return true
     }
     return false
@@ -133,7 +134,7 @@ export class UnifiedAuthPipeline {
    */
   getMaskedCredentials(): unknown {
     const creds = this.getCredentials()
-    return creds != null ? maskSensitiveData(creds) : null
+    return creds != null ? maskSensitive(creds) : null
   }
 
   /**

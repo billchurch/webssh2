@@ -46,6 +46,7 @@ export interface SSHConfig {
   passphrase?: string
   readyTimeout?: number
   keepaliveInterval?: number
+  keepaliveCountMax?: number
   algorithms?: Record<string, string[]>
 }
 
