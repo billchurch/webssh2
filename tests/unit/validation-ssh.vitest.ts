@@ -10,7 +10,16 @@ import {
   normalizeDimension
 } from '../../app/validation/ssh.js'
 import { DEFAULTS } from '../../app/constants.js'
-import { TEST_IPS } from '../test-constants.js'
+import {
+  TEST_IPS,
+  TEST_KEY_OPENSSH,
+  TEST_KEY_RSA,
+  TEST_KEY_EC,
+  TEST_KEY_ENCRYPTED_RSA,
+  TEST_KEY_ENCRYPTED_PKCS8,
+  TEST_KEY_ENCRYPTED_OPENSSH,
+  TEST_KEY_PLAIN
+} from '../test-constants.js'
 
 describe('SSH Validation Functions', () => {
   describe('validateHost', () => {
@@ -69,20 +78,9 @@ describe('SSH Validation Functions', () => {
 
   describe('validatePrivateKey', () => {
     it('should accept valid private key formats', () => {
-      const opensshKey = `-----BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
------END OPENSSH PRIVATE KEY-----`
-      expect(validatePrivateKey(opensshKey)).toBe(true)
-
-      const rsaKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr
------END RSA PRIVATE KEY-----`
-      expect(validatePrivateKey(rsaKey)).toBe(true)
-
-      const ecKey = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIIGLlamZU9Z83D3g8VsZqsMpLMgCuRXmZrdWpBfxHdaPoAoGCCqGSM49
------END EC PRIVATE KEY-----`
-      expect(validatePrivateKey(ecKey)).toBe(true)
+      expect(validatePrivateKey(TEST_KEY_OPENSSH)).toBe(true)
+      expect(validatePrivateKey(TEST_KEY_RSA)).toBe(true)
+      expect(validatePrivateKey(TEST_KEY_EC)).toBe(true)
     })
 
     it('should reject invalid private keys', () => {
@@ -95,27 +93,13 @@ MHcCAQEEIIGLlamZU9Z83D3g8VsZqsMpLMgCuRXmZrdWpBfxHdaPoAoGCCqGSM49
 
   describe('isEncryptedKey', () => {
     it('should detect encrypted keys', () => {
-      const encryptedRSA = `-----BEGIN RSA PRIVATE KEY-----
-Proc-Type: 4,ENCRYPTED
-DEK-Info: AES-128-CBC,2AF25325A9B286F4CBD8AB0C4C3CDB3A`
-      expect(isEncryptedKey(encryptedRSA)).toBe(true)
-
-      const encryptedPKCS8 = `-----BEGIN ENCRYPTED PRIVATE KEY-----
-MIIFLTBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQITo1O0b8YrS0CAggA`
-      expect(isEncryptedKey(encryptedPKCS8)).toBe(true)
-
-      const encryptedOpenSSH = `-----BEGIN OPENSSH PRIVATE KEY-----
-aes256-ctr
-bcrypt
-b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBB
------END OPENSSH PRIVATE KEY-----`
-      expect(isEncryptedKey(encryptedOpenSSH)).toBe(true)
+      expect(isEncryptedKey(TEST_KEY_ENCRYPTED_RSA)).toBe(true)
+      expect(isEncryptedKey(TEST_KEY_ENCRYPTED_PKCS8)).toBe(true)
+      expect(isEncryptedKey(TEST_KEY_ENCRYPTED_OPENSSH)).toBe(true)
     })
 
     it('should detect unencrypted keys', () => {
-      const plainKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr`
-      expect(isEncryptedKey(plainKey)).toBe(false)
+      expect(isEncryptedKey(TEST_KEY_PLAIN)).toBe(false)
     })
   })
 

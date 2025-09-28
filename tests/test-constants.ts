@@ -54,6 +54,35 @@ export const TEST_SSH_KEY = 'ssh-rsa-key' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_VALID = '-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----' //NOSONAR
 export const TEST_SSH_PRIVATE_KEY_INVALID = 'not-a-valid-private-key-format' //NOSONAR
 
+// Private key test data for validation tests
+export const TEST_KEY_OPENSSH = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+-----END OPENSSH PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_RSA = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr
+-----END RSA PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_EC = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIIGLlamZU9Z83D3g8VsZqsMpLMgCuRXmZrdWpBfxHdaPoAoGCCqGSM49
+-----END EC PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_RSA = `-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,2AF25325A9B286F4CBD8AB0C4C3CDB3A` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_PKCS8 = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIFLTBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQITo1O0b8YrS0CAggA` //NOSONAR
+
+export const TEST_KEY_ENCRYPTED_OPENSSH = `-----BEGIN OPENSSH PRIVATE KEY-----
+aes256-ctr
+bcrypt
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBB
+-----END OPENSSH PRIVATE KEY-----` //NOSONAR
+
+export const TEST_KEY_PLAIN = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qnMDvtaE68iS8RwZTyT8TsLHYr` //NOSONAR
+
 // ============================================================================
 // SSH CONFIGURATION
 // ============================================================================

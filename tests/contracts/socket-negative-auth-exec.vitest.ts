@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, vi } from 'vitest'
-import { expect } from 'vitest'
+import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Config } from '../../app/types/config.js'
 import socketHandler from '../../dist/app/socket-v2.js'
