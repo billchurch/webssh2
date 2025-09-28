@@ -107,7 +107,7 @@ export {
   convertToAuthCredentials,
   CredentialError,
   type TerminalSettings,
-  type AuthMethod
+  type SSHAuthMethod
 } from './credential-extractor.js'
 
 // ============================================================================

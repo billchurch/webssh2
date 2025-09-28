@@ -24,9 +24,9 @@ interface RequiredFields {
 }
 
 /**
- * Authentication method type
+ * SSH Authentication method type
  */
-export type AuthMethod = 'password' | 'privateKey' | 'both' | 'none'
+export type SSHAuthMethod = 'password' | 'privateKey' | 'both' | 'none'
 
 /**
  * Credential validation error
@@ -78,7 +78,7 @@ export function validateRequiredFields(raw: Record<string, unknown>): Result<Req
  * @returns Authentication method
  * @pure
  */
-export function extractAuthMethod(raw: Record<string, unknown>): AuthMethod {
+export function extractAuthMethod(raw: Record<string, unknown>): SSHAuthMethod {
   const password = raw['password']
   const privateKey = raw['privateKey']
 
