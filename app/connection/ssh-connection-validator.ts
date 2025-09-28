@@ -1,6 +1,7 @@
 // app/connection/ssh-connection-validator.ts
 // SSH connection validation service
 
+import { randomUUID } from 'node:crypto'
 import { createNamespacedDebug } from '../logger.js'
 import { analyzeConnectionError } from './ssh-validator.js'
 import type { Config } from '../types/config.js'
@@ -48,8 +49,7 @@ export async function validateSshCredentials(
 
   const sshService = container.resolve<SSHService>(TOKENS.SSHService)
 
-  // Create temporary session for validation
-  const sessionId = createSessionId(`validate-${Date.now()}-${Math.random()}`)
+  const sessionId = createSessionId(randomUUID())
 
   const sshConfig: SSHConfig = {
     sessionId,

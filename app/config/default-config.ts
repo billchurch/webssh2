@@ -110,7 +110,7 @@ export function createCompleteDefaultConfig(sessionSecret = ''): Config {
         kex: [...DEFAULT_CONFIG_BASE.ssh.algorithms.kex],
         serverHostKey: [...DEFAULT_CONFIG_BASE.ssh.algorithms.serverHostKey],
       },
-      allowedSubnets: DEFAULT_CONFIG_BASE.ssh.allowedSubnets != null ? [...DEFAULT_CONFIG_BASE.ssh.allowedSubnets] : [],
+      allowedSubnets: DEFAULT_CONFIG_BASE.ssh.allowedSubnets == null ? [] : [...DEFAULT_CONFIG_BASE.ssh.allowedSubnets],
     },
     header: { ...DEFAULT_CONFIG_BASE.header },
     options: { ...DEFAULT_CONFIG_BASE.options },

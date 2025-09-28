@@ -30,7 +30,9 @@ vi.mock('ssh2', () => ({
       removeAllListeners: vi.fn(),
       _trigger: (event: string, ...args: unknown[]) => {
         const eventHandlers = handlers.get(event) ?? []
-        eventHandlers.forEach(handler => handler(...args))
+        for (const handler of eventHandlers) {
+          handler(...args)
+        }
       },
       _handlers: handlers,
     }
@@ -149,7 +151,9 @@ describe('SSHService', () => {
       removeAllListeners: vi.fn(),
       _trigger: (event: string, ...args: unknown[]) => {
         const eventHandlers = handlers.get(event) ?? []
-        eventHandlers.forEach(handler => handler(...args))
+        for (const handler of eventHandlers) {
+          handler(...args)
+        }
       },
       _handlers: handlers,
     }
@@ -218,7 +222,7 @@ describe('SSHService', () => {
       const result = await connectPromise
 
       expect(result.ok).toBe(false)
-      if (!result.ok) {
+      if (result.ok === false) {
         expect(result.error.message).toContain('Connection refused')
       }
 
@@ -286,7 +290,7 @@ describe('SSHService', () => {
       const shellResult = await sshService.shell(connection.id, options)
 
       expect(shellResult.ok).toBe(false)
-      if (!shellResult.ok) {
+      if (shellResult.ok === false) {
         expect(shellResult.error.message).toContain('Shell access denied')
       }
     })

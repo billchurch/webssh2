@@ -55,13 +55,13 @@ For detailed configuration options, see [Configuration Documentation](./DOCS/con
 
 ### Connect to a specific host using HTTP Basic Auth
 
-```
+```bash
 http://localhost:2222/ssh/host/192.168.1.100
 ```
 
 ### Custom port and terminal using interactive modal auth
 
-```
+```bash
 http://localhost:2222/ssh?port=2244&sshterm=xterm-256color
 ```
 
@@ -78,28 +78,33 @@ docker run --rm -it \
 ## Documentation
 
 ### Getting Started
+
 - [**Quick Start Guide**](./DOCS/getting-started/QUICK-START.md) - Get up and running in 5 minutes
 - [Installation Guide](./DOCS/getting-started/INSTALLATION.md) - Detailed installation instructions
 - [Docker Setup](./DOCS/getting-started/DOCKER.md) - Docker and Kubernetes deployment
 - [Migration Guide](./DOCS/getting-started/MIGRATION.md) - Upgrading from older versions
 
-### Configuration
+### Configuration Documentation
+
 - [Configuration Overview](./DOCS/configuration/OVERVIEW.md) - Configuration methods and priority
 - [Environment Variables](./DOCS/configuration/ENVIRONMENT-VARIABLES.md) - Complete environment variable reference
 - [URL Parameters](./DOCS/configuration/URL-PARAMETERS.md) - Query string parameters
 
-### Features
+### Feature Documentation
+
 - [Authentication Methods](./DOCS/features/AUTHENTICATION.md) - Password, key-based, and SSO
 - [Private Key Authentication](./DOCS/features/PRIVATE-KEYS.md) - SSH key setup and usage
 - [Exec Channel](./DOCS/features/EXEC-CHANNEL.md) - Non-interactive command execution
 - [Environment Forwarding](./DOCS/features/ENVIRONMENT-FORWARDING.md) - Pass environment variables
 
 ### Development
+
 - [Contributing Guide](./DOCS/development/CONTRIBUTING.md) - How to contribute
 - [Development Setup](./DOCS/development/SETUP.md) - Setting up development environment
 - [API Documentation](./DOCS/api/) - WebSocket and REST APIs
 
 ### Reference
+
 - [Troubleshooting](./DOCS/reference/TROUBLESHOOTING.md) - Common issues and solutions
 - [Breaking Changes](./DOCS/reference/BREAKING-CHANGES.md) - Version migration notes
 

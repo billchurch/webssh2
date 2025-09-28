@@ -19,6 +19,8 @@ export default [
       '.tsbuild/**',
       'tsconfig.tsbuildinfo',
     ],
+  },
+  {
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
