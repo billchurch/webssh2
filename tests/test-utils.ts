@@ -39,6 +39,81 @@ export function createMockStore(): SessionStore {
 }
 
 /**
+ * Creates mock Services for testing socket handlers
+ */
+export function createMockServices(options: {
+  authSucceeds?: boolean
+  sshConnectSucceeds?: boolean
+  shellSucceeds?: boolean
+  execSucceeds?: boolean
+} = {}): unknown {
+  const {
+    authSucceeds = true,
+    sshConnectSucceeds = true,
+    shellSucceeds = true,
+    execSucceeds = true
+  } = options
+
+  const mockStream = new EventEmitter()
+  mockStream.write = vi.fn()
+  mockStream.setWindow = vi.fn()
+
+  return {
+    auth: {
+      authenticate: vi.fn(() => Promise.resolve(
+        authSucceeds
+          ? { ok: true, value: { sessionId: 'test-session', userId: 'test-user', username: 'testuser', method: 'manual' } }
+          : { ok: false, error: new Error('Auth failed') }
+      )),
+      validateSession: vi.fn(() => ({ ok: true, value: true })),
+      revokeSession: vi.fn(() => Promise.resolve({ ok: true, value: undefined })),
+      getSessionInfo: vi.fn(() => ({ ok: true, value: null }))
+    },
+    ssh: {
+      connect: vi.fn(() => Promise.resolve(
+        sshConnectSucceeds
+          ? { ok: true, value: { id: 'test-conn-id', sessionId: 'test-session', status: 'connected', createdAt: Date.now(), lastActivity: Date.now() } }
+          : { ok: false, error: new Error('SSH connection failed') }
+      )),
+      shell: vi.fn(() => Promise.resolve(
+        shellSucceeds
+          ? { ok: true, value: mockStream }
+          : { ok: false, error: new Error('Shell failed') }
+      )),
+      exec: vi.fn((connectionId: string, command: string) => {
+        if (!execSucceeds) {
+          return Promise.resolve({ ok: false, error: new Error('Exec failed') })
+        }
+        const execStream = new EventEmitter()
+        execStream.stderr = new EventEmitter()
+        process.nextTick(() => {
+          execStream.emit('data', Buffer.from(`OUT:${command}`))
+          execStream.stderr.emit('data', Buffer.from('ERR:warn'))
+          execStream.emit('close', 0, null)
+        })
+        return Promise.resolve({ ok: true, value: { stdout: '', stderr: '', code: 0 } })
+      }),
+      disconnect: vi.fn(() => Promise.resolve({ ok: true, value: undefined })),
+      getConnectionStatus: vi.fn(() => ({ ok: true, value: null }))
+    },
+    terminal: {
+      create: vi.fn(() => ({ ok: true, value: { id: 'test-term-id', sessionId: 'test-session', term: 'xterm-256color', rows: 24, cols: 80, env: {} } })),
+      resize: vi.fn(() => ({ ok: true, value: undefined })),
+      write: vi.fn(() => ({ ok: true, value: undefined })),
+      destroy: vi.fn(() => ({ ok: true, value: undefined })),
+      getTerminal: vi.fn(() => ({ ok: true, value: null }))
+    },
+    session: {
+      create: vi.fn(() => ({ ok: true, value: { id: 'test-session', state: {}, createdAt: Date.now(), updatedAt: Date.now() } })),
+      get: vi.fn(() => ({ ok: true, value: null })),
+      update: vi.fn(() => ({ ok: true, value: { id: 'test-session', state: {}, createdAt: Date.now(), updatedAt: Date.now() } })),
+      delete: vi.fn(() => ({ ok: true, value: undefined })),
+      list: vi.fn(() => ({ ok: true, value: [] }))
+    }
+  }
+}
+
+/**
  * Creates mock ServiceDependencies for testing
  */
 export function createMockDependencies(): ServiceDependencies {
@@ -311,6 +386,8 @@ export function createMockSocket(options: MockSocketOptions = {}): unknown {
   }
   mockSocket.emit = vi.fn()
   mockSocket.disconnect = vi.fn()
+  mockSocket.onAny = vi.fn()
+  mockSocket.offAny = vi.fn()
   return mockSocket
 }
 
@@ -355,12 +432,19 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
       keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
       keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
       disableInteractiveAuth: false,
+      alwaysSendKeyboardInteractivePrompts: false,
+      algorithms: {
+        cipher: [],
+        compress: [],
+        hmac: []
+      },
       ...overrides.ssh,
     },
     options: {
       allowReauth: true,
       allowReplay: true,
       allowReconnect: true,
+      autoLog: false,
       ...overrides.options,
     },
     user: overrides.user ?? {},

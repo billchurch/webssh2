@@ -4,8 +4,9 @@ import socketHandler from '../../dist/app/socket-v2.js'
 import {
   createMockIO,
   createMockSocket,
-  createMockSSHConnection,
-  createMockSocketConfig
+  createMockSocketConfig,
+  createMockServices,
+  createMockStore
 } from '../test-utils.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
@@ -36,15 +37,16 @@ interface MockSocket extends EventEmitter {
 }
 
 describe('Socket.IO Contracts', () => {
-  let io: MockIO, mockSocket: MockSocket, mockConfig: unknown, MockSSHConnection: unknown
+  let io: MockIO, mockSocket: MockSocket, mockConfig: unknown, mockServices: unknown, mockStore: unknown
 
   beforeEach(() => {
     io = createMockIO() as MockIO
     mockSocket = createMockSocket() as MockSocket
     mockConfig = createMockSocketConfig()
-    MockSSHConnection = createMockSSHConnection({ withExecMethods: true })
+    mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true })
+    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, MockSSHConnection)
+    socketHandler(io, mockConfig, mockServices, mockStore)
   })
 
   it('emits authentication(request_auth) on new connection without basic auth', () => {
@@ -73,7 +75,12 @@ describe('Socket.IO Contracts', () => {
     mockSocket.request.session.usedBasicAuth = true
     mockSocket.request.session.sshCredentials = MOCK_CREDENTIALS.basic
     connectionHandler(mockSocket)
+
+    // Wait for async authentication to complete
     await new Promise<void>((r) => setImmediate(r))
+    await new Promise<void>((r) => setImmediate(r))
+    await new Promise<void>((r) => setImmediate(r))
+
     const permEvent = mockSocket.emit.mock.calls.find((c) => c[0] === 'permissions')
     expect(permEvent).toBeDefined()
     const perms = permEvent![1] as Record<string, unknown>
