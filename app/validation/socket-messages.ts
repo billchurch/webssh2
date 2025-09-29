@@ -4,6 +4,12 @@
 import type { Result } from '../types/result.js'
 import validator from 'validator'
 import { ENV_LIMITS, VALIDATION_LIMITS } from '../constants/index.js'
+import {
+  createSafeKey,
+  type SafeKey,
+  safeGet,
+  isRecord
+} from '../utils/safe-property-access.js'
 
 export interface AuthCredentials {
   username: string
@@ -36,6 +42,128 @@ export interface ExecCommand {
   cols?: number
   rows?: number
   timeoutMs?: number
+}
+
+interface FieldDescriptor<Name extends string> {
+  key: SafeKey
+  name: Name
+}
+
+interface DimensionFieldDescriptor<Name extends string> extends FieldDescriptor<Name> {
+  label: string
+}
+
+type AuthOptionalStringField = 'password' | 'privateKey' | 'passphrase' | 'term'
+type DimensionField = 'cols' | 'rows'
+
+const USERNAME_FIELD: FieldDescriptor<'username'> = {
+  key: createSafeKey('username'),
+  name: 'username'
+}
+
+const HOST_FIELD: FieldDescriptor<'host'> = {
+  key: createSafeKey('host'),
+  name: 'host'
+}
+
+const PORT_FIELD: FieldDescriptor<'port'> = {
+  key: createSafeKey('port'),
+  name: 'port'
+}
+
+const PASSWORD_FIELD: FieldDescriptor<'password'> = {
+  key: createSafeKey('password'),
+  name: 'password'
+}
+
+const PRIVATE_KEY_FIELD: FieldDescriptor<'privateKey'> = {
+  key: createSafeKey('privateKey'),
+  name: 'privateKey'
+}
+
+const PASSPHRASE_FIELD: FieldDescriptor<'passphrase'> = {
+  key: createSafeKey('passphrase'),
+  name: 'passphrase'
+}
+
+const TERM_FIELD: FieldDescriptor<'term'> = {
+  key: createSafeKey('term'),
+  name: 'term'
+}
+
+const COLS_FIELD: DimensionFieldDescriptor<'cols'> = {
+  key: createSafeKey('cols'),
+  name: 'cols',
+  label: 'Columns'
+}
+
+const ROWS_FIELD: DimensionFieldDescriptor<'rows'> = {
+  key: createSafeKey('rows'),
+  name: 'rows',
+  label: 'Rows'
+}
+
+const COMMAND_FIELD: FieldDescriptor<'command'> = {
+  key: createSafeKey('command'),
+  name: 'command'
+}
+
+const PTY_FIELD: FieldDescriptor<'pty'> = {
+  key: createSafeKey('pty'),
+  name: 'pty'
+}
+
+const ENV_FIELD: FieldDescriptor<'env'> = {
+  key: createSafeKey('env'),
+  name: 'env'
+}
+
+const TIMEOUT_FIELD: FieldDescriptor<'timeoutMs'> = {
+  key: createSafeKey('timeoutMs'),
+  name: 'timeoutMs'
+}
+
+const ACTION_FIELD: FieldDescriptor<'action'> = {
+  key: createSafeKey('action'),
+  name: 'action'
+}
+
+const AUTH_OPTIONAL_FIELDS: ReadonlyArray<FieldDescriptor<AuthOptionalStringField>> = [
+  PASSWORD_FIELD,
+  PRIVATE_KEY_FIELD,
+  PASSPHRASE_FIELD,
+  TERM_FIELD
+]
+
+const AUTH_DIMENSION_FIELDS: ReadonlyArray<DimensionFieldDescriptor<DimensionField>> = [
+  COLS_FIELD,
+  ROWS_FIELD
+]
+
+const EXEC_DIMENSION_FIELDS: ReadonlyArray<DimensionFieldDescriptor<DimensionField>> = [
+  COLS_FIELD,
+  ROWS_FIELD
+]
+
+const ENV_KEY_PATTERN = /^[A-Za-z_]\w*$/
+const VALID_CONTROL_ACTIONS = new Set<string>([
+  'reauth',
+  'clear-credentials',
+  'disconnect'
+])
+
+const ensureRecord = (
+  value: unknown,
+  errorMessage: string
+): Result<Record<string, unknown>> => {
+  if (!isRecord(value)) {
+    return {
+      ok: false,
+      error: new Error(errorMessage)
+    }
+  }
+
+  return { ok: true, value }
 }
 
 // Helper function to safely convert value to string for validation
@@ -80,88 +208,86 @@ const validatePort = (value: unknown): Result<number> => {
   }
 }
 
-// Helper function to validate string field
 const validateStringField = (
   obj: Record<string, unknown>,
-  field: string,
-  required: boolean = false,
-  errorMessage?: string
+  field: FieldDescriptor<string>,
+  options: {
+    required?: boolean
+    errorMessage?: string
+    trim?: boolean
+  } = {}
 ): Result<string | undefined> => {
-  // eslint-disable-next-line security/detect-object-injection
-  const value = obj[field]
-  
+  const value = safeGet(obj, field.key)
+  const requiredMessage = options.errorMessage ?? `${field.name} is required`
+  const emptyMessage = options.errorMessage ?? `${field.name} must be a non-empty string`
+  const typeMessage = field.name === 'term'
+    ? 'Terminal type must be a string'
+    : `${field.name} must be a string`
+
   if (value == null) {
-    if (required) {
+    if (options.required === true) {
       return {
         ok: false,
-        error: new Error(errorMessage ?? `${field} is required`)
+        error: new Error(requiredMessage)
       }
     }
     return { ok: true, value: undefined }
   }
-  
+
   if (typeof value !== 'string') {
     return {
       ok: false,
-      error: new Error(field === 'term' ? 'Terminal type must be a string' : `${field} must be a string`)
+      error: new Error(typeMessage)
     }
   }
-  
-  if (required && value.trim() === '') {
+
+  const resultValue = options.trim === true ? value.trim() : value
+  if (options.required === true && resultValue === '') {
     return {
       ok: false,
-      error: new Error(errorMessage ?? `${field} must be a non-empty string`)
+      error: new Error(emptyMessage)
     }
   }
-  
-  return { ok: true, value }
+
+  return { ok: true, value: resultValue }
 }
 
-// Helper function to validate dimension (rows/cols)
 const validateDimension = (
   obj: Record<string, unknown>,
-  field: string
+  field: DimensionFieldDescriptor<DimensionField>,
+  bounds: { min: number; max: number }
 ): Result<number | undefined> => {
-  // eslint-disable-next-line security/detect-object-injection
-  const value = obj[field]
-  if (value == null) {return { ok: true, value: undefined }}
-  
-  const result = parseIntInRange(value, VALIDATION_LIMITS.MIN_TERMINAL_ROWS, VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION, field === 'rows' ? 'Rows' : 'Columns')
-  if (result.ok) {
-    return { ok: true, value: result.value }
-  } else {
-    return result
+  const value = safeGet(obj, field.key)
+  if (value == null) {
+    return { ok: true, value: undefined }
   }
+
+  return parseIntInRange(value, bounds.min, bounds.max, field.label)
 }
 
-// Helper function to validate environment variables
 const validateEnvironmentVars = (value: unknown): Record<string, string> | undefined => {
-  if (typeof value !== 'object' || value == null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return undefined
   }
-  
-  const env: Record<string, string> = {}
-  const entries = Object.entries(value as Record<string, unknown>)
+
+  const entries = Object.entries(value)
     .slice(0, ENV_LIMITS.MAX_PAIRS)
     .filter(([key, val]) => {
-      return typeof key === 'string' && 
-             key.length > 0 && 
-             key.length < VALIDATION_LIMITS.MAX_ENV_KEY_LENGTH &&
-             /^[A-Za-z_]\w*$/.test(key) && 
-             val != null
+      return (
+        typeof key === 'string' &&
+        key.length > 0 &&
+        key.length < VALIDATION_LIMITS.MAX_ENV_KEY_LENGTH &&
+        ENV_KEY_PATTERN.test(key) &&
+        val != null
+      )
     })
-  
-  for (const [key, val] of entries) {
-    // Use Object.defineProperty to avoid object-injection warning
-    Object.defineProperty(env, key, {
-      value: String(val),
-      writable: true,
-      enumerable: true,
-      configurable: true
-    })
+    .map(([key, val]) => [key, String(val)] as const)
+
+  if (entries.length === 0) {
+    return undefined
   }
-  
-  return Object.keys(env).length > 0 ? env : undefined
+
+  return Object.fromEntries(entries) as Record<string, string>
 }
 
 // Helper function to validate optional term field
@@ -178,70 +304,45 @@ const validateOptionalTimeout = (value: unknown): number | undefined => {
   return result.ok ? result.value : undefined
 }
 
-// Helper function to add optional exec dimensions to validated object
-const addOptionalExecDimensions = (
-  exec: Record<string, unknown>,
-  validated: ExecCommand
-): Result<void> => {
-  const colsResult = validateDimension(exec, 'cols')
-  if (colsResult.ok) {
-    if (colsResult.value != null) {
-      validated.cols = colsResult.value
-    }
-  } else {
-    return { ok: false, error: colsResult.error }
-  }
-
-  const rowsResult = validateDimension(exec, 'rows')
-  if (rowsResult.ok) {
-    if (rowsResult.value != null) {
-      validated.rows = rowsResult.value
-    }
-  } else {
-    return { ok: false, error: rowsResult.error }
-  }
-
-  return { ok: true, value: undefined }
-}
-
-// Helper to validate multiple optional string fields
-const validateOptionalFields = (
-  creds: Record<string, unknown>,
-  fields: string[]
-): Result<Record<string, string | undefined>> => {
-  const results: Record<string, string | undefined> = {}
+const collectOptionalStrings = <Name extends string>(
+  obj: Record<string, unknown>,
+  fields: ReadonlyArray<FieldDescriptor<Name>>
+): Result<Partial<Record<Name, string>>> => {
+  const collected: Partial<Record<Name, string>> = {}
 
   for (const field of fields) {
-    const result = validateStringField(creds, field)
-    if (result.ok) {
-      // eslint-disable-next-line security/detect-object-injection
-      results[field] = result.value
-    } else {
-      return result as Result<Record<string, string | undefined>>
+    const result = validateStringField(obj, field)
+    if (!result.ok) {
+      return { ok: false, error: result.error }
+    }
+
+    if (result.value !== undefined) {
+      collected[field.name] = result.value
     }
   }
 
-  return { ok: true, value: results }
+  return { ok: true, value: collected }
 }
 
-// Helper to validate optional dimensions
-const validateOptionalDimensions = (
-  creds: Record<string, unknown>,
-  fields: string[]
-): Result<Record<string, number | undefined>> => {
-  const results: Record<string, number | undefined> = {}
+const collectOptionalDimensions = <Name extends DimensionField>(
+  obj: Record<string, unknown>,
+  fields: ReadonlyArray<DimensionFieldDescriptor<Name>>,
+  bounds: { min: number; max: number }
+): Result<Partial<Record<Name, number>>> => {
+  const collected: Partial<Record<Name, number>> = {}
 
   for (const field of fields) {
-    const result = validateDimension(creds, field)
-    if (result.ok) {
-      // eslint-disable-next-line security/detect-object-injection
-      results[field] = result.value
-    } else {
-      return result as Result<Record<string, number | undefined>>
+    const result = validateDimension(obj, field, bounds)
+    if (!result.ok) {
+      return { ok: false, error: result.error }
+    }
+
+    if (result.value !== undefined) {
+      collected[field.name] = result.value
     }
   }
 
-  return { ok: true, value: results }
+  return { ok: true, value: collected }
 }
 
 /**
@@ -251,63 +352,74 @@ const validateOptionalDimensions = (
  * @pure
  */
 export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
-  // Check if data is an object
-  if (data == null || typeof data !== 'object') {
-    return {
-      ok: false,
-      error: new Error('Authentication data must be an object')
-    }
+  const recordResult = ensureRecord(data, 'Authentication data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<AuthCredentials>
   }
 
-  const creds = data as Record<string, unknown>
+  const creds = recordResult.value
 
-  // Validate required fields
-  const usernameResult = validateStringField(creds, 'username', true, 'Username is required and must be a non-empty string')
+  const usernameResult = validateStringField(creds, USERNAME_FIELD, {
+    required: true,
+    errorMessage: 'Username is required and must be a non-empty string',
+    trim: true
+  })
   if (!usernameResult.ok) {
     return usernameResult as Result<AuthCredentials>
   }
 
-  const hostResult = validateStringField(creds, 'host', true, 'Host is required and must be a non-empty string')
+  const hostResult = validateStringField(creds, HOST_FIELD, {
+    required: true,
+    errorMessage: 'Host is required and must be a non-empty string',
+    trim: true
+  })
   if (!hostResult.ok) {
     return hostResult as Result<AuthCredentials>
   }
 
-  // Validate port
-  const portResult = creds['port'] != null ? validatePort(creds['port']) : { ok: true, value: 22 } as Result<number>
+  const portSource = safeGet(creds, PORT_FIELD.key)
+  const portResult = portSource == null
+    ? ({ ok: true, value: 22 } as Result<number>)
+    : validatePort(portSource)
   if (!portResult.ok) {
     return portResult as Result<AuthCredentials>
   }
 
-  // Validate all optional string fields at once
-  const optionalStrings = validateOptionalFields(creds, ['password', 'privateKey', 'passphrase', 'term'])
-  if (!optionalStrings.ok) {
-    return optionalStrings as Result<AuthCredentials>
+  const optionalStringsResult = collectOptionalStrings(creds, AUTH_OPTIONAL_FIELDS)
+  if (!optionalStringsResult.ok) {
+    return optionalStringsResult as Result<AuthCredentials>
   }
 
-  // Validate optional dimensions
-  const optionalDimensions = validateOptionalDimensions(creds, ['cols', 'rows'])
-  if (!optionalDimensions.ok) {
-    return optionalDimensions as Result<AuthCredentials>
+  const optionalDimensionsResult = collectOptionalDimensions(
+    creds,
+    AUTH_DIMENSION_FIELDS,
+    {
+      min: VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
+      max: VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION
+    }
+  )
+  if (!optionalDimensionsResult.ok) {
+    return optionalDimensionsResult as Result<AuthCredentials>
   }
 
-  // Build validated credentials - all results are guaranteed to be ok here
+  const username = usernameResult.value as string
+  const host = hostResult.value as string
+
   const validated: AuthCredentials = {
-    username: (usernameResult.value as string).trim(),
-    host: (hostResult.value as string).trim(),
+    username,
+    host,
     port: portResult.value
   }
 
-  // Add optional fields if present
-  const { password, privateKey, passphrase, term } = optionalStrings.value
-  // eslint-disable-next-line security/detect-possible-timing-attacks
-  if (password !== undefined) {validated.password = password}
-  if (privateKey !== undefined) {validated.privateKey = privateKey}
-  if (passphrase !== undefined) {validated.passphrase = passphrase}
-  if (term !== undefined) {validated.term = term}
+  const optionalStrings = optionalStringsResult.value
+  if (optionalStrings.password !== undefined) {validated.password = optionalStrings.password}
+  if (optionalStrings.privateKey !== undefined) {validated.privateKey = optionalStrings.privateKey}
+  if (optionalStrings.passphrase !== undefined) {validated.passphrase = optionalStrings.passphrase}
+  if (optionalStrings.term !== undefined) {validated.term = optionalStrings.term}
 
-  const { cols, rows } = optionalDimensions.value
-  if (cols !== undefined) {validated.cols = cols}
-  if (rows !== undefined) {validated.rows = rows}
+  const optionalDimensions = optionalDimensionsResult.value
+  if (optionalDimensions.cols !== undefined) {validated.cols = optionalDimensions.cols}
+  if (optionalDimensions.rows !== undefined) {validated.rows = optionalDimensions.rows}
 
   return { ok: true, value: validated }
 }
@@ -319,48 +431,47 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
  * @pure
  */
 export const validateTerminalMessage = (data: unknown): Result<TerminalConfig> => {
-  // Check if data is an object
-  if (data == null || typeof data !== 'object') {
-    return {
-      ok: false,
-      error: new Error('Terminal data must be an object')
-    }
+  const recordResult = ensureRecord(data, 'Terminal data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<TerminalConfig>
   }
 
-  const config = data as Record<string, unknown>
+  const config = recordResult.value
   const validated: TerminalConfig = {
-    rows: 24, // default
-    cols: 80  // default
+    rows: 24,
+    cols: 80
   }
 
-  // Validate rows
-  const rowsResult = validateDimension(config, 'rows')
-  if (rowsResult.ok) {
-    if (rowsResult.value != null) {validated.rows = rowsResult.value}
-  } else {
+  const bounds = {
+    min: VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
+    max: VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION
+  }
+
+  const rowsResult = validateDimension(config, ROWS_FIELD, bounds)
+  if (!rowsResult.ok) {
     return rowsResult as Result<TerminalConfig>
   }
+  if (rowsResult.value !== undefined) {
+    validated.rows = rowsResult.value
+  }
 
-  // Validate cols
-  const colsResult = validateDimension(config, 'cols')
-  if (colsResult.ok) {
-    if (colsResult.value != null) {validated.cols = colsResult.value}
-  } else {
+  const colsResult = validateDimension(config, COLS_FIELD, bounds)
+  if (!colsResult.ok) {
     return colsResult as Result<TerminalConfig>
   }
+  if (colsResult.value !== undefined) {
+    validated.cols = colsResult.value
+  }
 
-  // Validate optional term
-  const termResult = validateStringField(config, 'term')
-  if (termResult.ok) {
-    if (termResult.value != null) {validated.term = termResult.value}
-  } else {
+  const termResult = validateStringField(config, TERM_FIELD)
+  if (!termResult.ok) {
     return termResult as Result<TerminalConfig>
   }
-
-  return {
-    ok: true,
-    value: validated
+  if (termResult.value != null) {
+    validated.term = termResult.value
   }
+
+  return { ok: true, value: validated }
 }
 
 /**
@@ -370,37 +481,29 @@ export const validateTerminalMessage = (data: unknown): Result<TerminalConfig> =
  * @pure
  */
 export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
-  // Check if data is an object
-  if (data == null || typeof data !== 'object') {
-    return {
-      ok: false,
-      error: new Error('Resize data must be an object')
-    }
+  const recordResult = ensureRecord(data, 'Resize data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<ResizeParams>
   }
 
-  const size = data as Record<string, unknown>
+  const size = recordResult.value
+  const rowsSource = safeGet(size, ROWS_FIELD.key)
+  const colsSource = safeGet(size, COLS_FIELD.key)
 
-  // Both rows and cols are required for resize
-  if (size['rows'] == null || size['cols'] == null) {
+  if (rowsSource == null || colsSource == null) {
     return {
       ok: false,
       error: new Error('Both rows and cols are required for resize')
     }
   }
 
-  // Validate rows
-  const rowsResult = parseIntInRange(size['rows'], 1, 9999, 'Rows')
-  if (rowsResult.ok) {
-    // Continue with cols validation
-  } else {
+  const rowsResult = parseIntInRange(rowsSource, 1, 9999, ROWS_FIELD.label)
+  if (!rowsResult.ok) {
     return rowsResult as Result<ResizeParams>
   }
 
-  // Validate cols
-  const colsResult = parseIntInRange(size['cols'], 1, 9999, 'Columns')
-  if (colsResult.ok) {
-    // Continue with building result
-  } else {
+  const colsResult = parseIntInRange(colsSource, 1, 9999, COLS_FIELD.label)
+  if (!colsResult.ok) {
     return colsResult as Result<ResizeParams>
   }
 
@@ -420,67 +523,62 @@ export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
  * @pure
  */
 export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
-  // Check if data is an object
-  if (data == null || typeof data !== 'object') {
-    return {
-      ok: false,
-      error: new Error('Exec data must be an object')
-    }
+  const recordResult = ensureRecord(data, 'Exec data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<ExecCommand>
   }
 
-  const exec = data as Record<string, unknown>
-
-  // Validate required command field
-  const commandResult = validateStringField(
-    exec,
-    'command',
-    true,
-    'Command is required and must be a non-empty string'
-  )
-  if (commandResult.ok) {
-    // Continue with building validated command
-  } else {
+  const exec = recordResult.value
+  const commandResult = validateStringField(exec, COMMAND_FIELD, {
+    required: true,
+    errorMessage: 'Command is required and must be a non-empty string',
+    trim: true
+  })
+  if (!commandResult.ok) {
     return commandResult as Result<ExecCommand>
   }
 
-  // Safe to use type assertion as we validated this field is required
-  const command = commandResult.value as string
-  
   const validated: ExecCommand = {
-    command: command.trim()
+    command: commandResult.value as string
   }
 
-  // Handle all optional fields without nested conditionals
-  if (exec['pty'] != null) {
-    validated.pty = Boolean(exec['pty'])
+  const ptySource = safeGet(exec, PTY_FIELD.key)
+  if (ptySource != null) {
+    validated.pty = Boolean(ptySource)
   }
 
-  const term = validateOptionalTerm(exec['term'])
-  if (term != null) {
-    validated.term = term
+  const termValue = validateOptionalTerm(safeGet(exec, TERM_FIELD.key))
+  if (termValue != null) {
+    validated.term = termValue
   }
 
-  const dimensionsResult = addOptionalExecDimensions(exec, validated)
-  if (dimensionsResult.ok) {
-    // Continue with other validations
-  } else {
-    return dimensionsResult as Result<ExecCommand>
+  const dimensionResult = collectOptionalDimensions(
+    exec,
+    EXEC_DIMENSION_FIELDS,
+    {
+      min: VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
+      max: VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION
+    }
+  )
+  if (!dimensionResult.ok) {
+    return dimensionResult as Result<ExecCommand>
   }
 
-  const env = validateEnvironmentVars(exec['env'])
-  if (env != null) {
-    validated.env = env
+  const dimensions = dimensionResult.value
+  if (dimensions.cols !== undefined) {validated.cols = dimensions.cols}
+  if (dimensions.rows !== undefined) {validated.rows = dimensions.rows}
+
+  const envValue = validateEnvironmentVars(safeGet(exec, ENV_FIELD.key))
+  if (envValue != null) {
+    validated.env = envValue
   }
 
-  const timeout = validateOptionalTimeout(exec['timeoutMs'])
-  if (timeout != null) {
-    validated.timeoutMs = timeout
+  const timeoutValue = validateOptionalTimeout(safeGet(exec, TIMEOUT_FIELD.key))
+  if (timeoutValue != null) {
+    validated.timeoutMs = timeoutValue
   }
 
-  return {
-    ok: true,
-    value: validated
-  }
+  return { ok: true, value: validated }
 }
 
 /**
@@ -490,44 +588,28 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
  * @pure
  */
 export const validateControlMessage = (data: unknown): Result<{ action: string }> => {
-  // Check if data is an object
-  if (data == null || typeof data !== 'object') {
-    return {
-      ok: false,
-      error: new Error('Control data must be an object')
-    }
+  const recordResult = ensureRecord(data, 'Control data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<{ action: string }>
   }
 
-  const control = data as Record<string, unknown>
-
-  // Validate required action field
-  const actionResult = validateStringField(
-    control,
-    'action',
-    true,
-    'Action is required and must be a non-empty string'
-  )
-  if (actionResult.ok) {
-    // Continue with building result
-  } else {
+  const control = recordResult.value
+  const actionResult = validateStringField(control, ACTION_FIELD, {
+    required: true,
+    errorMessage: 'Action is required and must be a non-empty string',
+    trim: true
+  })
+  if (!actionResult.ok) {
     return actionResult as Result<{ action: string }>
   }
 
-  // Validate known actions
-  const validActions = ['reauth', 'clear-credentials', 'disconnect']
-  // Safe to use type assertion as we validated this field is required
-  const actionValue = actionResult.value as string
-  const action = actionValue.trim().toLowerCase()
-  
-  if (!validActions.includes(action)) {
+  const action = (actionResult.value as string).toLowerCase()
+  if (!VALID_CONTROL_ACTIONS.has(action)) {
     return {
       ok: false,
       error: new Error(`Unknown control action: ${action}`)
     }
   }
 
-  return {
-    ok: true,
-    value: { action }
-  }
+  return { ok: true, value: { action } }
 }
