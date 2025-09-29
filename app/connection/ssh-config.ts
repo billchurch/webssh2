@@ -33,36 +33,14 @@ export function buildSSHConfig(
   config: Config,
   tryKeyboard = true
 ): SSHConfig {
-  const sshConfig: SSHConfig = {
-    host: creds.host ?? '',
-    port: creds.port ?? DEFAULTS.SSH_PORT,
-    tryKeyboard,
-    algorithms: config.ssh.algorithms as unknown,
-    readyTimeout: config.ssh.readyTimeout,
-    keepaliveInterval: config.ssh.keepaliveInterval,
-    keepaliveCountMax: config.ssh.keepaliveCountMax,
+  const baseConfig = createBaseConfig(creds, config, tryKeyboard)
+
+  return {
+    ...baseConfig,
+    ...buildUsernameSection(creds),
+    ...buildPrivateKeySection(creds),
+    ...buildPasswordSection(creds)
   }
-  
-  if (creds.username != null && creds.username !== '') {
-    sshConfig.username = creds.username
-  }
-  
-  // Add private key if valid
-  if (creds.privateKey != null && creds.privateKey !== '' && validatePrivateKey(creds.privateKey)) {
-    sshConfig.privateKey = creds.privateKey
-    
-    // Add passphrase if key is encrypted
-    if (isEncryptedKey(creds.privateKey) && creds.passphrase != null && creds.passphrase !== '') {
-      sshConfig.passphrase = creds.passphrase
-    }
-  }
-  
-  // Add password if provided
-  if (creds.password != null && creds.password !== '') {
-    sshConfig.password = creds.password
-  }
-  
-  return sshConfig
 }
 
 /**
@@ -81,4 +59,67 @@ export function mergeSSHConfig(
     ...overrides,
     algorithms: overrides.algorithms ?? base.algorithms,
   }
+}
+
+const createBaseConfig = (
+  creds: Partial<Credentials>,
+  config: Config,
+  tryKeyboard: boolean
+): SSHConfig => ({
+  host: creds.host ?? '',
+  port: creds.port ?? DEFAULTS.SSH_PORT,
+  tryKeyboard,
+  algorithms: config.ssh.algorithms as unknown,
+  readyTimeout: config.ssh.readyTimeout,
+  keepaliveInterval: config.ssh.keepaliveInterval,
+  keepaliveCountMax: config.ssh.keepaliveCountMax,
+})
+
+const buildUsernameSection = (creds: Partial<Credentials>): Partial<SSHConfig> => {
+  const username = takeFilled(creds.username)
+  if (username === undefined) {
+    return {}
+  }
+  return { username }
+}
+
+const buildPrivateKeySection = (creds: Partial<Credentials>): Partial<SSHConfig> => {
+  const privateKey = takeFilled(creds.privateKey)
+  if (privateKey === undefined) {
+    return {}
+  }
+  if (!validatePrivateKey(privateKey)) {
+    return {}
+  }
+
+  if (isEncryptedKey(privateKey)) {
+    const passphrase = takeFilled(creds.passphrase)
+    if (passphrase === undefined) {
+      return { privateKey }
+    }
+    return {
+      privateKey,
+      passphrase
+    }
+  }
+
+  return { privateKey }
+}
+
+const buildPasswordSection = (creds: Partial<Credentials>): Partial<SSHConfig> => {
+  const sanitizedPassword = takeFilled(creds.password)
+  if (typeof sanitizedPassword !== 'string') {
+    return {}
+  }
+  return { password: sanitizedPassword }
+}
+
+const takeFilled = (value: string | null | undefined): string | undefined => {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+  if (value.length === 0) {
+    return undefined
+  }
+  return value
 }
