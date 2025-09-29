@@ -45,6 +45,30 @@ export interface MaskedConfig {
   }
 }
 
+const maskWhenFilled = (value: string | null | undefined): string | null => {
+  if (value == null) {
+    return null
+  }
+  if (value === '') {
+    return null
+  }
+  return '***'
+}
+
+const describeOrigins = (origins: string[]): string => {
+  if (origins.length === 0) {
+    return 'none'
+  }
+  return `${origins.length} origin(s)`
+}
+
+const maskSessionSecret = (secret: string): string => {
+  if (secret.length === 0) {
+    return 'not set'
+  }
+  return '***'
+}
+
 /**
  * Masks sensitive configuration data for logging
  * @param config - Configuration to mask
@@ -55,15 +79,13 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
   return {
     listen: config.listen,
     http: {
-      origins: config.http.origins.length > 0 
-        ? `${config.http.origins.length} origin(s)` 
-        : 'none'
+      origins: describeOrigins(config.http.origins)
     },
     user: {
-      name: config.user.name != null && config.user.name !== '' ? '***' : null,
-      password: config.user.password != null && config.user.password !== '' ? '***' : null,
-      privateKey: config.user.privateKey != null && config.user.privateKey !== '' ? '***' : null,
-      passphrase: config.user.passphrase != null && config.user.passphrase !== '' ? '***' : null
+      name: maskWhenFilled(config.user.name),
+      password: maskWhenFilled(config.user.password),
+      privateKey: maskWhenFilled(config.user.privateKey),
+      passphrase: maskWhenFilled(config.user.passphrase)
     },
     ssh: {
       host: config.ssh.host,
@@ -87,7 +109,7 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
     options: config.options,
     session: {
       name: config.session.name,
-      secret: config.session.secret === '' ? 'not set' : '***'
+      secret: maskSessionSecret(config.session.secret)
     },
     sso: {
       enabled: config.sso.enabled,
