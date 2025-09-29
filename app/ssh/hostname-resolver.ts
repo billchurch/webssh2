@@ -2,6 +2,8 @@
 // Async hostname resolution service for subnet validation
 
 import { lookup } from 'node:dns/promises'
+import type { LookupAddress } from 'node:dns'
+import { isIP } from 'node:net'
 import type { Result } from '../types/result.js'
 import { createNamespacedDebug } from '../logger.js'
 
@@ -22,13 +24,9 @@ export const resolveHostname = async (
   try {
     debug(`Resolving hostname: ${hostname}`)
 
-    // Check if already an IP address
-    // eslint-disable-next-line security/detect-unsafe-regex
-    const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
-    // eslint-disable-next-line security/detect-unsafe-regex
-    const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+    const ipVersion = isIP(hostname)
 
-    if (ipv4Pattern.test(hostname) || ipv6Pattern.test(hostname)) {
+    if (ipVersion === 4 || ipVersion === 6) {
       debug(`${hostname} is already an IP address`)
       return {
         ok: true,
@@ -40,15 +38,34 @@ export const resolveHostname = async (
     }
 
     // Perform DNS lookup
-    const { address } = await lookup(hostname)
+    const lookupResult = await lookup(hostname, { all: true })
+    const entries: Array<LookupAddress | string> = Array.isArray(lookupResult)
+      ? lookupResult
+      : [lookupResult]
 
-    debug(`Resolved ${hostname} to ${address}`)
+    const addresses = entries
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          return entry
+        }
+        return entry.address
+      })
+      .filter((address): address is string => typeof address === 'string' && address !== '')
+
+    if (addresses.length === 0) {
+      return {
+        ok: false,
+        error: new Error(`No DNS records found for ${hostname}`)
+      }
+    }
+
+    debug(`Resolved ${hostname} to ${addresses.join(', ')}`)
 
     return {
       ok: true,
       value: {
         hostname,
-        addresses: [address]
+        addresses
       }
     }
   } catch (error) {
@@ -138,12 +155,19 @@ const isIpv6InCidr = (ip: string, subnet: string): boolean => {
   const ipParts = normalizedIp.split(':')
   const subnetParts = normalizedSubnet.split(':')
 
+  const ipPartMap = new Map(ipParts.entries())
+  const subnetPartMap = new Map(subnetParts.entries())
+
+  const segmentIndices: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7]
+
   let bitsChecked = 0
-  for (let i = 0; i < 8 && bitsChecked < mask; i++) {
-    // eslint-disable-next-line security/detect-object-injection
-    const ipPart = ipParts[i] ?? '0'
-    // eslint-disable-next-line security/detect-object-injection
-    const subnetPart = subnetParts[i] ?? '0'
+  for (const index of segmentIndices) {
+    if (bitsChecked >= mask) {
+      break
+    }
+
+    const ipPart = ipPartMap.get(index) ?? '0'
+    const subnetPart = subnetPartMap.get(index) ?? '0'
     const ipHex = Number.parseInt(ipPart, 16)
     const subnetHex = Number.parseInt(subnetPart, 16)
 
@@ -175,10 +199,26 @@ const matchesIpv4Wildcard = (ip: string, subnet: string): boolean => {
     return false
   }
 
-  const pattern = subnet.replaceAll(/\./g, '\\.').replaceAll(/\*/g, '.*')
-  // eslint-disable-next-line security/detect-non-literal-regexp
-  const regex = new RegExp(`^${pattern}$`)
-  return regex.test(ip)
+  const ipOctets = ip.split('.')
+  const subnetOctets = subnet.split('.')
+  if (ipOctets.length !== 4 || subnetOctets.length !== 4) {
+    return false
+  }
+
+  const ipOctetMap = new Map(ipOctets.entries())
+
+  for (const [index, subnetOctet] of subnetOctets.entries()) {
+    if (subnetOctet === '*') {
+      continue
+    }
+
+    const ipOctet = ipOctetMap.get(index)
+    if (ipOctet == null || subnetOctet !== ipOctet) {
+      return false
+    }
+  }
+
+  return true
 }
 
 /**
@@ -209,12 +249,11 @@ const matchesCidrSubnet = (
  * Determine IP version
  */
 const getIpVersion = (ip: string): { isIpv4: boolean; isIpv6: boolean } => {
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip)
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(ip)
-
-  return { isIpv4, isIpv6 }
+  const version = isIP(ip)
+  return {
+    isIpv4: version === 4,
+    isIpv6: version === 6
+  }
 }
 
 /**
