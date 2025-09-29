@@ -26,17 +26,24 @@ const debug = createNamespacedDebug('config')
 const FILENAME = fileURLToPath(import.meta.url)
 const DIRNAME = dirname(FILENAME)
 
-function getConfigPath(): string {
+interface ConfigPathResolution {
+  path: string
+  exists: boolean
+}
+
+function resolveConfigPath(): ConfigPathResolution {
   // Prefer project root config.json regardless of running from src or dist
   const candidateA = path.join(DIRNAME, '..', 'config.json')
   if (existsSync(candidateA)) {
-    return candidateA
+    return { path: candidateA, exists: true }
   }
+
   const candidateB = path.join(DIRNAME, '..', '..', 'config.json')
   if (existsSync(candidateB)) {
-    return candidateB
+    return { path: candidateB, exists: true }
   }
-  return candidateA
+
+  return { path: candidateA, exists: false }
 }
 
 async function loadEnhancedConfig(
@@ -104,7 +111,8 @@ async function loadEnhancedConfig(
 
 export async function loadConfigAsync(): Promise<Config> {
   debug('Using enhanced configuration implementation')
-  const configPath = getConfigPath()
+  const resolution = resolveConfigPath()
+  const configPath = resolution.path
   const sessionSecret = process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret()
   
   const result = await loadEnhancedConfig(configPath, sessionSecret)
@@ -132,10 +140,7 @@ export async function loadConfigAsync(): Promise<Config> {
   }
   
   // Check if config.json was found or just using env/defaults
-  // configPath is from internal getConfigPath(), not user input
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  const configFileExists = existsSync(configPath)
-  if (configFileExists) {
+  if (resolution.exists) {
     debug('Configuration loaded from config.json and environment variables')
   } else {
     debug('No config.json found, configuration loaded from environment variables and defaults')
