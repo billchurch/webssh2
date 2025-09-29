@@ -10,6 +10,7 @@ import { validateSshCredentials } from '../connection/index.js'
 import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
 import type { AuthSession } from '../auth/auth-utils.js'
+import { createSafeKey, safeGet } from '../utils/safe-property-access.js'
 
 // Import pure handlers
 import {
@@ -20,7 +21,8 @@ import {
   processReauthRequest,
   validateConnectionParameters,
   sanitizeCredentialsForLogging,
-  type SshRouteRequest
+  type SshRouteRequest,
+  type SshConnectionParams
 } from './handlers/ssh-handler.js'
 
 // Import adapters
@@ -39,6 +41,59 @@ type ExpressRequest = Request & {
   sessionID: string
 }
 
+type ConnectionParamsInput = Partial<{
+  host: string
+  port: string
+  term: string
+}>
+
+const queryKeys = {
+  port: createSafeKey('port'),
+  sshterm: createSafeKey('sshterm')
+} as const
+
+function buildConnectionParams(
+  query: SshRouteRequest['query'],
+  hostOverride?: string
+): ConnectionParamsInput {
+  const host = typeof hostOverride === 'string' && hostOverride !== '' ? hostOverride : undefined
+  const portValue = safeGet(query, queryKeys.port)
+  const termValue = safeGet(query, queryKeys.sshterm)
+  const port = typeof portValue === 'string' && portValue !== '' ? portValue : undefined
+  const term = typeof termValue === 'string' && termValue !== '' ? termValue : undefined
+
+  const params: ConnectionParamsInput = {}
+  if (host != null) {
+    params.host = host
+  }
+  if (port != null) {
+    params.port = port
+  }
+  if (term != null) {
+    params.term = term
+  }
+
+  return params
+}
+
+function updateSessionCredentials(
+  session: AuthSession & Record<string, unknown>,
+  connection: SshConnectionParams
+): void {
+  const existing = session.sshCredentials
+  if (existing == null) {
+    return
+  }
+
+  session.sshCredentials = {
+    ...existing,
+    host: connection.host,
+    port: connection.port,
+    ...(connection.term != null ? { term: connection.term } : {})
+  }
+  debug('Updated session credentials with host/port/term from URL')
+}
+
 /**
  * Internal helper to handle SSH GET route logic
  */
@@ -51,87 +106,57 @@ async function handleSshGetRoute(
   const expressReq = req as unknown as ExpressRequest
   const routeRequest = extractRouteRequest(expressReq)
 
-  // Validate credentials
-  const credResult = validateSshRouteCredentials(routeRequest.session.sshCredentials)
-  if (credResult.ok) {
-    // Continue with connection parameters
-  } else {
+  const credentialResult = validateSshRouteCredentials(routeRequest.session.sshCredentials)
+  if (!credentialResult.ok) {
     applyRouteResponse({
       status: HTTP.UNAUTHORIZED,
       headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
-      data: { error: credResult.error.message }
+      data: { error: credentialResult.error.message }
     }, res)
     return
   }
 
-  // Build connection parameters
-  const portParam = routeRequest.query['port'] as string | undefined
-  const termParam = routeRequest.query['sshterm'] as string | undefined
-  const connectionParams: Record<string, string> = {}
-
-  if (hostOverride != null && hostOverride !== '') {
-    connectionParams['host'] = hostOverride
-  }
-  if (portParam != null && portParam !== '') {
-    connectionParams['port'] = portParam
-  }
-  if (termParam != null && termParam !== '') {
-    connectionParams['term'] = termParam
-  }
-
-  // Validate connection parameters
-  const connResult = validateConnectionParameters(connectionParams, config)
-  if (connResult.ok) {
-    // Continue with SSH validation
-  } else {
+  const connectionResult = validateConnectionParameters(
+    buildConnectionParams(routeRequest.query, hostOverride),
+    config
+  )
+  if (!connectionResult.ok) {
     applyRouteResponse({
       status: 400,
-      data: { error: connResult.error.message }
+      data: { error: connectionResult.error.message }
     }, res)
     return
   }
 
-  // Validate SSH connection
   const validationResult = await validateSshCredentials(
-    connResult.value.host,
-    connResult.value.port,
-    credResult.value.username,
-    credResult.value.password,
+    connectionResult.value.host,
+    connectionResult.value.port,
+    credentialResult.value.username,
+    credentialResult.value.password,
     config
   )
 
   if (!validationResult.success) {
     const errorResponse = processSshValidationResult(
       validationResult,
-      connResult.value.host,
-      connResult.value.port
+      connectionResult.value.host,
+      connectionResult.value.port
     )
     applyRouteResponse(errorResponse, res)
     return
   }
 
-  // Log sanitized credentials
-  const sanitized = sanitizeCredentialsForLogging(credResult.value, connResult.value)
-  debug('SSH validation passed:', sanitized)
+  debug(
+    'SSH validation passed:',
+    sanitizeCredentialsForLogging(credentialResult.value, connectionResult.value)
+  )
 
-  // Update session credentials with host, port, and term from URL for socket auto-connection
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/prefer-optional-chain
-  if (expressReq.session != null && expressReq.session.sshCredentials != null) {
-    expressReq.session.sshCredentials = {
-      ...expressReq.session.sshCredentials,
-      host: connResult.value.host,
-      port: connResult.value.port,
-      ...(connResult.value.term != null && { term: connResult.value.term })
-    }
-    debug('Updated session credentials with host/port/term from URL')
-  }
-
-  // Process auth and serve client
+  updateSessionCredentials(expressReq.session, connectionResult.value)
   processAuthParameters(routeRequest.query, expressReq.session)
   await handleConnection(
     expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
     res,
-    { host: connResult.value.host }
+    { host: connectionResult.value.host }
   )
 }
 
