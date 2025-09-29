@@ -25,26 +25,12 @@
 
 /**
  * Functional error handling with Result<T, E> type.
- * Provides Railway-oriented programming primitives for safe error handling.
+ * Only exports production-used functions.
  */
 export {
   ok,
   err,
-  isOk,
-  isErr,
-  map,
-  mapErr,
-  andThen,
-  orElse,
-  unwrap,
-  unwrapOr,
-  unwrapOrElse,
-  toNullable,
-  fromNullable,
-  tryCatch,
-  tryCatchAsync,
-  combine,
-  combineAll
+  isErr
 } from './result.js'
 
 // ============================================================================

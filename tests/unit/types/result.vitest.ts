@@ -18,7 +18,7 @@ import {
   tryCatch,
   combine,
   combineAll
-} from '../../../app/utils/index.js'
+} from '../../test-utils.js'
 import type { Result } from '../../../app/types/result.js'
 
 void describe('Result type', () => {
