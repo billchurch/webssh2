@@ -1,15 +1,17 @@
 // server
 // app/config.ts
 
-import path, { dirname } from 'node:path'
-import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { generateSecureSecret, enhanceConfig, err } from './utils/index.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
-import { readConfigFile } from './config/config-loader.js'
+import {
+  readConfigFile,
+  resolveConfigFile,
+  configLocationToPath,
+  type ConfigFileResolution
+} from './config/config-loader.js'
 import {
   createDefaultConfig,
   processConfig as processConfigPure,
@@ -23,43 +25,21 @@ const debug = createNamespacedDebug('config')
 
 // Session secret will be generated inside loadEnhancedConfig if needed
 
-const FILENAME = fileURLToPath(import.meta.url)
-const DIRNAME = dirname(FILENAME)
-
-interface ConfigPathResolution {
-  path: string
-  exists: boolean
-}
-
-function resolveConfigPath(): ConfigPathResolution {
-  // Prefer project root config.json regardless of running from src or dist
-  const candidateA = path.join(DIRNAME, '..', 'config.json')
-  if (existsSync(candidateA)) {
-    return { path: candidateA, exists: true }
-  }
-
-  const candidateB = path.join(DIRNAME, '..', '..', 'config.json')
-  if (existsSync(candidateB)) {
-    return { path: candidateB, exists: true }
-  }
-
-  return { path: candidateA, exists: false }
-}
-
 async function loadEnhancedConfig(
-  configPath?: string,
+  resolution: ConfigFileResolution,
   sessionSecret?: string
 ): Promise<Result<Config, ConfigValidationError[]>> {
   // Start with default config
   const defaultConfig = createDefaultConfig(sessionSecret)
-  
-  // Load file config if path provided and file exists
+  const resolvedPath = configLocationToPath(resolution.location)
+
+  // Load file config if a valid location exists
   let fileConfig: Partial<Config> | undefined
-  if (configPath == null || configPath === '') {
-    // No config path provided, skip file loading
-    debug('No config path provided, using environment variables and defaults')
+  if (!resolution.exists) {
+    // No config file available, skip file loading
+    debug('No config file found at %s, using environment variables and defaults', resolvedPath)
   } else {
-    const fileResult = await readConfigFile(configPath)
+    const fileResult = await readConfigFile(resolution.location)
     if (fileResult.ok) {
       const parseResult = parseConfigJson(fileResult.value)
       if (parseResult.ok) {
@@ -75,7 +55,7 @@ async function loadEnhancedConfig(
       const error = fileResult.error as { code?: string }
       if (error.code === 'ENOENT') {
         // Missing file is expected and not an error
-        debug('Config file not found (expected):', configPath)
+        debug('Config file not found (expected):', resolvedPath)
       } else {
         // Only treat non-ENOENT errors as actual errors
         return err([{
@@ -111,11 +91,11 @@ async function loadEnhancedConfig(
 
 export async function loadConfigAsync(): Promise<Config> {
   debug('Using enhanced configuration implementation')
-  const resolution = resolveConfigPath()
-  const configPath = resolution.path
+  const resolution = resolveConfigFile()
+  const configPath = configLocationToPath(resolution.location)
   const sessionSecret = process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret()
   
-  const result = await loadEnhancedConfig(configPath, sessionSecret)
+  const result = await loadEnhancedConfig(resolution, sessionSecret)
   
   if (result.ok) {
     // Config loaded successfully, continue
@@ -141,9 +121,9 @@ export async function loadConfigAsync(): Promise<Config> {
   
   // Check if config.json was found or just using env/defaults
   if (resolution.exists) {
-    debug('Configuration loaded from config.json and environment variables')
+    debug('Configuration loaded from %s and environment variables', configPath)
   } else {
-    debug('No config.json found, configuration loaded from environment variables and defaults')
+    debug('No config.json found at %s, configuration loaded from environment variables and defaults', configPath)
   }
   
   const finalConfig = result.value
