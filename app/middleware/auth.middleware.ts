@@ -7,6 +7,13 @@ import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
 import { processAuthentication, createSessionData } from './auth-processor.js'
 import { isErr } from '../utils/index.js'
+import { createNamespacedDebug } from '../logger.js'
+
+type SavableSession = Record<string, unknown> & {
+  save?: (callback: (err: unknown) => void) => void
+}
+
+const debug = createNamespacedDebug('middleware:auth')
 
 /**
  * Create authentication middleware that handles basic auth
@@ -33,20 +40,24 @@ export function createAuthMiddleware(config: Config): RequestHandler {
     // Create session data from auth result
     const sessionData = createSessionData(authResult.value)
     
-    // Apply session data
-    Object.assign(r.session, sessionData)
-
-    // Explicitly save session to ensure Socket.IO can access it
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (r.session != null && typeof r.session.save === 'function') {
-      r.session.save((err: unknown) => {
-        if (err != null) {
-          console.error('Session save error:', err)
-        }
-        next()
-      })
-    } else {
+    const session = r.session as SavableSession | undefined
+    if (session == null) {
       next()
+      return
     }
+
+    Object.assign(session, sessionData)
+
+    if (typeof session.save !== 'function') {
+      next()
+      return
+    }
+
+    session.save((err: unknown) => {
+      if (err != null) {
+        debug('Session save error: %O', err)
+      }
+      next()
+    })
   }
 }
