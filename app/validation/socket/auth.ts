@@ -17,21 +17,21 @@ import {
   AUTH_DIMENSION_FIELDS
 } from './fields.js'
 
-export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
-  const recordResult = ensureRecord(data, 'Authentication data must be an object')
-  if (!recordResult.ok) {
-    return recordResult as Result<AuthCredentials>
-  }
+interface RequiredAuthFields {
+  username: string
+  host: string
+}
 
-  const creds = recordResult.value
-
+const validateRequiredAuthFields = (
+  creds: Record<string, unknown>
+): Result<RequiredAuthFields> => {
   const usernameResult = validateStringField(creds, USERNAME_FIELD, {
     required: true,
     errorMessage: 'Username is required and must be a non-empty string',
     trim: true
   })
   if (!usernameResult.ok) {
-    return usernameResult as Result<AuthCredentials>
+    return { ok: false, error: usernameResult.error }
   }
 
   const hostResult = validateStringField(creds, HOST_FIELD, {
@@ -40,13 +40,76 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
     trim: true
   })
   if (!hostResult.ok) {
-    return hostResult as Result<AuthCredentials>
+    return { ok: false, error: hostResult.error }
   }
 
+  return {
+    ok: true,
+    value: {
+      username: usernameResult.value as string,
+      host: hostResult.value as string
+    }
+  }
+}
+
+const resolveAuthPort = (creds: Record<string, unknown>): Result<number> => {
   const portSource = safeGet(creds, PORT_FIELD.key)
-  const portResult = portSource == null
-    ? ({ ok: true, value: 22 } as Result<number>)
-    : validatePort(portSource)
+  if (portSource == null) {
+    return { ok: true, value: 22 }
+  }
+
+  return validatePort(portSource)
+}
+
+const buildAuthCredentials = (
+  required: RequiredAuthFields,
+  port: number,
+  optionalStrings: Partial<Record<'password' | 'privateKey' | 'passphrase' | 'term', string>>,
+  optionalDimensions: Partial<Record<'cols' | 'rows', number>>
+): AuthCredentials => {
+  const credentials: AuthCredentials = {
+    username: required.username,
+    host: required.host,
+    port
+  }
+
+  if (optionalStrings.password !== undefined) {
+    credentials.password = optionalStrings.password
+  }
+  if (optionalStrings.privateKey !== undefined) {
+    credentials.privateKey = optionalStrings.privateKey
+  }
+  if (optionalStrings.passphrase !== undefined) {
+    credentials.passphrase = optionalStrings.passphrase
+  }
+  if (optionalStrings.term !== undefined) {
+    credentials.term = optionalStrings.term
+  }
+
+  if (optionalDimensions.cols !== undefined) {
+    credentials.cols = optionalDimensions.cols
+  }
+  if (optionalDimensions.rows !== undefined) {
+    credentials.rows = optionalDimensions.rows
+  }
+
+  return credentials
+}
+
+export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
+  const recordResult = ensureRecord(data, 'Authentication data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<AuthCredentials>
+  }
+
+  const creds = recordResult.value
+
+  const requiredResult = validateRequiredAuthFields(creds)
+  if (!requiredResult.ok) {
+    return requiredResult as Result<AuthCredentials>
+  }
+
+  const portResult = resolveAuthPort(creds)
   if (!portResult.ok) {
     return portResult as Result<AuthCredentials>
   }
@@ -68,33 +131,12 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
     return optionalDimensionsResult as Result<AuthCredentials>
   }
 
-  const validated: AuthCredentials = {
-    username: usernameResult.value as string,
-    host: hostResult.value as string,
-    port: portResult.value
-  }
+  const credentials = buildAuthCredentials(
+    requiredResult.value,
+    portResult.value,
+    optionalStringsResult.value,
+    optionalDimensionsResult.value
+  )
 
-  const optionalStrings = optionalStringsResult.value
-  if (optionalStrings.password !== undefined) {
-    validated.password = optionalStrings.password
-  }
-  if (optionalStrings.privateKey !== undefined) {
-    validated.privateKey = optionalStrings.privateKey
-  }
-  if (optionalStrings.passphrase !== undefined) {
-    validated.passphrase = optionalStrings.passphrase
-  }
-  if (optionalStrings.term !== undefined) {
-    validated.term = optionalStrings.term
-  }
-
-  const optionalDimensions = optionalDimensionsResult.value
-  if (optionalDimensions.cols !== undefined) {
-    validated.cols = optionalDimensions.cols
-  }
-  if (optionalDimensions.rows !== undefined) {
-    validated.rows = optionalDimensions.rows
-  }
-
-  return { ok: true, value: validated }
+  return { ok: true, value: credentials }
 }

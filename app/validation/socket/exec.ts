@@ -20,13 +20,9 @@ import { createSafeKey, safeGet } from '../../utils/safe-property-access.js'
 const COMMAND_KEY = createSafeKey('command')
 const COMMAND_ERROR_MESSAGE = 'Command is required and must be a non-empty string'
 
-export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
-  const recordResult = ensureRecord(data, 'Exec data must be an object')
-  if (!recordResult.ok) {
-    return recordResult as Result<ExecCommand>
-  }
+type ExecDimensions = Partial<Record<'cols' | 'rows', number>>
 
-  const exec = recordResult.value
+const validateCommand = (exec: Record<string, unknown>): Result<string> => {
   const commandSource = safeGet(exec, COMMAND_KEY)
   if (typeof commandSource !== 'string') {
     return {
@@ -43,18 +39,12 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
     }
   }
 
-  const validated: ExecCommand = { command }
+  return { ok: true, value: command }
+}
 
-  const ptySource = safeGet(exec, PTY_FIELD.key)
-  if (ptySource != null) {
-    validated.pty = Boolean(ptySource)
-  }
-
-  const termValue = validateOptionalTerm(safeGet(exec, TERM_FIELD.key))
-  if (termValue != null) {
-    validated.term = termValue
-  }
-
+const resolveDimensions = (
+  exec: Record<string, unknown>
+): Result<ExecDimensions> => {
   const dimensionResult = collectOptionalDimensions(
     exec,
     EXEC_DIMENSION_FIELDS,
@@ -63,26 +53,45 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
       max: VALIDATION_LIMITS.MAX_TERMINAL_DIMENSION
     }
   )
+
   if (!dimensionResult.ok) {
-    return dimensionResult as Result<ExecCommand>
+    return { ok: false, error: dimensionResult.error }
   }
 
-  const dimensions = dimensionResult.value
-  if (dimensions.cols !== undefined) {
-    validated.cols = dimensions.cols
-  }
-  if (dimensions.rows !== undefined) {
-    validated.rows = dimensions.rows
+  return { ok: true, value: dimensionResult.value }
+}
+
+export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
+  const recordResult = ensureRecord(data, 'Exec data must be an object')
+  if (!recordResult.ok) {
+    return recordResult as Result<ExecCommand>
   }
 
+  const exec = recordResult.value
+
+  const commandResult = validateCommand(exec)
+  if (!commandResult.ok) {
+    return commandResult as Result<ExecCommand>
+  }
+
+  const dimensionsResult = resolveDimensions(exec)
+  if (!dimensionsResult.ok) {
+    return dimensionsResult as Result<ExecCommand>
+  }
+
+  const ptySource = safeGet(exec, PTY_FIELD.key)
+  const termValue = validateOptionalTerm(safeGet(exec, TERM_FIELD.key))
   const envValue = validateEnvironmentVars(safeGet(exec, ENV_FIELD.key))
-  if (envValue != null) {
-    validated.env = envValue
-  }
-
   const timeoutValue = validateOptionalTimeout(safeGet(exec, TIMEOUT_FIELD.key))
-  if (timeoutValue != null) {
-    validated.timeoutMs = timeoutValue
+
+  const validated: ExecCommand = {
+    command: commandResult.value,
+    ...(ptySource != null ? { pty: Boolean(ptySource) } : {}),
+    ...(termValue != null ? { term: termValue } : {}),
+    ...(dimensionsResult.value.cols !== undefined ? { cols: dimensionsResult.value.cols } : {}),
+    ...(dimensionsResult.value.rows !== undefined ? { rows: dimensionsResult.value.rows } : {}),
+    ...(envValue != null ? { env: envValue } : {}),
+    ...(timeoutValue != null ? { timeoutMs: timeoutValue } : {})
   }
 
   return { ok: true, value: validated }
