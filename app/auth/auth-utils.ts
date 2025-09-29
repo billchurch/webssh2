@@ -139,38 +139,44 @@ export function processSessionRecordingParams(
 ): void {
   const recording = extractRecordingParams(body)
   
-  if (recording.allowReplay !== undefined) {
-    session.allowReplay = recording.allowReplay
-  }
-  if (recording.mrhSession !== undefined) {
-    session.mrhSession = recording.mrhSession
-  }
-  if (recording.replayDateStart !== undefined) {
-    session.replayDateStart = recording.replayDateStart
-  }
-  if (recording.replayDateEnd !== undefined) {
-    session.replayDateEnd = recording.replayDateEnd
-  }
-  if (recording.replayExitCode !== undefined) {
-    session.replayExitCode = recording.replayExitCode
-  }
-  if (recording.replayExitSignal !== undefined) {
-    session.replayExitSignal = recording.replayExitSignal
-  }
-  if (recording.sessionId !== undefined) {
-    session.sessionId = recording.sessionId
-  }
-  if (recording.sessionUsername !== undefined) {
-    session.sessionUsername = recording.sessionUsername
-  }
-  if (recording.userHash !== undefined) {
-    session.userHash = recording.userHash
-  }
+  applyWhenDefined(recording.allowReplay, value => {
+    session.allowReplay = value
+  })
+  applyWhenDefined(recording.mrhSession, value => {
+    session.mrhSession = value
+  })
+  applyWhenDefined(recording.replayDateStart, value => {
+    session.replayDateStart = value
+  })
+  applyWhenDefined(recording.replayDateEnd, value => {
+    session.replayDateEnd = value
+  })
+  applyWhenDefined(recording.replayExitCode, value => {
+    session.replayExitCode = value
+  })
+  applyWhenDefined(recording.replayExitSignal, value => {
+    session.replayExitSignal = value
+  })
+  applyWhenDefined(recording.sessionId, value => {
+    session.sessionId = value
+  })
+  applyWhenDefined(recording.sessionUsername, value => {
+    session.sessionUsername = value
+  })
+  applyWhenDefined(recording.userHash, value => {
+    session.userHash = value
+  })
   
   // Also check for readyTimeout
   const timeout = extractReadyTimeout(body)
   if (timeout != null) {
     session.readyTimeout = timeout
+  }
+}
+
+function applyWhenDefined<T>(value: T | undefined, apply: (definedValue: T) => void): void {
+  if (value !== undefined) {
+    apply(value)
   }
 }
 
