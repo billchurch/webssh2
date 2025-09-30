@@ -35,6 +35,9 @@ export class ServiceSocketControl {
     this.context.state.shellStream = null
     this.context.state.connectionId = null
     this.context.state.sessionId = null
+    this.context.state.targetHost = null
+    this.context.state.targetPort = null
+    this.context.state.username = null
   }
 
   private handleReplayCredentials(): void {

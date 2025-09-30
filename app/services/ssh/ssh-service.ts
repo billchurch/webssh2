@@ -217,7 +217,10 @@ export class SSHServiceImpl implements SSHService {
           client,
           status: 'connecting',
           createdAt: Date.now(),
-          lastActivity: Date.now()
+          lastActivity: Date.now(),
+          host: config.host,
+          port: config.port,
+          username: config.username
         }
 
         // Setup timeout

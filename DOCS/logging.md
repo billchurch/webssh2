@@ -95,7 +95,8 @@ Configuration is parsed through the existing env-mapper, validated via zod schem
 ## Current Progress
 - `app/logging/` contains the structured formatter, log level helpers, stdout transport, and application-facing logger factory.
 - `app/logger.ts` exposes `createAppStructuredLogger` and now emits structured `error` events in addition to legacy console output.
-- Unit coverage lives under `tests/unit/logging/`, validating formatting, level filtering, and stdout backpressure handling.
+- Socket authentication/terminal adapters publish structured events for auth attempts, successes/failures, and exec activity.
+- Unit coverage lives under `tests/unit/logging/`, validating formatting, level filtering, socket context derivation, and stdout backpressure handling.
 
 ## Future Enhancements
 - Support OpenTelemetry log record export once Node SDK stabilises.

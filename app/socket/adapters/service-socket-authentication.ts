@@ -5,6 +5,7 @@ import type { AdapterContext } from './service-socket-shared.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildSSHConfig } from './ssh-config.js'
+import { emitSocketLog } from '../../logging/socket-logger.js'
 
 export class ServiceSocketAuthentication {
   constructor(private readonly context: AdapterContext) {}
@@ -84,6 +85,7 @@ export class ServiceSocketAuthentication {
   async handleAuthentication(credentials: AuthCredentials): Promise<void> {
     try {
       this.initializeAuthAttempt(credentials)
+      this.logAuthAttempt(credentials)
 
       const authCredentials = this.prepareAuthCredentials(credentials)
       if (authCredentials === null) {
@@ -108,6 +110,7 @@ export class ServiceSocketAuthentication {
 
   private initializeAuthAttempt(credentials: AuthCredentials): void {
     this.context.debug('Authenticating user:', credentials.username)
+    this.context.state.username = credentials.username
     this.context.state.originalAuthMethod ??= this.context.authPipeline.getAuthMethod()
   }
 
@@ -205,6 +208,10 @@ export class ServiceSocketAuthentication {
       authCredentials.passphrase = validatedCreds.passphrase
     }
 
+    this.context.state.targetHost = authCredentials.host
+    this.context.state.targetPort = authCredentials.port
+    this.context.state.username = authCredentials.username
+
     return authCredentials
   }
 
@@ -256,6 +263,9 @@ export class ServiceSocketAuthentication {
   ): void {
     this.context.state.connectionId = connectionId
     this.context.state.sessionId = sessionId
+    this.context.state.username = authCredentials.username
+
+    this.logAuthSuccess(authCredentials, connectionId)
     this.emitAuthSuccess(authCredentials)
 
     const method = this.context.state.originalAuthMethod ?? 'manual'
@@ -268,6 +278,8 @@ export class ServiceSocketAuthentication {
       success: false,
       message
     })
+
+    this.logAuthFailure(message)
   }
 
   private handleAuthenticationError(error: unknown): void {
@@ -296,5 +308,41 @@ export class ServiceSocketAuthentication {
     const connectionString = `ssh://${credentials.host}:${credentials.port}`
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'footer', value: connectionString })
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'status', value: 'Connected' })
+  }
+
+  private logAuthAttempt(credentials: AuthCredentials): void {
+    emitSocketLog(this.context, 'info', 'auth_attempt', 'Authentication attempt received', {
+      data: this.buildAuthLogData(credentials)
+    })
+  }
+
+  private logAuthSuccess(credentials: AuthCredentials, connectionId: string): void {
+    emitSocketLog(this.context, 'info', 'auth_success', 'Authentication succeeded', {
+      status: 'success',
+      data: {
+        host: credentials.host,
+        port: credentials.port,
+        connection_id: connectionId
+      }
+    })
+  }
+
+  private logAuthFailure(reason: string): void {
+    emitSocketLog(this.context, 'warn', 'auth_failure', 'Authentication failed', {
+      status: 'failure',
+      reason,
+      data: { reason }
+    })
+  }
+
+  private buildAuthLogData(credentials: AuthCredentials): Record<string, unknown> {
+    return {
+      host: credentials.host,
+      port: credentials.port,
+      requested_username: credentials.username,
+      password_present: credentials.password !== undefined && credentials.password !== '',
+      private_key_present: credentials.privateKey !== undefined && credentials.privateKey !== '',
+      passphrase_present: credentials.passphrase !== undefined && credentials.passphrase !== ''
+    }
   }
 }

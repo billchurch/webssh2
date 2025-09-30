@@ -15,7 +15,7 @@ import type {
   TerminalSettings
 } from '../../types/contracts/v1/socket.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
-import { createNamespacedDebug } from '../../logger.js'
+import { createNamespacedDebug, createAppStructuredLogger } from '../../logger.js'
 import {
   createAdapterSharedState,
   type AdapterContext
@@ -25,6 +25,11 @@ import { ServiceSocketTerminal } from './service-socket-terminal.js'
 import { ServiceSocketControl } from './service-socket-control.js'
 
 const debug = createNamespacedDebug('socket:service-adapter')
+
+interface SocketHandshakeLike {
+  headers?: Record<string, string | string[]>
+  address?: unknown
+}
 
 export class ServiceSocketAdapter {
   private readonly authPipeline: UnifiedAuthPipeline
@@ -40,13 +45,19 @@ export class ServiceSocketAdapter {
   ) {
     this.authPipeline = new UnifiedAuthPipeline(socket.request, config)
 
+    const state = createAdapterSharedState()
+    const clientDetails = extractClientDetails(socket)
+    state.clientIp = clientDetails.ip
+    state.clientPort = clientDetails.port
+
     this.context = {
       socket,
       config,
       services,
       authPipeline: this.authPipeline,
-      state: createAdapterSharedState(),
-      debug
+      state,
+      debug,
+      logger: createAppStructuredLogger({ namespace: 'webssh2:socket' })
     }
 
     this.auth = new ServiceSocketAuthentication(this.context)
@@ -107,4 +118,56 @@ export class ServiceSocketAdapter {
       this.control.handleDisconnect()
     })
   }
+}
+
+function extractClientDetails(
+  socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
+): { ip: string | null; port: number | null } {
+  const handshakeLike = (socket as unknown as { handshake?: SocketHandshakeLike }).handshake
+  const headersRecord = handshakeLike?.headers ?? {}
+
+  const forwardedFor = headersRecord['x-forwarded-for']
+  const forwardedPort = headersRecord['x-forwarded-port']
+
+  let ip = normaliseForwardedValue(forwardedFor)
+  const fallbackAddress = typeof handshakeLike?.address === 'string' ? handshakeLike.address : null
+  if (ip === null && fallbackAddress !== null) {
+    ip = fallbackAddress
+  }
+
+  const port = parsePort(forwardedPort)
+
+  return { ip, port }
+}
+
+function normaliseForwardedValue(value: string | string[] | undefined): string | null {
+  if (typeof value === 'string' && value !== '') {
+    return value.split(',')[0]?.trim() ?? null
+  }
+
+  if (Array.isArray(value) && value.length > 0) {
+    return value[0]?.split(',')[0]?.trim() ?? null
+  }
+
+  return null
+}
+
+function parsePort(value: string | string[] | undefined): number | null {
+  let portString: string | undefined
+  if (typeof value === 'string') {
+    portString = value
+  } else if (Array.isArray(value) && value.length > 0) {
+    portString = value[0]
+  }
+
+  if (portString === undefined) {
+    return null
+  }
+
+  const parsed = Number.parseInt(portString, 10)
+  if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535) {
+    return parsed
+  }
+
+  return null
 }
