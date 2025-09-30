@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.1.0...webssh2-server-v2.2.0) (2025-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* Error messages from credential validation have changed
+
+### Features
+
+* migrate from Ajv to Zod for config validation ([#415](https://github.com/billchurch/webssh2/issues/415)) ([4230595](https://github.com/billchurch/webssh2/commit/4230595efdc742892f05cc19176cd11122e1a45b))
+
+
+### Bug Fixes
+
+* rename AuthMethod to SSHAuthMethod to avoid type naming conflict ([#418](https://github.com/billchurch/webssh2/issues/418)) ([0b82619](https://github.com/billchurch/webssh2/commit/0b826198159078b29b8709aa781da5e1dbf3336d))
+
+
+### Chores
+
+* release 2.2.0 ([e50427c](https://github.com/billchurch/webssh2/commit/e50427c8d4de0e15bbb30dfa10cc841ed457c43b))
+
+
+### Code Refactoring
+
+* unify credential extraction with SRP and pure functions ([#417](https://github.com/billchurch/webssh2/issues/417)) ([e568ea1](https://github.com/billchurch/webssh2/commit/e568ea1431b238dcc5d6047c07f2c9536ee0c610))
+
 ## [2.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.0.0...webssh2-server-v2.1.0) (2025-09-26)
 
 
