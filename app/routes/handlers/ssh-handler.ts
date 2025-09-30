@@ -156,43 +156,22 @@ export const processPostAuthRequest = (
   credentials: SshCredentials
   connection: SshConnectionParams
 }> => {
-  // Extract and validate credentials
-  const username = body['username'] as string | undefined
-  const password = body['password'] as string | undefined
-  
-  if (username == null || username === '' || password == null || password === '') {
-    return {
-      ok: false,
-      error: new Error('Missing required fields: username and password')
-    }
+  const normalizedBody = toPlainRecord(body)
+  const credentialsResult = extractCredentials(normalizedBody)
+  if (!credentialsResult.ok) {
+    return credentialsResult
   }
 
-  // Extract connection parameters
-  const host = (body['host'] ?? query['host'] ?? query['hostname'] ?? config.ssh.host) as string | undefined
-  if (host == null || host === '') {
-    return {
-      ok: false,
-      error: new Error('Missing required field: host')
-    }
+  const connectionResult = buildConnectionParams(normalizedBody, query, config)
+  if (!connectionResult.ok) {
+    return connectionResult
   }
-
-  const portValue = body['port'] ?? query['port']
-  let port: number
-  if (typeof portValue === 'number') {
-    port = portValue
-  } else if (typeof portValue === 'string' && portValue !== '') {
-    port = Number.parseInt(portValue, 10)
-  } else {
-    port = config.ssh.port
-  }
-
-  const term = (body['sshterm'] ?? query['sshterm'] ?? null) as string | null
 
   return {
     ok: true,
     value: {
-      credentials: { username, password },
-      connection: { host, port, term }
+      credentials: credentialsResult.value,
+      connection: connectionResult.value
     }
   }
 }
@@ -265,7 +244,7 @@ export const validateConnectionParameters = (
   if (host == null || host === '') {
     return {
       ok: false,
-      error: new Error('Host parameter is required')
+      error: new Error('Missing required field: host')
     }
   }
 
@@ -309,4 +288,107 @@ export const sanitizeCredentialsForLogging = (
     hasPrivateKey: credentials.privateKey != null && credentials.privateKey !== '',
     term: connection.term
   }
+}
+
+const extractCredentials = (
+  body: Record<string, unknown>
+): Result<SshCredentials> => {
+  const username = toFilledString(body['username'])
+  const password = toFilledString(body['password'])
+
+  if (username === undefined || password === undefined) {
+    return {
+      ok: false,
+      error: new Error('Missing required fields: username and password')
+    }
+  }
+
+  return {
+    ok: true,
+    value: {
+      username,
+      password
+    }
+  }
+}
+
+const buildConnectionParams = (
+  body: Record<string, unknown>,
+  query: Record<string, unknown>,
+  config: Config
+): Result<SshConnectionParams> => {
+  const hostCandidate = firstDefinedString([
+    body['host'],
+    query['host'],
+    query['hostname']
+  ])
+
+  const portCandidate = firstDefinedPortCandidate([
+    body['port'],
+    query['port']
+  ])
+
+  const termCandidate = firstDefinedString([
+    body['sshterm'],
+    query['sshterm']
+  ])
+
+  const parameters: {
+    host?: string
+    port?: string | number
+    term?: string
+  } = {}
+
+  if (hostCandidate !== undefined) {
+    parameters.host = hostCandidate
+  }
+  if (portCandidate !== undefined) {
+    parameters.port = portCandidate
+  }
+  if (termCandidate !== undefined) {
+    parameters.term = termCandidate
+  }
+
+  return validateConnectionParameters(parameters, config)
+}
+
+const firstDefinedString = (candidates: unknown[]): string | undefined => {
+  for (const candidate of candidates) {
+    const value = toFilledString(candidate)
+    if (value !== undefined) {
+      return value
+    }
+  }
+  return undefined
+}
+
+const firstDefinedPortCandidate = (candidates: unknown[]): string | number | undefined => {
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) {
+      continue
+    }
+
+    if (typeof candidate === 'number') {
+      return candidate
+    }
+
+    if (typeof candidate === 'string' && candidate !== '') {
+      return candidate
+    }
+  }
+  return undefined
+}
+
+const toFilledString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string' || value === '') {
+    return undefined
+  }
+  return value
+}
+
+const toPlainRecord = (value: Record<string, unknown> | null | undefined): Record<string, unknown> => {
+  if (value === undefined || value === null) {
+    return {}
+  }
+  return value
 }

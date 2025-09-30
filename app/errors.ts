@@ -3,29 +3,13 @@
 
 import { logError, createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES } from './constants.js'
+import { WebSSH2Error } from './errors/webssh2-error.js'
+
+export { WebSSH2Error } from './errors/webssh2-error.js'
+export { ConfigError } from './errors/config-error.js'
+export { SSHConnectionError } from './errors/ssh-connection-error.js'
 
 const debug = createNamespacedDebug('errors')
-
-export class WebSSH2Error extends Error {
-  code: string
-  constructor(message: string, code: string) {
-    super(message)
-    this.name = new.target.name
-    this.code = code
-  }
-}
-
-export class ConfigError extends WebSSH2Error {
-  constructor(message: string) {
-    super(message, MESSAGES.CONFIG_ERROR)
-  }
-}
-
-export class SSHConnectionError extends WebSSH2Error {
-  constructor(message: string) {
-    super(message, MESSAGES.SSH_CONNECTION_ERROR)
-  }
-}
 
 interface ResponseLike { status: (code: number) => { json: (body: unknown) => void } }
 

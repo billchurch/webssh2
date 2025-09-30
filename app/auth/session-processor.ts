@@ -115,52 +115,52 @@ function parseString(value: unknown): string | undefined {
 export function extractRecordingParams(params: Record<string, unknown>): RecordingParams {
   const recording: RecordingParams = {}
   
-  // Process each parameter with its parser
-  const allowReplay = parseBoolean(params['allowreplay'])
-  if (allowReplay !== undefined) {
-    recording.allowReplay = allowReplay
-  }
-  
-  if (params['mrhsession'] != null) {
-    recording.mrhSession = params['mrhsession']
-  }
-  
-  const replayDateStart = parseDate(params['replaydatestart'])
-  if (replayDateStart !== undefined) {
-    recording.replayDateStart = replayDateStart
-  }
-  
-  const replayDateEnd = parseDate(params['replaydateend'])
-  if (replayDateEnd !== undefined) {
-    recording.replayDateEnd = replayDateEnd
-  }
-  
-  const replayExitCode = parseNumber(params['replayexitcode'])
-  if (replayExitCode !== undefined) {
-    recording.replayExitCode = replayExitCode
-  }
-  
-  const replayExitSignal = parseString(params['replayexitsignal'])
-  if (replayExitSignal !== undefined) {
-    recording.replayExitSignal = replayExitSignal
-  }
-  
-  const sessionId = parseString(params['sessionid'])
-  if (sessionId !== undefined) {
-    recording.sessionId = sessionId
-  }
-  
-  const sessionUsername = parseString(params['sessionusername'])
-  if (sessionUsername !== undefined) {
-    recording.sessionUsername = sessionUsername
-  }
-  
-  const userHash = parseString(params['userhash'])
-  if (userHash !== undefined) {
-    recording.userHash = userHash
-  }
+  assignParsedValue(params['allowreplay'], parseBoolean, value => {
+    recording.allowReplay = value
+  })
+  assignDirectValue(params['mrhsession'], value => {
+    recording.mrhSession = value
+  })
+  assignParsedValue(params['replaydatestart'], parseDate, value => {
+    recording.replayDateStart = value
+  })
+  assignParsedValue(params['replaydateend'], parseDate, value => {
+    recording.replayDateEnd = value
+  })
+  assignParsedValue(params['replayexitcode'], parseNumber, value => {
+    recording.replayExitCode = value
+  })
+  assignParsedValue(params['replayexitsignal'], parseString, value => {
+    recording.replayExitSignal = value
+  })
+  assignParsedValue(params['sessionid'], parseString, value => {
+    recording.sessionId = value
+  })
+  assignParsedValue(params['sessionusername'], parseString, value => {
+    recording.sessionUsername = value
+  })
+  assignParsedValue(params['userhash'], parseString, value => {
+    recording.userHash = value
+  })
   
   return recording
+}
+
+function assignParsedValue<T>(
+  input: unknown,
+  parser: (value: unknown) => T | undefined,
+  assign: (value: T) => void
+): void {
+  const parsed = parser(input)
+  if (parsed !== undefined) {
+    assign(parsed)
+  }
+}
+
+function assignDirectValue<T>(value: T | null | undefined, assign: (definedValue: T) => void): void {
+  if (value != null) {
+    assign(value)
+  }
 }
 
 /**

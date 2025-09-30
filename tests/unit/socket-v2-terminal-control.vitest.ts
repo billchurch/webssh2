@@ -13,19 +13,18 @@ import {
   setupAuthenticatedSocketWithTracking,
   createTerminalSession
 } from './socket-v2-test-utils.js'
-import { createMockServices, createMockStore } from '../test-utils.js'
+import { createMockServices } from '../test-utils.js'
 
 describe('Socket V2 Terminal and Control', () => {
-  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown, mockStore: unknown
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown
 
   beforeEach(() => {
     io = createMockIO()
     mockSocket = createMockSocket('neg-socket-id')
     mockConfig = createMockConfig()
     mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true, shellSucceeds: true })
-    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, mockServices, mockStore)
+    socketHandler(io, mockConfig, mockServices)
   })
 
   it('terminal: handles invalid terminal settings gracefully', async () => {

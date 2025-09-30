@@ -65,9 +65,16 @@ export function validateHeaderValue(value: unknown): string | null {
     return null
   }
   // Limit length and remove control characters for security
-  // Control characters (\x00-\x1F and \x7F) must be removed to prevent header injection attacks
-  // eslint-disable-next-line no-control-regex
-  return value.slice(0, 100).replaceAll(/[\x00-\x1F\x7F]/g, '')
+  // Control characters (U+0000-U+001F and U+007F) must be removed to prevent header injection attacks
+  return Array.from(value)
+    .slice(0, 100)
+    .filter((char) => {
+      const codePoint = char.codePointAt(0)
+      if (codePoint == null) {return false}
+
+      return codePoint > 0x1f && codePoint !== 0x7f
+    })
+    .join('')
 }
 
 /**

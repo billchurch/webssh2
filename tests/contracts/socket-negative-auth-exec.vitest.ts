@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events'
 import type { Config } from '../../app/types/config.js'
 import socketHandler from '../../app/socket-v2.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
-import { createMockServices, createMockStore, createMockSocketConfig } from '../test-utils.js'
+import { createMockServices, createMockSocketConfig } from '../test-utils.js'
 
 describe('Socket.IO Negative: authenticate + exec env', () => {
   let io: EventEmitter & { on: ReturnType<typeof vi.fn> }
@@ -17,7 +17,6 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
   }
   let mockConfig: Partial<Config>
   let mockServices: unknown
-  let mockStore: unknown
 
   beforeEach(() => {
     io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof vi.fn> }
@@ -44,9 +43,8 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
       ssh: { term: 'xterm-color', disableInteractiveAuth: false }
     })
     mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true })
-    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, mockServices, mockStore)
+    socketHandler(io, mockConfig, mockServices)
   })
 
   it('authenticate: string port and missing secrets → invalid credentials', () => {

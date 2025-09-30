@@ -82,6 +82,15 @@ class ConnectionPool {
   }
 }
 
+interface ConnectionHandlerParams {
+  client: SSH2Client
+  connection: SSHConnection
+  config: SSHConfig
+  timeout: ReturnType<typeof setTimeout>
+  onReady: () => void
+  onError: (error: Error) => void
+}
+
 export class SSHServiceImpl implements SSHService {
   private readonly pool = new ConnectionPool()
   private readonly connectionTimeout: number
@@ -161,14 +170,14 @@ export class SSHServiceImpl implements SSHService {
   /**
    * Setup SSH connection event handlers
    */
-  private setupConnectionHandlers(
-    client: SSH2Client,
-    connection: SSHConnection,
-    config: SSHConfig,
-    timeout: ReturnType<typeof setTimeout>,
-    onReady: () => void,
-    onError: (error: Error) => void
-  ): void {
+  private setupConnectionHandlers({
+    client,
+    connection,
+    config,
+    timeout,
+    onReady,
+    onError
+  }: ConnectionHandlerParams): void {
     // Handle ready event
     client.on('ready', () => {
       clearTimeout(timeout)
@@ -278,14 +287,14 @@ export class SSHServiceImpl implements SSHService {
         this.setupKeyboardInteractiveHandler(client, config)
 
         // Setup connection event handlers
-        this.setupConnectionHandlers(
+        this.setupConnectionHandlers({
           client,
           connection,
           config,
           timeout,
-          () => resolve(ok(connection)),
-          (error) => resolve(err(error))
-        )
+          onReady: () => resolve(ok(connection)),
+          onError: (error) => resolve(err(error))
+        })
 
         // Build and apply connection config
         const connectConfig = this.buildConnectConfig(config)

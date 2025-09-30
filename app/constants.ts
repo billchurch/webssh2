@@ -75,6 +75,13 @@ export const HTTP = {
   CREDENTIALS_CLEARED: 'Credentials cleared.',
 } as const
 
+export const TERMINAL_LIMITS = {
+  MIN_ROWS: 1,
+  MAX_ROWS: 9999,
+  MIN_COLS: 1,
+  MAX_COLS: 9999,
+} as const
+
 export const HEADERS = {
   CONTENT_SECURITY_POLICY: 'Content-Security-Policy',
   X_CONTENT_TYPE_OPTIONS: 'X-Content-Type-Options',

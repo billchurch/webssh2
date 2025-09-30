@@ -3,7 +3,76 @@
  */
 
 import type { SessionMetadata } from '../types.js'
-import type { SessionAction } from '../actions.js'
+import type { MetadataAction, SessionAction } from '../actions.js'
+
+type TimestampAction = Extract<MetadataAction, { type: 'METADATA_UPDATE_TIMESTAMP' }> |
+  Extract<SessionAction, { type: 'CONNECTION_ACTIVITY' }> |
+  Extract<SessionAction, { type: 'TERMINAL_RESIZE' }>
+
+const metadataActionTypes = new Set<MetadataAction['type']>([
+  'METADATA_SET_CLIENT',
+  'METADATA_UPDATE',
+  'METADATA_UPDATE_TIMESTAMP'
+])
+
+const timestampActionTypes = new Set<TimestampAction['type']>([
+  'METADATA_UPDATE_TIMESTAMP',
+  'CONNECTION_ACTIVITY',
+  'TERMINAL_RESIZE'
+])
+
+function isMetadataAction(action: SessionAction): action is MetadataAction {
+  return metadataActionTypes.has(action.type as MetadataAction['type'])
+}
+
+function isTimestampAction(action: SessionAction): action is TimestampAction {
+  return timestampActionTypes.has(action.type as TimestampAction['type'])
+}
+
+function updateClientMetadata(
+  state: SessionMetadata,
+  action: Extract<MetadataAction, { type: 'METADATA_SET_CLIENT' }>
+): SessionMetadata {
+  return {
+    ...state,
+    clientIp: action.payload.clientIp,
+    userAgent: action.payload.userAgent,
+    updatedAt: Date.now()
+  }
+}
+
+function mergeMetadataUpdate(
+  state: SessionMetadata,
+  action: Extract<MetadataAction, { type: 'METADATA_UPDATE' }>
+): SessionMetadata {
+  const { userId, clientIp, userAgent, updatedAt } = action.payload
+
+  return {
+    ...state,
+    ...(userId === undefined ? {} : { userId }),
+    ...(clientIp === undefined ? {} : { clientIp }),
+    ...(userAgent === undefined ? {} : { userAgent }),
+    updatedAt: updatedAt ?? Date.now()
+  }
+}
+
+function setMetadataUser(
+  state: SessionMetadata,
+  action: Extract<SessionAction, { type: 'AUTH_SUCCESS' }>
+): SessionMetadata {
+  return {
+    ...state,
+    userId: action.payload.userId ?? null,
+    updatedAt: Date.now()
+  }
+}
+
+function touchMetadata(state: SessionMetadata): SessionMetadata {
+  return {
+    ...state,
+    updatedAt: Date.now()
+  }
+}
 
 /**
  * Metadata reducer - handles session metadata state transitions
@@ -12,60 +81,25 @@ export const metadataReducer = (
   state: SessionMetadata,
   action: SessionAction
 ): SessionMetadata => {
-  switch (action.type) {
-    case 'METADATA_SET_CLIENT':
-      return {
-        ...state,
-        clientIp: action.payload.clientIp,
-        userAgent: action.payload.userAgent,
-        updatedAt: Date.now()
-      }
-    
-    case 'METADATA_UPDATE':
-      return {
-        ...state,
-        ...(action.payload.userId !== undefined && { userId: action.payload.userId }),
-        ...(action.payload.clientIp !== undefined && { clientIp: action.payload.clientIp }),
-        ...(action.payload.userAgent !== undefined && { userAgent: action.payload.userAgent }),
-        updatedAt: action.payload.updatedAt ?? Date.now()
-      }
-    
-    case 'METADATA_UPDATE_TIMESTAMP':
-    case 'CONNECTION_ACTIVITY':
-    case 'TERMINAL_RESIZE':
-      return {
-        ...state,
-        updatedAt: Date.now()
-      }
+  if (isMetadataAction(action)) {
+    if (action.type === 'METADATA_SET_CLIENT') {
+      return updateClientMetadata(state, action)
+    }
 
-    // Update userId on successful auth
-    case 'AUTH_SUCCESS':
-      return {
-        ...state,
-        userId: action.payload.userId ?? null,
-        updatedAt: Date.now()
-      }
-    
-    // Ignore non-metadata actions
-    case 'AUTH_REQUEST':
-    case 'AUTH_FAILURE':
-    case 'AUTH_LOGOUT':
-    case 'AUTH_CLEAR_ERROR':
-    case 'CONNECTION_START':
-    case 'CONNECTION_ESTABLISHED':
-    case 'CONNECTION_ERROR':
-    case 'CONNECTION_CLOSED':
-    case 'TERMINAL_INIT':
-    case 'TERMINAL_SET_TERM':
-    case 'TERMINAL_SET_ENV':
-    case 'TERMINAL_UPDATE_ENV':
-    case 'TERMINAL_SET_CWD':
-    case 'TERMINAL_DESTROY':
-    case 'SESSION_RESET':
-    case 'SESSION_END':
-      return state
-    
-    default:
-      return state
+    if (action.type === 'METADATA_UPDATE') {
+      return mergeMetadataUpdate(state, action)
+    }
+
+    return touchMetadata(state)
   }
+
+  if (isTimestampAction(action)) {
+    return touchMetadata(state)
+  }
+
+  if (action.type === 'AUTH_SUCCESS') {
+    return setMetadataUser(state, action)
+  }
+
+  return state
 }

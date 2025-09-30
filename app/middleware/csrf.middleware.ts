@@ -13,45 +13,114 @@ import type { Config } from '../types/config.js'
 export function createCSRFMiddleware(config: Config): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!config.sso.csrfProtection) {
-      return next()
+      next()
+      return
     }
 
-    // Check if client is a trusted proxy
-    if (config.sso.trustedProxies.length > 0) {
-      const clientIp = (req.ip ?? 
-        (req.connection as { remoteAddress?: string }).remoteAddress)
-      if (clientIp != null && config.sso.trustedProxies.includes(clientIp)) {
-        return next()
-      }
+    if (isTrustedProxy(req, config.sso.trustedProxies)) {
+      next()
+      return
     }
 
-    // Skip CSRF check if SSO headers are present
-    if (
-      req.headers[DEFAULTS.SSO_HEADERS.USERNAME] != null || 
-      req.headers[DEFAULTS.SSO_HEADERS.SESSION] != null
-    ) {
-      return next()
+    if (hasSsoHeaders(req)) {
+      next()
+      return
     }
 
-    // Validate CSRF token for POST requests
-    if (req.method === 'POST') {
-      const r = req as Request & {
-        session?: Record<string, unknown>
-        body?: Record<string, unknown>
-      }
-      
-      const token = (r.body != null ? 
-        ((r.body as Record<string, unknown>)['_csrf'] as string | undefined) : 
-        undefined) ?? req.headers['x-csrf-token']
-      
-      const sessionToken = (r.session as Record<string, unknown>)['csrfToken'] as 
-        string | undefined
-      
-      if (sessionToken == null || token !== sessionToken) {
-        return res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
-      }
+    if (req.method === 'POST' && !isValidCsrfToken(req)) {
+      res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
+      return
     }
-    
+
     next()
   }
+}
+
+type RequestWithSession = Request & {
+  session?: Record<string, unknown> | null
+  body?: unknown
+}
+
+const isTrustedProxy = (req: Request, trustedProxies: readonly string[]): boolean => {
+  if (trustedProxies.length === 0) {
+    return false
+  }
+  const candidateIp = getClientIp(req)
+  if (candidateIp === undefined) {
+    return false
+  }
+  return trustedProxies.includes(candidateIp)
+}
+
+const getClientIp = (req: Request): string | undefined => {
+  if (typeof req.ip === 'string' && req.ip !== '') {
+    return req.ip
+  }
+  const connection = req.connection as { remoteAddress?: string } | undefined
+  return connection?.remoteAddress
+}
+
+const hasSsoHeaders = (req: Request): boolean => {
+  const usernameHeader = req.headers[DEFAULTS.SSO_HEADERS.USERNAME]
+  const sessionHeader = req.headers[DEFAULTS.SSO_HEADERS.SESSION]
+  return usernameHeader != null || sessionHeader != null
+}
+
+const isValidCsrfToken = (req: Request): boolean => {
+  const enrichedRequest = req as RequestWithSession
+  const sessionToken = extractSessionToken(enrichedRequest)
+  if (sessionToken === undefined) {
+    return false
+  }
+  const requestToken = extractRequestToken(enrichedRequest)
+  return requestToken === sessionToken
+}
+
+const extractSessionToken = (req: RequestWithSession): string | undefined => {
+  const session = req.session
+  if (!isObjectLike(session)) {
+    return undefined
+  }
+  return session['csrfToken'] as string | undefined
+}
+
+const extractRequestToken = (req: RequestWithSession): string | undefined => {
+  const bodyToken = extractBodyToken(normalizeBody(req.body))
+  if (bodyToken !== undefined) {
+    return bodyToken
+  }
+  return toHeaderString(req.headers['x-csrf-token'])
+}
+
+const normalizeBody = (body: unknown): Record<string, unknown> | undefined => {
+  if (!isPlainRecord(body)) {
+    return undefined
+  }
+  return body
+}
+
+const extractBodyToken = (body: Record<string, unknown> | undefined): string | undefined => {
+  if (body == null) {
+    return undefined
+  }
+  const csrfCandidate = body['_csrf']
+  return typeof csrfCandidate === 'string' && csrfCandidate !== '' ? csrfCandidate : undefined
+}
+
+const toHeaderString = (value: string | string[] | undefined): string | undefined => {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value[0]
+  }
+  return undefined
+}
+
+const isObjectLike = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null
+}
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
+  return isObjectLike(value) && !Array.isArray(value)
 }

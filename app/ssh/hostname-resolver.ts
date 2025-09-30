@@ -2,6 +2,8 @@
 // Async hostname resolution service for subnet validation
 
 import { lookup } from 'node:dns/promises'
+import type { LookupAddress } from 'node:dns'
+import { isIP } from 'node:net'
 import type { Result } from '../types/result.js'
 import { createNamespacedDebug } from '../logger.js'
 
@@ -22,13 +24,9 @@ export const resolveHostname = async (
   try {
     debug(`Resolving hostname: ${hostname}`)
 
-    // Check if already an IP address
-    // eslint-disable-next-line security/detect-unsafe-regex
-    const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
-    // eslint-disable-next-line security/detect-unsafe-regex
-    const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+    const ipVersion = isIP(hostname)
 
-    if (ipv4Pattern.test(hostname) || ipv6Pattern.test(hostname)) {
+    if (ipVersion === 4 || ipVersion === 6) {
       debug(`${hostname} is already an IP address`)
       return {
         ok: true,
@@ -40,15 +38,34 @@ export const resolveHostname = async (
     }
 
     // Perform DNS lookup
-    const { address } = await lookup(hostname)
+    const lookupResult = await lookup(hostname, { all: true })
+    const entries: Array<LookupAddress | string> = Array.isArray(lookupResult)
+      ? lookupResult
+      : [lookupResult]
 
-    debug(`Resolved ${hostname} to ${address}`)
+    const addresses = entries
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          return entry
+        }
+        return entry.address
+      })
+      .filter((address): address is string => typeof address === 'string' && address !== '')
+
+    if (addresses.length === 0) {
+      return {
+        ok: false,
+        error: new Error(`No DNS records found for ${hostname}`)
+      }
+    }
+
+    debug(`Resolved ${hostname} to ${addresses.join(', ')}`)
 
     return {
       ok: true,
       value: {
         hostname,
-        addresses: [address]
+        addresses
       }
     }
   } catch (error) {
@@ -105,52 +122,64 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
  * Check if an IPv6 address matches a subnet in CIDR notation
  */
 const isIpv6InCidr = (ip: string, subnet: string): boolean => {
+  const parsed = parseIpv6Cidr(subnet)
+  if (parsed === null) {
+    return false
+  }
+
+  const normalizedIp = normalizeIpv6Address(ip.toLowerCase())
+  const normalizedSubnet = normalizeIpv6Address(parsed.base.toLowerCase())
+  return ipv6MatchesMask(normalizedIp, normalizedSubnet, parsed.mask)
+}
+
+interface ParsedIpv6Cidr {
+  base: string
+  mask: number
+}
+
+const parseIpv6Cidr = (subnet: string): ParsedIpv6Cidr | null => {
   const [subnetBase, maskStr] = subnet.split('/')
   if (subnetBase === undefined || maskStr === undefined) {
-    return false
+    return null
   }
 
   const mask = Number.parseInt(maskStr, 10)
   if (Number.isNaN(mask) || mask < 0 || mask > 128) {
-    return false
+    return null
   }
 
-  // Normalize IPv6 addresses
-  const normalizeIpv6 = (addr: string): string => {
-    // Expand :: notation
-    if (addr.includes('::')) {
-      const parts = addr.split('::')
-      const left = parts[0]?.split(':').filter(p => p !== '') ?? []
-      const right = parts[1]?.split(':').filter(p => p !== '') ?? []
-      const missing = 8 - left.length - right.length
-      const middle: string[] = Array(missing).fill('0') as string[]
-      const expanded = [...left, ...middle, ...right]
-      return expanded.map(p => p.padStart(4, '0')).join(':')
-    }
-    // Already expanded, just pad
-    return addr.split(':').map(p => p.padStart(4, '0')).join(':')
+  return { base: subnetBase, mask }
+}
+
+const normalizeIpv6Address = (addr: string): string => {
+  if (addr.includes('::')) {
+    const parts = addr.split('::')
+    const left = parts[0]?.split(':').filter(segment => segment !== '') ?? []
+    const right = parts[1]?.split(':').filter(segment => segment !== '') ?? []
+    const missing = Math.max(0, 8 - left.length - right.length)
+    const middle = Array.from({ length: missing }, () => '0')
+    const expanded = [...left, ...middle, ...right]
+    return expanded.map(segment => segment.padStart(4, '0')).join(':')
   }
 
-  const normalizedIp = normalizeIpv6(ip.toLowerCase())
-  const normalizedSubnet = normalizeIpv6(subnetBase.toLowerCase())
+  return addr.split(':').map(segment => segment.padStart(4, '0')).join(':')
+}
 
-  // Convert to binary and compare based on mask
-  const ipParts = normalizedIp.split(':')
-  const subnetParts = normalizedSubnet.split(':')
-
+const ipv6MatchesMask = (ip: string, subnet: string, mask: number): boolean => {
   let bitsChecked = 0
-  for (let i = 0; i < 8 && bitsChecked < mask; i++) {
-    // eslint-disable-next-line security/detect-object-injection
-    const ipPart = ipParts[i] ?? '0'
-    // eslint-disable-next-line security/detect-object-injection
-    const subnetPart = subnetParts[i] ?? '0'
-    const ipHex = Number.parseInt(ipPart, 16)
-    const subnetHex = Number.parseInt(subnetPart, 16)
+  const subnetIterator = subnet.split(':')[Symbol.iterator]()
+  for (const ipSegment of ip.split(':')) {
+    if (bitsChecked >= mask) {
+      break
+    }
 
+    const subnetSegment = subnetIterator.next().value
+    const ipValue = Number.parseInt(ipSegment, 16)
+    const subnetValue = Number.parseInt(subnetSegment ?? '0', 16)
     const bitsToCheck = Math.min(16, mask - bitsChecked)
     const bitMask = (0xFFFF << (16 - bitsToCheck)) & 0xFFFF
 
-    if ((ipHex & bitMask) !== (subnetHex & bitMask)) {
+    if ((ipValue & bitMask) !== (subnetValue & bitMask)) {
       return false
     }
 
@@ -175,10 +204,26 @@ const matchesIpv4Wildcard = (ip: string, subnet: string): boolean => {
     return false
   }
 
-  const pattern = subnet.replaceAll(/\./g, '\\.').replaceAll(/\*/g, '.*')
-  // eslint-disable-next-line security/detect-non-literal-regexp
-  const regex = new RegExp(`^${pattern}$`)
-  return regex.test(ip)
+  const ipOctets = ip.split('.')
+  const subnetOctets = subnet.split('.')
+  if (ipOctets.length !== 4 || subnetOctets.length !== 4) {
+    return false
+  }
+
+  const ipOctetMap = new Map(ipOctets.entries())
+
+  for (const [index, subnetOctet] of subnetOctets.entries()) {
+    if (subnetOctet === '*') {
+      continue
+    }
+
+    const ipOctet = ipOctetMap.get(index)
+    if (ipOctet == null || subnetOctet !== ipOctet) {
+      return false
+    }
+  }
+
+  return true
 }
 
 /**
@@ -209,12 +254,11 @@ const matchesCidrSubnet = (
  * Determine IP version
  */
 const getIpVersion = (ip: string): { isIpv4: boolean; isIpv6: boolean } => {
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip)
-  // eslint-disable-next-line security/detect-unsafe-regex
-  const isIpv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(ip)
-
-  return { isIpv4, isIpv6 }
+  const version = isIP(ip)
+  return {
+    isIpv4: version === 4,
+    isIpv6: version === 6
+  }
 }
 
 /**

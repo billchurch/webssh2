@@ -12,42 +12,95 @@ import type { Config } from '../types/config.js'
  */
 export function createSSOAuthMiddleware(config: Config): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
-    if (req.method !== 'POST') {
-      return next()
+    if (!isPost(req)) {
+      next()
+      return
     }
 
-    // Check for SSO headers
-    if (
-      req.headers[DEFAULTS.SSO_HEADERS.USERNAME] != null && 
-      req.headers[DEFAULTS.SSO_HEADERS.PASSWORD] != null
-    ) {
-      return next()
+    if (containsSsoHeaders(req) || hasCredentialsInBody(req)) {
+      next()
+      return
     }
 
-    // Check for credentials in body
-    const body = (req as Request & { body?: Record<string, unknown> }).body as 
-      Record<string, unknown> | undefined
-    if (
-      body?.['username'] != null && 
-      body['username'] !== '' && 
-      body['password'] != null && 
-      body['password'] !== ''
-    ) {
-      return next()
-    }
-
-    // Apply default credentials if SSO is enabled
-    if (config.sso.enabled && config.user.name != null && config.user.password != null) {
-      const r = req as Request & { body?: Record<string, unknown> }
-      r.body ??= {}
-      if (r.body != null) {
-        const body = r.body as Record<string, unknown>
-        body['username'] = (body['username'] as string | undefined) ?? config.user.name
-        body['password'] = (body['password'] as string | undefined) ?? config.user.password
-      }
-      return next()
+    if (shouldApplyDefaults(config)) {
+      applyDefaultCredentials(req, config)
     }
 
     next()
   }
+}
+
+type RequestWithMutableBody = Request & { body?: unknown }
+
+const isPost = (req: Request): boolean => req.method === 'POST'
+
+const containsSsoHeaders = (req: Request): boolean => {
+  const usernameHeader = req.headers[DEFAULTS.SSO_HEADERS.USERNAME]
+  const passwordHeader = req.headers[DEFAULTS.SSO_HEADERS.PASSWORD]
+  return usernameHeader != null && passwordHeader != null
+}
+
+const hasCredentialsInBody = (req: Request): boolean => {
+  const body = normalizeBody((req as RequestWithMutableBody).body)
+  if (body === undefined) {
+    return false
+  }
+
+  const username = toFilledString(body['username'])
+  const password = toFilledString(body['password'])
+  return username !== undefined && password !== undefined
+}
+
+const shouldApplyDefaults = (config: Config): boolean => {
+  if (!config.sso.enabled) {
+    return false
+  }
+  return toFilledString(config.user.name) !== undefined &&
+    toFilledString(config.user.password) !== undefined
+}
+
+const applyDefaultCredentials = (req: Request, config: Config): void => {
+  const enrichedRequest = req as RequestWithMutableBody
+  const body = ensureMutableBody(enrichedRequest)
+  const currentUsername = toFilledString(body['username'])
+  const currentPassword = toFilledString(body['password'])
+
+  if (currentUsername === undefined) {
+    body['username'] = config.user.name
+  }
+  if (currentPassword === undefined) {
+    body['password'] = config.user.password
+  }
+}
+
+const ensureMutableBody = (req: RequestWithMutableBody): Record<string, unknown> => {
+  const normalized = normalizeBody(req.body)
+  if (normalized !== undefined) {
+    req.body = normalized
+    return normalized
+  }
+
+  const newBody: Record<string, unknown> = {}
+  req.body = newBody
+  return newBody
+}
+
+const normalizeBody = (body: unknown): Record<string, unknown> | undefined => {
+  if (body === undefined || body === null) {
+    return undefined
+  }
+  if (typeof body === 'object' && !Array.isArray(body)) {
+    return body as Record<string, unknown>
+  }
+  return undefined
+}
+
+const toFilledString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+  if (value === '') {
+    return undefined
+  }
+  return value
 }

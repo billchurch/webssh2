@@ -64,7 +64,7 @@
     "check": "npm run lint && npm run typecheck && npm run test",
     "check:fix": "npm run lint:fix && npm run typecheck && npm run test",
     "verify": "npm run check",
-    "test:e2e": "npm run build && ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
+    "test:e2e": "npm run build && CONTAINER_RUNTIME=apple ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
     "e2e:setup": "playwright install --with-deps",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
@@ -105,9 +105,6 @@
   "directories": {
     "test": "tests"
   },
-  "author": "",
-  "type": "module",
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.50.2"
-  }
+  "author": "Bill Church",
+  "type": "module"
 }

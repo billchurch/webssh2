@@ -1,10 +1,8 @@
 import type { Request, Response } from 'express'
 import { promises as fs } from 'node:fs'
-import path from 'node:path'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
 import { transformHtml } from './utils/html-transformer.js'
-import { getClientPublicPath } from './client-path.js'
 import type { AuthSession } from './auth/auth-utils.js'
 
 const debug = createNamespacedDebug('connectionHandler')
@@ -21,11 +19,9 @@ function hasSessionCredentials(session: Sess): boolean {
   )
 }
 
-async function sendClient(filePath: string, config: unknown, res: Response): Promise<void> {
+async function sendClient(config: unknown, res: Response): Promise<void> {
   try {
-    // File path is from internal client module resolution, not user input
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    const data = await fs.readFile(filePath, 'utf8')
+    const data = await readClientTemplate()
     debug('Transforming HTML with config')
     const modifiedHtml = transformHtml(data, config)
     res.send(modifiedHtml)
@@ -34,14 +30,49 @@ async function sendClient(filePath: string, config: unknown, res: Response): Pro
   }
 }
 
+let cachedClientTemplate: string | null = null
+
+async function readClientTemplate(): Promise<string> {
+  if (cachedClientTemplate != null) {
+    return cachedClientTemplate
+  }
+
+  for (const reader of CLIENT_TEMPLATE_READERS) {
+    try {
+      const template = await reader()
+      cachedClientTemplate = template
+      return template
+    } catch (error) {
+      debug('Client template candidate failed: %s', (error as { message?: string }).message ?? 'unknown error')
+    }
+  }
+
+  throw new Error('Client template not found in expected locations')
+}
+
+type TemplateReader = () => Promise<string>
+
+const readFromProjectRoot: TemplateReader = () =>
+  fs.readFile('node_modules/webssh2_client/client/public/client.htm', 'utf8')
+
+const readFromParentRoot: TemplateReader = () =>
+  fs.readFile('../node_modules/webssh2_client/client/public/client.htm', 'utf8')
+
+const readFromGrandParentRoot: TemplateReader = () =>
+  fs.readFile('../../node_modules/webssh2_client/client/public/client.htm', 'utf8')
+
+const CLIENT_TEMPLATE_READERS: readonly TemplateReader[] = [
+  readFromProjectRoot,
+  readFromParentRoot,
+  readFromGrandParentRoot
+]
+
 export default async function handleConnection(
   req: Request & { session?: Sess; sessionID?: string },
   res: Response,
   _opts?: { host?: string }
 ): Promise<void> {
   debug('Handling connection req.path:', (req as Request).path)
-  const clientPath = getClientPublicPath()
-
   const tempConfig: Record<string, unknown> = {
     socket: {
       url: `${req.protocol}://${req.get('host')}`,
@@ -71,6 +102,5 @@ export default async function handleConnection(
     })
   }
 
-  const filePath = path.join(clientPath, DEFAULTS.CLIENT_FILE)
-  await sendClient(filePath, tempConfig, res)
+  await sendClient(tempConfig, res)
 }

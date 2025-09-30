@@ -52,50 +52,89 @@ export function analyzeConnectionError(error: {
   level?: string
   message: string
 }): 'network' | 'timeout' | 'auth' | 'unknown' {
-  // Network/connectivity errors
-  if (
-    error.code === 'ENOTFOUND' ||
-    error.message.includes('getaddrinfo') ||
-    error.message.includes('ENOTFOUND')
-  ) {
-    return 'network' // DNS resolution failed
+  const normalizedMessage = error.message.toLowerCase()
+
+  if (isDnsResolutionIssue(error.code, normalizedMessage)) {
+    return 'network'
   }
-  
-  if (
-    error.code === 'ECONNREFUSED' ||
-    error.message.includes('Connection refused') ||
-    error.message.includes('ECONNREFUSED')
-  ) {
-    return 'network' // Port closed or service not running
+
+  if (isConnectionRefused(error.code, normalizedMessage)) {
+    return 'network'
   }
-  
-  if (
-    error.code === 'ETIMEDOUT' ||
-    error.code === 'ECONNRESET' ||
-    error.message.includes('timeout') ||
-    error.message.includes('ETIMEDOUT')
-  ) {
-    return 'timeout' // Connection timeout
+
+  if (isTimeoutScenario(error.code, normalizedMessage)) {
+    return 'timeout'
   }
-  
-  if (
-    error.code === 'ENETUNREACH' ||
-    error.message.includes('Network is unreachable') ||
-    error.message.includes('ENETUNREACH')
-  ) {
-    return 'network' // Network unreachable
+
+  if (isNetworkUnreachable(error.code, normalizedMessage)) {
+    return 'network'
   }
-  
-  // Authentication errors
-  if (
-    error.level === 'client-authentication' ||
-    error.message.includes('Authentication failed') ||
-    error.message.includes('All configured authentication methods failed') ||
-    error.message.includes('permission denied') ||
-    error.message.toLowerCase().includes('password')
-  ) {
+
+  if (isAuthenticationFailure(error.level, normalizedMessage)) {
     return 'auth'
   }
-  
+
   return 'unknown'
 }
+
+const isDnsResolutionIssue = (code: string | undefined, message: string): boolean => {
+  if (codeMatches(code, DNS_ERROR_CODES)) {
+    return true
+  }
+  return messageContains(message, DNS_MESSAGE_PATTERNS)
+}
+
+const isConnectionRefused = (code: string | undefined, message: string): boolean => {
+  if (codeMatches(code, CONNECTION_REFUSED_CODES)) {
+    return true
+  }
+  return messageContains(message, CONNECTION_REFUSED_PATTERNS)
+}
+
+const isTimeoutScenario = (code: string | undefined, message: string): boolean => {
+  if (codeMatches(code, TIMEOUT_ERROR_CODES)) {
+    return true
+  }
+  return messageContains(message, TIMEOUT_MESSAGE_PATTERNS)
+}
+
+const isNetworkUnreachable = (code: string | undefined, message: string): boolean => {
+  if (codeMatches(code, NETWORK_UNREACHABLE_CODES)) {
+    return true
+  }
+  return messageContains(message, NETWORK_UNREACHABLE_PATTERNS)
+}
+
+const isAuthenticationFailure = (level: string | undefined, message: string): boolean => {
+  if (level === 'client-authentication') {
+    return true
+  }
+  return messageContains(message, AUTHENTICATION_MESSAGE_PATTERNS)
+}
+
+const codeMatches = (code: string | undefined, expected: readonly string[]): boolean => {
+  if (code === undefined) {
+    return false
+  }
+  return expected.includes(code)
+}
+
+const messageContains = (message: string, patterns: readonly string[]): boolean => {
+  return patterns.some(pattern => message.includes(pattern))
+}
+
+const DNS_ERROR_CODES = ['ENOTFOUND'] as const
+const CONNECTION_REFUSED_CODES = ['ECONNREFUSED'] as const
+const TIMEOUT_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET'] as const
+const NETWORK_UNREACHABLE_CODES = ['ENETUNREACH'] as const
+
+const DNS_MESSAGE_PATTERNS = ['getaddrinfo', 'enotfound'] as const
+const CONNECTION_REFUSED_PATTERNS = ['connection refused', 'econnrefused'] as const
+const TIMEOUT_MESSAGE_PATTERNS = ['timeout', 'etimedout', 'econnreset'] as const
+const NETWORK_UNREACHABLE_PATTERNS = ['network is unreachable', 'enetunreach'] as const
+const AUTHENTICATION_MESSAGE_PATTERNS = [
+  'authentication failed',
+  'all configured authentication methods failed',
+  'permission denied',
+  'password'
+] as const

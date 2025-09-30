@@ -205,12 +205,16 @@ function processTermField(execPayload: Record<string, unknown>, validated: ExecR
  * @returns Error message if validation fails
  * @pure
  */
+interface NumericFieldConfig {
+  min: number
+  max: number
+  errorMessage: string
+}
+
 function processNumericField(
   execPayload: Record<string, unknown>,
   fieldName: 'cols' | 'rows' | 'timeoutMs',
-  min: number,
-  max: number,
-  errorMsg: string,
+  config: NumericFieldConfig,
   validated: ExecRequestPayload
 ): string | undefined {
   // Access field value safely by explicit field name
@@ -228,7 +232,7 @@ function processNumericField(
     return undefined
   }
 
-  const result = validateNumericField(value, min, max, errorMsg)
+  const result = validateNumericField(value, config.min, config.max, config.errorMessage)
   if (result.valid) {
     if (result.value !== undefined) {
       // Assign to correct field based on fieldName
@@ -243,7 +247,7 @@ function processNumericField(
     }
     return undefined
   } else {
-    return result.error ?? errorMsg
+    return result.error ?? config.errorMessage
   }
 }
 
@@ -297,9 +301,11 @@ function validateOptionalFields(
   error = processNumericField(
     execPayload,
     'cols',
-    VALIDATION_LIMITS.MIN_TERMINAL_COLS,
-    VALIDATION_LIMITS.MAX_TERMINAL_COLS,
-    VALIDATION_MESSAGES.INVALID_COLUMNS_VALUE,
+    {
+      min: VALIDATION_LIMITS.MIN_TERMINAL_COLS,
+      max: VALIDATION_LIMITS.MAX_TERMINAL_COLS,
+      errorMessage: VALIDATION_MESSAGES.INVALID_COLUMNS_VALUE
+    },
     validated
   )
   if (error !== undefined) {
@@ -309,9 +315,11 @@ function validateOptionalFields(
   error = processNumericField(
     execPayload,
     'rows',
-    VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
-    VALIDATION_LIMITS.MAX_TERMINAL_ROWS,
-    VALIDATION_MESSAGES.INVALID_ROWS_VALUE,
+    {
+      min: VALIDATION_LIMITS.MIN_TERMINAL_ROWS,
+      max: VALIDATION_LIMITS.MAX_TERMINAL_ROWS,
+      errorMessage: VALIDATION_MESSAGES.INVALID_ROWS_VALUE
+    },
     validated
   )
   if (error !== undefined) {
@@ -321,9 +329,11 @@ function validateOptionalFields(
   error = processNumericField(
     execPayload,
     'timeoutMs',
-    VALIDATION_LIMITS.MIN_EXEC_TIMEOUT_MS,
-    VALIDATION_LIMITS.MAX_EXEC_TIMEOUT_MS,
-    VALIDATION_MESSAGES.INVALID_TIMEOUT_VALUE,
+    {
+      min: VALIDATION_LIMITS.MIN_EXEC_TIMEOUT_MS,
+      max: VALIDATION_LIMITS.MAX_EXEC_TIMEOUT_MS,
+      errorMessage: VALIDATION_MESSAGES.INVALID_TIMEOUT_VALUE
+    },
     validated
   )
   if (error !== undefined) {

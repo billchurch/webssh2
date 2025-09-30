@@ -38,6 +38,73 @@ export class CredentialError extends Error {
   }
 }
 
+interface AuthenticationFields {
+  password?: string
+  privateKey?: string
+  passphrase?: string
+}
+
+function getNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  return value === '' ? undefined : value
+}
+
+function buildAuthenticationFields(raw: Record<string, unknown>): Result<AuthenticationFields, CredentialError> {
+  const passwordValue = getNonEmptyString(raw['password'])
+  const privateKeyValue = getNonEmptyString(raw['privateKey'])
+
+  if (passwordValue === undefined && privateKeyValue === undefined) {
+    return err(new CredentialError('Either password or privateKey is required for authentication'))
+  }
+
+  const passphraseValue = privateKeyValue === undefined
+    ? undefined
+    : getNonEmptyString(raw['passphrase'])
+  const fields: AuthenticationFields = {}
+
+  if (passwordValue !== undefined) {
+    fields.password = passwordValue
+  }
+
+  if (privateKeyValue !== undefined) {
+    fields.privateKey = privateKeyValue
+
+    if (passphraseValue !== undefined) {
+      fields.passphrase = passphraseValue
+    }
+  }
+
+  return ok(fields)
+}
+
+function createBaseCredentials(
+  required: RequiredFields,
+  authFields: AuthenticationFields
+): AuthCredentials {
+  return {
+    username: required.username,
+    host: required.host,
+    port: required.port,
+    ...authFields
+  }
+}
+
+function mergeTerminalSettings(
+  credentials: AuthCredentials,
+  settings: TerminalSettings
+): AuthCredentials {
+  const { term, cols, rows } = settings
+  return {
+    ...credentials,
+    ...(term === undefined ? {} : { term }),
+    ...(cols === undefined ? {} : { cols }),
+    ...(rows === undefined ? {} : { rows })
+  }
+}
+
 /**
  * Validate and extract required credential fields
  * @param raw - Raw credential data
@@ -133,57 +200,21 @@ export function extractOptionalTerminalSettings(raw: Record<string, unknown>): T
  * @pure
  */
 export function extractAuthCredentials(raw: Record<string, unknown>): Result<AuthCredentials, CredentialError> {
-  // Validate required fields first
   const requiredResult = validateRequiredFields(raw)
   if (!requiredResult.ok) {
-    return requiredResult
+    return err(requiredResult.error)
   }
 
-  const { username, host, port } = requiredResult.value
-
-  // Check authentication method
-  const authMethod = extractAuthMethod(raw)
-  if (authMethod === 'none') {
-    return err(new CredentialError('Either password or privateKey is required for authentication'))
+  const authFieldsResult = buildAuthenticationFields(raw)
+  if (!authFieldsResult.ok) {
+    return err(authFieldsResult.error)
   }
 
-  // Build base credentials
-  const credentials: AuthCredentials = {
-    username,
-    host,
-    port
-  }
-
-  // Add authentication fields
-  const password = raw['password']
-  if (typeof password === 'string' && password !== '') {
-    credentials.password = password
-  }
-
-  const privateKey = raw['privateKey']
-  if (typeof privateKey === 'string' && privateKey !== '') {
-    credentials.privateKey = privateKey
-  }
-
-  // Add passphrase if present (only valid with privateKey)
-  const passphrase = raw['passphrase']
-  if (typeof passphrase === 'string' && passphrase !== '' && credentials.privateKey !== undefined) {
-    credentials.passphrase = passphrase
-  }
-
-  // Add terminal settings
+  const credentials = createBaseCredentials(requiredResult.value, authFieldsResult.value)
   const terminalSettings = extractOptionalTerminalSettings(raw)
-  if (terminalSettings.term !== undefined) {
-    credentials.term = terminalSettings.term
-  }
-  if (terminalSettings.cols !== undefined) {
-    credentials.cols = terminalSettings.cols
-  }
-  if (terminalSettings.rows !== undefined) {
-    credentials.rows = terminalSettings.rows
-  }
+  const merged = mergeTerminalSettings(credentials, terminalSettings)
 
-  return ok(credentials)
+  return ok(merged)
 }
 
 /**

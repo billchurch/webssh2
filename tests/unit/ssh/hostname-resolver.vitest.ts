@@ -42,11 +42,13 @@ describe('hostname-resolver', () => {
 
     it('should resolve hostnames to IP addresses', async () => {
       const mockLookup = vi.mocked(dns.lookup)
-      mockLookup.mockResolvedValue({ address: TEST_IPS.PRIVATE_192, family: 4 })
+      mockLookup.mockResolvedValue([
+        { address: TEST_IPS.PRIVATE_192, family: 4 }
+      ])
 
       const result = await resolveHostname('example.com')
 
-      expect(mockLookup).toHaveBeenCalledWith('example.com')
+      expect(mockLookup).toHaveBeenCalledWith('example.com', { all: true })
       expect(result).toEqual({
         ok: true,
         value: {
@@ -208,12 +210,14 @@ describe('hostname-resolver', () => {
 
     it('should resolve hostnames and validate against subnets', async () => {
       const mockLookup = vi.mocked(dns.lookup)
-      mockLookup.mockResolvedValue({ address: TEST_IPS.PRIVATE_192, family: 4 })
+      mockLookup.mockResolvedValue([
+        { address: TEST_IPS.PRIVATE_192, family: 4 }
+      ])
 
       const subnets = [TEST_SUBNETS.PRIVATE_192]
       const result = await validateConnectionWithDns('example.com', subnets)
 
-      expect(mockLookup).toHaveBeenCalledWith('example.com')
+      expect(mockLookup).toHaveBeenCalledWith('example.com', { all: true })
       expect(result).toEqual({
         ok: true,
         value: true
@@ -222,7 +226,9 @@ describe('hostname-resolver', () => {
 
     it('should reject hostnames not in allowed subnets', async () => {
       const mockLookup = vi.mocked(dns.lookup)
-      mockLookup.mockResolvedValue({ address: TEST_IPS.PUBLIC_DNS, family: 4 })
+      mockLookup.mockResolvedValue([
+        { address: TEST_IPS.PUBLIC_DNS, family: 4 }
+      ])
 
       const subnets = [TEST_SUBNETS.PRIVATE_192]
       const result = await validateConnectionWithDns('google-dns.com', subnets)
