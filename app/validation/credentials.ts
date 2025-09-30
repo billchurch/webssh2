@@ -47,55 +47,102 @@ export function isValidCredentials(creds: Credentials | undefined): boolean {
  * @returns Validation result with specific errors
  * @pure
  */
-export function validateCredentialFormat(creds: unknown): {
-  valid: boolean
-  errors: string[]
-} {
-  const errors: string[] = []
+interface CredentialRecord {
+  username?: unknown
+  host?: unknown
+  port?: unknown
+  password?: unknown
+  privateKey?: unknown
+  passphrase?: unknown
+}
 
-  if (creds === null || creds === undefined || typeof creds !== 'object') {
-    return { valid: false, errors: ['Credentials must be an object'] }
+function isCredentialRecord(value: unknown): value is CredentialRecord {
+  return value !== null && typeof value === 'object'
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
+}
+
+function validateUsername(record: CredentialRecord, errors: string[]): void {
+  if (typeof record.username !== 'string') {
+    errors.push('Username is required and must be a string')
+    return
   }
 
-  const c = creds as Record<string, unknown>
-
-  // Check username
-  if (c['username'] === null || c['username'] === undefined || c['username'] === '' || typeof c['username'] !== 'string') {
-    errors.push('Username is required and must be a string')
-  } else if ((c['username']).length === 0) {
+  if (record.username.length === 0) {
     errors.push('Username cannot be empty')
   }
+}
 
-  // Check host
-  if (c['host'] === null || c['host'] === undefined || c['host'] === '' || typeof c['host'] !== 'string') {
+function validateHost(record: CredentialRecord, errors: string[]): void {
+  if (typeof record.host !== 'string') {
     errors.push('Host is required and must be a string')
-  } else if ((c['host']).length === 0) {
+    return
+  }
+
+  if (record.host.length === 0) {
     errors.push('Host cannot be empty')
   }
+}
 
-  // Check port
-  if (c['port'] !== undefined) {
-    const port = Number(c['port'])
-    if (isNaN(port) || port < 1 || port > 65535) {
-      errors.push('Port must be a number between 1 and 65535')
-    }
+function validatePort(record: CredentialRecord, errors: string[]): void {
+  if (record.port === undefined) {
+    return
   }
 
-  // Check authentication method
-  const hasPassword = c['password'] !== null && c['password'] !== undefined && c['password'] !== '' && typeof c['password'] === 'string'
-  const hasPrivateKey = c['privateKey'] !== null && c['privateKey'] !== undefined && c['privateKey'] !== '' && typeof c['privateKey'] === 'string'
+  const portCandidate = typeof record.port === 'string'
+    ? Number.parseInt(record.port, 10)
+    : record.port
+
+  if (
+    typeof portCandidate !== 'number' ||
+    Number.isNaN(portCandidate) ||
+    portCandidate < 1 ||
+    portCandidate > 65535
+  ) {
+    errors.push('Port must be a number between 1 and 65535')
+  }
+}
+
+function validateAuthentication(record: CredentialRecord, errors: string[]): void {
+  const hasPassword = isNonEmptyString(record.password)
+  const hasPrivateKey = isNonEmptyString(record.privateKey)
 
   if (!hasPassword && !hasPrivateKey) {
     errors.push('Either password or privateKey is required')
   }
+}
 
-  // Check passphrase if present
-  if ('passphrase' in c && c['passphrase'] !== undefined && typeof c['passphrase'] !== 'string') {
+function validatePassphrase(record: CredentialRecord, errors: string[]): void {
+  if (!('passphrase' in record)) {
+    return
+  }
+
+  if (record.passphrase !== undefined && typeof record.passphrase !== 'string') {
     errors.push('Passphrase must be a string if provided')
   }
+}
+
+export function validateCredentialFormat(creds: unknown): {
+  valid: boolean
+  errors: string[]
+} {
+  if (!isCredentialRecord(creds)) {
+    return { valid: false, errors: ['Credentials must be an object'] }
+  }
+
+  const errors: string[] = []
+  const record = creds
+
+  validateUsername(record, errors)
+  validateHost(record, errors)
+  validatePort(record, errors)
+  validateAuthentication(record, errors)
+  validatePassphrase(record, errors)
 
   return {
     valid: errors.length === 0,
-    errors,
+    errors
   }
 }
