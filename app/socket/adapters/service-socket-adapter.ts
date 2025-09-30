@@ -276,49 +276,48 @@ export class ServiceSocketAdapter {
 
   private async handleAuthentication(credentials: AuthCredentials): Promise<void> {
     try {
-      debug('Authenticating user:', credentials.username)
-      this.originalAuthMethod ??= this.authPipeline.getAuthMethod()
+      this.initializeAuthAttempt(credentials)
 
-      // Step 1: Update pipeline with credentials
-      if (!this.updateAuthPipeline(credentials)) {
+      const authCredentials = this.prepareAuthCredentials(credentials)
+      if (authCredentials === null) {
         return
       }
 
-      // Step 2: Get and validate credentials
-      const validatedCreds = this.authPipeline.getCredentials()
-      if (!this.validateCredentials(validatedCreds)) {
-        return
-      }
-
-      // Step 3: Store settings for later use
-      this.storeTerminalSettings(credentials)
-      this.storePasswordIfEnabled(validatedCreds)
-
-      // Step 4: Build auth credentials
-      const authCredentials = this.buildAuthCredentials(validatedCreds, credentials)
-
-      // Step 5: Perform authentication
       const authResult = await this.performAuthentication(authCredentials)
       if (authResult === null) {
         return
       }
 
-      // Step 6: Connect SSH
       const sshResult = await this.connectSSH(authCredentials, authResult.sessionId)
       if (sshResult === null) {
         return
       }
 
-      // Step 7: Finalize successful authentication
-      this.connectionId = sshResult.id
-      this.sessionId = authResult.sessionId
-      this.emitAuthenticationSuccess(authCredentials)
-
-      debug(`Authentication successful via ${this.originalAuthMethod ?? 'manual'}`)
-      console.info(`[auth] socket=${this.socket.id} method=${this.originalAuthMethod ?? 'manual'}`)
+      this.finalizeAuthentication(authCredentials, authResult.sessionId, sshResult.id)
     } catch (error) {
       this.handleAuthenticationError(error)
     }
+  }
+
+  private initializeAuthAttempt(credentials: AuthCredentials): void {
+    debug('Authenticating user:', credentials.username)
+    this.originalAuthMethod ??= this.authPipeline.getAuthMethod()
+  }
+
+  private prepareAuthCredentials(credentials: AuthCredentials): AuthCredentials | null {
+    if (!this.updateAuthPipeline(credentials)) {
+      return null
+    }
+
+    const validatedCreds = this.authPipeline.getCredentials()
+    if (!this.validateCredentials(validatedCreds)) {
+      return null
+    }
+
+    this.storeTerminalSettings(credentials)
+    this.storePasswordIfEnabled(validatedCreds)
+
+    return this.buildAuthCredentials(validatedCreds, credentials)
   }
 
   private updateAuthPipeline(credentials: AuthCredentials): boolean {
@@ -425,6 +424,20 @@ export class ServiceSocketAdapter {
       this.emitAuthenticationFailure(sshResult.error.message)
       return null
     }
+  }
+
+  private finalizeAuthentication(
+    authCredentials: AuthCredentials,
+    sessionId: SessionId,
+    connectionId: string
+  ): void {
+    this.connectionId = connectionId
+    this.sessionId = sessionId
+    this.emitAuthenticationSuccess(authCredentials)
+
+    const method = this.originalAuthMethod ?? 'manual'
+    debug(`Authentication successful via ${method}`)
+    console.info(`[auth] socket=${this.socket.id} method=${method}`)
   }
 
   private emitAuthenticationFailure(message: string): void {
