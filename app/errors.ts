@@ -4,12 +4,12 @@
 import { logError, createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES } from './constants.js'
 import { WebSSH2Error } from './errors/webssh2-error.js'
-import { ConfigError } from './errors/config-error.js'
-import { SSHConnectionError } from './errors/ssh-connection-error.js'
+
+export { WebSSH2Error } from './errors/webssh2-error.js'
+export { ConfigError } from './errors/config-error.js'
+export { SSHConnectionError } from './errors/ssh-connection-error.js'
 
 const debug = createNamespacedDebug('errors')
-
-export { WebSSH2Error, ConfigError, SSHConnectionError }
 
 interface ResponseLike { status: (code: number) => { json: (body: unknown) => void } }
 

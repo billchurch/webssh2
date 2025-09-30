@@ -66,10 +66,13 @@ export function validateHeaderValue(value: unknown): string | null {
   }
   // Limit length and remove control characters for security
   // Control characters (U+0000-U+001F and U+007F) must be removed to prevent header injection attacks
-  return Array.from(value.slice(0, 100))
+  return Array.from(value)
+    .slice(0, 100)
     .filter((char) => {
-      const code = char.charCodeAt(0)
-      return code > 0x1f && code !== 0x7f
+      const codePoint = char.codePointAt(0)
+      if (codePoint == null) {return false}
+
+      return codePoint > 0x1f && codePoint !== 0x7f
     })
     .join('')
 }

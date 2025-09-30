@@ -94,11 +94,12 @@ function mergeTerminalSettings(
   credentials: AuthCredentials,
   settings: TerminalSettings
 ): AuthCredentials {
+  const { term, cols, rows } = settings
   return {
     ...credentials,
-    ...(settings.term !== undefined ? { term: settings.term } : {}),
-    ...(settings.cols !== undefined ? { cols: settings.cols } : {}),
-    ...(settings.rows !== undefined ? { rows: settings.rows } : {})
+    ...(term === undefined ? {} : { term }),
+    ...(cols === undefined ? {} : { cols }),
+    ...(rows === undefined ? {} : { rows })
   }
 }
 

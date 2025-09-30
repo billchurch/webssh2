@@ -89,7 +89,7 @@ function updateSessionCredentials(
     ...existing,
     host: connection.host,
     port: connection.port,
-    ...(connection.term != null ? { term: connection.term } : {})
+    ...(typeof connection.term === 'string' ? { term: connection.term } : {})
   }
   debug('Updated session credentials with host/port/term from URL')
 }

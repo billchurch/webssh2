@@ -80,18 +80,20 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
   }
 
   const ptySource = safeGet(exec, PTY_FIELD.key)
+  const ptyValue = ptySource === null || ptySource === undefined ? undefined : Boolean(ptySource)
   const termValue = validateOptionalTerm(safeGet(exec, TERM_FIELD.key))
   const envValue = validateEnvironmentVars(safeGet(exec, ENV_FIELD.key))
   const timeoutValue = validateOptionalTimeout(safeGet(exec, TIMEOUT_FIELD.key))
+  const { cols, rows } = dimensionsResult.value
 
   const validated: ExecCommand = {
     command: commandResult.value,
-    ...(ptySource != null ? { pty: Boolean(ptySource) } : {}),
-    ...(termValue != null ? { term: termValue } : {}),
-    ...(dimensionsResult.value.cols !== undefined ? { cols: dimensionsResult.value.cols } : {}),
-    ...(dimensionsResult.value.rows !== undefined ? { rows: dimensionsResult.value.rows } : {}),
-    ...(envValue != null ? { env: envValue } : {}),
-    ...(timeoutValue != null ? { timeoutMs: timeoutValue } : {})
+    ...(ptyValue === undefined ? {} : { pty: ptyValue }),
+    ...(termValue === undefined ? {} : { term: termValue }),
+    ...(cols === undefined ? {} : { cols }),
+    ...(rows === undefined ? {} : { rows }),
+    ...(envValue === undefined ? {} : { env: envValue }),
+    ...(timeoutValue === undefined ? {} : { timeoutMs: timeoutValue })
   }
 
   return { ok: true, value: validated }

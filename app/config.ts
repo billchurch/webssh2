@@ -35,10 +35,7 @@ async function loadEnhancedConfig(
 
   // Load file config if a valid location exists
   let fileConfig: Partial<Config> | undefined
-  if (!resolution.exists) {
-    // No config file available, skip file loading
-    debug('No config file found at %s, using environment variables and defaults', resolvedPath)
-  } else {
+  if (resolution.exists) {
     const fileResult = await readConfigFile(resolution.location)
     if (fileResult.ok) {
       const parseResult = parseConfigJson(fileResult.value)
@@ -65,6 +62,9 @@ async function loadEnhancedConfig(
       }
       // File doesn't exist - this is fine, we'll use env vars and defaults
     }
+  } else {
+    // No config file available, skip file loading
+    debug('No config file found at %s, using environment variables and defaults', resolvedPath)
   }
   
   // Load environment config

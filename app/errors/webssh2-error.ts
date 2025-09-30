@@ -1,9 +1,7 @@
-export type ErrorCode = string
-
 export class WebSSH2Error extends Error {
-  readonly code: ErrorCode
+  readonly code: string
 
-  constructor(message: string, code: ErrorCode) {
+  constructor(message: string, code: string) {
     super(message)
     this.name = new.target.name
     this.code = code
