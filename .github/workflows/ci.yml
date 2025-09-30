@@ -9,6 +9,8 @@ on:
 jobs:
   build-lint-test:
     runs-on: ubuntu-latest
+    env:
+      ROLLUP_SKIP_NATIVE: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
