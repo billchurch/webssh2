@@ -105,43 +105,21 @@ export class Container {
   async resolveAsync<T>(token: Token<T> | string): Promise<T> {
     const key = typeof token === 'string' ? token : String(token)
     
-    // Check for circular dependencies
-    if (this.resolving.has(key)) {
-      throw new Error(`Circular dependency detected for: ${key}`)
+    this.ensureNotResolving(key)
+
+    const cachedInstance = this.getCachedInstance<T>(key)
+    if (cachedInstance !== null) {
+      return cachedInstance
     }
 
-    // Check if already instantiated
-    if (this.instances.has(key)) {
-      logger('Returning cached instance:', key)
-      return this.instances.get(key) as T
-    }
-
-    // Check for async factory first
     const asyncFactory = this.asyncFactories.get(key)
     if (asyncFactory !== undefined) {
-      logger('Creating instance from async factory:', key)
-      this.resolving.add(key)
-      try {
-        const instance = await asyncFactory() as T
-        this.instances.set(key, instance)
-        return instance
-      } finally {
-        this.resolving.delete(key)
-      }
+      return this.createFromAsyncFactory<T>(key, asyncFactory)
     }
 
-    // Fall back to sync factory
     const factory = this.factories.get(key)
     if (factory !== undefined) {
-      logger('Creating instance from factory:', key)
-      this.resolving.add(key)
-      try {
-        const instance = factory() as T
-        this.instances.set(key, instance)
-        return instance
-      } finally {
-        this.resolving.delete(key)
-      }
+      return this.createFromFactory<T>(key, factory)
     }
 
     throw new Error(`No registration found for ${key}`)
@@ -206,6 +184,50 @@ export class Container {
     
     logger('Created child container')
     return child
+  }
+
+  private ensureNotResolving(key: string): void {
+    if (this.resolving.has(key)) {
+      throw new Error(`Circular dependency detected for: ${key}`)
+    }
+  }
+
+  private getCachedInstance<T>(key: string): T | null {
+    if (!this.instances.has(key)) {
+      return null
+    }
+    logger('Returning cached instance:', key)
+    return this.instances.get(key) as T
+  }
+
+  private async createFromAsyncFactory<T>(
+    key: string,
+    factory: () => Promise<unknown>
+  ): Promise<T> {
+    logger('Creating instance from async factory:', key)
+    this.resolving.add(key)
+    try {
+      const instance = await factory() as T
+      this.instances.set(key, instance)
+      return instance
+    } finally {
+      this.resolving.delete(key)
+    }
+  }
+
+  private createFromFactory<T>(
+    key: string,
+    factory: () => unknown
+  ): T {
+    logger('Creating instance from factory:', key)
+    this.resolving.add(key)
+    try {
+      const instance = factory() as T
+      this.instances.set(key, instance)
+      return instance
+    } finally {
+      this.resolving.delete(key)
+    }
   }
 }
 
