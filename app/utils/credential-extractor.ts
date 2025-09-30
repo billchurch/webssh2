@@ -60,7 +60,9 @@ function buildAuthenticationFields(raw: Record<string, unknown>): Result<Authent
     return err(new CredentialError('Either password or privateKey is required for authentication'))
   }
 
-  const passphraseValue = privateKeyValue !== undefined ? getNonEmptyString(raw['passphrase']) : undefined
+  const passphraseValue = privateKeyValue === undefined
+    ? undefined
+    : getNonEmptyString(raw['passphrase'])
   const fields: AuthenticationFields = {}
 
   if (passwordValue !== undefined) {

@@ -49,9 +49,9 @@ function mergeMetadataUpdate(
 
   return {
     ...state,
-    ...(userId !== undefined ? { userId } : {}),
-    ...(clientIp !== undefined ? { clientIp } : {}),
-    ...(userAgent !== undefined ? { userAgent } : {}),
+    ...(userId === undefined ? {} : { userId }),
+    ...(clientIp === undefined ? {} : { clientIp }),
+    ...(userAgent === undefined ? {} : { userAgent }),
     updatedAt: updatedAt ?? Date.now()
   }
 }
