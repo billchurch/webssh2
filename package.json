@@ -27,7 +27,7 @@
   "engines": {
     "node": ">= 22"
   },
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.6.1",
   "bugs": {
     "url": "https://github.com/billchurch/WebSSH2/issues"
   },
@@ -44,6 +44,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "jsmasker": "^2.0.0",
+    "npm": "^11.6.1",
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.15",
@@ -51,6 +52,7 @@
     "zod": "^4.1.11"
   },
   "scripts": {
+    "postinstall": "node -e \"const os = require('os'); const platform = os.platform(); const arch = os.arch(); if (platform === 'darwin' && arch === 'arm64') { require('child_process').execSync('npm install @rollup/rollup-darwin-arm64 --no-save', {stdio: 'inherit'}); } else if (platform === 'linux' && arch === 'x64') { require('child_process').execSync('npm install @rollup/rollup-linux-x64-gnu --no-save', {stdio: 'inherit'}); }\"",
     "prestart": "npm run build",
     "start": "node dist/index.js",
     "lint": "eslint app tests",
@@ -68,29 +70,28 @@
     "e2e:setup": "playwright install --with-deps",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "publish:npm": "npm publish",
     "ci": "npm run test",
     "security:audit": "npm audit"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
-    "@playwright/test": "^1.55.0",
+    "@eslint/js": "^9.36.0",
+    "@playwright/test": "^1.55.1",
     "@types/basic-auth": "^1.1.8",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
-    "@types/node": "^24.3.3",
+    "@types/node": "^24.6.0",
     "@types/ssh2": "^1.15.5",
     "@types/validator": "^13.15.3",
-    "@typescript-eslint/eslint-plugin": "^8.43.0",
-    "@typescript-eslint/parser": "^8.43.0",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
+    "@typescript-eslint/parser": "^8.45.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.35.0",
+    "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-security": "^3.0.1",
     "supertest": "^7.1.4",
-    "tsx": "^4.20.5",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
