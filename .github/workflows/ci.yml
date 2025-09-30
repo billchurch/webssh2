@@ -19,13 +19,8 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies (non-macOS)
-        if: runner.os != 'macOS'
-        run: npm ci --omit=optional
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: npm ci --include=optional
+      - name: Install dependencies
+        run: npm ci
 
       - name: Lint
         run: npm run lint
