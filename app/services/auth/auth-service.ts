@@ -48,87 +48,28 @@ export class AuthServiceImpl implements AuthService {
    */
   authenticate(credentials: Credentials): Promise<Result<AuthResult>> {
     try {
-      logger('Authenticating user:', credentials.username)
-      logger('Auth credentials:', {
-        username: credentials.username,
-        host: credentials.host,
-        port: credentials.port,
-        hasPassword: credentials.password !== undefined && credentials.password !== '',
-        hasPrivateKey: credentials.privateKey !== undefined && credentials.privateKey !== '',
-        hasPassphrase: credentials.passphrase !== undefined && credentials.passphrase !== ''
-      })
+      this.logAuthenticationAttempt(credentials)
 
-      // Validate credentials
       const validationError = this.validateCredentials(credentials)
       if (validationError !== null) {
         logger('Credential validation failed:', validationError)
         return Promise.resolve(err(new Error(validationError)))
       }
 
-      // Check for existing cached session with same credentials
-      for (const [, cached] of this.authCache.entries()) {
-        if (cached.username === credentials.username && 
-            cached.expiresAt > Date.now()) {
-          // Return existing session
-          return Promise.resolve(ok({
-            sessionId: cached.sessionId,
-            userId: cached.userId,
-            username: cached.username,
-            method: cached.method,
-            expiresAt: cached.expiresAt
-          }))
-        }
+      const cachedSession = this.findCachedSession(credentials)
+      if (cachedSession !== null) {
+        return Promise.resolve(ok(cachedSession))
       }
 
-      // Generate session and user IDs
-      const sessionId = createSessionId(randomUUID())
-      const userId = createUserId(randomUUID())
-
-      // Create session in store
-      this.store.createSession(sessionId)
-
-      // Dispatch authentication action
-      this.store.dispatch(sessionId, {
-        type: 'AUTH_SUCCESS',
-        payload: {
-          username: credentials.username,
-          method: 'manual'
-        }
-      })
-
-      // Update connection info
-      this.store.dispatch(sessionId, {
-        type: 'CONNECTION_START',
-        payload: {
-          host: credentials.host,
-          port: credentials.port
-        }
-      })
-
-      // Create auth result
-      const authResult: AuthResult = {
-        sessionId,
-        userId,
-        username: credentials.username,
-        method: 'manual',
-        expiresAt: Date.now() + this.sessionTimeout
-      }
-
-      // Cache authentication info
-      this.authCache.set(sessionId, {
-        sessionId: authResult.sessionId,
-        userId: authResult.userId,
-        username: authResult.username,
-        method: authResult.method,
-        createdAt: Date.now(),
-        expiresAt: authResult.expiresAt ?? Date.now() + this.sessionTimeout
-      })
+      const authResult = this.issueNewSession(credentials)
+      this.cacheAuthentication(authResult)
 
       logger('Authentication successful for:', credentials.username)
       return Promise.resolve(ok(authResult))
     } catch (error) {
       logger('Authentication failed:', error)
-      return Promise.resolve(err(error instanceof Error ? error : new Error('Authentication failed')))
+      const failure = error instanceof Error ? error : new Error('Authentication failed')
+      return Promise.resolve(err(failure))
     }
   }
 
@@ -158,6 +99,78 @@ export class AuthServiceImpl implements AuthService {
     }
 
     return ok(true)
+  }
+
+  private logAuthenticationAttempt(credentials: Credentials): void {
+    logger('Authenticating user:', credentials.username)
+    logger('Auth credentials:', {
+      username: credentials.username,
+      host: credentials.host,
+      port: credentials.port,
+      hasPassword: typeof credentials.password === 'string' && credentials.password !== '',
+      hasPrivateKey: typeof credentials.privateKey === 'string' && credentials.privateKey !== '',
+      hasPassphrase: typeof credentials.passphrase === 'string' && credentials.passphrase !== ''
+    })
+  }
+
+  private findCachedSession(credentials: Credentials): AuthResult | null {
+    const now = Date.now()
+    for (const [, cached] of this.authCache.entries()) {
+      if (cached.username === credentials.username && cached.expiresAt > now) {
+        return {
+          sessionId: cached.sessionId,
+          userId: cached.userId,
+          username: cached.username,
+          method: cached.method,
+          expiresAt: cached.expiresAt
+        }
+      }
+    }
+    return null
+  }
+
+  private issueNewSession(credentials: Credentials): AuthResult {
+    const sessionId = createSessionId(randomUUID())
+    const userId = createUserId(randomUUID())
+    this.store.createSession(sessionId)
+
+    this.store.dispatch(sessionId, {
+      type: 'AUTH_SUCCESS',
+      payload: {
+        username: credentials.username,
+        method: 'manual'
+      }
+    })
+
+    this.store.dispatch(sessionId, {
+      type: 'CONNECTION_START',
+      payload: {
+        host: credentials.host,
+        port: credentials.port
+      }
+    })
+
+    const expiresAt = Date.now() + this.sessionTimeout
+
+    return {
+      sessionId,
+      userId,
+      username: credentials.username,
+      method: 'manual',
+      expiresAt
+    }
+  }
+
+  private cacheAuthentication(result: AuthResult): void {
+    const expiration = result.expiresAt ?? Date.now() + this.sessionTimeout
+    this.authCache.set(result.sessionId, {
+      sessionId: result.sessionId,
+      userId: result.userId,
+      username: result.username,
+      method: result.method,
+      createdAt: Date.now(),
+      expiresAt: expiration
+    })
   }
 
   /**
