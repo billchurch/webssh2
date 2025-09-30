@@ -106,5 +106,11 @@
     "test": "tests"
   },
   "author": "Bill Church",
-  "type": "module"
+  "type": "module",
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.52.3",
+    "@rollup/rollup-darwin-x64": "^4.52.3",
+    "@rollup/rollup-linux-arm64-gnu": "^4.52.3",
+    "@rollup/rollup-linux-x64-gnu": "^4.52.3"
+  }
 }
