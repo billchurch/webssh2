@@ -21,66 +21,9 @@ import debug from 'debug'
 import type { Duplex } from 'node:stream'
 import type { PseudoTtyOptions, ClientChannel } from 'ssh2'
 import { validateConnectionWithDns } from '../../ssh/hostname-resolver.js'
+import { ConnectionPool } from './connection-pool.js'
 
 const logger = debug('webssh2:services:ssh')
-
-/**
- * Connection pool for managing SSH connections
- */
-class ConnectionPool {
-  private readonly connections = new Map<ConnectionId, SSHConnection>()
-  private readonly sessionConnections = new Map<SessionId, Set<ConnectionId>>()
-
-  add(connection: SSHConnection): void {
-    this.connections.set(connection.id, connection)
-    
-    const sessionConnections = this.sessionConnections.get(connection.sessionId) ?? new Set()
-    sessionConnections.add(connection.id)
-    this.sessionConnections.set(connection.sessionId, sessionConnections)
-  }
-
-  get(id: ConnectionId): SSHConnection | undefined {
-    return this.connections.get(id)
-  }
-
-  remove(id: ConnectionId): void {
-    const connection = this.connections.get(id)
-    if (connection !== undefined) {
-      const sessionConnections = this.sessionConnections.get(connection.sessionId)
-      if (sessionConnections !== undefined) {
-        sessionConnections.delete(id)
-        if (sessionConnections.size === 0) {
-          this.sessionConnections.delete(connection.sessionId)
-        }
-      }
-      this.connections.delete(id)
-    }
-  }
-
-  getBySession(sessionId: SessionId): SSHConnection[] {
-    const connectionIds = this.sessionConnections.get(sessionId)
-    if (connectionIds === undefined) {return []}
-    
-    const connections: SSHConnection[] = []
-    for (const id of connectionIds) {
-      const conn = this.connections.get(id)
-      if (conn !== undefined) {connections.push(conn)}
-    }
-    return connections
-  }
-
-  clear(): void {
-    for (const connection of this.connections.values()) {
-      try {
-        connection.client.end()
-      } catch (error) {
-        logger('Error closing connection:', error)
-      }
-    }
-    this.connections.clear()
-    this.sessionConnections.clear()
-  }
-}
 
 interface ConnectionHandlerParams {
   client: SSH2Client
