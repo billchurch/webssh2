@@ -23,6 +23,21 @@ export interface SshErrorInfo {
   originalError?: unknown
 }
 
+interface ErrorDetails {
+  message: string
+  code?: string
+  level?: string
+}
+
+const NETWORK_CODE_PATTERNS = ['econnrefused', 'enotfound'] as const
+const TIMEOUT_CODE_PATTERNS = ['etimedout', 'timeout'] as const
+const AUTH_CODE_PATTERNS = ['auth'] as const
+
+const AUTH_MESSAGE_PATTERNS = ['authentication', 'permission', 'denied'] as const
+const TIMEOUT_MESSAGE_PATTERNS = ['timeout', 'timed out'] as const
+const NETWORK_MESSAGE_PATTERNS = ['refused', 'network', 'unreachable'] as const
+const CONNECTION_MESSAGE_PATTERNS = ['connection'] as const
+
 /**
  * Extract error message from unknown error
  * Pure function - no side effects
@@ -56,8 +71,35 @@ export function extractErrorMessage(err: unknown): string {
       return str
     }
   }
-  
+
   return '[Unknown error]'
+}
+
+function extractErrorDetails(err: unknown): ErrorDetails {
+  const errorObj = err as { code?: string; level?: string }
+  const message = extractErrorMessage(err).toLowerCase()
+  const code = typeof errorObj.code === 'string' ? errorObj.code.toLowerCase() : undefined
+  const level = typeof errorObj.level === 'string' ? errorObj.level : undefined
+
+  const details: ErrorDetails = { message }
+  if (code !== undefined) {
+    details.code = code
+  }
+  if (level !== undefined) {
+    details.level = level
+  }
+  return details
+}
+
+function matchesPattern(value: string | undefined, patterns: readonly string[]): boolean {
+  if (value === undefined) {
+    return false
+  }
+  return patterns.some(pattern => value.includes(pattern))
+}
+
+function messageContains(message: string, patterns: readonly string[]): boolean {
+  return patterns.some(pattern => message.includes(pattern))
 }
 
 /**
@@ -68,49 +110,28 @@ export function categorizeError(err: unknown): SshErrorType {
   if (err == null) {
     return SshErrorType.UNKNOWN
   }
-  
-  const message = extractErrorMessage(err).toLowerCase()
-  const errorObj = err as { code?: string; level?: string }
-  
-  // Check error code
-  if (errorObj.code != null) {
-    const code = errorObj.code.toLowerCase()
-    
-    if (code.includes('econnrefused') || code.includes('enotfound')) {
-      return SshErrorType.NETWORK
-    }
-    
-    if (code.includes('etimedout') || code.includes('timeout')) {
-      return SshErrorType.TIMEOUT
-    }
-    
-    if (code.includes('auth')) {
-      return SshErrorType.AUTHENTICATION
-    }
-  }
-  
-  // Check message content
-  if (message.includes('authentication') || message.includes('permission') || message.includes('denied')) {
-    return SshErrorType.AUTHENTICATION
-  }
+  const details = extractErrorDetails(err)
 
-  if (message.includes('timeout') || message.includes('timed out')) {
-    return SshErrorType.TIMEOUT
-  }
-
-  if (message.includes('refused') || message.includes('network') || message.includes('unreachable')) {
+  if (matchesPattern(details.code, NETWORK_CODE_PATTERNS) ||
+      messageContains(details.message, NETWORK_MESSAGE_PATTERNS)) {
     return SshErrorType.NETWORK
   }
 
-  if (message.includes('connection')) {
-    return SshErrorType.CONNECTION
+  if (matchesPattern(details.code, TIMEOUT_CODE_PATTERNS) ||
+      messageContains(details.message, TIMEOUT_MESSAGE_PATTERNS)) {
+    return SshErrorType.TIMEOUT
   }
-  
-  // Check level for authentication errors
-  if (errorObj.level === 'client-authentication') {
+
+  if (matchesPattern(details.code, AUTH_CODE_PATTERNS) ||
+      messageContains(details.message, AUTH_MESSAGE_PATTERNS) ||
+      details.level === 'client-authentication') {
     return SshErrorType.AUTHENTICATION
   }
-  
+
+  if (messageContains(details.message, CONNECTION_MESSAGE_PATTERNS)) {
+    return SshErrorType.CONNECTION
+  }
+
   return SshErrorType.UNKNOWN
 }
 
