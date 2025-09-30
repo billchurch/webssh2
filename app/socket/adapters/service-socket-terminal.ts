@@ -1,6 +1,6 @@
 import type { AdapterContext, SSH2Stream } from './service-socket-shared.js'
 import type { TerminalSettings } from '../../types/contracts/v1/socket.js'
-import type { SessionId, ConnectionId } from '../../types/branded.js'
+import type { SessionId } from '../../types/branded.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildTerminalDefaults, createConnectionIdentifier } from './ssh-config.js'
@@ -224,7 +224,14 @@ export class ServiceSocketTerminal {
     })
   }
 
-  private async performExec(command: string, connectionId: ConnectionId): Promise<void> {
+  private async performExec(
+    command: string,
+    connectionId: ReturnType<typeof createConnectionIdentifier>
+  ): Promise<void> {
+    if (connectionId === null) {
+      return
+    }
+
     const start = Date.now()
     const result = await this.context.services.ssh.exec(connectionId, command)
 

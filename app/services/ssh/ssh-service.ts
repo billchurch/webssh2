@@ -22,6 +22,11 @@ import type { Duplex } from 'node:stream'
 import type { PseudoTtyOptions, ClientChannel } from 'ssh2'
 import { validateConnectionWithDns } from '../../ssh/hostname-resolver.js'
 import { ConnectionPool } from './connection-pool.js'
+import type { StructuredLogger } from '../../logging/structured-logger.js'
+import type { StructuredLogInput } from '../../logging/structured-log.js'
+import type { LogLevel } from '../../logging/levels.js'
+import type { LogEventName } from '../../logging/event-catalog.js'
+import type { LogContext, LogStatus, LogSubsystem } from '../../logging/log-context.js'
 
 const logger = debug('webssh2:services:ssh')
 
@@ -34,11 +39,31 @@ interface ConnectionHandlerParams {
   onError: (error: Error) => void
 }
 
+interface ConnectionLogBase {
+  readonly sessionId: SessionId
+  readonly host: string
+  readonly port: number
+  readonly username?: string | undefined
+}
+
+interface ConnectionLogDetails {
+  readonly connectionId?: ConnectionId
+  readonly status?: LogStatus
+  readonly reason?: string | undefined
+  readonly errorCode?: string | number | undefined
+  readonly durationMs?: number
+  readonly bytesIn?: number
+  readonly bytesOut?: number
+  readonly subsystem?: LogSubsystem
+  readonly data?: Record<string, unknown>
+}
+
 export class SSHServiceImpl implements SSHService {
   private readonly pool = new ConnectionPool()
   private readonly connectionTimeout: number
   private readonly keepaliveInterval: number
   private readonly keepaliveCountMax: number
+  private readonly structuredLogger: StructuredLogger
 
   constructor(
     private readonly deps: ServiceDependencies,
@@ -47,12 +72,10 @@ export class SSHServiceImpl implements SSHService {
     this.connectionTimeout = deps.config.ssh.readyTimeout
     this.keepaliveInterval = deps.config.ssh.keepaliveInterval
     this.keepaliveCountMax = deps.config.ssh.keepaliveCountMax
+    this.structuredLogger = deps.createStructuredLogger({ namespace: 'webssh2:services:ssh' })
   }
 
-  /**
-   * Build SSH2 connection configuration
-   */
-  private buildConnectConfig(config: SSHConfig): Parameters<SSH2Client['connect']>[0] {
+    private buildConnectConfig(config: SSHConfig): Parameters<SSH2Client['connect']>[0] {
     const connectConfig: Parameters<SSH2Client['connect']>[0] = {
       host: config.host,
       port: config.port,
@@ -85,10 +108,7 @@ export class SSHServiceImpl implements SSHService {
     return connectConfig
   }
 
-  /**
-   * Setup keyboard-interactive authentication handler
-   */
-  private setupKeyboardInteractiveHandler(client: SSH2Client, config: SSHConfig): void {
+    private setupKeyboardInteractiveHandler(client: SSH2Client, config: SSHConfig): void {
     client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
       logger('Keyboard-interactive authentication requested')
       logger('Prompts:', prompts.map(p => ({ prompt: p.prompt, echo: p.echo })))
@@ -110,10 +130,7 @@ export class SSHServiceImpl implements SSHService {
     })
   }
 
-  /**
-   * Setup SSH connection event handlers
-   */
-  private setupConnectionHandlers({
+    private setupConnectionHandlers({
     client,
     connection,
     config,
@@ -121,7 +138,6 @@ export class SSHServiceImpl implements SSHService {
     onReady,
     onError
   }: ConnectionHandlerParams): void {
-    // Handle ready event
     client.on('ready', () => {
       clearTimeout(timeout)
       logger('SSH connection ready')
@@ -130,16 +146,26 @@ export class SSHServiceImpl implements SSHService {
       connection.lastActivity = Date.now()
       this.pool.add(connection)
 
-      // Update store state
       this.store.dispatch(config.sessionId, {
         type: 'CONNECTION_ESTABLISHED',
         payload: { connectionId: connection.id }
       })
 
+      this.logConnection(
+        this.createLogBaseFromConnection(connection),
+        'info',
+        'session_start',
+        'SSH connection established',
+        {
+          connectionId: connection.id,
+          status: 'success',
+          durationMs: Date.now() - connection.createdAt
+        }
+      )
+
       onReady()
     })
 
-    // Handle error event
     client.on('error', (error: Error & { level?: string }) => {
       clearTimeout(timeout)
       logger('SSH connection error:', error.message)
@@ -151,25 +177,48 @@ export class SSHServiceImpl implements SSHService {
 
       connection.status = 'error'
 
-      // Update store state
       this.store.dispatch(config.sessionId, {
         type: 'CONNECTION_ERROR',
         payload: { error: error.message }
       })
 
+      this.logConnection(
+        this.createLogBaseFromConnection(connection),
+        'error',
+        'error',
+        'SSH connection error',
+        {
+          connectionId: connection.id,
+          status: 'failure',
+          reason: error.message,
+          errorCode: error.level
+        }
+      )
+
       onError(error)
     })
 
-    // Handle close event
     client.on('close', () => {
       logger('SSH connection closed')
       this.pool.remove(connection.id)
 
-      // Update store state
       this.store.dispatch(config.sessionId, {
         type: 'CONNECTION_CLOSED',
         payload: {}
       })
+
+      const status: LogStatus = connection.status === 'error' ? 'failure' : 'success'
+      this.logConnection(
+        this.createLogBaseFromConnection(connection),
+        'info',
+        'session_end',
+        'SSH connection closed',
+        {
+          connectionId: connection.id,
+          status,
+          durationMs: Date.now() - connection.createdAt
+        }
+      )
     })
   }
 
@@ -177,30 +226,10 @@ export class SSHServiceImpl implements SSHService {
    * Connect to SSH server
    */
   async connect(config: SSHConfig): Promise<Result<SSHConnection>> {
-    // Validate connection against allowed subnets if configured
-    const allowedSubnets = this.deps.config.ssh.allowedSubnets
-
-    if (allowedSubnets != null && allowedSubnets.length > 0) {
-      logger(`Validating connection to ${config.host} against subnet restrictions`)
-
-      const validationResult = await validateConnectionWithDns(config.host, allowedSubnets)
-
-      if (validationResult.ok) {
-        // DNS resolution succeeded, check if host is in allowed subnets
-        if (validationResult.value) {
-          // Host is in allowed subnets
-          logger(`Host ${config.host} passed subnet validation`)
-        } else {
-          // Host not in allowed subnets
-          logger(`Host ${config.host} is not in allowed subnets: ${allowedSubnets.join(', ')}`)
-          const errorMessage = `Connection to host ${config.host} is not permitted`
-          return err(new Error(errorMessage))
-        }
-      } else {
-        // DNS resolution failed
-        logger(`Host validation failed: ${validationResult.error.message}`)
-        return err(validationResult.error)
-      }
+    const baseInfo = this.createLogBaseFromConfig(config)
+    const validationResult = await this.validateConnectionAgainstSubnets(config, baseInfo)
+    if (!validationResult.ok) {
+      return err(validationResult.error)
     }
 
     return new Promise((resolve) => {
@@ -210,7 +239,6 @@ export class SSHServiceImpl implements SSHService {
         const client = new SSH2Client()
         const connectionId = createConnectionId(randomUUID())
 
-        // Create connection object
         const connection: SSHConnection = {
           id: connectionId,
           sessionId: config.sessionId,
@@ -223,16 +251,17 @@ export class SSHServiceImpl implements SSHService {
           username: config.username
         }
 
-        // Setup timeout
         const timeout = setTimeout(() => {
           client.end()
+          this.logConnection(baseInfo, 'warn', 'error', 'SSH connection timed out', {
+            connectionId,
+            status: 'failure',
+            reason: 'Connection timeout'
+          })
           resolve(err(new Error('Connection timeout')))
         }, this.connectionTimeout)
 
-        // Setup keyboard-interactive authentication
         this.setupKeyboardInteractiveHandler(client, config)
-
-        // Setup connection event handlers
         this.setupConnectionHandlers({
           client,
           connection,
@@ -242,10 +271,8 @@ export class SSHServiceImpl implements SSHService {
           onError: (error) => resolve(err(error))
         })
 
-        // Build and apply connection config
         const connectConfig = this.buildConnectConfig(config)
 
-        // Log the connection config (without sensitive data)
         logger('SSH2 client connect config:', {
           host: connectConfig.host,
           port: connectConfig.port,
@@ -261,17 +288,54 @@ export class SSHServiceImpl implements SSHService {
         })
 
         client.connect(connectConfig)
-
       } catch (error) {
         logger('Failed to connect:', error)
-        resolve(err(error instanceof Error ? error : new Error('Connection failed')))
+        const failure = error instanceof Error ? error : new Error('Connection failed')
+        this.logConnection(baseInfo, 'error', 'error', 'SSH connection setup failed', {
+          status: 'failure',
+          reason: failure.message
+        })
+        resolve(err(failure))
       }
     })
   }
 
-  /**
-   * Open a shell
-   */
+  
+  private async validateConnectionAgainstSubnets(
+    config: SSHConfig,
+    baseInfo: ConnectionLogBase
+  ): Promise<Result<void>> {
+    const allowedSubnets = this.deps.config.ssh.allowedSubnets
+    if (allowedSubnets == null || allowedSubnets.length === 0) {
+      return ok(undefined)
+    }
+
+    logger(`Validating connection to ${config.host} against subnet restrictions`)
+    const validationResult = await validateConnectionWithDns(config.host, allowedSubnets)
+
+    if (validationResult.ok) {
+      if (validationResult.value) {
+        logger(`Host ${config.host} passed subnet validation`)
+        return ok(undefined)
+      }
+
+      const errorMessage = `Connection to host ${config.host} is not permitted`
+      logger(`Host ${config.host} is not in allowed subnets: ${allowedSubnets.join(', ')}`)
+      this.logConnection(baseInfo, 'warn', 'policy_block', 'SSH connection blocked by subnet policy', {
+        status: 'failure',
+        reason: errorMessage
+      })
+      return err(new Error(errorMessage))
+    }
+
+    logger(`Host validation failed: ${validationResult.error.message}`)
+    this.logConnection(baseInfo, 'error', 'error', 'SSH connection validation failed', {
+      status: 'failure',
+      reason: validationResult.error.message
+    })
+    return err(validationResult.error)
+  }
+
   async shell(connectionId: ConnectionId, options: ShellOptions): Promise<Result<Duplex>> {
     return new Promise((resolve) => {
       try {
@@ -341,10 +405,7 @@ export class SSHServiceImpl implements SSHService {
     })
   }
 
-  /**
-   * Execute a command
-   */
-  async exec(connectionId: ConnectionId, command: string): Promise<Result<ExecResult>> {
+    async exec(connectionId: ConnectionId, command: string): Promise<Result<ExecResult>> {
     return new Promise((resolve) => {
       try {
         const connection = this.pool.get(connectionId)
@@ -354,11 +415,20 @@ export class SSHServiceImpl implements SSHService {
         }
 
         if (connection.status !== 'connected') {
+          this.logConnection(this.createLogBaseFromConnection(connection), 'warn', 'ssh_command', 'SSH exec command rejected', {
+            connectionId: connection.id,
+            status: 'failure',
+            subsystem: 'exec',
+            reason: 'Connection not ready',
+            data: { command }
+          })
           resolve(err(new Error('Connection not ready')))
           return
         }
 
         logger('Executing command:', command)
+        const baseInfo = this.createLogBaseFromConnection(connection)
+        const start = Date.now()
 
         let stdout = ''
         let stderr = ''
@@ -366,6 +436,13 @@ export class SSHServiceImpl implements SSHService {
         connection.client.exec(command, (error: Error | undefined, stream: ClientChannel) => {
           if (error !== undefined) {
             logger('Failed to execute command:', error)
+            this.logConnection(baseInfo, 'warn', 'ssh_command', 'SSH exec command failed to start', {
+              connectionId: connection.id,
+              status: 'failure',
+              subsystem: 'exec',
+              reason: error.message,
+              data: { command }
+            })
             resolve(err(error))
             return
           }
@@ -381,20 +458,47 @@ export class SSHServiceImpl implements SSHService {
           stream.on('close', (code: number) => {
             connection.lastActivity = Date.now()
             logger('Command executed with code:', code)
+
+            const status: LogStatus = code === 0 ? 'success' : 'failure'
+            const level: LogLevel = status === 'success' ? 'info' : 'warn'
+            const reason = status === 'failure' ? `Command exited with code ${code}` : undefined
+
+            this.logConnection(baseInfo, level, 'ssh_command', 'SSH exec command completed', {
+              connectionId: connection.id,
+              status,
+              subsystem: 'exec',
+              durationMs: Date.now() - start,
+              bytesIn: Buffer.byteLength(command),
+              bytesOut: Buffer.byteLength(stdout) + Buffer.byteLength(stderr),
+              reason,
+              data: {
+                command,
+                exit_code: code
+              }
+            })
+
             resolve(ok({ stdout, stderr, code }))
           })
         })
-
       } catch (error) {
         logger('Failed to execute command:', error)
-        resolve(err(error instanceof Error ? error : new Error('Exec failed')))
+        const failure = error instanceof Error ? error : new Error('Exec failed')
+        const connection = this.pool.get(connectionId)
+        if (connection !== undefined) {
+          this.logConnection(this.createLogBaseFromConnection(connection), 'error', 'ssh_command', 'SSH exec command threw error', {
+            connectionId: connection.id,
+            status: 'failure',
+            subsystem: 'exec',
+            reason: failure.message,
+            data: { command }
+          })
+        }
+        resolve(err(failure))
       }
     })
   }
 
-  /**
-   * Disconnect
-   */
+
   disconnect(connectionId: ConnectionId): Promise<Result<void>> {
     try {
       const connection = this.pool.get(connectionId)
@@ -423,18 +527,12 @@ export class SSHServiceImpl implements SSHService {
     }
   }
 
-  /**
-   * Get connection status
-   */
-  getConnectionStatus(connectionId: ConnectionId): Result<SSHConnection | null> {
+    getConnectionStatus(connectionId: ConnectionId): Result<SSHConnection | null> {
     const connection = this.pool.get(connectionId)
     return ok(connection ?? null)
   }
 
-  /**
-   * Disconnect all connections for a session
-   */
-  async disconnectSession(sessionId: SessionId): Promise<void> {
+    async disconnectSession(sessionId: SessionId): Promise<void> {
     const connections = this.pool.getBySession(sessionId)
     for (const connection of connections) {
       await this.disconnect(connection.id)
@@ -442,11 +540,83 @@ export class SSHServiceImpl implements SSHService {
   }
 
 
-  /**
-   * Clean up all connections
-   */
-  cleanup(): void {
+    cleanup(): void {
     logger('Cleaning up all connections')
     this.pool.clear()
+  }
+
+  private createLogBaseFromConfig(config: SSHConfig): ConnectionLogBase {
+    return {
+      sessionId: config.sessionId,
+      host: config.host,
+      port: config.port,
+      username: config.username
+    }
+  }
+
+  private createLogBaseFromConnection(connection: SSHConnection): ConnectionLogBase {
+    return {
+      sessionId: connection.sessionId,
+      host: connection.host,
+      port: connection.port,
+      username: connection.username
+    }
+  }
+
+  private logConnection(
+    base: ConnectionLogBase,
+    level: LogLevel,
+    event: LogEventName,
+    message: string,
+    details: ConnectionLogDetails = {}
+  ): void {
+    const context: LogContext = {
+      sessionId: base.sessionId,
+      protocol: 'ssh',
+      subsystem: details.subsystem ?? 'shell',
+      targetHost: base.host,
+      targetPort: base.port,
+      ...(base.username !== undefined && base.username !== '' ? { username: base.username } : {}),
+      ...(details.connectionId !== undefined ? { connectionId: details.connectionId } : {}),
+      ...(details.status !== undefined ? { status: details.status } : {}),
+      ...(details.reason !== undefined ? { reason: details.reason } : {}),
+      ...(details.errorCode !== undefined ? { errorCode: details.errorCode } : {}),
+      ...(details.durationMs !== undefined ? { durationMs: details.durationMs } : {}),
+      ...(details.bytesIn !== undefined ? { bytesIn: details.bytesIn } : {}),
+      ...(details.bytesOut !== undefined ? { bytesOut: details.bytesOut } : {})
+    }
+
+    const entry: Omit<StructuredLogInput, 'level'> = {
+      event,
+      message,
+      context,
+      ...(details.data !== undefined ? { data: { ...details.data } } : {})
+    }
+
+    this.emitStructuredLog(level, entry)
+  }
+
+  private emitStructuredLog(level: LogLevel, entry: Omit<StructuredLogInput, 'level'>): void {
+    type StructuredResult = ReturnType<StructuredLogger['info']>
+    const logResult: StructuredResult = (() => {
+      switch (level) {
+        case 'debug':
+          return this.structuredLogger.debug(entry)
+        case 'info':
+          return this.structuredLogger.info(entry)
+        case 'warn':
+          return this.structuredLogger.warn(entry)
+        case 'error':
+          return this.structuredLogger.error(entry)
+        default:
+          return this.structuredLogger.info(entry)
+      }
+    })()
+
+    if (!logResult.ok) {
+      const reason =
+        logResult.error instanceof Error ? logResult.error.message : String(logResult.error)
+      this.deps.logger.warn('Failed to emit structured SSH log', { error: reason })
+    }
   }
 }
