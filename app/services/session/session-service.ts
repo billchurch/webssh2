@@ -189,52 +189,77 @@ export class SessionServiceImpl implements SessionService {
     state: SessionState,
     connection: Partial<SessionState['connection']>
   ): void {
-    if (connection.status === undefined) {
+    const status = connection.status
+    if (status === undefined) {
       return
     }
 
-    switch (connection.status) {
+    switch (status) {
       case 'connecting':
-        this.store.dispatch(id, {
-          type: 'CONNECTION_START',
-          payload: {
-            host: connection.host ?? state.connection.host ?? '',
-            port: connection.port ?? state.connection.port ?? 22
-          }
-        })
+        this.dispatchConnectionStart(id, state, connection)
         break
-
-      case 'connected': {
-        const connectionId = connection.connectionId
-        if (connectionId !== undefined && connectionId !== null) {
-          this.store.dispatch(id, {
-            type: 'CONNECTION_ESTABLISHED',
-            payload: { connectionId }
-          })
-        }
+      case 'connected':
+        this.dispatchConnectionEstablished(id, connection)
         break
-      }
-
       case 'error':
-        this.store.dispatch(id, {
-          type: 'CONNECTION_ERROR',
-          payload: {
-            error: connection.errorMessage ?? 'Connection failed'
-          }
-        })
+        this.dispatchConnectionError(id, connection)
         break
-
       case 'closed':
-        this.store.dispatch(id, {
-          type: 'CONNECTION_CLOSED',
-          payload: {}
-        })
+        this.dispatchConnectionClosed(id)
         break
-
       case 'disconnected':
-        // No action needed for disconnected status
+        break
+      default:
         break
     }
+  }
+
+  private dispatchConnectionStart(
+    id: SessionId,
+    state: SessionState,
+    connection: Partial<SessionState['connection']>
+  ): void {
+    this.store.dispatch(id, {
+      type: 'CONNECTION_START',
+      payload: {
+        host: connection.host ?? state.connection.host ?? '',
+        port: connection.port ?? state.connection.port ?? 22
+      }
+    })
+  }
+
+  private dispatchConnectionEstablished(
+    id: SessionId,
+    connection: Partial<SessionState['connection']>
+  ): void {
+    const connectionId = connection.connectionId
+    if (connectionId === undefined || connectionId === null) {
+      return
+    }
+
+    this.store.dispatch(id, {
+      type: 'CONNECTION_ESTABLISHED',
+      payload: { connectionId }
+    })
+  }
+
+  private dispatchConnectionError(
+    id: SessionId,
+    connection: Partial<SessionState['connection']>
+  ): void {
+    this.store.dispatch(id, {
+      type: 'CONNECTION_ERROR',
+      payload: {
+        error: connection.errorMessage ?? 'Connection failed'
+      }
+    })
+  }
+
+  private dispatchConnectionClosed(id: SessionId): void {
+    this.store.dispatch(id, {
+      type: 'CONNECTION_CLOSED',
+      payload: {}
+    })
   }
 
   /**
