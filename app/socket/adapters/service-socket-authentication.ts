@@ -259,8 +259,7 @@ export class ServiceSocketAuthentication {
     this.emitAuthSuccess(authCredentials)
 
     const method = this.context.state.originalAuthMethod ?? 'manual'
-    this.context.debug(`Authentication successful via ${method}`)
-    console.info(`[auth] socket=${this.context.socket.id} method=${method}`)
+    this.context.debug(`Authentication successful via ${method}, socket=${this.context.socket.id}`)
   }
 
   private emitAuthFailure(message: string): void {

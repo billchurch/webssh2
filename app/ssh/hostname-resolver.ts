@@ -9,6 +9,19 @@ import { createNamespacedDebug } from '../logger.js'
 
 const debug = createNamespacedDebug('ssh:hostname-resolver')
 
+// IPv4 CIDR constants
+const IPV4_MAX_MASK_BITS = 32
+const IPV4_FULL_MASK = 0xFFFFFFFF
+const IPV4_OCTET_MAX = 255
+const IPV4_OCTET_COUNT = 4
+
+// IPv6 CIDR constants
+const IPV6_MAX_MASK_BITS = 128
+const IPV6_SEGMENT_COUNT = 8
+const IPV6_SEGMENT_BITS = 16
+const IPV6_SEGMENT_HEX_DIGITS = 4
+const IPV6_SEGMENT_MAX_VALUE = 0xFFFF
+
 export interface ResolvedHost {
   hostname: string
   addresses: string[]
@@ -92,19 +105,19 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
   }
 
   const mask = Number.parseInt(maskStr, 10)
-  if (Number.isNaN(mask) || mask < 0 || mask > 32) {
+  if (Number.isNaN(mask) || mask < 0 || mask > IPV4_MAX_MASK_BITS) {
     return false
   }
 
   // Convert IP addresses to 32-bit integers
   const ipToInt = (addr: string): number => {
     const parts = addr.split('.')
-    if (parts.length !== 4) {
+    if (parts.length !== IPV4_OCTET_COUNT) {
       return 0
     }
     return parts.reduce((acc, part, i) => {
       const num = Number.parseInt(part, 10)
-      if (Number.isNaN(num) || num < 0 || num > 255) {
+      if (Number.isNaN(num) || num < 0 || num > IPV4_OCTET_MAX) {
         return 0
       }
       return acc + (num << (8 * (3 - i)))
@@ -113,7 +126,7 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
 
   const ipInt = ipToInt(ip)
   const subnetInt = ipToInt(subnetBase)
-  const maskBits = (0xFFFFFFFF << (32 - mask)) >>> 0
+  const maskBits = (IPV4_FULL_MASK << (IPV4_MAX_MASK_BITS - mask)) >>> 0
 
   return (ipInt & maskBits) === (subnetInt & maskBits)
 }
@@ -144,7 +157,7 @@ const parseIpv6Cidr = (subnet: string): ParsedIpv6Cidr | null => {
   }
 
   const mask = Number.parseInt(maskStr, 10)
-  if (Number.isNaN(mask) || mask < 0 || mask > 128) {
+  if (Number.isNaN(mask) || mask < 0 || mask > IPV6_MAX_MASK_BITS) {
     return null
   }
 
@@ -156,13 +169,13 @@ const normalizeIpv6Address = (addr: string): string => {
     const parts = addr.split('::')
     const left = parts[0]?.split(':').filter(segment => segment !== '') ?? []
     const right = parts[1]?.split(':').filter(segment => segment !== '') ?? []
-    const missing = Math.max(0, 8 - left.length - right.length)
+    const missing = Math.max(0, IPV6_SEGMENT_COUNT - left.length - right.length)
     const middle = Array.from({ length: missing }, () => '0')
     const expanded = [...left, ...middle, ...right]
-    return expanded.map(segment => segment.padStart(4, '0')).join(':')
+    return expanded.map(segment => segment.padStart(IPV6_SEGMENT_HEX_DIGITS, '0')).join(':')
   }
 
-  return addr.split(':').map(segment => segment.padStart(4, '0')).join(':')
+  return addr.split(':').map(segment => segment.padStart(IPV6_SEGMENT_HEX_DIGITS, '0')).join(':')
 }
 
 const ipv6MatchesMask = (ip: string, subnet: string, mask: number): boolean => {
@@ -176,14 +189,14 @@ const ipv6MatchesMask = (ip: string, subnet: string, mask: number): boolean => {
     const subnetSegment = subnetIterator.next().value
     const ipValue = Number.parseInt(ipSegment, 16)
     const subnetValue = Number.parseInt(subnetSegment ?? '0', 16)
-    const bitsToCheck = Math.min(16, mask - bitsChecked)
-    const bitMask = (0xFFFF << (16 - bitsToCheck)) & 0xFFFF
+    const bitsToCheck = Math.min(IPV6_SEGMENT_BITS, mask - bitsChecked)
+    const bitMask = (IPV6_SEGMENT_MAX_VALUE << (IPV6_SEGMENT_BITS - bitsToCheck)) & IPV6_SEGMENT_MAX_VALUE
 
     if ((ipValue & bitMask) !== (subnetValue & bitMask)) {
       return false
     }
 
-    bitsChecked += 16
+    bitsChecked += IPV6_SEGMENT_BITS
   }
 
   return true

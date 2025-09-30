@@ -210,7 +210,21 @@ export class SessionStore {
   }
 }
 
-// Singleton instance
+/**
+ * Module-level singleton for session store management.
+ *
+ * Lifecycle:
+ * - Lazily initialized on first getStore() call
+ * - Maintains session state across socket connections
+ * - Provides centralized session lifecycle management
+ * - Reset via resetStore() in test environments only
+ *
+ * Thread Safety:
+ * - Safe for concurrent access in Node.js single-threaded event loop
+ * - All operations are synchronous within the event loop tick
+ *
+ * @internal
+ */
 let storeInstance: SessionStore | null = null
 
 /**

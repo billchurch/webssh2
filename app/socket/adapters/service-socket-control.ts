@@ -61,8 +61,7 @@ export class ServiceSocketControl {
 
     try {
       this.context.state.shellStream.write(passwordToSend)
-      this.context.debug('Credential replay completed')
-      console.info(`[replayCredentials] socket=${this.context.socket.id} crlf=${this.context.config.options.replayCRLF === true ? '1' : '0'}`)
+      this.context.debug(`Credential replay completed, socket=${this.context.socket.id} crlf=${this.context.config.options.replayCRLF === true ? '1' : '0'}`)
     } catch (error) {
       this.context.debug('Failed to replay credentials:', error)
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'Failed to replay credentials')

@@ -13,6 +13,7 @@ import { MESSAGES } from './constants.js'
 import { getClientPublicPath } from './client-path.js'
 import type { Config } from './types/config.js'
 import { initializeGlobalContainer } from './services/setup.js'
+import { extractErrorMessage } from './utils/error-messages.js'
 import { TOKENS } from './services/container.js'
 import type { Services } from './services/interfaces.js'
 
@@ -33,10 +34,7 @@ export function createAppAsync(appConfig: Config): {
     app.use('/ssh', sshRoutes)
     return { app, sessionMiddleware }
   } catch (err) {
-    const message =
-      err !== null && err !== undefined && typeof err === 'object' && 'message' in (err as { message?: unknown })
-        ? String((err as { message?: unknown }).message)
-        : String(err)
+    const message = extractErrorMessage(err)
     throw new ConfigError(`${MESSAGES.EXPRESS_APP_CONFIG_ERROR}: ${message}`)
   }
 }
