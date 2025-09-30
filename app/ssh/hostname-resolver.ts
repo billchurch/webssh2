@@ -122,59 +122,64 @@ const isIpv4InCidr = (ip: string, subnet: string): boolean => {
  * Check if an IPv6 address matches a subnet in CIDR notation
  */
 const isIpv6InCidr = (ip: string, subnet: string): boolean => {
+  const parsed = parseIpv6Cidr(subnet)
+  if (parsed === null) {
+    return false
+  }
+
+  const normalizedIp = normalizeIpv6Address(ip.toLowerCase())
+  const normalizedSubnet = normalizeIpv6Address(parsed.base.toLowerCase())
+  return ipv6MatchesMask(normalizedIp, normalizedSubnet, parsed.mask)
+}
+
+interface ParsedIpv6Cidr {
+  base: string
+  mask: number
+}
+
+const parseIpv6Cidr = (subnet: string): ParsedIpv6Cidr | null => {
   const [subnetBase, maskStr] = subnet.split('/')
   if (subnetBase === undefined || maskStr === undefined) {
-    return false
+    return null
   }
 
   const mask = Number.parseInt(maskStr, 10)
   if (Number.isNaN(mask) || mask < 0 || mask > 128) {
-    return false
+    return null
   }
 
-  // Normalize IPv6 addresses
-  const normalizeIpv6 = (addr: string): string => {
-    // Expand :: notation
-    if (addr.includes('::')) {
-      const parts = addr.split('::')
-      const left = parts[0]?.split(':').filter(p => p !== '') ?? []
-      const right = parts[1]?.split(':').filter(p => p !== '') ?? []
-      const missing = 8 - left.length - right.length
-      const middle: string[] = Array(missing).fill('0') as string[]
-      const expanded = [...left, ...middle, ...right]
-      return expanded.map(p => p.padStart(4, '0')).join(':')
-    }
-    // Already expanded, just pad
-    return addr.split(':').map(p => p.padStart(4, '0')).join(':')
+  return { base: subnetBase, mask }
+}
+
+const normalizeIpv6Address = (addr: string): string => {
+  if (addr.includes('::')) {
+    const parts = addr.split('::')
+    const left = parts[0]?.split(':').filter(segment => segment !== '') ?? []
+    const right = parts[1]?.split(':').filter(segment => segment !== '') ?? []
+    const missing = Math.max(0, 8 - left.length - right.length)
+    const middle = Array.from({ length: missing }, () => '0')
+    const expanded = [...left, ...middle, ...right]
+    return expanded.map(segment => segment.padStart(4, '0')).join(':')
   }
 
-  const normalizedIp = normalizeIpv6(ip.toLowerCase())
-  const normalizedSubnet = normalizeIpv6(subnetBase.toLowerCase())
+  return addr.split(':').map(segment => segment.padStart(4, '0')).join(':')
+}
 
-  // Convert to binary and compare based on mask
-  const ipParts = normalizedIp.split(':')
-  const subnetParts = normalizedSubnet.split(':')
-
-  const ipPartMap = new Map(ipParts.entries())
-  const subnetPartMap = new Map(subnetParts.entries())
-
-  const segmentIndices: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7]
-
+const ipv6MatchesMask = (ip: string, subnet: string, mask: number): boolean => {
   let bitsChecked = 0
-  for (const index of segmentIndices) {
+  const subnetIterator = subnet.split(':')[Symbol.iterator]()
+  for (const ipSegment of ip.split(':')) {
     if (bitsChecked >= mask) {
       break
     }
 
-    const ipPart = ipPartMap.get(index) ?? '0'
-    const subnetPart = subnetPartMap.get(index) ?? '0'
-    const ipHex = Number.parseInt(ipPart, 16)
-    const subnetHex = Number.parseInt(subnetPart, 16)
-
+    const subnetSegment = subnetIterator.next().value
+    const ipValue = Number.parseInt(ipSegment, 16)
+    const subnetValue = Number.parseInt(subnetSegment ?? '0', 16)
     const bitsToCheck = Math.min(16, mask - bitsChecked)
     const bitMask = (0xFFFF << (16 - bitsToCheck)) & 0xFFFF
 
-    if ((ipHex & bitMask) !== (subnetHex & bitMask)) {
+    if ((ipValue & bitMask) !== (subnetValue & bitMask)) {
       return false
     }
 
