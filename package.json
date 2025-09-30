@@ -75,7 +75,6 @@
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.55.0",
-    "@rollup/rollup-darwin-arm64": "^4.52.3",
     "@types/basic-auth": "^1.1.8",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
@@ -107,8 +106,5 @@
     "test": "tests"
   },
   "author": "Bill Church",
-  "type": "module",
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.50.2"
-  }
+  "type": "module"
 }
