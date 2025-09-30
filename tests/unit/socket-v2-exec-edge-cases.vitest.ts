@@ -12,19 +12,18 @@ import {
   trackEmittedEvents,
   waitForAsync
 } from './socket-v2-test-utils.js'
-import { createMockServices, createMockStore } from '../test-utils.js'
+import { createMockServices } from '../test-utils.js'
 
 describe('Socket V2 Exec Edge Cases', () => {
-  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown, mockStore: unknown
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown
 
   beforeEach(() => {
     io = createMockIO()
     mockSocket = createMockSocket('exec-edge-socket-id')
     mockConfig = createMockConfig()
     mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true, execSucceeds: true })
-    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, mockServices, mockStore)
+    socketHandler(io, mockConfig, mockServices)
   })
 
   it('exec: non-string command → ssherror', async () => {

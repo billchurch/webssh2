@@ -11,22 +11,20 @@ import {
   createMockIO,
   createMockSocket,
   createMockSocketConfig,
-  createMockServices,
-  createMockStore
+  createMockServices
 } from '../test-utils.js'
 import { TEST_PASSWORDS } from '../test-constants.js'
 
 describe('Socket V2 Exec Handler', () => {
-  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown, mockStore: unknown
+  let io: unknown, mockSocket: unknown, mockConfig: unknown, mockServices: unknown
 
   beforeEach(() => {
     io = createMockIO()
     mockSocket = createMockSocket()
     mockConfig = createMockSocketConfig()
     mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true, execSucceeds: true })
-    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, mockServices, mockStore)
+    socketHandler(io, mockConfig, mockServices)
   })
 
   it('should handle exec requests without errors', async () => {

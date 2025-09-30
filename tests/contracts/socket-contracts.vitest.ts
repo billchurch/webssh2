@@ -5,8 +5,7 @@ import {
   createMockIO,
   createMockSocket,
   createMockSocketConfig,
-  createMockServices,
-  createMockStore
+  createMockServices
 } from '../test-utils.js'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
 
@@ -37,16 +36,15 @@ interface MockSocket extends EventEmitter {
 }
 
 describe('Socket.IO Contracts', () => {
-  let io: MockIO, mockSocket: MockSocket, mockConfig: unknown, mockServices: unknown, mockStore: unknown
+  let io: MockIO, mockSocket: MockSocket, mockConfig: unknown, mockServices: unknown
 
   beforeEach(() => {
     io = createMockIO() as MockIO
     mockSocket = createMockSocket() as MockSocket
     mockConfig = createMockSocketConfig()
     mockServices = createMockServices({ authSucceeds: true, sshConnectSucceeds: true })
-    mockStore = createMockStore()
 
-    socketHandler(io, mockConfig, mockServices, mockStore)
+    socketHandler(io, mockConfig, mockServices)
   })
 
   it('emits authentication(request_auth) on new connection without basic auth', () => {

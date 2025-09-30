@@ -6,7 +6,6 @@ import { createNamespacedDebug } from './logger.js'
 import { ServiceSocketAdapter } from './socket/adapters/service-socket-adapter.js'
 import type { Config } from './types/config.js'
 import type { Services } from './services/interfaces.js'
-import type { SessionStore } from './state/store.js'
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -22,8 +21,7 @@ const debug = createNamespacedDebug('socket:v2')
 export default function init(
   io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   config: Config,
-  services: Services,
-  store: SessionStore
+  services: Services
 ): void {
   debug('V2 socket init() called - registering connection handler')
   io.on('connection', (socket) => {
@@ -31,7 +29,7 @@ export default function init(
     debug('Using service-based socket adapter')
 
     // ServiceSocketAdapter sets up all handlers in its constructor
-    const serviceAdapter = new ServiceSocketAdapter(socket, config, services, store)
+    const serviceAdapter = new ServiceSocketAdapter(socket, config, services)
     // Keep reference to prevent GC (adapter manages its own lifecycle via socket events)
     void serviceAdapter //NOSONAR
   })
