@@ -32,6 +32,16 @@ interface SocketHandshakeLike {
   address?: unknown
 }
 
+type HeaderValue = string | string[] | undefined
+type NullableString = string | null
+type NullableNumber = number | null
+type ClientDetails = {
+  ip: NullableString
+  port: NullableNumber
+  userAgent: NullableString
+  sourcePort: NullableNumber
+}
+
 export class ServiceSocketAdapter {
   private readonly authPipeline: UnifiedAuthPipeline
   private readonly context: AdapterContext
@@ -136,7 +146,7 @@ export class ServiceSocketAdapter {
 
 function extractClientDetails(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
-): { ip: string | null; port: number | null; userAgent: string | null; sourcePort: number | null } {
+): ClientDetails {
   const handshakeLike = (socket as unknown as { handshake?: SocketHandshakeLike }).handshake
   const headersRecord = handshakeLike?.headers ?? {}
 
@@ -157,7 +167,7 @@ function extractClientDetails(
   return { ip, port, userAgent, sourcePort }
 }
 
-function normaliseForwardedValue(value: string | string[] | undefined): string | null {
+function normaliseForwardedValue(value: HeaderValue): NullableString {
   if (typeof value === 'string' && value !== '') {
     return value.split(',')[0]?.trim() ?? null
   }
@@ -169,7 +179,7 @@ function normaliseForwardedValue(value: string | string[] | undefined): string |
   return null
 }
 
-function parsePort(value: string | string[] | undefined): number | null {
+function parsePort(value: HeaderValue): NullableNumber {
   let portString: string | undefined
   if (typeof value === 'string') {
     portString = value
@@ -192,7 +202,7 @@ function parsePort(value: string | string[] | undefined): number | null {
 function parseSourcePort(
   request: { connection?: { remotePort?: number | null } } | undefined,
   forwardedPort: number | null
-): number | null {
+): NullableNumber {
   if (forwardedPort !== null) {
     return forwardedPort
   }
@@ -201,7 +211,7 @@ function parseSourcePort(
   return typeof remotePort === 'number' ? remotePort : null
 }
 
-function normaliseUserAgent(value: string | string[] | undefined): string | null {
+function normaliseUserAgent(value: HeaderValue): NullableString {
   const MAX_LENGTH = 512
 
   let candidate: string | undefined

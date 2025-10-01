@@ -165,7 +165,6 @@ export default [
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/prefer-as-const': 'error',
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       '@typescript-eslint/naming-convention': [
         'error',
         {

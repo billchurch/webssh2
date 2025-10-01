@@ -43,6 +43,7 @@ interface ReplayPasswordResult {
 }
 
 type WritableShellStream = EventEmitter & { write: (data: string) => void }
+type ShellStreamCandidate = (EventEmitter & { write?: (data: string) => void }) | null
 
 interface ValidatedReplayInput {
   password: string
@@ -106,10 +107,14 @@ export function getReplayPassword(
  * @returns Validation result with error message if invalid
  * @pure
  */
+const isWritableShellStream = (stream: ShellStreamCandidate): stream is WritableShellStream => {
+  return stream != null && typeof stream.write === 'function'
+}
+
 export function validateReplayRequest(
   config: Config,
   passwordResult: ReplayPasswordResult,
-  shellStream: (EventEmitter & { write?: (data: string) => void }) | null
+  shellStream: ShellStreamCandidate
 ): Result<ValidatedReplayInput, string> {
   if (!isReplayAllowedByConfig(config)) {
     return err(VALIDATION_MESSAGES.REPLAY_DISABLED)
@@ -125,14 +130,14 @@ export function validateReplayRequest(
     return err(VALIDATION_MESSAGES.NO_REPLAY_PASSWORD)
   }
 
-  if (shellStream == null || typeof shellStream.write !== 'function') {
+  if (!isWritableShellStream(shellStream)) {
     return err(VALIDATION_MESSAGES.NO_ACTIVE_TERMINAL)
   }
-  
+
   return ok({
     password,
     passwordSource: source,
-    shellStream: shellStream as WritableShellStream
+    shellStream
   })
 }
 
