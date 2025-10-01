@@ -11,7 +11,8 @@ export const LOG_EVENT_NAMES = [
   'pty_resize',
   'idle_timeout',
   'policy_block',
-  'error'
+  'error',
+  'credential_replay'
 ] as const
 
 export type LogEventName = typeof LOG_EVENT_NAMES[number]
