@@ -64,9 +64,7 @@ vi.mock('../../../app/socket/adapters/service-socket-authentication.js', () => (
     constructor(private readonly context: AdapterContext) {}
 
     checkInitialAuth(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
   }
 }))
@@ -76,27 +74,19 @@ vi.mock('../../../app/socket/adapters/service-socket-terminal.js', () => ({
     constructor(private readonly context: AdapterContext) {}
 
     handleTerminal(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
 
     handleResize(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
 
     handleData(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
 
     handleExec(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
   }
 }))
@@ -106,15 +96,11 @@ vi.mock('../../../app/socket/adapters/service-socket-control.js', () => ({
     constructor(private readonly context: AdapterContext) {}
 
     handleControl(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
 
     handleDisconnect(): void {
-      if (this.context.socket === undefined) {
-        return
-      }
+      this.context.socket
     }
   }
 }))
