@@ -13,7 +13,12 @@ import type {
 import type { LogLevel } from '../../../app/logging/levels.js'
 import type { LogEventName } from '../../../app/logging/event-catalog.js'
 import type { SocketLogOptions } from '../../../app/logging/socket-logger.js'
-import { TEST_NETWORK, TEST_SECRET, TEST_USER_AGENTS } from '../../test-constants.js'
+import {
+  TEST_NETWORK,
+  TEST_SECRET,
+  TEST_USER_AGENTS,
+  TEST_SOCKET_CONSTANTS
+} from '../../test-constants.js'
 
 type EmitSocketLogArgs = [
   AdapterContext,
@@ -24,6 +29,13 @@ type EmitSocketLogArgs = [
 ]
 
 const emitSocketLogMock = vi.fn<EmitSocketLogArgs, void>()
+
+const {
+  REMOTE_PASSWORD_HEADER,
+  SESSION_CREDENTIALS_KEY,
+  PASSWORD_SOURCE_NONE,
+  SSO_PASSWORD_HEADER
+} = TEST_SOCKET_CONSTANTS
 
 vi.mock('../../../app/logging/socket-logger.js', () => ({
   emitSocketLog: (...args: EmitSocketLogArgs) => {
@@ -42,43 +54,68 @@ class StubAuthPipeline implements Partial<UnifiedAuthPipeline> {
 }
 
 vi.mock('../../../app/auth/auth-pipeline.js', () => ({
-  UnifiedAuthPipeline: vi.fn((request: unknown, _config: unknown) => {
-    void request
-    return new StubAuthPipeline()
-  })
+  UnifiedAuthPipeline: vi.fn(
+    (_request: unknown, _config: unknown) => new StubAuthPipeline()
+  )
 }))
 
 vi.mock('../../../app/socket/adapters/service-socket-authentication.js', () => ({
   ServiceSocketAuthentication: class {
-    constructor(private readonly context: AdapterContext) {
-      void context
-    }
+    constructor(private readonly context: AdapterContext) {}
 
-    checkInitialAuth(): void {}
+    checkInitialAuth(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
+    }
   }
 }))
 
 vi.mock('../../../app/socket/adapters/service-socket-terminal.js', () => ({
   ServiceSocketTerminal: class {
-    constructor(private readonly context: AdapterContext) {
-      void context
+    constructor(private readonly context: AdapterContext) {}
+
+    handleTerminal(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
     }
 
-    handleTerminal(): void {}
-    handleResize(): void {}
-    handleData(): void {}
-    handleExec(): void {}
+    handleResize(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
+    }
+
+    handleData(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
+    }
+
+    handleExec(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
+    }
   }
 }))
 
 vi.mock('../../../app/socket/adapters/service-socket-control.js', () => ({
   ServiceSocketControl: class {
-    constructor(private readonly context: AdapterContext) {
-      void context
+    constructor(private readonly context: AdapterContext) {}
+
+    handleControl(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
     }
 
-    handleControl(): void {}
-    handleDisconnect(): void {}
+    handleDisconnect(): void {
+      if (this.context.socket === undefined) {
+        return
+      }
+    }
   }
 }))
 
@@ -128,7 +165,7 @@ const createConfig = (): Config => ({
     trustedProxies: [],
     headerMapping: {
       username: 'x-user',
-      password: 'x-pass',
+      password: SSO_PASSWORD_HEADER,
       session: 'x-session'
     }
   }
@@ -140,7 +177,8 @@ const createSocket = (): TestSocket => {
   const headers = {
     'user-agent': TEST_USER_AGENTS.SERVICE_SOCKET,
     'x-forwarded-for': TEST_NETWORK.FORWARDED_IP,
-    'x-forwarded-port': String(TEST_NETWORK.FORWARDED_PORT)
+    'x-forwarded-port': String(TEST_NETWORK.FORWARDED_PORT),
+    [REMOTE_PASSWORD_HEADER]: SESSION_CREDENTIALS_KEY
   }
 
   const socket: Partial<TestSocket> = {
@@ -151,7 +189,7 @@ const createSocket = (): TestSocket => {
     },
     request: {
       headers,
-      session: {}
+      session: { [SESSION_CREDENTIALS_KEY]: { passwordSource: PASSWORD_SOURCE_NONE } }
     },
     on: vi.fn(),
     onAny: vi.fn(),

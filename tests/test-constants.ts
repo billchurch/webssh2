@@ -191,6 +191,14 @@ export const TEST_USER_AGENTS = {
   SERVICE_SOCKET: 'TestAgent/5.0' //NOSONAR
 } as const
 
+export const TEST_SOCKET_CONSTANTS = {
+  REMOTE_PASSWORD_HEADER: 'x-remote-pass', //NOSONAR
+  SESSION_CREDENTIALS_KEY: 'session_credentials', //NOSONAR
+  PASSWORD_SOURCE_NONE: 'none', //NOSONAR
+  SSO_PASSWORD_HEADER: 'x-pass', //NOSONAR
+  TARGET_HOST: '10.0.0.5' //NOSONAR
+} as const
+
 // SSH test credentials objects
 export const SSH_TEST_CREDENTIALS = {
   host: 'localhost',

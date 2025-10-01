@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { formatStructuredLog } from '../../../app/logging/formatter.js'
-import { TEST_NETWORK, TEST_USER_AGENTS } from '../../test-constants.js'
+import {
+  TEST_NETWORK,
+  TEST_USER_AGENTS,
+  TEST_SOCKET_CONSTANTS
+} from '../../test-constants.js'
 
 const fixedDate = new Date('2025-01-01T00:00:00.000Z')
 const clock = (): Date => fixedDate
+const { TARGET_HOST } = TEST_SOCKET_CONSTANTS
 
 describe('formatStructuredLog', () => {
   it('formats structured log with context and data', () => {
@@ -20,7 +25,7 @@ describe('formatStructuredLog', () => {
           clientPort: 44321,
           clientSourcePort: TEST_NETWORK.FORWARDED_PORT,
           userAgent: TEST_USER_AGENTS.DEFAULT,
-          targetHost: '10.0.0.5',
+          targetHost: TARGET_HOST,
           targetPort: 22,
           protocol: 'ssh',
           subsystem: 'shell',
