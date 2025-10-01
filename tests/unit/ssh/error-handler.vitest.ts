@@ -32,6 +32,7 @@ describe('extractErrorMessage', () => {
   })
   
   it('uses toString for Error without message', () => {
+    // eslint-disable-next-line unicorn/error-message
     const err = new Error()
     expect(extractErrorMessage(err)).toBe('Error')
   })

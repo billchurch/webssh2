@@ -17,6 +17,9 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { SessionStore } from '../app/state/store.js'
 import type { ServiceDependencies } from '../app/services/interfaces.js'
+import type { StructuredLogger, StructuredLoggerOptions } from '../app/logging/structured-logger.js'
+import type { StructuredLogInput } from '../app/logging/structured-log.js'
+import type { LogLevel } from '../app/logging/levels.js'
 import type { TestEnvironment, AuthStatus } from './types/index.js'
 import { TEST_USERNAME, TEST_SSH, TEST_SECRET } from './test-constants.js'
 import { DEFAULTS } from '../app/constants.js'
@@ -25,6 +28,35 @@ import { ok, err, isErr } from '../app/utils/result.js'
 
 // Re-export Result utility functions for test use
 export { ok, err, isErr } from '../app/utils/result.js'
+
+export interface StructuredLoggerStub extends StructuredLogger {
+  readonly entries: Array<{ level: LogLevel; entry: Omit<StructuredLogInput, 'level'> }>
+}
+
+export function createStructuredLoggerStub(): StructuredLoggerStub {
+  const entries: Array<{ level: LogLevel; entry: Omit<StructuredLogInput, 'level'> }> = []
+
+  const record = (level: LogLevel, entry: Omit<StructuredLogInput, 'level'>): ReturnType<typeof ok<void>> => {
+    entries.push({ level, entry: cloneEntry(entry) })
+    return ok(undefined)
+  }
+
+  const cloneEntry = (entry: Omit<StructuredLogInput, 'level'>): Omit<StructuredLogInput, 'level'> => ({
+    ...entry,
+    context: entry.context === undefined ? undefined : { ...entry.context },
+    data: entry.data === undefined ? undefined : { ...entry.data }
+  })
+
+  return {
+    entries,
+    log: ({ level, ...rest }) => record(level, rest),
+    debug: (entry) => record('debug', entry),
+    info: (entry) => record('info', entry),
+    warn: (entry) => record('warn', entry),
+    error: (entry) => record('error', entry),
+    flush: () => ok(undefined)
+  }
+}
 
 /**
  * Creates a mock SessionStore for testing
@@ -77,7 +109,20 @@ export function createMockServices(options: {
     ssh: {
       connect: vi.fn(() => Promise.resolve(
         sshConnectSucceeds
-          ? { ok: true, value: { id: 'test-conn-id', sessionId: 'test-session', status: 'connected', createdAt: Date.now(), lastActivity: Date.now() } }
+          ? {
+              ok: true,
+              value: {
+                id: 'test-conn-id',
+                sessionId: 'test-session',
+                client: new EventEmitter(),
+                status: 'connected',
+                createdAt: Date.now(),
+                lastActivity: Date.now(),
+                host: TEST_SSH.HOST,
+                port: TEST_SSH.PORT,
+                username: TEST_USERNAME
+              }
+            }
           : { ok: false, error: new Error('SSH connection failed') }
       )),
       shell: vi.fn(() => Promise.resolve(
@@ -122,6 +167,10 @@ export function createMockServices(options: {
  * Creates mock ServiceDependencies for testing
  */
 export function createMockDependencies(): ServiceDependencies {
+  const loggerFactory = vi.fn((_options?: StructuredLoggerOptions) => {
+    return createStructuredLoggerStub()
+  })
+
   return {
     config: {
       session: {
@@ -161,7 +210,8 @@ export function createMockDependencies(): ServiceDependencies {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn()
-    }
+    },
+    createStructuredLogger: loggerFactory
   }
 }
 
@@ -278,9 +328,9 @@ export function setupMockStoreState(mockStore: SessionStore, state: unknown) {
  */
 export function setupMockStoreStates(mockStore: SessionStore, ...states: unknown[]) {
   const mockObj = mockStore.getState as any
-  states.forEach((state) => {
+  for (const state of states) {
     mockObj.mockReturnValueOnce(state)
-  })
+  }
   if (states.length > 0) {
     mockObj.mockReturnValue(states[states.length - 1])
   }
@@ -310,9 +360,9 @@ function getTestEnvironmentVariables(): string[] {
  * Should be called in beforeEach/afterEach hooks across all test files
  */
 export function cleanupEnvironmentVariables(): void {
-  getTestEnvironmentVariables().forEach(key => {
+  for (const key of getTestEnvironmentVariables()) {
     delete process.env[key]
-  })
+  }
 }
 
 /**
@@ -321,9 +371,9 @@ export function cleanupEnvironmentVariables(): void {
  */
 export function storeEnvironmentVariables(): TestEnvironment {
   const originalEnv: TestEnvironment = {}
-  getTestEnvironmentVariables().forEach(key => {
+  for (const key of getTestEnvironmentVariables()) {
     originalEnv[key] = process.env[key]
-  })
+  }
   return originalEnv
 }
 
@@ -336,11 +386,11 @@ export function restoreEnvironmentVariables(originalEnv: TestEnvironment): void 
   cleanupEnvironmentVariables()
 
   // Then restore original values
-  Object.entries(originalEnv).forEach(([key, value]) => {
+  for (const [key, value] of Object.entries(originalEnv)) {
     if (value !== undefined) {
       process.env[key] = value
     }
-  })
+  }
 }
 
 // =============================================================================

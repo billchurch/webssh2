@@ -89,7 +89,8 @@ void describe('createRouteErrorMessage', () => {
   })
   
   it('handles empty error message', () => {
-    const error = new Error('')
+    // eslint-disable-next-line unicorn/error-message
+    const error = new Error('') 
     
     const message = createRouteErrorMessage(error)
     

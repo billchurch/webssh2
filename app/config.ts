@@ -131,6 +131,17 @@ export async function loadConfigAsync(): Promise<Config> {
   return finalConfig
 }
 
+/**
+ * Module-level singleton for configuration management.
+ *
+ * Lifecycle:
+ * - Initially null until first getConfig() call
+ * - Populated once via loadConfigAsync() on first access
+ * - Cached for subsequent calls to avoid redundant file I/O
+ * - Reset via resetConfigForTesting() in test environments only
+ *
+ * @internal
+ */
 let configInstance: Config | null = null
 let configLoadPromise: Promise<Config> | null = null
 

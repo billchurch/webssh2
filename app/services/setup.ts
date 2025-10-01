@@ -7,7 +7,8 @@ import { Container, TOKENS } from './container.js'
 import {
   createLogger,
   createSessionStore,
-  createServices
+  createServices,
+  createServiceStructuredLogger
 } from './factory.js'
 import type { ExtendedServiceDependencies } from './factory.js'
 import debug from 'debug'
@@ -80,7 +81,8 @@ function createDependencies(container: Container): ExtendedServiceDependencies {
   return {
     config: container.resolve(TOKENS.Config),
     logger: container.resolve(TOKENS.Logger),
-    store: container.resolve(TOKENS.SessionStore)
+    store: container.resolve(TOKENS.SessionStore),
+    createStructuredLogger: createServiceStructuredLogger
   }
 }
 

@@ -5,10 +5,20 @@ import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
 import { ConfigError } from '../app/errors.js'
 import { setupTestEnvironment } from './test-utils.js'
+import type { ConfigFileManager } from './test-utils.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
 
 // Ensure clean state at module load
 resetConfigForTesting()
+
+const requireConfigManager = (
+  env: ReturnType<typeof setupTestEnvironment>
+): ConfigFileManager => {
+  if (env.configManager === undefined) {
+    throw new Error('Expected config manager in test environment')
+  }
+  return env.configManager
+}
 
 describe('Config Module - Async Tests', () => {
   let testEnv: ReturnType<typeof setupTestEnvironment>
@@ -25,7 +35,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('loadConfigAsync loads default config when config.json is missing', async () => {
-    const configManager = testEnv.configManager!
+    const configManager = requireConfigManager(testEnv)
     // Ensure config.json doesn't exist
     if (configManager.configExists()) {
       // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -43,6 +53,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('loadConfigAsync loads and merges custom config from config.json', async () => {
+    const configManager = requireConfigManager(testEnv)
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port1
@@ -55,7 +66,7 @@ describe('Config Module - Async Tests', () => {
       }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
 
     const config = await loadConfigAsync()
 
@@ -71,13 +82,14 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('loadConfigAsync overrides port with PORT environment variable', async () => {
+    const configManager = requireConfigManager(testEnv)
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port1
       }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
     process.env.PORT = '4444'
 
     const config = await loadConfigAsync()
@@ -87,8 +99,10 @@ describe('Config Module - Async Tests', () => {
 
   it('loadConfigAsync throws error for malformed JSON', async () => {
     // Write invalid JSON
+    const configManager = requireConfigManager(testEnv)
+    const configPath = configManager.configPath
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    fs.writeFileSync(testEnv.configManager!.configPath, '{ invalid json }')
+    fs.writeFileSync(configPath, '{ invalid json }')
 
     // Should throw ConfigError for malformed JSON
     try {
@@ -109,6 +123,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('getConfig works with custom configuration file', async () => {
+    const configManager = requireConfigManager(testEnv)
     const customConfig = {
       listen: {
         port: TEST_CUSTOM_PORTS.port2
@@ -120,7 +135,7 @@ describe('Config Module - Async Tests', () => {
       }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
 
     const config = await getConfig()
 
@@ -130,6 +145,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('async config loading uses literal JSON values (no env var substitution)', async () => {
+    const configManager = requireConfigManager(testEnv)
     // Native JSON parsing doesn't support environment variable substitution
     // This tests that literal values are preserved
     process.env.TEST_SECRET = TEST_SECRET_LONG
@@ -140,7 +156,7 @@ describe('Config Module - Async Tests', () => {
       }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
 
     try {
       const config = await loadConfigAsync()
@@ -153,6 +169,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('async config loading validates configuration schema', async () => {
+    const configManager = requireConfigManager(testEnv)
     const validConfig = {
       listen: {
         ip: TEST_IPS.LOCALHOST,
@@ -164,7 +181,7 @@ describe('Config Module - Async Tests', () => {
       }
     }
 
-    testEnv.configManager!.writeConfig(validConfig)
+    configManager.writeConfig(validConfig)
 
     const config = await loadConfigAsync()
 
@@ -175,6 +192,7 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('async config preserves all SSH algorithms', async () => {
+    const configManager = requireConfigManager(testEnv)
     const customConfig = {
       ssh: {
         algorithms: {
@@ -185,7 +203,7 @@ describe('Config Module - Async Tests', () => {
       }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
 
     const config = await loadConfigAsync()
 
@@ -200,11 +218,12 @@ describe('Config Module - Async Tests', () => {
   })
 
   it('concurrent calls to getConfig return the same instance', async () => {
+    const configManager = requireConfigManager(testEnv)
     const customConfig = {
       listen: { port: TEST_CUSTOM_PORTS.port3 }
     }
 
-    testEnv.configManager!.writeConfig(customConfig)
+    configManager.writeConfig(customConfig)
 
     // Make multiple concurrent calls
     const [config1, config2, config3] = await Promise.all([

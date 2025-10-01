@@ -4,6 +4,9 @@ import type { SessionId } from '../../types/branded.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildTerminalDefaults, createConnectionIdentifier } from './ssh-config.js'
+import { emitSocketLog } from '../../logging/socket-logger.js'
+import type { SocketLogOptions } from '../../logging/socket-logger.js'
+import type { LogLevel } from '../../logging/levels.js'
 
 interface TerminalConfig {
   sessionId: SessionId
@@ -53,13 +56,26 @@ export class ServiceSocketTerminal {
     if (terminalResult.ok && terminalResult.value !== null) {
       const result = this.context.services.terminal.resize(this.context.state.sessionId, dimensions)
 
-      if (!result.ok) {
+      if (result.ok) {
+        emitSocketLog(this.context, 'info', 'pty_resize', 'Terminal resized', {
+          status: 'success',
+          data: { rows: dimensions.rows, cols: dimensions.cols }
+        })
+      } else {
         this.context.debug('Resize failed:', result.error)
+        emitSocketLog(this.context, 'warn', 'pty_resize', 'Terminal resize failed', {
+          status: 'failure',
+          reason: result.error.message,
+          data: { rows: dimensions.rows, cols: dimensions.cols }
+        })
       }
     } else {
       this.context.debug('Resize ignored: Terminal not created yet for session', this.context.state.sessionId)
       this.context.state.initialTermSettings.rows = dimensions.rows
       this.context.state.initialTermSettings.cols = dimensions.cols
+      emitSocketLog(this.context, 'debug', 'pty_resize', 'Resize deferred until terminal is ready', {
+        data: { rows: dimensions.rows, cols: dimensions.cols }
+      })
       return
     }
 
@@ -78,6 +94,11 @@ export class ServiceSocketTerminal {
       return
     }
 
+    const command =
+      typeof request === 'object' && request !== null && 'command' in (request as Record<string, unknown>)
+        ? String((request as { command: string }).command)
+        : ''
+
     try {
       const connectionId = createConnectionIdentifier(this.context)
       if (connectionId === null) {
@@ -85,23 +106,11 @@ export class ServiceSocketTerminal {
         return
       }
 
-      const result = await this.context.services.ssh.exec(
-        connectionId,
-        (request as { command: string }).command
-      )
-
-      if (result.ok) {
-        this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, result.value.stdout)
-
-        if (result.value.stderr !== '') {
-          this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, result.value.stderr)
-        }
-      } else {
-        this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error.message)
-      }
+      await this.performExec(command, connectionId)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Exec failed'
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, message)
+      this.logExecFailure(command, 0, message, 'error')
     }
   }
 
@@ -178,5 +187,66 @@ export class ServiceSocketTerminal {
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.CONNECTION_CLOSED)
       this.context.socket.disconnect()
     })
+  }
+
+  private logExecSuccess(
+    command: string,
+    durationMs: number,
+    result: { stdout: string; stderr: string; code: number }
+  ): void {
+    const status = result.code === 0 ? 'success' : 'failure'
+    const level: LogLevel = status === 'success' ? 'info' : 'warn'
+    const logOptions: SocketLogOptions = {
+      status,
+      subsystem: 'exec',
+      durationMs,
+      bytesOut: Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr),
+      bytesIn: Buffer.byteLength(command),
+      ...(status === 'failure' ? { reason: `Command exited with code ${result.code}` } : {}),
+      data: {
+        command,
+        exit_code: result.code
+      }
+    }
+
+    emitSocketLog(this.context, level, 'ssh_command', 'SSH exec command completed', logOptions)
+  }
+
+  private logExecFailure(command: string, durationMs: number, reason: string, level: LogLevel): void {
+    emitSocketLog(this.context, level, 'ssh_command', 'SSH exec command failed', {
+      status: 'failure',
+      subsystem: 'exec',
+      durationMs,
+      reason,
+      data: {
+        command
+      }
+    })
+  }
+
+  private async performExec(
+    command: string,
+    connectionId: ReturnType<typeof createConnectionIdentifier>
+  ): Promise<void> {
+    if (connectionId === null) {
+      return
+    }
+
+    const start = Date.now()
+    const result = await this.context.services.ssh.exec(connectionId, command)
+
+    if (result.ok) {
+      this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, result.value.stdout)
+
+      if (result.value.stderr !== '') {
+        this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, result.value.stderr)
+      }
+
+      this.logExecSuccess(command, Date.now() - start, result.value)
+      return
+    }
+
+    this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, result.error.message)
+    this.logExecFailure(command, Date.now() - start, result.error.message, 'warn')
   }
 }

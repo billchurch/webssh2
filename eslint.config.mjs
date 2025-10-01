@@ -4,6 +4,7 @@ import securityPlugin from 'eslint-plugin-security'
 import prettierConfig from 'eslint-config-prettier'
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
+import unicornPlugin from 'eslint-plugin-unicorn'
 
 export default [
   eslint.configs.recommended,
@@ -36,6 +37,7 @@ export default [
     plugins: {
       node: nodePlugin,
       security: securityPlugin,
+      unicorn: unicornPlugin,
     },
     rules: {
       'no-var': 'error',
@@ -45,6 +47,7 @@ export default [
       'prefer-template': 'error',
       'template-curly-spacing': ['error', 'never'],
       'node/file-extension-in-import': ['error', 'always'],
+      'no-new': 'error',
       'security/detect-buffer-noassert': 'error',
       'security/detect-child-process': 'warn',
       'security/detect-disable-mustache-escape': 'error',
@@ -69,6 +72,16 @@ export default [
       'prefer-object-spread': 'error',
       'no-nested-ternary': 'error',
       'no-template-curly-in-string': 'error',
+      'unicorn/no-negated-condition': 'error',
+      'unicorn/no-array-for-each': 'error',
+      'unicorn/prefer-includes': 'error',
+      'unicorn/prefer-string-slice': 'error',
+      'unicorn/explicit-length-check': 'error',
+      'unicorn/error-message': 'error',
+      'unicorn/prefer-top-level-await': 'error',
+      'unicorn/prefer-node-protocol': 'error',
+      'unicorn/prefer-modern-dom-apis': 'error',
+      'unicorn/consistent-function-scoping': 'warn',
     },
   },
   {
@@ -101,6 +114,7 @@ export default [
         },
       ],
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         {
@@ -151,7 +165,6 @@ export default [
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/prefer-as-const': 'error',
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       '@typescript-eslint/naming-convention': [
         'error',
         {
@@ -205,4 +218,5 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+
 ]

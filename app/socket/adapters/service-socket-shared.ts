@@ -11,6 +11,7 @@ import type {
   InterServerEvents,
   SocketData
 } from '../../types/contracts/v1/socket.js'
+import type { StructuredLogger } from '../../logging/structured-logger.js'
 
 export interface SSH2Stream extends Duplex {
   setWindow?(rows: number, cols: number): void
@@ -23,6 +24,13 @@ export interface AdapterSharedState {
   storedPassword: string | null
   originalAuthMethod: AuthMethod | null
   initialTermSettings: { term?: string; rows?: number; cols?: number }
+  clientIp: string | null
+  clientPort: number | null
+  clientSourcePort: number | null
+  targetHost: string | null
+  targetPort: number | null
+  username: string | null
+  userAgent: string | null
 }
 
 export interface AdapterContext {
@@ -32,6 +40,7 @@ export interface AdapterContext {
   authPipeline: UnifiedAuthPipeline
   state: AdapterSharedState
   debug: (...args: unknown[]) => void
+  logger: StructuredLogger
 }
 
 export function createAdapterSharedState(): AdapterSharedState {
@@ -41,6 +50,13 @@ export function createAdapterSharedState(): AdapterSharedState {
     shellStream: null,
     storedPassword: null,
     originalAuthMethod: null,
-    initialTermSettings: {}
+    initialTermSettings: {},
+    clientIp: null,
+    clientPort: null,
+    clientSourcePort: null,
+    targetHost: null,
+    targetPort: null,
+    username: null,
+    userAgent: null
   }
 }

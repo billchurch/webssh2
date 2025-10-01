@@ -22,6 +22,8 @@ import { createInitialState } from '../state/types.js'
 import { Client as SSH2Client } from 'ssh2'
 import type { Duplex } from 'node:stream'
 import debug from 'debug'
+import { createAppStructuredLogger } from '../logger.js'
+import type { StructuredLogger, StructuredLoggerOptions } from '../logging/structured-logger.js'
 
 const factoryLogger = debug('webssh2:services:factory')
 
@@ -116,6 +118,16 @@ export function createLogger(
   return new DefaultLogger(logNamespace)
 }
 
+export function createServiceStructuredLogger(
+  options: StructuredLoggerOptions = {}
+): StructuredLogger {
+  const namespace = options.namespace ?? 'webssh2:services'
+  return createAppStructuredLogger({
+    ...options,
+    namespace
+  })
+}
+
 /**
  * Create a session store
  */
@@ -142,7 +154,8 @@ export function bootstrapServices(config: Config): {
   const deps: ExtendedServiceDependencies = {
     config,
     logger,
-    store
+    store,
+    createStructuredLogger: createServiceStructuredLogger
   }
 
   // Create services
@@ -175,7 +188,10 @@ export function createMockServices(): Services {
     client: new SSH2Client(),
     status: 'connected',
     createdAt: Date.now(),
-    lastActivity: Date.now()
+    lastActivity: Date.now(),
+    host: 'mock-host',
+    port: 22,
+    username: 'testuser'
   }
 
   const mockTerminal: Terminal = {

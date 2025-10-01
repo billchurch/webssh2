@@ -53,7 +53,11 @@ it('router registers expected paths and methods', () => {
   const assertRoute = (path: string, method: string): void => {
     expect(hasPath(path)).toBeTruthy()
     // eslint-disable-next-line security/detect-object-injection
-    expect(byPath[path]!.includes(method)).toBeTruthy()
+    const methods = byPath[path]
+    if (methods === undefined) {
+      throw new Error(`Route ${path} missing from router map`)
+    }
+    expect(methods.includes(method)).toBeTruthy()
   }
 
   assertRoute('/', 'get')

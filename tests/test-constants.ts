@@ -174,6 +174,31 @@ export const TEST_SSH: TestSSHConstants = {
   }
 } as const
 
+export const TEST_NETWORK = {
+  LOOPBACK_IP: '127.0.0.1', //NOSONAR
+  CLIENT_CONTEXT_IP: '198.51.100.1', //NOSONAR
+  FORWARDED_IP: '203.0.113.5', //NOSONAR
+  HANDSHAKE_IP: '203.0.113.10', //NOSONAR
+  SSH_TARGET_IP: '192.168.1.19', //NOSONAR
+  FORWARDED_PORT: 51234
+} as const
+
+export const TEST_USER_AGENTS = {
+  DEFAULT: 'TestAgent/1.0', //NOSONAR
+  BLOCKED: 'BlockedAgent/2.0', //NOSONAR
+  NO_PASSWORD: 'NoPasswordAgent/3.0', //NOSONAR
+  WRITE_FAIL: 'WriteFail/4.0', //NOSONAR
+  SERVICE_SOCKET: 'TestAgent/5.0' //NOSONAR
+} as const
+
+export const TEST_SOCKET_CONSTANTS = {
+  REMOTE_PASSWORD_HEADER: 'x-remote-pass', //NOSONAR
+  SESSION_CREDENTIALS_KEY: 'session_credentials', //NOSONAR
+  PASSWORD_SOURCE_NONE: 'none', //NOSONAR
+  SSO_PASSWORD_HEADER: 'x-pass', //NOSONAR
+  TARGET_HOST: '10.0.0.5' //NOSONAR
+} as const
+
 // SSH test credentials objects
 export const SSH_TEST_CREDENTIALS = {
   host: 'localhost',

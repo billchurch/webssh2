@@ -131,12 +131,28 @@ const setupParentChild = (container: Container): { token: ReturnType<typeof crea
 }
 
 // Error factory helpers
-const createErrorFactory = (): (() => never) => (): never => {
+function throwFactoryError(): never {
   throw new Error('Factory error')
 }
 
-const createAsyncErrorFactory = (): (() => Promise<never>) => (): Promise<never> => {
+function createErrorFactory(): () => never {
+  return throwFactoryError
+}
+
+function rejectAsyncFactory(): Promise<never> {
   return Promise.reject(new Error('Async factory error'))
+}
+
+function createAsyncErrorFactory(): () => Promise<never> {
+  return rejectAsyncFactory
+}
+
+function resolveHelloWorld(): string {
+  return 'Hello, World!'
+}
+
+function resolveSyncResult(): string {
+  return 'Sync Result'
 }
 
 // Test suite
@@ -150,9 +166,7 @@ describe('Container', () => {
   describe('basic registration and resolution', () => {
     it('should register and resolve factory', () => {
       const token = createToken<string>('test-string')
-      const factory = (): string => 'Hello, World!'
-
-      container.register(token, factory)
+      container.register(token, resolveHelloWorld)
       const result = container.resolve(token)
 
       expect(result).toBe('Hello, World!')
@@ -218,9 +232,7 @@ describe('Container', () => {
 
     it('should fall back to sync factory in async resolve', async () => {
       const token = createToken<string>('sync-in-async')
-      const factory = (): string => 'Sync Result'
-
-      container.register(token, factory)
+      container.register(token, resolveSyncResult)
       const result = await container.resolveAsync(token)
 
       expect(result).toBe('Sync Result')

@@ -4,6 +4,7 @@
 
 import type { SessionId, ConnectionId, UserId } from '../types/branded.js'
 import type { Result, SessionState } from '../state/types.js'
+import type { StructuredLogger, StructuredLoggerOptions } from '../logging/structured-logger.js'
 // import type { AuthCredentials } from '../types/contracts/v1/socket.js' // Not currently used
 import type { Config } from '../types/config.js'
 import type { Client as SSH2Client } from 'ssh2'
@@ -60,6 +61,9 @@ export interface SSHConnection {
   status: 'connecting' | 'connected' | 'disconnected' | 'error'
   createdAt: number
   lastActivity: number
+  host: string
+  port: number
+  username?: string
 }
 
 /**
@@ -274,4 +278,5 @@ export interface Services {
 export interface ServiceDependencies {
   config: Config
   logger: Logger
+  createStructuredLogger: (options?: StructuredLoggerOptions) => StructuredLogger
 }
