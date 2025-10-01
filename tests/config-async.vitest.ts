@@ -4,8 +4,7 @@ import { describe, it, beforeEach, afterEach, expect } from 'vitest'
 import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
 import { ConfigError } from '../app/errors.js'
-import { setupTestEnvironment } from './test-utils.js'
-import type { ConfigFileManager } from './test-utils.js'
+import { setupTestEnvironment, type ConfigFileManager } from './test-utils.js'
 import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
 
 // Ensure clean state at module load

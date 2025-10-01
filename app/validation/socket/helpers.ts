@@ -2,8 +2,12 @@ import type { Result } from '../../types/result.js'
 import validator from 'validator'
 import { ENV_LIMITS, VALIDATION_LIMITS } from '../../constants/index.js'
 import { safeGet, isRecord } from '../../utils/safe-property-access.js'
-import type { FieldDescriptor, DimensionFieldDescriptor, DimensionField } from './fields.js'
-import { ENV_KEY_PATTERN } from './fields.js'
+import {
+  ENV_KEY_PATTERN,
+  type FieldDescriptor,
+  type DimensionFieldDescriptor,
+  type DimensionField
+} from './fields.js'
 
 export const ensureRecord = (
   value: unknown,

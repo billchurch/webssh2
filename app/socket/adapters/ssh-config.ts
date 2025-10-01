@@ -1,7 +1,6 @@
 import type { AuthCredentials, TerminalSettings } from '../../types/contracts/v1/socket.js'
 import type { Config } from '../../types/config.js'
-import type { SessionId } from '../../types/branded.js'
-import { createConnectionId } from '../../types/branded.js'
+import { createConnectionId, type SessionId } from '../../types/branded.js'
 import type { Services } from '../../services/interfaces.js'
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
 import type { AdapterContext } from './service-socket-shared.js'

@@ -5,8 +5,7 @@
  * Centralizes common V2-specific test operations
  */
 
-import type { Page, Response } from '@playwright/test'
-import { expect } from '@playwright/test'
+import { expect, type Page, type Response } from '@playwright/test'
 import { TIMEOUTS } from './constants.js'
 
 /**

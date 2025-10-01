@@ -75,6 +75,26 @@ Environment variables (all prefixed `WEBSSH2_LOGGING_`):
 
 Configuration is parsed through the existing env-mapper, validated via zod schemas, and surfaced through the DI container.
 
+### Runtime Controls (Phase 2)
+
+Structured logging can now be tuned at runtime through `logging` entries in the primary config (`config.json` or environment overrides):
+
+- `logging.minimumLevel`: adjusts the inclusive severity threshold across every structured logger.
+- `logging.controls.sampling`: accepts a `defaultSampleRate` and optional `rules[]` keyed by event name (or `*`) to drop high-volume events deterministically.
+- `logging.controls.rateLimit`: provides `rules[]` with `limit`, `intervalMs`, and optional `burst` tokens for per-event or wildcard throttling.
+- `logging.reload`: toggles hot reloading for logging options; when enabled the runtime will adopt new sampling/rate limit settings without restart.
+
+Environment overrides keep these controls in sync without touching `config.json`:
+
+- `WEBSSH2_LOGGING_LEVEL` → `logging.minimumLevel`
+- `WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE` → `logging.controls.sampling.defaultSampleRate`
+- `WEBSSH2_LOGGING_SAMPLING_RULES` → `logging.controls.sampling.rules` (JSON array)
+- `WEBSSH2_LOGGING_RATE_LIMIT_RULES` → `logging.controls.rateLimit.rules` (JSON array)
+- `WEBSSH2_LOGGING_RELOAD_ENABLED` → `logging.reload.enabled`
+- `WEBSSH2_LOGGING_RELOAD_INTERVAL_MS` → `logging.reload.intervalMs`
+
+The stdout transport now enforces a bounded in-memory queue (default 1000 events). When the queue is full, entries are dropped with `TransportBackpressureError`; `StructuredLogger#snapshotMetrics()` exposes counters for published, sampled, rate-limited, and queue-dropped events to aid operational dashboards.
+
 ## Implementation Milestones
 1. Replace the current `Logger` interface with a structured logger accepting `{ level, event, data }`.
 2. Implement shared utilities for timestamps, correlation IDs, byte counters, and error serialisation (`Result` based).

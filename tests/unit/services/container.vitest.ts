@@ -3,8 +3,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createContainer, createToken, TOKENS } from '../../../app/services/container.js'
-import type { Container } from '../../../app/services/container.js'
+import {
+  createContainer,
+  createToken,
+  TOKENS,
+  type Container
+} from '../../../app/services/container.js'
 import type { Config } from '../../../app/types/config.js'
 import { TEST_SECRET } from '../../test-constants.js'
 

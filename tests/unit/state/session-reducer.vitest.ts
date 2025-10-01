@@ -4,11 +4,10 @@
 
 import { describe, it, expect } from 'vitest'
 import { sessionReducer } from '../../../app/state/reducers/session-reducer.js'
-import { createInitialState } from '../../../app/state/types.js'
+import { createInitialState, type SessionState } from '../../../app/state/types.js'
 import { actions } from '../../../app/state/actions.js'
 import { createSessionId, createUserId, createConnectionId } from '../../../app/types/branded.js'
 import { TEST_USERNAME, TEST_SSH } from '../../test-constants.js'
-import type { SessionState } from '../../../app/state/types.js'
 
 // Reusable test helpers
 const createTestState = (overrides: Partial<SessionState> = {}): SessionState => {

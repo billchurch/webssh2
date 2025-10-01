@@ -27,7 +27,7 @@ import type { Result } from '../app/types/result.js'
 import { ok, err, isErr } from '../app/utils/result.js'
 
 // Re-export Result utility functions for test use
-export { ok, err, isErr } from '../app/utils/result.js'
+export { ok, err, isErr }
 
 export interface StructuredLoggerStub extends StructuredLogger {
   readonly entries: Array<{ level: LogLevel; entry: Omit<StructuredLogInput, 'level'> }>

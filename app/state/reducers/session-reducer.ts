@@ -2,13 +2,12 @@
  * Root session reducer combining all sub-reducers
  */
 
-import type { SessionState } from '../types.js'
+import { createInitialState, type SessionState } from '../types.js'
 import type { SessionAction } from '../actions.js'
 import { authReducer } from './auth-reducer.js'
 import { connectionReducer } from './connection-reducer.js'
 import { terminalReducer } from './terminal-reducer.js'
 import { metadataReducer } from './metadata-reducer.js'
-import { createInitialState } from '../types.js'
 
 /**
  * Main session reducer - combines all sub-reducers

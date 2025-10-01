@@ -2,7 +2,14 @@
 // Shared default configuration object
 
 import crypto from 'node:crypto'
-import type { Config } from '../types/config.js'
+import type {
+  Config,
+  LoggingConfig,
+  LoggingControlsConfig,
+  LoggingSamplingConfig,
+  LoggingRateLimitConfig,
+  LoggingReloadConfig
+} from '../types/config.js'
 import { DEFAULTS } from '../constants.js'
 
 /**
@@ -91,6 +98,13 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
       session: DEFAULTS.SSO_HEADERS.SESSION,
     },
   },
+  logging: {
+    namespace: 'webssh2:app',
+    minimumLevel: 'info',
+    reload: {
+      enabled: false,
+    },
+  },
 }
 
 /**
@@ -101,6 +115,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
 export function createCompleteDefaultConfig(sessionSecret?: string): Config {
   // Generate a secure secret if none provided
   const secret = sessionSecret ?? crypto.randomBytes(32).toString('hex')
+  const loggingConfig = cloneLoggingConfig(DEFAULT_CONFIG_BASE.logging)
   return {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
@@ -127,5 +142,88 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
       trustedProxies: [...DEFAULT_CONFIG_BASE.sso.trustedProxies],
       headerMapping: { ...DEFAULT_CONFIG_BASE.sso.headerMapping },
     },
+    ...(loggingConfig === undefined ? {} : { logging: loggingConfig })
+  }
+}
+
+function cloneLoggingConfig(config: LoggingConfig | undefined): LoggingConfig | undefined {
+  if (config === undefined) {
+    return undefined
+  }
+
+  const clonedControls = cloneLoggingControls(config.controls)
+  const clonedReload = cloneLoggingReload(config.reload)
+
+  return {
+    ...(config.namespace === undefined ? {} : { namespace: config.namespace }),
+    ...(config.minimumLevel === undefined ? {} : { minimumLevel: config.minimumLevel }),
+    ...(clonedControls === undefined ? {} : { controls: clonedControls }),
+    ...(clonedReload === undefined ? {} : { reload: clonedReload })
+  }
+}
+
+function cloneLoggingControls(
+  controls: LoggingControlsConfig | undefined
+): LoggingControlsConfig | undefined {
+  if (controls === undefined) {
+    return undefined
+  }
+
+  const sampling = cloneLoggingSampling(controls.sampling)
+  const rateLimit = cloneLoggingRateLimit(controls.rateLimit)
+
+  if (sampling === undefined && rateLimit === undefined) {
+    return {}
+  }
+
+  return {
+    ...(sampling === undefined ? {} : { sampling }),
+    ...(rateLimit === undefined ? {} : { rateLimit })
+  }
+}
+
+function cloneLoggingSampling(
+  sampling: LoggingSamplingConfig | undefined
+): LoggingSamplingConfig | undefined {
+  if (sampling === undefined) {
+    return undefined
+  }
+
+  return {
+    ...(sampling.defaultSampleRate === undefined ? {} : { defaultSampleRate: sampling.defaultSampleRate }),
+    ...(sampling.rules === undefined
+      ? {}
+      : {
+          rules: sampling.rules.map((rule) => ({ ...rule }))
+        })
+  }
+}
+
+function cloneLoggingRateLimit(
+  rateLimit: LoggingRateLimitConfig | undefined
+): LoggingRateLimitConfig | undefined {
+  if (rateLimit === undefined) {
+    return undefined
+  }
+
+  return {
+    ...(rateLimit.rules === undefined
+      ? {}
+      : {
+          rules: rateLimit.rules.map((rule) => ({ ...rule }))
+        })
+  }
+}
+
+function cloneLoggingReload(
+  reload: LoggingReloadConfig | undefined
+): LoggingReloadConfig | undefined {
+  if (reload === undefined) {
+    return undefined
+  }
+
+  return {
+    enabled: reload.enabled,
+    ...(reload.intervalMs === undefined ? {} : { intervalMs: reload.intervalMs })
   }
 }

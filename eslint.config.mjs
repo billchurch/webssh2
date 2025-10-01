@@ -45,6 +45,7 @@ export default [
       'prefer-rest-params': 'error',
       'prefer-spread': 'error',
       'prefer-template': 'error',
+      'no-duplicate-imports': 'error',
       'template-curly-spacing': ['error', 'never'],
       'node/file-extension-in-import': ['error', 'always'],
       'no-new': 'error',
@@ -119,9 +120,10 @@ export default [
         'error',
         {
           prefer: 'type-imports',
-          fixStyle: 'separate-type-imports',
+          fixStyle: 'inline-type-imports',
         },
       ],
+      'no-duplicate-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': [
         'error',

@@ -2,6 +2,7 @@
 // Zod schema for configuration validation
 
 import { z } from 'zod'
+import { LOG_EVENT_NAMES } from '../logging/event-catalog.js'
 
 /**
  * IPv4 validation function
@@ -143,11 +144,80 @@ const TerminalSchema = z.object({
 }).optional()
 
 /**
+ * Log level schema shared across logging configuration elements
+ */
+const LogLevelSchema = z.enum(['debug', 'info', 'warn', 'error'])
+
+const LOG_EVENT_NAME_SET = new Set<string>(LOG_EVENT_NAMES as readonly string[])
+
+/**
+ * Validate logging event target identifiers
+ */
+const LoggingEventTargetSchema = z.string().refine(
+  (value) => value === '*' || LOG_EVENT_NAME_SET.has(value),
+  { message: 'Invalid logging event target' }
+)
+
+/**
+ * Logging sampling rule schema
+ */
+const LoggingSamplingRuleSchema = z.object({
+  target: LoggingEventTargetSchema,
+  sampleRate: z.number().min(0).max(1)
+})
+
+/**
+ * Logging sampling configuration schema
+ */
+const LoggingSamplingConfigSchema = z.object({
+  defaultSampleRate: z.number().min(0).max(1).optional(),
+  rules: z.array(LoggingSamplingRuleSchema).optional()
+})
+
+/**
+ * Logging rate limit rule schema
+ */
+const LoggingRateLimitRuleSchema = z.object({
+  target: LoggingEventTargetSchema,
+  limit: z.number().int().min(0),
+  intervalMs: z.number().int().positive(),
+  burst: z.number().int().min(0).optional()
+})
+
+/**
+ * Logging rate limit configuration schema
+ */
+const LoggingRateLimitConfigSchema = z.object({
+  rules: z.array(LoggingRateLimitRuleSchema).optional()
+})
+
+/**
+ * Logging controls configuration schema
+ */
+const LoggingControlsSchema = z.object({
+  sampling: LoggingSamplingConfigSchema.optional(),
+  rateLimit: LoggingRateLimitConfigSchema.optional()
+})
+
+/**
+ * Logging reload configuration schema
+ */
+const LoggingReloadSchema = z.object({
+  enabled: z.boolean(),
+  intervalMs: z.number().int().positive().optional()
+})
+
+/**
  * Logging configuration schema (optional)
  */
-const LoggingSchema = z.object({
-  namespace: z.string().optional()
-}).optional()
+const LoggingSchema = z
+  .object({
+    namespace: z.string().optional(),
+    minimumLevel: LogLevelSchema.optional(),
+    controls: LoggingControlsSchema.optional(),
+    reload: LoggingReloadSchema.optional()
+  })
+  .optional()
 
 /**
  * Main configuration schema

@@ -4,8 +4,7 @@ import type { SessionId } from '../../types/branded.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildTerminalDefaults, createConnectionIdentifier } from './ssh-config.js'
-import { emitSocketLog } from '../../logging/socket-logger.js'
-import type { SocketLogOptions } from '../../logging/socket-logger.js'
+import { emitSocketLog, type SocketLogOptions } from '../../logging/socket-logger.js'
 import type { LogLevel } from '../../logging/levels.js'
 
 interface TerminalConfig {

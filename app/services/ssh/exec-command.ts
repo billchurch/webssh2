@@ -1,7 +1,6 @@
 import type { ClientChannel } from 'ssh2'
 import type { ConnectionId } from '../../types/branded.js'
-import type { Result } from '../../state/types.js'
-import { ok, err } from '../../state/types.js'
+import { ok, err, type Result } from '../../state/types.js'
 import type { ExecResult, SSHConnection } from '../interfaces.js'
 import type { ConnectionPool } from './connection-pool.js'
 import type { ConnectionLogger, ConnectionLogBase } from './connection-logger.js'

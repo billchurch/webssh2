@@ -4,28 +4,41 @@
 import createDebug, { type Debugger } from 'debug'
 import {
   createStructuredLogger,
-  type StructuredLogger,
-  type StructuredLoggerOptions
+  type StructuredLoggerOptions,
+  type StructuredLogger
 } from './logging/structured-logger.js'
 import type { LogContext } from './logging/log-context.js'
+import type { Config, LoggingConfig } from './types/config.js'
 
-const defaultStructuredLogger = createStructuredLogger({
+let defaultStructuredLogger = createStructuredLogger({
   namespace: 'webssh2:app',
   minimumLevel: 'info'
 })
+
+export interface AppStructuredLoggerOptions extends StructuredLoggerOptions {
+  readonly config?: Config
+}
 
 export function createNamespacedDebug(namespace: string): Debugger {
   return createDebug(`webssh2:${namespace}`)
 }
 
 export function createAppStructuredLogger(
-  options: StructuredLoggerOptions = {}
+  options: AppStructuredLoggerOptions = {}
 ): StructuredLogger {
+  const { config, ...rest } = options
+  const loggingConfig = config?.logging
+
+  const namespace =
+    rest.namespace ?? loggingConfig?.namespace ?? 'webssh2:app'
+  const minimumLevel = rest.minimumLevel ?? loggingConfig?.minimumLevel
+  const controls = rest.controls ?? loggingConfig?.controls
+
   return createStructuredLogger({
-    namespace: options.namespace ?? 'webssh2:app',
-    ...(options.minimumLevel === undefined ? {} : { minimumLevel: options.minimumLevel }),
-    ...(options.transport === undefined ? {} : { transport: options.transport }),
-    ...(options.clock === undefined ? {} : { clock: options.clock })
+    ...rest,
+    namespace,
+    ...(minimumLevel === undefined ? {} : { minimumLevel }),
+    ...(controls === undefined ? {} : { controls })
   })
 }
 
@@ -52,5 +65,13 @@ export function logError(message: string, error?: Error, context?: Partial<LogCo
   }
 }
 
-export { createStructuredLogger, type StructuredLogger, type StructuredLoggerOptions } from './logging/structured-logger.js'
+export function applyLoggingConfiguration(logging?: LoggingConfig): void {
+  defaultStructuredLogger = createStructuredLogger({
+    namespace: logging?.namespace ?? 'webssh2:app',
+    minimumLevel: logging?.minimumLevel ?? 'info',
+    ...(logging?.controls === undefined ? {} : { controls: logging.controls })
+  })
+}
 
+export { createStructuredLogger } from './logging/structured-logger.js'
+export type { StructuredLogger, StructuredLoggerOptions, StructuredLoggerMetrics } from './logging/structured-logger.js'

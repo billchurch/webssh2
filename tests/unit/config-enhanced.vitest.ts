@@ -45,6 +45,13 @@ const createTestEnvironment = (): Record<string, string> => ({
   WEBSSH2_SSO_HEADER_USERNAME: SSO_AUTH_HEADERS.username,
   WEBSSH2_SSO_HEADER_PASSWORD: SSO_AUTH_HEADERS.password,
   WEBSSH2_SSO_HEADER_SESSION: SSO_AUTH_HEADERS.session,
+  WEBSSH2_LOGGING_LEVEL: 'debug',
+  WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE: '0.5',
+  WEBSSH2_LOGGING_SAMPLING_RULES: '[{"target":"ssh_command","sampleRate":0.25}]',
+  WEBSSH2_LOGGING_RATE_LIMIT_RULES:
+    '[{"target":"ssh_command","limit":5,"intervalMs":1000,"burst":5}]',
+  WEBSSH2_LOGGING_RELOAD_ENABLED: 'true',
+  WEBSSH2_LOGGING_RELOAD_INTERVAL_MS: '5000',
 })
 
 const verifyListenConfig = (config: ReturnType<typeof mapEnvironmentVariables>): void => {
@@ -90,6 +97,37 @@ const verifySsoConfig = (config: ReturnType<typeof mapEnvironmentVariables>): vo
   })
 }
 
+const verifyLoggingConfig = (config: ReturnType<typeof mapEnvironmentVariables>): void => {
+  expect(config.logging).toMatchObject({
+    minimumLevel: 'debug',
+    controls: {
+      sampling: {
+        defaultSampleRate: 0.5,
+        rules: [
+          {
+            target: 'ssh_command',
+            sampleRate: 0.25,
+          },
+        ],
+      },
+      rateLimit: {
+        rules: [
+          {
+            target: 'ssh_command',
+            limit: 5,
+            intervalMs: 1000,
+            burst: 5,
+          },
+        ],
+      },
+    },
+    reload: {
+      enabled: true,
+      intervalMs: 5000,
+    },
+  })
+}
+
 describe('Enhanced Config - Environment Variable Support', () => {
   it('should support all environment variables from ENV_VAR_MAPPING', () => {
     const testEnv = createTestEnvironment()
@@ -101,6 +139,7 @@ describe('Enhanced Config - Environment Variable Support', () => {
     verifyHeaderConfig(config)
     verifyOptionsConfig(config)
     verifySsoConfig(config)
+    verifyLoggingConfig(config)
   })
 
   it('should have mapping for all core environment variables', () => {

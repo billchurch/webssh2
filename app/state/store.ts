@@ -3,9 +3,8 @@
  */
 
 import type { SessionId } from '../types/branded.js'
-import type { SessionState, StateListener } from './types.js'
+import { createInitialState, type SessionState, type StateListener } from './types.js'
 import type { SessionAction } from './actions.js'
-import { createInitialState } from './types.js'
 import { sessionReducer, hasStateChanged } from './reducers/session-reducer.js'
 import debug from 'debug'
 

@@ -119,12 +119,14 @@ export function createLogger(
 }
 
 export function createServiceStructuredLogger(
+  config: Config,
   options: StructuredLoggerOptions = {}
 ): StructuredLogger {
   const namespace = options.namespace ?? 'webssh2:services'
   return createAppStructuredLogger({
     ...options,
-    namespace
+    namespace,
+    config
   })
 }
 
@@ -155,7 +157,7 @@ export function bootstrapServices(config: Config): {
     config,
     logger,
     store,
-    createStructuredLogger: createServiceStructuredLogger
+    createStructuredLogger: (options) => createServiceStructuredLogger(config, options)
   }
 
   // Create services

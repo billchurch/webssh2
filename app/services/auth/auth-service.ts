@@ -9,10 +9,13 @@ import type {
   Credentials,
   ServiceDependencies
 } from '../interfaces.js'
-import type { SessionId, UserId } from '../../types/branded.js'
-import type { Result } from '../../state/types.js'
-import { ok, err } from '../../state/types.js'
-import { createSessionId, createUserId } from '../../types/branded.js'
+import {
+  createSessionId,
+  createUserId,
+  type SessionId,
+  type UserId
+} from '../../types/branded.js'
+import { ok, err, type Result } from '../../state/types.js'
 import type { SessionStore } from '../../state/store.js'
 import { DEFAULTS } from '../../constants.js'
 // import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js' // Not used yet

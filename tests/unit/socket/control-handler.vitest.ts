@@ -2,8 +2,10 @@ import { describe, beforeEach, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Socket } from 'socket.io'
 import { SOCKET_EVENTS, VALIDATION_MESSAGES } from '../../../app/constants/index.js'
-import { createInitialSessionState } from '../../../app/socket/handlers/auth-handler.js'
-import type { SessionState } from '../../../app/socket/handlers/auth-handler.js'
+import {
+  createInitialSessionState,
+  type SessionState
+} from '../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../app/types/config.js'
 import { createStructuredLoggerStub, type StructuredLoggerStub } from '../../test-utils.js'
 import {

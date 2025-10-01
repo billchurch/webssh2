@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Writable } from 'node:stream'
-import { createStdoutTransport } from '../../../app/logging/stdout-transport.js'
+import { createStdoutTransport, TransportBackpressureError } from '../../../app/logging/stdout-transport.js'
 
 class WritableStub {
   public readonly lines: string[] = []
@@ -67,5 +67,27 @@ describe('createStdoutTransport', () => {
     expect(flushResult.ok).toBe(true)
 
     expect(stub.lines).toEqual(['first\n', 'second\n'])
+  })
+
+  it('returns error when queue capacity is exceeded during backpressure', () => {
+    const stub = new WritableStub()
+    stub.failNextWrite = true
+    const transport = createStdoutTransport({
+      stream: stub as unknown as Writable,
+      lineSeparator: '\n',
+      maxQueueSize: 1
+    })
+
+    const first = transport.publish('primary')
+    expect(first.ok).toBe(true)
+
+    const second = transport.publish('secondary')
+    expect(second.ok).toBe(true)
+
+    const third = transport.publish('overflow')
+    expect(third.ok).toBe(false)
+    if (third.ok === false) {
+      expect(third.error).toBeInstanceOf(TransportBackpressureError)
+    }
   })
 })

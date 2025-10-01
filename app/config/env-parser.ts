@@ -1,7 +1,16 @@
 // app/config/env-parser.ts
 // Pure functions for parsing environment variable values
 
-export type EnvValueType = 'string' | 'number' | 'boolean' | 'array' | 'preset'
+export type EnvValueType = 'string' | 'number' | 'boolean' | 'array' | 'preset' | 'json'
+
+export type ParsedEnvValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | Record<string, unknown>
+  | unknown[]
+  | null
 
 /**
  * Parse a comma-separated or JSON array string into array
@@ -41,7 +50,7 @@ export function parseArrayValue(value: string): string[] {
 export function parseEnvValue(
   value: string,
   type: EnvValueType
-): string | number | boolean | string[] | null {
+): ParsedEnvValue {
   if (value === 'null') {
     return null
   }
@@ -54,7 +63,7 @@ export function parseEnvValue(
     case 'boolean':
       return value === 'true' || value === '1'
     case 'number':
-      return Number.parseInt(value, 10)
+      return Number.parseFloat(value)
     case 'array':
       return parseArrayValue(value)
     case 'string':
@@ -62,7 +71,26 @@ export function parseEnvValue(
     case 'preset':
       // Presets are handled upstream; return raw value
       return value
+    case 'json':
+      return parseJsonValue(value)
   }
+}
+
+function parseJsonValue(value: string): Record<string, unknown> | unknown[] | null {
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (Array.isArray(parsed)) {
+      const arrayValue = parsed as unknown[]
+      return arrayValue
+    }
+    if (parsed !== null && typeof parsed === 'object') {
+      const objectValue = parsed as Record<string, unknown>
+      return objectValue
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 /**
