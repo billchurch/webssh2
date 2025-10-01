@@ -37,6 +37,15 @@ const {
   SSO_PASSWORD_HEADER
 } = TEST_SOCKET_CONSTANTS
 
+const ensureSocket = (context: AdapterContext): Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+> => {
+  return context.socket
+}
+
 vi.mock('../../../app/logging/socket-logger.js', () => ({
   emitSocketLog: (...args: EmitSocketLogArgs) => {
     emitSocketLogMock(...args)
@@ -64,7 +73,7 @@ vi.mock('../../../app/socket/adapters/service-socket-authentication.js', () => (
     constructor(private readonly context: AdapterContext) {}
 
     checkInitialAuth(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
   }
 }))
@@ -74,19 +83,19 @@ vi.mock('../../../app/socket/adapters/service-socket-terminal.js', () => ({
     constructor(private readonly context: AdapterContext) {}
 
     handleTerminal(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
 
     handleResize(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
 
     handleData(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
 
     handleExec(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
   }
 }))
@@ -96,11 +105,11 @@ vi.mock('../../../app/socket/adapters/service-socket-control.js', () => ({
     constructor(private readonly context: AdapterContext) {}
 
     handleControl(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
 
     handleDisconnect(): void {
-      this.context.socket
+      ensureSocket(this.context)
     }
   }
 }))

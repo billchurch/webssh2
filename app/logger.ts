@@ -52,5 +52,5 @@ export function logError(message: string, error?: Error, context?: Partial<LogCo
   }
 }
 
-export { createStructuredLogger } from './logging/structured-logger.js'
-export type { StructuredLogger, StructuredLoggerOptions }
+export { createStructuredLogger, type StructuredLogger, type StructuredLoggerOptions } from './logging/structured-logger.js'
+

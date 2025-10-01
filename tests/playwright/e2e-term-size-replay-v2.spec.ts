@@ -128,8 +128,11 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       // Fallback to any number pair
       const match = out.match(/\b(\d+)\s+(\d+)\b/)
       expect(match).toBeTruthy()
-      rows = Number(match![1])
-      cols = Number(match![2])
+      if (match === null) {
+        throw new Error(`Expected fallback dimensions in terminal output: ${out.slice(0, 500)}`)
+      }
+      rows = Number(match[1])
+      cols = Number(match[2])
     } else {
       rows = Number(sttyMatch[1])
       cols = Number(sttyMatch[2])

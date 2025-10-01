@@ -112,6 +112,7 @@ export default [
         },
       ],
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         {
@@ -218,4 +219,3 @@ export default [
   },
 
 ]
-

@@ -35,6 +35,16 @@ interface MockSocket extends EventEmitter {
   }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null
+}
+
+const isAuthPayload = (
+  value: unknown
+): value is { success?: boolean; message?: string } => {
+  return isRecord(value)
+}
+
 describe('Socket.IO Contracts', () => {
   let io: MockIO, mockSocket: MockSocket, mockConfig: unknown, mockServices: unknown
 
@@ -63,9 +73,18 @@ describe('Socket.IO Contracts', () => {
     EventEmitter.prototype.emit.call(mockSocket, 'authenticate', { host: 'h' })
     const authEvents = mockSocket.emit.mock.calls.filter((c) => c[0] === 'authentication')
     expect(authEvents.length > 0).toBeTruthy()
-    const last = authEvents.at(-1)![1] as { success?: boolean; message?: string }
-    expect(last.success).toBe(false)
-    expect(String(last.message ?? '')).toMatch(/Invalid credentials/i)
+    const last = authEvents.at(-1)
+    expect(last).toBeDefined()
+    if (last === undefined) {
+      return
+    }
+    const [, payload] = last
+    expect(isAuthPayload(payload)).toBe(true)
+    if (!isAuthPayload(payload)) {
+      return
+    }
+    expect(payload.success).toBe(false)
+    expect(String(payload.message ?? '')).toMatch(/Invalid credentials/i)
   })
 
   it('emits permissions after successful connection with expected flags', async () => {
@@ -81,7 +100,14 @@ describe('Socket.IO Contracts', () => {
 
     const permEvent = mockSocket.emit.mock.calls.find((c) => c[0] === 'permissions')
     expect(permEvent).toBeDefined()
-    const perms = permEvent![1] as Record<string, unknown>
-    expect(Object.keys(perms).sort()).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog'].sort())
+    if (permEvent === undefined) {
+      return
+    }
+    const [, payload] = permEvent
+    expect(isRecord(payload)).toBe(true)
+    if (!isRecord(payload)) {
+      return
+    }
+    expect(Object.keys(payload).sort()).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog'].sort())
   })
 })
