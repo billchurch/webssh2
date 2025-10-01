@@ -119,7 +119,7 @@ export default [
         'error',
         {
           prefer: 'type-imports',
-          fixStyle: 'separate-type-imports',
+          fixStyle: 'inline-type-imports',
         },
       ],
       '@typescript-eslint/no-floating-promises': 'error',

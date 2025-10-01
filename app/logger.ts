@@ -4,9 +4,9 @@
 import createDebug, { type Debugger } from 'debug'
 import {
   createStructuredLogger,
-  type StructuredLoggerOptions
+  type StructuredLoggerOptions,
+  type StructuredLogger
 } from './logging/structured-logger.js'
-import type { StructuredLogger } from './logging/structured-logger.js'
 import type { LogContext } from './logging/log-context.js'
 import type { Config, LoggingConfig } from './types/config.js'
 
@@ -74,8 +74,4 @@ export function applyLoggingConfiguration(logging?: LoggingConfig): void {
 }
 
 export { createStructuredLogger } from './logging/structured-logger.js'
-export type {
-  StructuredLogger,
-  StructuredLoggerOptions,
-  StructuredLoggerMetrics
-} from './logging/structured-logger.js'
+export type { StructuredLogger, StructuredLoggerOptions, StructuredLoggerMetrics } from './logging/structured-logger.js'

@@ -80,10 +80,12 @@ function parseJsonValue(value: string): Record<string, unknown> | unknown[] | nu
   try {
     const parsed = JSON.parse(value) as unknown
     if (Array.isArray(parsed)) {
-      return parsed
+      const arrayValue = parsed as unknown[]
+      return arrayValue
     }
     if (parsed !== null && typeof parsed === 'object') {
-      return parsed as Record<string, unknown>
+      const objectValue = parsed as Record<string, unknown>
+      return objectValue
     }
   } catch {
     return null
