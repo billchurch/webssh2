@@ -45,39 +45,31 @@ export class ServiceSocketControl {
 
   private handleReplayCredentials(): void {
     if (!this.context.config.options.allowReplay) {
-      this.context.debug('Credential replay not permitted by configuration')
-      this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'Credential replay not permitted')
-      this.logCredentialReplay(
+      this.rejectReplay(
         'warn',
-        'failure',
+        'Credential replay not permitted by configuration',
         'Credential replay denied by configuration',
-        { allowReplay: false },
-        'Credential replay not permitted'
+        'Credential replay not permitted',
+        { allowReplay: false }
       )
       return
     }
 
     if (this.context.state.storedPassword === null) {
-      this.context.debug('No stored password for credential replay')
-      this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No stored password available')
-      this.logCredentialReplay(
+      this.rejectReplay(
         'warn',
-        'failure',
+        'No stored password for credential replay',
         'Credential replay failed: no stored password',
-        undefined,
         'No stored password available'
       )
       return
     }
 
     if (this.context.state.shellStream === null) {
-      this.context.debug('No active shell for credential replay')
-      this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'No active shell')
-      this.logCredentialReplay(
+      this.rejectReplay(
         'warn',
-        'failure',
+        'No active shell for credential replay',
         'Credential replay failed: no active shell',
-        undefined,
         'No active shell'
       )
       return
@@ -129,5 +121,17 @@ export class ServiceSocketControl {
       ...(reason !== undefined ? { reason } : {}),
       data
     })
+  }
+
+  private rejectReplay(
+    level: LogLevel,
+    debugMessage: string,
+    logMessage: string,
+    reason: string,
+    data?: Record<string, unknown>
+  ): void {
+    this.context.debug(debugMessage)
+    this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, reason)
+    this.logCredentialReplay(level, 'failure', logMessage, data, reason)
   }
 }

@@ -23,6 +23,7 @@ import {
 import { ServiceSocketAuthentication } from './service-socket-authentication.js'
 import { ServiceSocketTerminal } from './service-socket-terminal.js'
 import { ServiceSocketControl } from './service-socket-control.js'
+import { emitSocketLog } from '../../logging/socket-logger.js'
 
 const debug = createNamespacedDebug('socket:service-adapter')
 
@@ -49,6 +50,8 @@ export class ServiceSocketAdapter {
     const clientDetails = extractClientDetails(socket)
     state.clientIp = clientDetails.ip
     state.clientPort = clientDetails.port
+    state.clientSourcePort = clientDetails.sourcePort
+    state.userAgent = clientDetails.userAgent
 
     this.context = {
       socket,
@@ -65,6 +68,7 @@ export class ServiceSocketAdapter {
     this.control = new ServiceSocketControl(this.context)
 
     this.setupEventHandlers()
+    this.logSessionInit()
     this.auth.checkInitialAuth()
   }
 
@@ -118,16 +122,27 @@ export class ServiceSocketAdapter {
       this.control.handleDisconnect()
     })
   }
+
+  private logSessionInit(): void {
+    emitSocketLog(this.context, 'info', 'session_init', 'Socket session initialised', {
+      data: {
+        allow_replay: this.context.config.options.allowReplay === true,
+        allow_reauth: this.context.config.options.allowReauth === true,
+        allow_reconnect: this.context.config.options.allowReconnect === true
+      }
+    })
+  }
 }
 
 function extractClientDetails(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
-): { ip: string | null; port: number | null } {
+): { ip: string | null; port: number | null; userAgent: string | null; sourcePort: number | null } {
   const handshakeLike = (socket as unknown as { handshake?: SocketHandshakeLike }).handshake
   const headersRecord = handshakeLike?.headers ?? {}
 
   const forwardedFor = headersRecord['x-forwarded-for']
   const forwardedPort = headersRecord['x-forwarded-port']
+  const userAgentHeader = headersRecord['user-agent']
 
   let ip = normaliseForwardedValue(forwardedFor)
   const fallbackAddress = typeof handshakeLike?.address === 'string' ? handshakeLike.address : null
@@ -136,8 +151,10 @@ function extractClientDetails(
   }
 
   const port = parsePort(forwardedPort)
+  const sourcePort = parseSourcePort(socket.request as { connection?: { remotePort?: number | null } } | undefined, port)
+  const userAgent = normaliseUserAgent(userAgentHeader)
 
-  return { ip, port }
+  return { ip, port, userAgent, sourcePort }
 }
 
 function normaliseForwardedValue(value: string | string[] | undefined): string | null {
@@ -170,4 +187,38 @@ function parsePort(value: string | string[] | undefined): number | null {
   }
 
   return null
+}
+
+function parseSourcePort(
+  request: { connection?: { remotePort?: number | null } } | undefined,
+  forwardedPort: number | null
+): number | null {
+  if (forwardedPort !== null) {
+    return forwardedPort
+  }
+
+  const remotePort = request?.connection?.remotePort ?? null
+  return typeof remotePort === 'number' ? remotePort : null
+}
+
+function normaliseUserAgent(value: string | string[] | undefined): string | null {
+  const MAX_LENGTH = 512
+
+  let candidate: string | undefined
+  if (typeof value === 'string') {
+    candidate = value
+  } else if (Array.isArray(value) && value.length > 0) {
+    candidate = value[0]
+  }
+
+  if (candidate === undefined) {
+    return null
+  }
+
+  const trimmed = candidate.trim()
+  if (trimmed === '') {
+    return null
+  }
+
+  return trimmed.length > MAX_LENGTH ? trimmed.slice(0, MAX_LENGTH) : trimmed
 }

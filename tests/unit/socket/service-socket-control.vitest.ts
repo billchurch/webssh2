@@ -8,6 +8,7 @@ import type { ClientToServerEvents, InterServerEvents, ServerToClientEvents, Soc
 import type { Socket } from 'socket.io'
 import { createStructuredLoggerStub } from '../../test-utils.js'
 import type { StructuredLoggerStub } from '../../test-utils.js'
+import { TEST_PASSWORDS } from '../../test-constants.js'
 
 interface MinimalSocket extends Partial<Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>> {
   id: string
@@ -54,7 +55,7 @@ describe('ServiceSocketControl logging', () => {
 
   it('logs credential replay success', () => {
     const { control, logger, context } = createContext({ allowReplay: true })
-    context.state.storedPassword = 'secret'
+    context.state.storedPassword = TEST_PASSWORDS.secret
     context.state.shellStream = {
       write: vi.fn()
     } as unknown as AdapterContext['state']['shellStream']

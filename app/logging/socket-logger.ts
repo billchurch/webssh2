@@ -3,7 +3,7 @@
 
 import type { AdapterContext } from '../socket/adapters/service-socket-shared.js'
 import type { LogEventName } from './event-catalog.js'
-import type { LogContext, LogStatus, LogSubsystem } from './log-context.js'
+import type { LogContext, LogStatus, LogSubsystem, LogAuthMethod } from './log-context.js'
 import type { LogLevel } from './levels.js'
 import type { StructuredLogInput } from './structured-log.js'
 import type { Result } from '../types/result.js'
@@ -28,7 +28,7 @@ export function emitSocketLog(
   message: string,
   options: SocketLogOptions = {}
 ): void {
-  const context = buildSocketLogContext(adapter, options)
+  const context = buildSocketLogContext(adapter, event, options)
   const entry = buildLogEntry(event, message, context, options.data)
 
   const result = invokeLogger(adapter, level, entry)
@@ -39,6 +39,7 @@ export function emitSocketLog(
 
 export function buildSocketLogContext(
   adapter: AdapterContext,
+  event: LogEventName,
   options: SocketLogOptions = {}
 ): LogContext {
   const context: Record<string, unknown> = {
@@ -46,7 +47,7 @@ export function buildSocketLogContext(
     subsystem: options.subsystem ?? 'shell'
   }
 
-  populateStateContext(context, adapter)
+  populateStateContext(context, adapter, event)
   populateStatusContext(context, options)
   populateMetricContext(context, options)
 
@@ -95,43 +96,49 @@ function invokeLogger(
   }
 }
 
-function populateStateContext(context: Record<string, unknown>, adapter: AdapterContext): void {
+function populateStateContext(
+  context: Record<string, unknown>,
+  adapter: AdapterContext,
+  event: LogEventName
+): void {
   const { state, socket } = adapter
-
-  if (state.sessionId !== null) {
-    context['sessionId'] = state.sessionId
-  }
 
   context['requestId'] = socket.id
 
-  if (state.username !== null) {
-    context['username'] = state.username
+  const mappedAuthMethod = mapAuthMethod(state.originalAuthMethod)
+  const optionalContext: Partial<LogContext> = {
+    ...(state.sessionId !== null ? { sessionId: state.sessionId } : {}),
+    ...(state.username !== null ? { username: state.username } : {}),
+    ...(mappedAuthMethod !== null ? { authMethod: mappedAuthMethod } : {}),
+    ...(state.clientIp !== null ? { clientIp: state.clientIp } : {}),
+    ...(state.clientPort !== null ? { clientPort: state.clientPort } : {}),
+    ...(state.clientSourcePort !== null ? { clientSourcePort: state.clientSourcePort } : {}),
+    ...(state.targetHost !== null ? { targetHost: state.targetHost } : {}),
+    ...(state.targetPort !== null ? { targetPort: state.targetPort } : {}),
+    ...(state.connectionId !== null ? { connectionId: state.connectionId } : {}),
+    ...(event === 'session_init' && state.userAgent !== null ? { userAgent: state.userAgent } : {})
   }
 
-  if (state.originalAuthMethod !== null) {
-    context['authMethod'] = state.originalAuthMethod
-  }
-
-  if (state.clientIp !== null) {
-    context['clientIp'] = state.clientIp
-  }
-
-  if (state.clientPort !== null) {
-    context['clientPort'] = state.clientPort
-  }
-
-  if (state.targetHost !== null) {
-    context['targetHost'] = state.targetHost
-  }
-
-  if (state.targetPort !== null) {
-    context['targetPort'] = state.targetPort
-  }
-
-  if (state.connectionId !== null) {
-    context['connectionId'] = state.connectionId
-  }
+  Object.assign(context, optionalContext)
 }
+
+function mapAuthMethod(method: string | null): LogAuthMethod | null {
+  if (method === null) {
+    return null
+  }
+
+  return ALLOWED_LOG_AUTH_METHODS.has(method as LogAuthMethod)
+    ? (method as LogAuthMethod)
+    : null
+}
+
+const ALLOWED_LOG_AUTH_METHODS: ReadonlySet<LogAuthMethod> = new Set<LogAuthMethod>([
+  'publickey',
+  'password',
+  'keyboard-interactive',
+  'agent',
+  'gssapi'
+])
 
 function populateStatusContext(context: Record<string, unknown>, options: SocketLogOptions): void {
   if (options.status !== undefined) {

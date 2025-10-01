@@ -21,6 +21,8 @@ const CONTEXT_FIELD_MAP: Record<keyof LogContext, keyof StructuredLogRecord> = {
   mfaUsed: 'mfa_used',
   clientIp: 'client_ip',
   clientPort: 'client_port',
+  clientSourcePort: 'client_source_port',
+  userAgent: 'user_agent',
   targetHost: 'target_host',
   targetPort: 'target_port',
   protocol: 'protocol',
@@ -230,6 +232,7 @@ function createContextValidators(): ReadonlyMap<keyof LogContext, (value: unknow
     'sessionId',
     'requestId',
     'username',
+    'userAgent',
     'clientIp',
     'targetHost',
     'auditId',
@@ -242,6 +245,7 @@ function createContextValidators(): ReadonlyMap<keyof LogContext, (value: unknow
   })
 
   validators.set('clientPort', isValidPort)
+  validators.set('clientSourcePort', isValidPort)
   validators.set('targetPort', isValidPort)
   validators.set('durationMs', isNonNegativeNumber)
   validators.set('bytesIn', isNonNegativeNumber)

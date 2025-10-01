@@ -6,16 +6,19 @@ import type { UnifiedAuthPipeline } from '../../../app/auth/auth-pipeline.js'
 import { createStructuredLoggerStub } from '../../test-utils.js'
 import type { StructuredLoggerStub } from '../../test-utils.js'
 import type { SessionId } from '../../../app/types/branded.js'
+import { TEST_NETWORK, TEST_USER_AGENTS } from '../../test-constants.js'
 
 const createTestAdapterContext = (): { context: AdapterContext; logger: StructuredLoggerStub } => {
   const state = createAdapterSharedState()
   state.sessionId = 'session-123' as SessionId
   state.connectionId = 'conn-123'
-  state.clientIp = '198.51.100.1'
-  state.clientPort = 443
+  state.clientIp = TEST_NETWORK.CLIENT_CONTEXT_IP
+  state.clientPort = TEST_NETWORK.FORWARDED_PORT
+  state.clientSourcePort = TEST_NETWORK.FORWARDED_PORT
   state.targetHost = '10.0.0.5'
   state.targetPort = 22
   state.username = 'jdoe'
+  state.userAgent = TEST_USER_AGENTS.DEFAULT
 
   const logger = createStructuredLoggerStub()
 
@@ -25,7 +28,7 @@ const createTestAdapterContext = (): { context: AdapterContext; logger: Structur
       emit: () => undefined,
       on: () => undefined,
       onAny: () => undefined,
-      handshake: { headers: {}, address: '198.51.100.1' }
+      handshake: { headers: {}, address: TEST_NETWORK.CLIENT_CONTEXT_IP }
     } as unknown as AdapterContext['socket'],
     config: {} as AdapterContext['config'],
     services: {} as Services,
@@ -41,17 +44,29 @@ const createTestAdapterContext = (): { context: AdapterContext; logger: Structur
 describe('socket-logger', () => {
   it('buildSocketLogContext includes adapter state', () => {
     const { context } = createTestAdapterContext()
-    const logContext = buildSocketLogContext(context, {
+    const logContext = buildSocketLogContext(context, 'session_init', {
       status: 'success',
       subsystem: 'shell'
     })
 
     expect(logContext.sessionId).toBe('session-123')
     expect(logContext.connectionId).toBe('conn-123')
-    expect(logContext.clientIp).toBe('198.51.100.1')
+    expect(logContext.clientIp).toBe(TEST_NETWORK.CLIENT_CONTEXT_IP)
+    expect(logContext.clientPort).toBe(TEST_NETWORK.FORWARDED_PORT)
+    expect(logContext.clientSourcePort).toBe(TEST_NETWORK.FORWARDED_PORT)
+    expect(logContext.userAgent).toBe(TEST_USER_AGENTS.DEFAULT)
     expect(logContext.targetHost).toBe('10.0.0.5')
     expect(logContext.targetPort).toBe(22)
     expect(logContext.status).toBe('success')
+  })
+
+  it('omits user agent for non session_init events', () => {
+    const { context } = createTestAdapterContext()
+    const logContext = buildSocketLogContext(context, 'auth_success', {})
+
+    expect(logContext.userAgent).toBeUndefined()
+    expect(logContext.clientPort).toBe(TEST_NETWORK.FORWARDED_PORT)
+    expect(logContext.clientSourcePort).toBe(TEST_NETWORK.FORWARDED_PORT)
   })
 
   it('emitSocketLog records entry on structured logger', () => {

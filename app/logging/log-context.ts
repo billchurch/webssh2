@@ -19,6 +19,8 @@ export interface LogContext {
   readonly mfaUsed?: boolean
   readonly clientIp?: string
   readonly clientPort?: number
+  readonly clientSourcePort?: number
+  readonly userAgent?: string
   readonly targetHost?: string
   readonly targetPort?: number
   readonly protocol?: LogProtocol

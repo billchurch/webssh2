@@ -23,7 +23,9 @@ Each log event combines core metadata with an event-specific payload. Core field
 | `session_id` | string | Branded session identifier from the session store. |
 | `request_id` | string | Correlates HTTP request, socket, and downstream actions. |
 | `client_ip` | string | Resolved client IP (trusting configured proxy chain). |
-| `client_port` | number | Optional source port if available. |
+| `client_port` | number | Client source port when available. |
+| `client_source_port` | number | Backing TCP port observed from the socket connection (post-proxy). |
+| `user_agent` | string | Normalised browser agent string (logged on `session_init` only). |
 | `username` | string | Normalised username when known. |
 | `target_host` | string | Final SSH target hostname or IP. |
 | `target_port` | number | Final SSH target port. |
@@ -35,7 +37,7 @@ Each log event combines core metadata with an event-specific payload. Core field
 
 Event catalog (initial focus):
 - `auth_attempt`, `auth_success`, `auth_failure`
-- `session_start`, `session_end`
+- `session_init`, `session_start`, `session_end`
 - `ssh_command` (shell command execution)
 - `pty_resize` (terminal size changes)
 - `idle_timeout` (automatic disconnect)
@@ -77,6 +79,7 @@ Configuration is parsed through the existing env-mapper, validated via zod schem
 1. Replace the current `Logger` interface with a structured logger accepting `{ level, event, data }`.
 2. Implement shared utilities for timestamps, correlation IDs, byte counters, and error serialisation (`Result` based).
 3. Instrument authentication, session, and SSH services to emit events with exhaustive metadata.
+   Capture client network fingerprint (IP, port, user agent) during the initial socket handshake.
 4. Layer in syslog transport once stdout coverage is complete and validated.
 5. Add integration tests that assert log production for representative socket flows.
 
@@ -95,7 +98,8 @@ Configuration is parsed through the existing env-mapper, validated via zod schem
 ## Current Progress
 - `app/logging/` contains the structured formatter, log level helpers, stdout transport, and application-facing logger factory.
 - `app/logger.ts` exposes `createAppStructuredLogger` and now emits structured `error` events in addition to legacy console output.
-- Socket authentication/terminal adapters publish structured events for auth attempts, successes/failures, and exec activity.
+- Socket authentication/terminal adapters publish structured events for auth attempts, successes/failures,
+  exec activity, and capture client network metadata for downstream events.
 - Unit coverage lives under `tests/unit/logging/`, validating formatting, level filtering, socket context derivation, and stdout backpressure handling.
 
 ## Future Enhancements

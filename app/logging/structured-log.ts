@@ -27,6 +27,8 @@ export interface StructuredLogRecord {
   readonly mfa_used?: boolean
   readonly client_ip?: string
   readonly client_port?: number
+  readonly client_source_port?: number
+  readonly user_agent?: string
   readonly target_host?: string
   readonly target_port?: number
   readonly protocol?: string

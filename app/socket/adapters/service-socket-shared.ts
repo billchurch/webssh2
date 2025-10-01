@@ -26,9 +26,11 @@ export interface AdapterSharedState {
   initialTermSettings: { term?: string; rows?: number; cols?: number }
   clientIp: string | null
   clientPort: number | null
+  clientSourcePort: number | null
   targetHost: string | null
   targetPort: number | null
   username: string | null
+  userAgent: string | null
 }
 
 export interface AdapterContext {
@@ -51,8 +53,10 @@ export function createAdapterSharedState(): AdapterSharedState {
     initialTermSettings: {},
     clientIp: null,
     clientPort: null,
+    clientSourcePort: null,
     targetHost: null,
     targetPort: null,
-    username: null
+    username: null,
+    userAgent: null
   }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatStructuredLog } from '../../../app/logging/formatter.js'
+import { TEST_NETWORK, TEST_USER_AGENTS } from '../../test-constants.js'
 
 const fixedDate = new Date('2025-01-01T00:00:00.000Z')
 const clock = (): Date => fixedDate
@@ -15,8 +16,10 @@ describe('formatStructuredLog', () => {
           sessionId: 'session-123',
           requestId: 'req-1',
           username: 'jdoe',
-          clientIp: '198.51.100.1',
+          clientIp: TEST_NETWORK.CLIENT_CONTEXT_IP,
           clientPort: 44321,
+          clientSourcePort: TEST_NETWORK.FORWARDED_PORT,
+          userAgent: TEST_USER_AGENTS.DEFAULT,
           targetHost: '10.0.0.5',
           targetPort: 22,
           protocol: 'ssh',
@@ -42,8 +45,10 @@ describe('formatStructuredLog', () => {
     expect(payload.event).toBe('session_start')
     expect(payload.session_id).toBe('session-123')
     expect(payload.request_id).toBe('req-1')
-    expect(payload.client_ip).toBe('198.51.100.1')
+    expect(payload.client_ip).toBe(TEST_NETWORK.CLIENT_CONTEXT_IP)
     expect(payload.client_port).toBe(44321)
+    expect(payload.client_source_port).toBe(TEST_NETWORK.FORWARDED_PORT)
+    expect(payload.user_agent).toBe(TEST_USER_AGENTS.DEFAULT)
     expect(payload.details).toEqual({ agent: 'web', version: '2.0.0' })
     expect(payload.extra).toEqual({ logger_namespace: 'webssh2:test' })
   })
