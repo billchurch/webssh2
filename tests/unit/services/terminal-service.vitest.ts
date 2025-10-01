@@ -353,9 +353,9 @@ describe('TerminalService', () => {
       ]
 
       // All should succeed
-      results.forEach(result => {
+      for (const result of results) {
         expect(result.ok).toBe(true)
-      })
+      }
 
       // Final state should be last resize
       const terminal = terminalService.getTerminal(sessionId)

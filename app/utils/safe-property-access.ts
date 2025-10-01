@@ -95,7 +95,7 @@ export function safeSetNested(
   let current = obj
   
   // Navigate to the parent using Map for safe property access
-  pathCopy.forEach((key) => {
+  for (const key of pathCopy) {
     const stringKey = key as string
     const currentMap = new Map(Object.entries(current))
     const next = currentMap.get(stringKey)
@@ -113,7 +113,7 @@ export function safeSetNested(
     } else {
       current = next as Record<string, unknown>
     }
-  })
+  }
   
   // Set the final property using Object.defineProperty
   const lastStringKey = lastKey as string

@@ -328,9 +328,9 @@ export function setupMockStoreState(mockStore: SessionStore, state: unknown) {
  */
 export function setupMockStoreStates(mockStore: SessionStore, ...states: unknown[]) {
   const mockObj = mockStore.getState as any
-  states.forEach((state) => {
+  for (const state of states) {
     mockObj.mockReturnValueOnce(state)
-  })
+  }
   if (states.length > 0) {
     mockObj.mockReturnValue(states[states.length - 1])
   }
@@ -360,9 +360,9 @@ function getTestEnvironmentVariables(): string[] {
  * Should be called in beforeEach/afterEach hooks across all test files
  */
 export function cleanupEnvironmentVariables(): void {
-  getTestEnvironmentVariables().forEach(key => {
+  for (const key of getTestEnvironmentVariables()) {
     delete process.env[key]
-  })
+  }
 }
 
 /**
@@ -371,9 +371,9 @@ export function cleanupEnvironmentVariables(): void {
  */
 export function storeEnvironmentVariables(): TestEnvironment {
   const originalEnv: TestEnvironment = {}
-  getTestEnvironmentVariables().forEach(key => {
+  for (const key of getTestEnvironmentVariables()) {
     originalEnv[key] = process.env[key]
-  })
+  }
   return originalEnv
 }
 
@@ -386,11 +386,11 @@ export function restoreEnvironmentVariables(originalEnv: TestEnvironment): void 
   cleanupEnvironmentVariables()
 
   // Then restore original values
-  Object.entries(originalEnv).forEach(([key, value]) => {
+  for (const [key, value] of Object.entries(originalEnv)) {
     if (value !== undefined) {
       process.env[key] = value
     }
-  })
+  }
 }
 
 // =============================================================================

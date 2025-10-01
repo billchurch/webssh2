@@ -240,9 +240,9 @@ function createContextValidators(): ReadonlyMap<keyof LogContext, (value: unknow
     'connectionId'
   ]
 
-  nonEmptyStringKeys.forEach((key) => {
+  for (const key of nonEmptyStringKeys) {
     validators.set(key, isNonEmptyString)
-  })
+  }
 
   validators.set('clientPort', isValidPort)
   validators.set('clientSourcePort', isValidPort)

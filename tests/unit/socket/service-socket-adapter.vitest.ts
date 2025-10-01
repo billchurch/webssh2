@@ -206,7 +206,9 @@ describe('ServiceSocketAdapter', () => {
     const config = createConfig()
     const services = {} as Services
 
-    new ServiceSocketAdapter(socket, config, services)
+    const adapter = new ServiceSocketAdapter(socket, config, services)
+
+    expect(adapter).toBeInstanceOf(ServiceSocketAdapter)
 
     expect(emitSocketLogMock).toHaveBeenCalled()
     const callArgs: EmitSocketLogArgs = emitSocketLogMock.mock.calls[0]
