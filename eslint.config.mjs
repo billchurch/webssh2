@@ -45,6 +45,7 @@ export default [
       'prefer-rest-params': 'error',
       'prefer-spread': 'error',
       'prefer-template': 'error',
+      'no-duplicate-imports': 'error',
       'template-curly-spacing': ['error', 'never'],
       'node/file-extension-in-import': ['error', 'always'],
       'no-new': 'error',

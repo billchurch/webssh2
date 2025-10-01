@@ -3,6 +3,7 @@
 
 import type { Result } from './result.js'
 import type { LogLevel } from '../logging/levels.js'
+import type { LogEventName } from '../logging/event-catalog.js'
 
 /**
  * SSH algorithms configuration
@@ -139,7 +140,7 @@ export interface LoggingReloadConfig {
 /**
  * Supported logging event target identifiers
  */
-export type LoggingEventTarget = '*' | string
+export type LoggingEventTarget = '*' | LogEventName
 
 /**
  * Logging configuration
