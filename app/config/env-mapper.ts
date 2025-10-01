@@ -73,11 +73,6 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
     path: 'logging.controls.rateLimit.rules',
     type: 'json'
   },
-  WEBSSH2_LOGGING_RELOAD_ENABLED: { path: 'logging.reload.enabled', type: 'boolean' },
-  WEBSSH2_LOGGING_RELOAD_INTERVAL_MS: {
-    path: 'logging.reload.intervalMs',
-    type: 'number'
-  },
 }
 
 /**

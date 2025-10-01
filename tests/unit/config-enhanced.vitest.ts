@@ -50,8 +50,6 @@ const createTestEnvironment = (): Record<string, string> => ({
   WEBSSH2_LOGGING_SAMPLING_RULES: '[{"target":"ssh_command","sampleRate":0.25}]',
   WEBSSH2_LOGGING_RATE_LIMIT_RULES:
     '[{"target":"ssh_command","limit":5,"intervalMs":1000,"burst":5}]',
-  WEBSSH2_LOGGING_RELOAD_ENABLED: 'true',
-  WEBSSH2_LOGGING_RELOAD_INTERVAL_MS: '5000',
 })
 
 const verifyListenConfig = (config: ReturnType<typeof mapEnvironmentVariables>): void => {
@@ -121,10 +119,6 @@ const verifyLoggingConfig = (config: ReturnType<typeof mapEnvironmentVariables>)
         ],
       },
     },
-    reload: {
-      enabled: true,
-      intervalMs: 5000,
-    },
   })
 }
 
@@ -144,8 +138,8 @@ describe('Enhanced Config - Environment Variable Support', () => {
 
   it('should have mapping for all core environment variables', () => {
     const envVarCount = Object.keys(ENV_VAR_MAPPING).length
-    // Current implementation has 42 environment variables mapped
-    expect(envVarCount).toBeGreaterThanOrEqual(42)
+    // Current implementation has 40 environment variables mapped
+    expect(envVarCount).toBeGreaterThanOrEqual(40)
   })
 })
 

@@ -25,7 +25,6 @@ void describe('createDefaultConfig', () => {
     expect(config.session.secret.length).toBe(64)
     expect(config.session.name).toBe('webssh2.sid')
     expect(config.logging?.minimumLevel).toBe('info')
-    expect(config.logging?.reload?.enabled).toBe(false)
   })
   
   it('should create default config with provided session secret', () => {

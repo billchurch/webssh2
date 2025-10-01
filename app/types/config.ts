@@ -132,11 +132,6 @@ export interface LoggingRateLimitRule {
 /**
  * Logging configuration reload behaviour
  */
-export interface LoggingReloadConfig {
-  readonly enabled: boolean
-  readonly intervalMs?: number
-}
-
 /**
  * Supported logging event target identifiers
  */
@@ -149,7 +144,6 @@ export interface LoggingConfig {
   readonly namespace?: string
   readonly minimumLevel?: LogLevel
   readonly controls?: LoggingControlsConfig
-  readonly reload?: LoggingReloadConfig
 }
 
 /**

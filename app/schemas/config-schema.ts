@@ -200,22 +200,13 @@ const LoggingControlsSchema = z.object({
 })
 
 /**
- * Logging reload configuration schema
- */
-const LoggingReloadSchema = z.object({
-  enabled: z.boolean(),
-  intervalMs: z.number().int().positive().optional()
-})
-
-/**
  * Logging configuration schema (optional)
  */
 const LoggingSchema = z
   .object({
     namespace: z.string().optional(),
     minimumLevel: LogLevelSchema.optional(),
-    controls: LoggingControlsSchema.optional(),
-    reload: LoggingReloadSchema.optional()
+    controls: LoggingControlsSchema.optional()
   })
   .optional()
 

@@ -7,8 +7,7 @@ import type {
   LoggingConfig,
   LoggingControlsConfig,
   LoggingSamplingConfig,
-  LoggingRateLimitConfig,
-  LoggingReloadConfig
+  LoggingRateLimitConfig
 } from '../types/config.js'
 import { DEFAULTS } from '../constants.js'
 
@@ -101,9 +100,6 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
   logging: {
     namespace: 'webssh2:app',
     minimumLevel: 'info',
-    reload: {
-      enabled: false,
-    },
   },
 }
 
@@ -152,13 +148,11 @@ function cloneLoggingConfig(config: LoggingConfig | undefined): LoggingConfig | 
   }
 
   const clonedControls = cloneLoggingControls(config.controls)
-  const clonedReload = cloneLoggingReload(config.reload)
 
   return {
     ...(config.namespace === undefined ? {} : { namespace: config.namespace }),
     ...(config.minimumLevel === undefined ? {} : { minimumLevel: config.minimumLevel }),
-    ...(clonedControls === undefined ? {} : { controls: clonedControls }),
-    ...(clonedReload === undefined ? {} : { reload: clonedReload })
+    ...(clonedControls === undefined ? {} : { controls: clonedControls })
   }
 }
 
@@ -212,18 +206,5 @@ function cloneLoggingRateLimit(
       : {
           rules: rateLimit.rules.map((rule) => ({ ...rule }))
         })
-  }
-}
-
-function cloneLoggingReload(
-  reload: LoggingReloadConfig | undefined
-): LoggingReloadConfig | undefined {
-  if (reload === undefined) {
-    return undefined
-  }
-
-  return {
-    enabled: reload.enabled,
-    ...(reload.intervalMs === undefined ? {} : { intervalMs: reload.intervalMs })
   }
 }
