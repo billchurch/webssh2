@@ -2,6 +2,7 @@
 // Configuration type definitions
 
 import type { Result } from './result.js'
+import type { LogLevel } from '../logging/levels.js'
 
 /**
  * SSH algorithms configuration
@@ -87,10 +88,67 @@ export interface TerminalConfig {
 }
 
 /**
+ * Logging controls configuration for runtime sampling and rate limits
+ */
+export interface LoggingControlsConfig {
+  readonly sampling?: LoggingSamplingConfig
+  readonly rateLimit?: LoggingRateLimitConfig
+}
+
+/**
+ * Logging sampling configuration
+ */
+export interface LoggingSamplingConfig {
+  readonly defaultSampleRate?: number
+  readonly rules?: readonly LoggingSamplingRule[]
+}
+
+/**
+ * Logging sampling rule entry
+ */
+export interface LoggingSamplingRule {
+  readonly target: LoggingEventTarget
+  readonly sampleRate: number
+}
+
+/**
+ * Logging rate limit configuration
+ */
+export interface LoggingRateLimitConfig {
+  readonly rules?: readonly LoggingRateLimitRule[]
+}
+
+/**
+ * Logging rate limit rule entry
+ */
+export interface LoggingRateLimitRule {
+  readonly target: LoggingEventTarget
+  readonly limit: number
+  readonly intervalMs: number
+  readonly burst?: number
+}
+
+/**
+ * Logging configuration reload behaviour
+ */
+export interface LoggingReloadConfig {
+  readonly enabled: boolean
+  readonly intervalMs?: number
+}
+
+/**
+ * Supported logging event target identifiers
+ */
+export type LoggingEventTarget = '*' | string
+
+/**
  * Logging configuration
  */
 export interface LoggingConfig {
-  namespace?: string
+  readonly namespace?: string
+  readonly minimumLevel?: LogLevel
+  readonly controls?: LoggingControlsConfig
+  readonly reload?: LoggingReloadConfig
 }
 
 /**

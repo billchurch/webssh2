@@ -8,7 +8,7 @@ import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
 import { configureSocketIO } from './io.js'
 import { handleError, ConfigError } from './errors.js'
-import { createNamespacedDebug } from './logger.js'
+import { createNamespacedDebug, applyLoggingConfiguration } from './logger.js'
 import { MESSAGES } from './constants.js'
 import { getClientPublicPath } from './client-path.js'
 import type { Config } from './types/config.js'
@@ -49,6 +49,8 @@ export async function initializeServerAsync(): Promise<{
   try {
     const appConfig = await getConfig()
     debug('Configuration loaded asynchronously')
+
+    applyLoggingConfiguration(appConfig.logging)
 
     // Initialize DI container and services
     const container = initializeGlobalContainer(appConfig)

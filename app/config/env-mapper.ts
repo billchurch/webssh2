@@ -61,6 +61,24 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_SSO_HEADER_USERNAME: { path: 'sso.headerMapping.username', type: 'string' },
   WEBSSH2_SSO_HEADER_PASSWORD: { path: 'sso.headerMapping.password', type: 'string' },
   WEBSSH2_SSO_HEADER_SESSION: { path: 'sso.headerMapping.session', type: 'string' },
+  WEBSSH2_LOGGING_LEVEL: { path: 'logging.minimumLevel', type: 'string' },
+  WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE: {
+    path: 'logging.controls.sampling.defaultSampleRate',
+    type: 'number'
+  },
+  WEBSSH2_LOGGING_SAMPLING_RULES: {
+    path: 'logging.controls.sampling.rules',
+    type: 'json'
+  },
+  WEBSSH2_LOGGING_RATE_LIMIT_RULES: {
+    path: 'logging.controls.rateLimit.rules',
+    type: 'json'
+  },
+  WEBSSH2_LOGGING_RELOAD_ENABLED: { path: 'logging.reload.enabled', type: 'boolean' },
+  WEBSSH2_LOGGING_RELOAD_INTERVAL_MS: {
+    path: 'logging.reload.intervalMs',
+    type: 'number'
+  },
 }
 
 /**

@@ -5,6 +5,15 @@ import type { Writable } from 'node:stream'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/result.js'
 
+export class TransportBackpressureError extends Error {
+  public readonly reason = 'queue_full'
+
+  constructor(message: string = 'Stdout transport queue is full') {
+    super(message)
+    this.name = 'TransportBackpressureError'
+  }
+}
+
 export interface LogTransport {
   publish(payload: string): Result<void>
   flush(): Result<void>
@@ -13,17 +22,22 @@ export interface LogTransport {
 export interface StdoutTransportOptions {
   readonly stream?: Writable
   readonly lineSeparator?: string
+  readonly maxQueueSize?: number
 }
 
 export function createStdoutTransport(options: StdoutTransportOptions = {}): LogTransport {
   const stream = options.stream ?? process.stdout
   const lineSeparator: string = options.lineSeparator ?? '\n'
+  const maxQueueSize = options.maxQueueSize ?? 1000
   const queue: string[] = []
   let waitingForDrain = false
   let drainListenerAttached = false
 
   const publish = (payload: string): Result<void> => {
     if (waitingForDrain) {
+      if (queue.length >= maxQueueSize) {
+        return err(new TransportBackpressureError())
+      }
       queue.push(payload)
       return ok(undefined)
     }
@@ -33,10 +47,10 @@ export function createStdoutTransport(options: StdoutTransportOptions = {}): Log
       return writeResult
     }
 
-    if (!writeResult.value) {
-      waitingForDrain = true
-      attachDrainListener()
-    }
+      if (!writeResult.value) {
+        waitingForDrain = true
+        attachDrainListener()
+      }
 
     return ok(undefined)
   }
@@ -73,8 +87,7 @@ export function createStdoutTransport(options: StdoutTransportOptions = {}): Log
   const handleDrain = (): void => {
     const result = flush()
     if (!result.ok) {
-      // Best effort: report failure to stderr without throwing
-      console.error('Failed to flush stdout transport queue:', result.error)
+      waitingForDrain = false
     }
   }
 

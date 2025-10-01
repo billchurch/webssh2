@@ -186,6 +186,35 @@ WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
 | `WEBSSH2_HEADER_TEXT` | string | `null` | Header text in web interface |
 | `WEBSSH2_HEADER_BACKGROUND` | string | `green` | Header background color |
 
+### Logging
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_LOGGING_FORMAT` | string | `json` | Structured log output format (`json` only at present) |
+| `WEBSSH2_LOGGING_LEVEL` | string | `info` | Global minimum log level (`debug`, `info`, `warn`, `error`) |
+| `WEBSSH2_LOGGING_STDOUT_ENABLED` | boolean | `true` | Enables stdout transport when `true` |
+| `WEBSSH2_LOGGING_STDOUT_MIN_LEVEL` | string | `info` | Per-transport minimum level for stdout delivery |
+| `WEBSSH2_LOGGING_SYSLOG_ENABLED` | boolean | `false` | Enables RFC 5424/TLS syslog forwarding |
+| `WEBSSH2_LOGGING_SYSLOG_HOST` | string | `null` | Syslog collector hostname or IP |
+| `WEBSSH2_LOGGING_SYSLOG_PORT` | number | `6514` | Syslog collector port (TLS default) |
+| `WEBSSH2_LOGGING_SYSLOG_APP_NAME` | string | `webssh2` | Syslog `APP-NAME` field |
+| `WEBSSH2_LOGGING_SYSLOG_ENTERPRISE_ID` | number | `32473` | Enterprise ID for structured data (`webssh2@<ID>`) |
+| `WEBSSH2_LOGGING_SYSLOG_TLS_ENABLED` | boolean | `true` | Enables TLS transport as per RFC 5425 |
+| `WEBSSH2_LOGGING_SYSLOG_TLS_CA_FILE` | string | `null` | Path to CA bundle when TLS is enabled |
+| `WEBSSH2_LOGGING_SYSLOG_TLS_CERT_FILE` | string | `null` | Path to client certificate for mutual TLS |
+| `WEBSSH2_LOGGING_SYSLOG_TLS_KEY_FILE` | string | `null` | Path to private key paired with client cert |
+| `WEBSSH2_LOGGING_SYSLOG_TLS_REJECT_UNAUTHORIZED` | boolean | `true` | Reject syslog server certificates failing validation |
+| `WEBSSH2_LOGGING_SYSLOG_BUFFER_SIZE` | number | `1000` | Maximum in-memory message backlog before drop |
+| `WEBSSH2_LOGGING_SYSLOG_FLUSH_INTERVAL_MS` | number | `1000` | Flush cadence for buffered syslog messages |
+| `WEBSSH2_LOGGING_SYSLOG_INCLUDE_JSON` | boolean | `false` | Attach JSON payload after syslog structured data |
+| `WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE` | number | `1` | Default probability (0-1) for emitting sampled events |
+| `WEBSSH2_LOGGING_SAMPLING_RULES` | string | `null` | JSON array of sampling overrides (`[{"target":"*","sampleRate":0.25}]`) |
+| `WEBSSH2_LOGGING_RATE_LIMIT_RULES` | string | `null` | JSON describing token-bucket rules (`[{"target":"ssh_command","limit":5,"intervalMs":1000,"burst":5}]`) |
+| `WEBSSH2_LOGGING_RELOAD_ENABLED` | boolean | `false` | Enables runtime polling for logging control reload |
+| `WEBSSH2_LOGGING_RELOAD_INTERVAL_MS` | number | `null` | Optional reload interval override in milliseconds |
+
+> **Note:** Syslog variables are part of the roadmap and are documented for planning only; the transport implementation ships in a later phase. When providing complex JSON values (such as `WEBSSH2_LOGGING_RATE_LIMIT_RULES` or `WEBSSH2_LOGGING_SAMPLING_RULES`), wrap the payload in single quotes to prevent shell interpolation. Sampling rules can be supplied via `config.json` for richer targeting (per-event overrides).
+
 ## Quick Start Examples
 
 Set common settings using environment variables (preferred):
