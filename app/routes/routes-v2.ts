@@ -5,11 +5,10 @@ import express, { type Router, type Request, type Response } from 'express'
 import handleConnection from '../connectionHandler.js'
 import { createNamespacedDebug } from '../logger.js'
 import { createAuthMiddleware } from '../middleware.js'
-import { processAuthParameters } from '../auth/auth-utils.js'
+import { processAuthParameters, type AuthSession } from '../auth/auth-utils.js'
 import { validateSshCredentials } from '../connection/index.js'
 import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
-import type { AuthSession } from '../auth/auth-utils.js'
 import { createSafeKey, safeGet } from '../utils/safe-property-access.js'
 
 // Import pure handlers

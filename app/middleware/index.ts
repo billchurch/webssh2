@@ -12,11 +12,13 @@ import type { Config } from '../types/config.js'
 
 // Re-export individual middleware creators
 export { createAuthMiddleware } from './auth.middleware.js'
-export { createSessionMiddleware } from './session.middleware.js'
-export { createBodyParserMiddleware } from './body-parser.middleware.js'
-export { createCookieMiddleware } from './cookie.middleware.js'
-export { createSSOAuthMiddleware } from './sso.middleware.js'
-export { createCSRFMiddleware } from './csrf.middleware.js'
+export {
+  createSessionMiddleware,
+  createBodyParserMiddleware,
+  createCookieMiddleware,
+  createSSOAuthMiddleware,
+  createCSRFMiddleware
+}
 
 /**
  * Apply all middleware to the Express application

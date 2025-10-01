@@ -5,7 +5,7 @@ import { logError, createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES } from './constants.js'
 import { WebSSH2Error } from './errors/webssh2-error.js'
 
-export { WebSSH2Error } from './errors/webssh2-error.js'
+export { WebSSH2Error }
 export { ConfigError } from './errors/config-error.js'
 export { SSHConnectionError } from './errors/ssh-connection-error.js'
 

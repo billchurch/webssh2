@@ -9,10 +9,8 @@ import type {
   SessionParams,
   ServiceDependencies
 } from '../interfaces.js'
-import type { SessionId } from '../../types/branded.js'
-import type { SessionState, Result } from '../../state/types.js'
-import { ok, err } from '../../state/types.js'
-import { createSessionId } from '../../types/branded.js'
+import { createSessionId, type SessionId } from '../../types/branded.js'
+import { ok, err, type SessionState, type Result } from '../../state/types.js'
 import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 

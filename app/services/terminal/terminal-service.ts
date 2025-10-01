@@ -10,8 +10,7 @@ import type {
   ServiceDependencies
 } from '../interfaces.js'
 import type { SessionId } from '../../types/branded.js'
-import type { Result } from '../../state/types.js'
-import { ok, err } from '../../state/types.js'
+import { ok, err, type Result } from '../../state/types.js'
 import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 

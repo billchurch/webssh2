@@ -3,8 +3,7 @@
 
 import { formatStructuredLog, type FormatStructuredLogOptions } from './formatter.js'
 import type { StructuredLogInput } from './structured-log.js'
-import type { LogLevel } from './levels.js'
-import { shouldLog } from './levels.js'
+import { shouldLog, type LogLevel } from './levels.js'
 import type { Result } from '../types/result.js'
 import { err, ok } from '../utils/result.js'
 import {

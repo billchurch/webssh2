@@ -3,8 +3,7 @@ import { buildSocketLogContext, emitSocketLog } from '../../../app/logging/socke
 import { createAdapterSharedState, type AdapterContext } from '../../../app/socket/adapters/service-socket-shared.js'
 import type { Services } from '../../../app/services/interfaces.js'
 import type { UnifiedAuthPipeline } from '../../../app/auth/auth-pipeline.js'
-import { createStructuredLoggerStub } from '../../test-utils.js'
-import type { StructuredLoggerStub } from '../../test-utils.js'
+import { createStructuredLoggerStub, type StructuredLoggerStub } from '../../test-utils.js'
 import type { SessionId } from '../../../app/types/branded.js'
 import { TEST_NETWORK, TEST_SOCKET_CONSTANTS, TEST_USER_AGENTS } from '../../test-constants.js'
 

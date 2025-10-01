@@ -8,9 +8,9 @@ import {
   createLogger,
   createSessionStore,
   createServices,
-  createServiceStructuredLogger
+  createServiceStructuredLogger,
+  type ExtendedServiceDependencies
 } from './factory.js'
-import type { ExtendedServiceDependencies } from './factory.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:setup')

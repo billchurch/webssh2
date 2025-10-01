@@ -11,15 +11,16 @@ import type {
   ExecResult,
   ServiceDependencies
 } from '../interfaces.js'
-import type { ConnectionId, SessionId } from '../../types/branded.js'
-import type { Result } from '../../state/types.js'
-import { ok, err } from '../../state/types.js'
-import { createConnectionId } from '../../types/branded.js'
-import { Client as SSH2Client } from 'ssh2'
+import {
+  createConnectionId,
+  type ConnectionId,
+  type SessionId
+} from '../../types/branded.js'
+import { ok, err, type Result } from '../../state/types.js'
+import { Client as SSH2Client, type ClientChannel, type PseudoTtyOptions } from 'ssh2'
 import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 import type { Duplex } from 'node:stream'
-import type { PseudoTtyOptions, ClientChannel } from 'ssh2'
 import { validateConnectionWithDns } from '../../ssh/hostname-resolver.js'
 import { ConnectionPool } from './connection-pool.js'
 import {

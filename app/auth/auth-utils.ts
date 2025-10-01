@@ -7,27 +7,11 @@ import { DEFAULTS } from '../constants.js'
 import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'
 
-// Re-export types from pure modules
-export type { 
-  HeaderOverride, 
-  HeaderValues, 
-  SourceType 
-} from './header-processor.js'
-
-export type {
-  SshCredentials,
-  ConnectionParams,
-  ValidatedConnection
-} from './credential-processor.js'
-
-export type {
-  RecordingParams
-} from './session-processor.js'
-
-// Import pure functions
 import {
   processHeaderParams,
-  type HeaderOverride
+  type HeaderOverride,
+  type HeaderValues,
+  type SourceType
 } from './header-processor.js'
 
 import {
@@ -36,13 +20,20 @@ import {
   createSshCredentials,
   maskCredentials,
   extractReadyTimeout,
-  type SshCredentials
+  type SshCredentials,
+  type ConnectionParams,
+  type ValidatedConnection
 } from './credential-processor.js'
 
 import {
   extractEnvironmentVars,
-  extractRecordingParams
+  extractRecordingParams,
+  type RecordingParams
 } from './session-processor.js'
+
+export type { HeaderOverride, HeaderValues, SourceType }
+export type { SshCredentials, ConnectionParams, ValidatedConnection }
+export type { RecordingParams }
 
 const debug = createNamespacedDebug('auth-utils')
 

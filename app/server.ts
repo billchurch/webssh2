@@ -1,7 +1,6 @@
 import type { Application } from 'express'
-import type { Server as HttpServer } from 'node:http'
+import http, { type Server as HttpServer } from 'node:http'
 import type { Config } from './types/config.js'
-import http from 'node:http'
 import debug from 'debug'
 
 const serverDebug = debug('webssh:server')

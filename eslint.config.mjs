@@ -122,6 +122,7 @@ export default [
           fixStyle: 'inline-type-imports',
         },
       ],
+      'no-duplicate-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': [
         'error',

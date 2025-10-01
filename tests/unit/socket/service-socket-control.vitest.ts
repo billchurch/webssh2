@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ServiceSocketControl } from '../../../app/socket/adapters/service-socket-control.js'
-import { createAdapterSharedState } from '../../../app/socket/adapters/service-socket-shared.js'
-import type { AdapterContext } from '../../../app/socket/adapters/service-socket-shared.js'
+import {
+  createAdapterSharedState,
+  type AdapterContext
+} from '../../../app/socket/adapters/service-socket-shared.js'
 import type { Services } from '../../../app/services/interfaces.js'
 import type { UnifiedAuthPipeline } from '../../../app/auth/auth-pipeline.js'
 import type { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData } from '../../../app/types/contracts/v1/socket.js'
 import type { Socket } from 'socket.io'
-import { createStructuredLoggerStub } from '../../test-utils.js'
-import type { StructuredLoggerStub } from '../../test-utils.js'
+import { createStructuredLoggerStub, type StructuredLoggerStub } from '../../test-utils.js'
 import { TEST_PASSWORDS } from '../../test-constants.js'
 
 interface MinimalSocket extends Partial<Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>> {

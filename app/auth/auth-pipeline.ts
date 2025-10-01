@@ -3,22 +3,27 @@
 
 import type { IncomingMessage } from 'node:http'
 import { createNamespacedDebug } from '../logger.js'
-import { isValidCredentials } from '../validation/index.js'
+import { isValidCredentials, type Credentials } from '../validation/index.js'
 import { maskSensitive } from '../utils/data-masker.js'
-import type { Credentials } from '../validation/index.js'
 import type { Config } from '../types/config.js'
 import type { AuthSession } from './auth-utils.js'
 import {
-  type AuthProvider,
-  type AuthMethod,
   BasicAuthProvider,
   PostAuthProvider,
+  type AuthProvider as InternalAuthProvider,
+  type AuthMethod as InternalAuthMethod
 } from './providers/index.js'
+
+type AuthProvider = InternalAuthProvider
+type AuthMethod = InternalAuthMethod
 
 const debug = createNamespacedDebug('auth-pipeline')
 
 // Re-export types for backward compatibility
-export type { AuthMethod, AuthProvider } from './providers/index.js'
+export type {
+  InternalAuthMethod as AuthMethod,
+  InternalAuthProvider as AuthProvider
+}
 
 type ExtendedRequest = IncomingMessage & {
   session?: AuthSession
