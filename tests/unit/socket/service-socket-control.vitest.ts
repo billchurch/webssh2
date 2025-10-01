@@ -14,44 +14,45 @@ interface MinimalSocket extends Partial<Socket<ClientToServerEvents, ServerToCli
   id: string
 }
 
-describe('ServiceSocketControl logging', () => {
-  const createContext = (
-    options?: { allowReplay?: boolean }
-  ): { control: ServiceSocketControl; logger: StructuredLoggerStub; context: AdapterContext } => {
-    const state = createAdapterSharedState()
-    state.sessionId = 'session-log' as never
-    state.connectionId = 'conn-log'
+function createContext(
+  options?: { allowReplay?: boolean }
+): { control: ServiceSocketControl; logger: StructuredLoggerStub; context: AdapterContext } {
+  const state = createAdapterSharedState()
+  state.sessionId = 'session-log' as never
+  state.connectionId = 'conn-log'
 
-    const logger = createStructuredLoggerStub()
-    const socket: MinimalSocket = {
-      id: 'socket-1',
-      emit: vi.fn()
-    }
-
-    const context: AdapterContext = {
-      socket: socket as Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-      config: {
-        options: {
-          allowReplay: options?.allowReplay ?? true,
-          allowReauth: true,
-          allowReconnect: true,
-          autoLog: false
-        }
-      } as AdapterContext['config'],
-      services: {
-        terminal: {
-          destroy: vi.fn()
-        }
-      } as unknown as Services,
-      authPipeline: {} as UnifiedAuthPipeline,
-      state,
-      debug: vi.fn(),
-      logger
-    }
-
-    const control = new ServiceSocketControl(context)
-    return { control, logger, context }
+  const logger = createStructuredLoggerStub()
+  const socket: MinimalSocket = {
+    id: 'socket-1',
+    emit: vi.fn()
   }
+
+  const context: AdapterContext = {
+    socket: socket as Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
+    config: {
+      options: {
+        allowReplay: options?.allowReplay ?? true,
+        allowReauth: true,
+        allowReconnect: true,
+        autoLog: false
+      }
+    } as AdapterContext['config'],
+    services: {
+      terminal: {
+        destroy: vi.fn()
+      }
+    } as unknown as Services,
+    authPipeline: {} as UnifiedAuthPipeline,
+    state,
+    debug: vi.fn(),
+    logger
+  }
+
+  const control = new ServiceSocketControl(context)
+  return { control, logger, context }
+}
+
+describe('ServiceSocketControl logging', () => {
 
   it('logs credential replay success', () => {
     const { control, logger, context } = createContext({ allowReplay: true })

@@ -7,12 +7,11 @@ import { Container, TOKENS } from './container.js'
 import {
   createLogger,
   createSessionStore,
-  createServices
+  createServices,
+  createServiceStructuredLogger
 } from './factory.js'
 import type { ExtendedServiceDependencies } from './factory.js'
 import debug from 'debug'
-import { createAppStructuredLogger } from '../logger.js'
-import type { StructuredLogger, StructuredLoggerOptions } from '../logging/structured-logger.js'
 
 const logger = debug('webssh2:services:setup')
 
@@ -79,19 +78,11 @@ export function setupContainer(config: Config): Container {
  * Helper to create service dependencies from container
  */
 function createDependencies(container: Container): ExtendedServiceDependencies {
-  const createStructuredLogger = (options: StructuredLoggerOptions = {}): StructuredLogger => {
-    const namespace = options.namespace ?? 'webssh2:services'
-    return createAppStructuredLogger({
-      ...options,
-      namespace
-    })
-  }
-
   return {
     config: container.resolve(TOKENS.Config),
     logger: container.resolve(TOKENS.Logger),
     store: container.resolve(TOKENS.SessionStore),
-    createStructuredLogger
+    createStructuredLogger: createServiceStructuredLogger
   }
 }
 

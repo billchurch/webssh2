@@ -45,21 +45,25 @@ export interface ConnectionLogger {
   readonly baseFromConnection: (connection: SSHConnection) => ConnectionLogBase
 }
 
-export function createConnectionLogger(deps: ConnectionLoggerDeps): ConnectionLogger {
-  const baseFromConfig = (config: SSHConfig): ConnectionLogBase => ({
+function mapConfigToConnectionBase(config: SSHConfig): ConnectionLogBase {
+  return {
     sessionId: config.sessionId,
     host: config.host,
     port: config.port,
     username: config.username
-  })
+  }
+}
 
-  const baseFromConnection = (connection: SSHConnection): ConnectionLogBase => ({
+function mapConnectionToBase(connection: SSHConnection): ConnectionLogBase {
+  return {
     sessionId: connection.sessionId,
     host: connection.host,
     port: connection.port,
     username: connection.username
-  })
+  }
+}
 
+export function createConnectionLogger(deps: ConnectionLoggerDeps): ConnectionLogger {
   const log = (
     base: ConnectionLogBase,
     level: LogLevel,
@@ -74,8 +78,8 @@ export function createConnectionLogger(deps: ConnectionLoggerDeps): ConnectionLo
 
   return {
     log,
-    baseFromConfig,
-    baseFromConnection
+    baseFromConfig: mapConfigToConnectionBase,
+    baseFromConnection: mapConnectionToBase
   }
 }
 

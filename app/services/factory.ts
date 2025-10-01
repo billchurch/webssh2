@@ -118,6 +118,16 @@ export function createLogger(
   return new DefaultLogger(logNamespace)
 }
 
+export function createServiceStructuredLogger(
+  options: StructuredLoggerOptions = {}
+): StructuredLogger {
+  const namespace = options.namespace ?? 'webssh2:services'
+  return createAppStructuredLogger({
+    ...options,
+    namespace
+  })
+}
+
 /**
  * Create a session store
  */
@@ -139,15 +149,6 @@ export function bootstrapServices(config: Config): {
   // Create core dependencies
   const logger = createLogger(config)
   const store = createSessionStore(config)
-  const createServiceStructuredLogger = (
-    options: StructuredLoggerOptions = {}
-  ): StructuredLogger => {
-    const namespace = options.namespace ?? 'webssh2:services'
-    return createAppStructuredLogger({
-      ...options,
-      namespace
-    })
-  }
 
   // Create extended dependencies
   const deps: ExtendedServiceDependencies = {

@@ -52,13 +52,17 @@ const expectKeyboardInteractiveEvent = (
   })
 }
 
+function runShellWithMockStream(
+  callback: (err: Error | null, stream?: unknown) => void
+): EventEmitter {
+  const stream = new EventEmitter()
+  callback(null, stream)
+  return stream
+}
+
 // Mock SSH2 connection
 class MockConnection extends EventEmitter {
-  shell = vi.fn((callback: (err: Error | null, stream?: unknown) => void) => {
-    const stream = new EventEmitter()
-    callback(null, stream)
-    return stream
-  })
+  shell = vi.fn(runShellWithMockStream)
   
   end = vi.fn()
   
