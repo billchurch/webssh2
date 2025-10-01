@@ -52,7 +52,7 @@ export function extractErrorMessage(err: unknown): string {
   }
   
   if (err instanceof Error) {
-    return err.message !== '' ? err.message : err.toString()
+    return err.message === '' ? err.toString() : err.message
   }
   
   const errorObj = err as { message?: string; code?: string; toString?: () => string }

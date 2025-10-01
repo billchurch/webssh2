@@ -118,7 +118,7 @@ export class ServiceSocketControl {
     emitSocketLog(this.context, level, 'credential_replay', message, {
       status,
       subsystem: 'shell',
-      ...(reason !== undefined ? { reason } : {}),
+      ...(reason === undefined ? {} : { reason }),
       data
     })
   }

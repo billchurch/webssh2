@@ -124,15 +124,15 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     let rows: number
     let cols: number
 
-    if (sttyMatch !== undefined) {
-      rows = Number(sttyMatch[1])
-      cols = Number(sttyMatch[2])
-    } else {
+    if (sttyMatch === undefined) {
       // Fallback to any number pair
       const match = out.match(/\b(\d+)\s+(\d+)\b/)
       expect(match).toBeTruthy()
       rows = Number(match![1])
       cols = Number(match![2])
+    } else {
+      rows = Number(sttyMatch[1])
+      cols = Number(sttyMatch[2])
     }
 
     // V2 should use actual terminal dimensions, not defaults
@@ -185,7 +185,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     const initialSizeMatch: RegExpMatchArray | undefined = sizeMatches[sizeMatches.length - 1]
 
     if (initialSizeMatch === undefined) {
-      throw new Error(`No initial size found in terminal output: ${initialOut.substring(0, 500)}`)
+      throw new Error(`No initial size found in terminal output: ${initialOut.slice(0, 500)}`)
     }
 
     const initialSize: string = initialSizeMatch[0]
@@ -210,7 +210,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches[newSizeMatches.length - 1]
 
     if (lastSizeMatch === undefined) {
-      throw new Error(`No size found after resize. Terminal output: ${newOut.substring(0, 500)}`)
+      throw new Error(`No size found after resize. Terminal output: ${newOut.slice(0, 500)}`)
     }
 
     const newSize: string = lastSizeMatch[0]

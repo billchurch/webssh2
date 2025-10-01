@@ -4,6 +4,7 @@ import securityPlugin from 'eslint-plugin-security'
 import prettierConfig from 'eslint-config-prettier'
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
+import unicornPlugin from 'eslint-plugin-unicorn'
 
 export default [
   eslint.configs.recommended,
@@ -36,6 +37,7 @@ export default [
     plugins: {
       node: nodePlugin,
       security: securityPlugin,
+      unicorn: unicornPlugin,
     },
     rules: {
       'no-var': 'error',
@@ -69,6 +71,15 @@ export default [
       'prefer-object-spread': 'error',
       'no-nested-ternary': 'error',
       'no-template-curly-in-string': 'error',
+      'unicorn/no-negated-condition': 'error',
+      'unicorn/prefer-includes': 'error',
+      'unicorn/prefer-string-slice': 'error',
+      'unicorn/explicit-length-check': 'error',
+      'unicorn/error-message': 'error',
+      'unicorn/prefer-top-level-await': 'error',
+      'unicorn/prefer-node-protocol': 'error',
+      'unicorn/prefer-modern-dom-apis': 'error',
+      'unicorn/consistent-function-scoping': 'warn',
     },
   },
   {
@@ -205,4 +216,6 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+
 ]
+

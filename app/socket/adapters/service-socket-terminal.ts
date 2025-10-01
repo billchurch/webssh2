@@ -56,16 +56,16 @@ export class ServiceSocketTerminal {
     if (terminalResult.ok && terminalResult.value !== null) {
       const result = this.context.services.terminal.resize(this.context.state.sessionId, dimensions)
 
-      if (!result.ok) {
+      if (result.ok) {
+        emitSocketLog(this.context, 'info', 'pty_resize', 'Terminal resized', {
+          status: 'success',
+          data: { rows: dimensions.rows, cols: dimensions.cols }
+        })
+      } else {
         this.context.debug('Resize failed:', result.error)
         emitSocketLog(this.context, 'warn', 'pty_resize', 'Terminal resize failed', {
           status: 'failure',
           reason: result.error.message,
-          data: { rows: dimensions.rows, cols: dimensions.cols }
-        })
-      } else {
-        emitSocketLog(this.context, 'info', 'pty_resize', 'Terminal resized', {
-          status: 'success',
           data: { rows: dimensions.rows, cols: dimensions.cols }
         })
       }

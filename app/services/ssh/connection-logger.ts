@@ -87,13 +87,13 @@ function buildLogContext(base: ConnectionLogBase, details: ConnectionLogDetails)
     targetHost: base.host,
     targetPort: base.port,
     ...(isNonEmpty(base.username) ? { username: base.username } : {}),
-    ...(details.connectionId !== undefined ? { connectionId: details.connectionId } : {}),
-    ...(details.status !== undefined ? { status: details.status } : {}),
-    ...(details.reason !== undefined ? { reason: details.reason } : {}),
-    ...(details.errorCode !== undefined ? { errorCode: details.errorCode } : {}),
-    ...(details.durationMs !== undefined ? { durationMs: details.durationMs } : {}),
-    ...(details.bytesIn !== undefined ? { bytesIn: details.bytesIn } : {}),
-    ...(details.bytesOut !== undefined ? { bytesOut: details.bytesOut } : {})
+    ...(details.connectionId === undefined ? {} : { connectionId: details.connectionId }),
+    ...(details.status === undefined ? {} : { status: details.status }),
+    ...(details.reason === undefined ? {} : { reason: details.reason }),
+    ...(details.errorCode === undefined ? {} : { errorCode: details.errorCode }),
+    ...(details.durationMs === undefined ? {} : { durationMs: details.durationMs }),
+    ...(details.bytesIn === undefined ? {} : { bytesIn: details.bytesIn }),
+    ...(details.bytesOut === undefined ? {} : { bytesOut: details.bytesOut })
   }
 }
 
@@ -107,7 +107,7 @@ function buildLogEntry(
     event,
     message,
     context,
-    ...(details.data !== undefined ? { data: { ...details.data } } : {})
+    ...(details.data === undefined ? {} : { data: { ...details.data } })
   }
 }
 

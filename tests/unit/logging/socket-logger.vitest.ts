@@ -6,7 +6,7 @@ import type { UnifiedAuthPipeline } from '../../../app/auth/auth-pipeline.js'
 import { createStructuredLoggerStub } from '../../test-utils.js'
 import type { StructuredLoggerStub } from '../../test-utils.js'
 import type { SessionId } from '../../../app/types/branded.js'
-import { TEST_NETWORK, TEST_USER_AGENTS } from '../../test-constants.js'
+import { TEST_NETWORK, TEST_SOCKET_CONSTANTS, TEST_USER_AGENTS } from '../../test-constants.js'
 
 const createTestAdapterContext = (): { context: AdapterContext; logger: StructuredLoggerStub } => {
   const state = createAdapterSharedState()
@@ -15,7 +15,7 @@ const createTestAdapterContext = (): { context: AdapterContext; logger: Structur
   state.clientIp = TEST_NETWORK.CLIENT_CONTEXT_IP
   state.clientPort = TEST_NETWORK.FORWARDED_PORT
   state.clientSourcePort = TEST_NETWORK.FORWARDED_PORT
-  state.targetHost = '10.0.0.5'
+  state.targetHost = TEST_SOCKET_CONSTANTS.TARGET_HOST
   state.targetPort = 22
   state.username = 'jdoe'
   state.userAgent = TEST_USER_AGENTS.DEFAULT
@@ -55,7 +55,7 @@ describe('socket-logger', () => {
     expect(logContext.clientPort).toBe(TEST_NETWORK.FORWARDED_PORT)
     expect(logContext.clientSourcePort).toBe(TEST_NETWORK.FORWARDED_PORT)
     expect(logContext.userAgent).toBe(TEST_USER_AGENTS.DEFAULT)
-    expect(logContext.targetHost).toBe('10.0.0.5')
+    expect(logContext.targetHost).toBe(TEST_SOCKET_CONSTANTS.TARGET_HOST)
     expect(logContext.targetPort).toBe(22)
     expect(logContext.status).toBe('success')
   })
@@ -74,14 +74,14 @@ describe('socket-logger', () => {
 
     emitSocketLog(context, 'info', 'auth_success', 'Authentication succeeded', {
       status: 'success',
-      data: { host: '10.0.0.5' }
+      data: { host: TEST_SOCKET_CONSTANTS.TARGET_HOST }
     })
 
     expect(logger.entries).toHaveLength(1)
     const entry = logger.entries[0]
     expect(entry.level).toBe('info')
     expect(entry.entry.event).toBe('auth_success')
-    expect(entry.entry.data).toEqual({ host: '10.0.0.5' })
+    expect(entry.entry.data).toEqual({ host: TEST_SOCKET_CONSTANTS.TARGET_HOST })
     expect(entry.entry.context?.status).toBe('success')
   })
 })

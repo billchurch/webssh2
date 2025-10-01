@@ -6,7 +6,12 @@ import { createInitialSessionState } from '../../../app/socket/handlers/auth-han
 import type { SessionState } from '../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../app/types/config.js'
 import { createStructuredLoggerStub, type StructuredLoggerStub } from '../../test-utils.js'
-import { TEST_PASSWORDS, TEST_SECRET, TEST_USER_AGENTS } from '../../test-constants.js'
+import {
+  TEST_PASSWORDS,
+  TEST_SECRET,
+  TEST_SOCKET_CONSTANTS,
+  TEST_USER_AGENTS
+} from '../../test-constants.js'
 
 interface ControlHandlerModule {
   handleReplayCredentials: (
@@ -70,7 +75,7 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
       trustedProxies: [],
       headerMapping: {
         username: 'x-remote-user',
-        password: 'x-remote-pass',
+        password: TEST_SOCKET_CONSTANTS.REMOTE_PASSWORD_HEADER,
         session: 'x-remote-session'
       }
     }
@@ -137,7 +142,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: true,
       lineEnding: 'crlf',
-      passwordSource: 'session_credentials'
+      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY
     })
   })
 
@@ -173,7 +178,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: false,
       lineEnding: 'cr',
-      passwordSource: 'session_credentials'
+      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY
     })
   })
 
@@ -203,7 +208,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: true,
       lineEnding: 'crlf',
-      passwordSource: 'none'
+      passwordSource: TEST_SOCKET_CONSTANTS.PASSWORD_SOURCE_NONE
     })
   })
 
@@ -243,7 +248,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: true,
       lineEnding: 'crlf',
-      passwordSource: 'session_credentials',
+      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY,
       writeFailure: true
     })
   })

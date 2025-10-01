@@ -23,9 +23,9 @@ export function createAppStructuredLogger(
 ): StructuredLogger {
   return createStructuredLogger({
     namespace: options.namespace ?? 'webssh2:app',
-    ...(options.minimumLevel !== undefined ? { minimumLevel: options.minimumLevel } : {}),
-    ...(options.transport !== undefined ? { transport: options.transport } : {}),
-    ...(options.clock !== undefined ? { clock: options.clock } : {})
+    ...(options.minimumLevel === undefined ? {} : { minimumLevel: options.minimumLevel }),
+    ...(options.transport === undefined ? {} : { transport: options.transport }),
+    ...(options.clock === undefined ? {} : { clock: options.clock })
   })
 }
 
@@ -39,7 +39,7 @@ export function logError(message: string, error?: Error, context?: Partial<LogCo
     event: 'error',
     message,
     context: structuredContext,
-    ...(error !== undefined ? { error } : {})
+    ...(error === undefined ? {} : { error })
   })
 
   if (!structuredResult.ok) {

@@ -75,7 +75,7 @@ export function filterEnvironmentVariables(
     if (sanitizedKey != null && !sensitiveVars.has(sanitizedKey)) {
       // Limit value length and use Object.defineProperty to avoid object injection warning
       Object.defineProperty(filtered, sanitizedKey, {
-        value: value.substring(0, VALIDATION_LIMITS.MAX_ENV_VALUE_LENGTH),
+        value: value.slice(0, Math.max(0, VALIDATION_LIMITS.MAX_ENV_VALUE_LENGTH)),
         writable: true,
         enumerable: true,
         configurable: true

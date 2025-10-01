@@ -107,15 +107,15 @@ function populateStateContext(
 
   const mappedAuthMethod = mapAuthMethod(state.originalAuthMethod)
   const optionalContext: Partial<LogContext> = {
-    ...(state.sessionId !== null ? { sessionId: state.sessionId } : {}),
-    ...(state.username !== null ? { username: state.username } : {}),
-    ...(mappedAuthMethod !== null ? { authMethod: mappedAuthMethod } : {}),
-    ...(state.clientIp !== null ? { clientIp: state.clientIp } : {}),
-    ...(state.clientPort !== null ? { clientPort: state.clientPort } : {}),
-    ...(state.clientSourcePort !== null ? { clientSourcePort: state.clientSourcePort } : {}),
-    ...(state.targetHost !== null ? { targetHost: state.targetHost } : {}),
-    ...(state.targetPort !== null ? { targetPort: state.targetPort } : {}),
-    ...(state.connectionId !== null ? { connectionId: state.connectionId } : {}),
+    ...(state.sessionId === null ? {} : { sessionId: state.sessionId }),
+    ...(state.username === null ? {} : { username: state.username }),
+    ...(mappedAuthMethod === null ? {} : { authMethod: mappedAuthMethod }),
+    ...(state.clientIp === null ? {} : { clientIp: state.clientIp }),
+    ...(state.clientPort === null ? {} : { clientPort: state.clientPort }),
+    ...(state.clientSourcePort === null ? {} : { clientSourcePort: state.clientSourcePort }),
+    ...(state.targetHost === null ? {} : { targetHost: state.targetHost }),
+    ...(state.targetPort === null ? {} : { targetPort: state.targetPort }),
+    ...(state.connectionId === null ? {} : { connectionId: state.connectionId }),
     ...(event === 'session_init' && state.userAgent !== null ? { userAgent: state.userAgent } : {})
   }
 

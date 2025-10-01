@@ -243,10 +243,10 @@ function createReplayLogContext(
     protocol: 'ssh',
     subsystem: 'shell',
     status,
-    ...(sessionState.username != null ? { username: sessionState.username } : {}),
-    ...(sessionState.host != null ? { targetHost: sessionState.host } : {}),
-    ...(sessionState.port != null ? { targetPort: sessionState.port } : {}),
-    ...(reason !== undefined ? { reason } : {})
+    ...(sessionState.username == null ? {} : { username: sessionState.username }),
+    ...(sessionState.host == null ? {} : { targetHost: sessionState.host }),
+    ...(sessionState.port == null ? {} : { targetPort: sessionState.port }),
+    ...(reason === undefined ? {} : { reason })
   }
 }
 

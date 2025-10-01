@@ -37,8 +37,8 @@ export function createStructuredLogger(options: StructuredLoggerOptions = {}): S
     }
 
     const formatOptions: FormatStructuredLogOptions = {
-      ...(options.clock !== undefined ? { clock: options.clock } : {}),
-      ...(options.namespace !== undefined ? { namespace: options.namespace } : {})
+      ...(options.clock === undefined ? {} : { clock: options.clock }),
+      ...(options.namespace === undefined ? {} : { namespace: options.namespace })
     }
 
     const formatted = formatStructuredLog(entry, formatOptions)
