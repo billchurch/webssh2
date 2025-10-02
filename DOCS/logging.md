@@ -63,15 +63,14 @@ Transports must be pluggable; attaching or detaching one cannot impact the core 
 
 ## Configuration Surface
 Environment variables (all prefixed `WEBSSH2_LOGGING_`):
-- `FORMAT`: `json` (default) for stdout.
 - `LEVEL`: minimum severity to emit (`info` default).
-- `STDOUT_ENABLED`: defaults to `true`.
-- `STDOUT_MIN_LEVEL`: override for stdout transport.
-- `SYSLOG_ENABLED`: defaults to `false`.
-- `SYSLOG_HOST`, `SYSLOG_PORT`, `SYSLOG_APP_NAME`, `SYSLOG_ENTERPRISE_ID`: connection metadata.
-- `SYSLOG_TLS_ENABLED`, `SYSLOG_TLS_CA_FILE`, `SYSLOG_TLS_CERT_FILE`, `SYSLOG_TLS_KEY_FILE`, `SYSLOG_TLS_REJECT_UNAUTHORIZED`: TLS controls.
-- `SYSLOG_BUFFER_SIZE`, `SYSLOG_FLUSH_INTERVAL_MS`: flow control.
-- `SYSLOG_INCLUDE_JSON`: include JSON payload after structured data block when `true`.
+- `STDOUT_ENABLED`: enable/disable stdout delivery (defaults to `true`).
+- `STDOUT_MIN_LEVEL`: override for stdout transport only.
+- `SYSLOG_ENABLED`: enable RFC 5424 forwarding (defaults to `false`).
+- `SYSLOG_HOST`, `SYSLOG_PORT`, `SYSLOG_APP_NAME`, `SYSLOG_ENTERPRISE_ID`: syslog endpoint metadata.
+- `SYSLOG_TLS_ENABLED`, `SYSLOG_TLS_CA_FILE`, `SYSLOG_TLS_CERT_FILE`, `SYSLOG_TLS_KEY_FILE`, `SYSLOG_TLS_REJECT_UNAUTHORIZED`: TLS configuration.
+- `SYSLOG_BUFFER_SIZE`, `SYSLOG_FLUSH_INTERVAL_MS`: client-side buffering controls.
+- `SYSLOG_INCLUDE_JSON`: append the JSON payload after the structured data block when `true`.
 
 Configuration is parsed through the existing env-mapper, validated via zod schemas, and surfaced through the DI container.
 
@@ -86,11 +85,52 @@ Structured logging can now be tuned at runtime through `logging` entries in the 
 Environment overrides keep these controls in sync without touching `config.json`:
 
 - `WEBSSH2_LOGGING_LEVEL` → `logging.minimumLevel`
+- `WEBSSH2_LOGGING_STDOUT_ENABLED` → `logging.stdout.enabled`
+- `WEBSSH2_LOGGING_STDOUT_MIN_LEVEL` → `logging.stdout.minimumLevel`
 - `WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE` → `logging.controls.sampling.defaultSampleRate`
 - `WEBSSH2_LOGGING_SAMPLING_RULES` → `logging.controls.sampling.rules` (JSON array)
 - `WEBSSH2_LOGGING_RATE_LIMIT_RULES` → `logging.controls.rateLimit.rules` (JSON array)
+- `WEBSSH2_LOGGING_SYSLOG_ENABLED` → `logging.syslog.enabled`
+- `WEBSSH2_LOGGING_SYSLOG_HOST` / `WEBSSH2_LOGGING_SYSLOG_PORT` → `logging.syslog.host` / `port`
+- `WEBSSH2_LOGGING_SYSLOG_APP_NAME` → `logging.syslog.appName`
+- `WEBSSH2_LOGGING_SYSLOG_ENTERPRISE_ID` → `logging.syslog.enterpriseId`
+- `WEBSSH2_LOGGING_SYSLOG_BUFFER_SIZE` → `logging.syslog.bufferSize`
+- `WEBSSH2_LOGGING_SYSLOG_FLUSH_INTERVAL_MS` → `logging.syslog.flushIntervalMs`
+- `WEBSSH2_LOGGING_SYSLOG_INCLUDE_JSON` → `logging.syslog.includeJson`
+- `WEBSSH2_LOGGING_SYSLOG_TLS_*` → `logging.syslog.tls.*`
 
-The stdout transport now enforces a bounded in-memory queue (default 1000 events). When the queue is full, entries are dropped with `TransportBackpressureError`; `StructuredLogger#snapshotMetrics()` exposes counters for published, sampled, rate-limited, and queue-dropped events to aid operational dashboards.
+### Transports
+
+- **Stdout (default)**
+  - Bounded queue (default 1000 events) with drain awareness.
+  - Optional per-transport minimum level via `WEBSSH2_LOGGING_STDOUT_MIN_LEVEL`.
+- **Syslog (optional)**
+  - RFC 5424 serializer with deterministic structured data under `webssh2@<enterpriseId>`.
+  - Octet-counted framing over TCP with automatic reconnect and exponential backoff.
+  - Optional TLS (RFC 5425) with filesystem-backed credentials and toggleable certificate validation.
+  - Dual-delivery supported; enable both stdout and syslog when operating in hybrid environments.
+
+`StructuredLogger#snapshotMetrics()` exposes counters for published, sampled, rate-limited, and queue-dropped events to aid operational dashboards.
+
+### Syslog Forwarding
+
+Enabling syslog only requires host and port:
+
+```bash
+WEBSSH2_LOGGING_SYSLOG_ENABLED=true \
+WEBSSH2_LOGGING_SYSLOG_HOST=syslog.example.com \
+WEBSSH2_LOGGING_SYSLOG_PORT=6514 \
+WEBSSH2_LOGGING_SYSLOG_TLS_ENABLED=true \
+WEBSSH2_LOGGING_SYSLOG_TLS_CA_FILE=/etc/pki/ca.pem
+```
+
+Key behaviours:
+
+- Severity is derived from the structured `level` and emitted under facility `local0` by default.
+- Structured data includes event metadata (`session_id`, `username`, `client_ip`, `connection_id`).
+- When `WEBSSH2_LOGGING_SYSLOG_INCLUDE_JSON=true`, the JSON payload is appended after the structured data block for downstream enrichment.
+- Buffered queue (`WEBSSH2_LOGGING_SYSLOG_BUFFER_SIZE`) and flush cadence (`WEBSSH2_LOGGING_SYSLOG_FLUSH_INTERVAL_MS`) guard against slow collectors; if the queue is exhausted the logger records a `TransportBackpressureError` and drops new events non-fatally.
+- TLS credentials are read during transport initialisation; invalid paths leave syslog disabled with a warning on stderr.
 
 ## Implementation Milestones
 1. Replace the current `Logger` interface with a structured logger accepting `{ level, event, data }`.

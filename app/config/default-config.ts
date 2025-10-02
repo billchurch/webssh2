@@ -7,7 +7,10 @@ import type {
   LoggingConfig,
   LoggingControlsConfig,
   LoggingSamplingConfig,
-  LoggingRateLimitConfig
+  LoggingRateLimitConfig,
+  LoggingStdoutConfig,
+  LoggingSyslogConfig,
+  LoggingSyslogTlsConfig
 } from '../types/config.js'
 import { DEFAULTS } from '../constants.js'
 
@@ -100,6 +103,9 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
   logging: {
     namespace: 'webssh2:app',
     minimumLevel: 'info',
+    stdout: {
+      enabled: true
+    }
   },
 }
 
@@ -148,11 +154,15 @@ function cloneLoggingConfig(config: LoggingConfig | undefined): LoggingConfig | 
   }
 
   const clonedControls = cloneLoggingControls(config.controls)
+  const clonedStdout = cloneLoggingStdout(config.stdout)
+  const clonedSyslog = cloneLoggingSyslog(config.syslog)
 
   return {
     ...(config.namespace === undefined ? {} : { namespace: config.namespace }),
     ...(config.minimumLevel === undefined ? {} : { minimumLevel: config.minimumLevel }),
-    ...(clonedControls === undefined ? {} : { controls: clonedControls })
+    ...(clonedControls === undefined ? {} : { controls: clonedControls }),
+    ...(clonedStdout === undefined ? {} : { stdout: clonedStdout }),
+    ...(clonedSyslog === undefined ? {} : { syslog: clonedSyslog })
   }
 }
 
@@ -206,5 +216,57 @@ function cloneLoggingRateLimit(
       : {
           rules: rateLimit.rules.map((rule) => ({ ...rule }))
         })
+  }
+}
+
+function cloneLoggingStdout(
+  stdout: LoggingStdoutConfig | undefined
+): LoggingStdoutConfig | undefined {
+  if (stdout === undefined) {
+    return undefined
+  }
+
+  return {
+    enabled: stdout.enabled,
+    ...(stdout.minimumLevel === undefined ? {} : { minimumLevel: stdout.minimumLevel })
+  }
+}
+
+function cloneLoggingSyslog(
+  syslog: LoggingSyslogConfig | undefined
+): LoggingSyslogConfig | undefined {
+  if (syslog === undefined) {
+    return undefined
+  }
+
+  const clonedTls = cloneLoggingSyslogTls(syslog.tls)
+
+  const base: LoggingSyslogConfig = {
+    enabled: syslog.enabled,
+    ...(syslog.host === undefined ? {} : { host: syslog.host }),
+    ...(syslog.port === undefined ? {} : { port: syslog.port }),
+    ...(syslog.appName === undefined ? {} : { appName: syslog.appName }),
+    ...(syslog.enterpriseId === undefined ? {} : { enterpriseId: syslog.enterpriseId }),
+    ...(syslog.bufferSize === undefined ? {} : { bufferSize: syslog.bufferSize }),
+    ...(syslog.flushIntervalMs === undefined ? {} : { flushIntervalMs: syslog.flushIntervalMs }),
+    ...(syslog.includeJson === undefined ? {} : { includeJson: syslog.includeJson })
+  }
+
+  return clonedTls === undefined ? base : { ...base, tls: clonedTls }
+}
+
+function cloneLoggingSyslogTls(
+  tls: LoggingSyslogTlsConfig | undefined
+): LoggingSyslogTlsConfig | undefined {
+  if (tls === undefined) {
+    return undefined
+  }
+
+  return {
+    enabled: tls.enabled,
+    ...(tls.caFile === undefined ? {} : { caFile: tls.caFile }),
+    ...(tls.certFile === undefined ? {} : { certFile: tls.certFile }),
+    ...(tls.keyFile === undefined ? {} : { keyFile: tls.keyFile }),
+    ...(tls.rejectUnauthorized === undefined ? {} : { rejectUnauthorized: tls.rejectUnauthorized })
   }
 }

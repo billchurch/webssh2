@@ -46,10 +46,25 @@ const createTestEnvironment = (): Record<string, string> => ({
   WEBSSH2_SSO_HEADER_PASSWORD: SSO_AUTH_HEADERS.password,
   WEBSSH2_SSO_HEADER_SESSION: SSO_AUTH_HEADERS.session,
   WEBSSH2_LOGGING_LEVEL: 'debug',
+  WEBSSH2_LOGGING_STDOUT_ENABLED: 'true',
+  WEBSSH2_LOGGING_STDOUT_MIN_LEVEL: 'warn',
   WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE: '0.5',
   WEBSSH2_LOGGING_SAMPLING_RULES: '[{"target":"ssh_command","sampleRate":0.25}]',
   WEBSSH2_LOGGING_RATE_LIMIT_RULES:
     '[{"target":"ssh_command","limit":5,"intervalMs":1000,"burst":5}]',
+  WEBSSH2_LOGGING_SYSLOG_ENABLED: 'true',
+  WEBSSH2_LOGGING_SYSLOG_HOST: 'syslog.example.com',
+  WEBSSH2_LOGGING_SYSLOG_PORT: '6514',
+  WEBSSH2_LOGGING_SYSLOG_APP_NAME: 'webssh2-app',
+  WEBSSH2_LOGGING_SYSLOG_ENTERPRISE_ID: '32473',
+  WEBSSH2_LOGGING_SYSLOG_BUFFER_SIZE: '2000',
+  WEBSSH2_LOGGING_SYSLOG_FLUSH_INTERVAL_MS: '1500',
+  WEBSSH2_LOGGING_SYSLOG_INCLUDE_JSON: 'true',
+  WEBSSH2_LOGGING_SYSLOG_TLS_ENABLED: 'true',
+  WEBSSH2_LOGGING_SYSLOG_TLS_CA_FILE: '/etc/ssl/ca.pem',
+  WEBSSH2_LOGGING_SYSLOG_TLS_CERT_FILE: '/etc/ssl/cert.pem',
+  WEBSSH2_LOGGING_SYSLOG_TLS_KEY_FILE: '/etc/ssl/key.pem',
+  WEBSSH2_LOGGING_SYSLOG_TLS_REJECT_UNAUTHORIZED: 'false',
 })
 
 const verifyListenConfig = (config: ReturnType<typeof mapEnvironmentVariables>): void => {
@@ -98,6 +113,10 @@ const verifySsoConfig = (config: ReturnType<typeof mapEnvironmentVariables>): vo
 const verifyLoggingConfig = (config: ReturnType<typeof mapEnvironmentVariables>): void => {
   expect(config.logging).toMatchObject({
     minimumLevel: 'debug',
+    stdout: {
+      enabled: true,
+      minimumLevel: 'warn'
+    },
     controls: {
       sampling: {
         defaultSampleRate: 0.5,
@@ -119,6 +138,23 @@ const verifyLoggingConfig = (config: ReturnType<typeof mapEnvironmentVariables>)
         ],
       },
     },
+    syslog: {
+      enabled: true,
+      host: 'syslog.example.com',
+      port: 6514,
+      appName: 'webssh2-app',
+      enterpriseId: 32473,
+      bufferSize: 2000,
+      flushIntervalMs: 1500,
+      includeJson: true,
+      tls: {
+        enabled: true,
+        caFile: '/etc/ssl/ca.pem',
+        certFile: '/etc/ssl/cert.pem',
+        keyFile: '/etc/ssl/key.pem',
+        rejectUnauthorized: false,
+      },
+    },
   })
 }
 
@@ -138,8 +174,8 @@ describe('Enhanced Config - Environment Variable Support', () => {
 
   it('should have mapping for all core environment variables', () => {
     const envVarCount = Object.keys(ENV_VAR_MAPPING).length
-    // Current implementation has 40 environment variables mapped
-    expect(envVarCount).toBeGreaterThanOrEqual(40)
+    // Current implementation has 54 environment variables mapped
+    expect(envVarCount).toBeGreaterThanOrEqual(54)
   })
 })
 

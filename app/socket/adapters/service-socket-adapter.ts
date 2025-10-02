@@ -70,7 +70,7 @@ export class ServiceSocketAdapter {
       authPipeline: this.authPipeline,
       state,
       debug,
-      logger: createAppStructuredLogger({ namespace: 'webssh2:socket' })
+      logger: createAppStructuredLogger({ namespace: 'webssh2:socket', config })
     }
 
     this.auth = new ServiceSocketAuthentication(this.context)
