@@ -82,6 +82,8 @@ export default [
       'unicorn/prefer-top-level-await': 'error',
       'unicorn/prefer-node-protocol': 'error',
       'unicorn/prefer-modern-dom-apis': 'error',
+      // S7744 parity: prevent useless fallback objects in spreads
+      'unicorn/no-useless-fallback-in-spread': 'error',
       'unicorn/consistent-function-scoping': 'warn',
     },
   },
@@ -187,6 +189,7 @@ export default [
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
         },
       ],
+      // S1186 parity: avoid empty functions (constructors remain allowed for DI hooks)
       '@typescript-eslint/no-empty-function': [
         'error',
         {

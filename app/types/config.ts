@@ -130,12 +130,34 @@ export interface LoggingRateLimitRule {
 }
 
 /**
- * Logging configuration reload behaviour
- */
-/**
  * Supported logging event target identifiers
  */
 export type LoggingEventTarget = '*' | LogEventName
+
+export interface LoggingStdoutConfig {
+  readonly enabled: boolean
+  readonly minimumLevel?: LogLevel
+}
+
+export interface LoggingSyslogTlsConfig {
+  readonly enabled: boolean
+  readonly caFile?: string
+  readonly certFile?: string
+  readonly keyFile?: string
+  readonly rejectUnauthorized?: boolean
+}
+
+export interface LoggingSyslogConfig {
+  readonly enabled: boolean
+  readonly host?: string
+  readonly port?: number
+  readonly appName?: string
+  readonly enterpriseId?: number
+  readonly bufferSize?: number
+  readonly flushIntervalMs?: number
+  readonly includeJson?: boolean
+  readonly tls?: LoggingSyslogTlsConfig
+}
 
 /**
  * Logging configuration
@@ -144,6 +166,8 @@ export interface LoggingConfig {
   readonly namespace?: string
   readonly minimumLevel?: LogLevel
   readonly controls?: LoggingControlsConfig
+  readonly stdout?: LoggingStdoutConfig
+  readonly syslog?: LoggingSyslogConfig
 }
 
 /**

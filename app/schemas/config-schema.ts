@@ -199,6 +199,31 @@ const LoggingControlsSchema = z.object({
   rateLimit: LoggingRateLimitConfigSchema.optional()
 })
 
+const LoggingStdoutSchema = z.object({
+  enabled: z.boolean(),
+  minimumLevel: LogLevelSchema.optional()
+})
+
+const LoggingSyslogTlsSchema = z.object({
+  enabled: z.boolean(),
+  caFile: z.string().optional(),
+  certFile: z.string().optional(),
+  keyFile: z.string().optional(),
+  rejectUnauthorized: z.boolean().optional()
+})
+
+const LoggingSyslogSchema = z.object({
+  enabled: z.boolean(),
+  host: z.string().optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  appName: z.string().optional(),
+  enterpriseId: z.number().int().positive().optional(),
+  bufferSize: z.number().int().positive().optional(),
+  flushIntervalMs: z.number().int().positive().optional(),
+  includeJson: z.boolean().optional(),
+  tls: LoggingSyslogTlsSchema.optional()
+})
+
 /**
  * Logging configuration schema (optional)
  */
@@ -206,7 +231,9 @@ const LoggingSchema = z
   .object({
     namespace: z.string().optional(),
     minimumLevel: LogLevelSchema.optional(),
-    controls: LoggingControlsSchema.optional()
+    controls: LoggingControlsSchema.optional(),
+    stdout: LoggingStdoutSchema.optional(),
+    syslog: LoggingSyslogSchema.optional()
   })
   .optional()
 

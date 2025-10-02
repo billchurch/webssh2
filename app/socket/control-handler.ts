@@ -14,8 +14,6 @@ import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/result.js'
 
 const debug = createNamespacedDebug('socket:control')
-const structuredLogger = createAppStructuredLogger({ namespace: 'webssh2:socket:control' })
-
 export interface ControlSession {
   sshCredentials?: Credentials
   password?: string
@@ -208,7 +206,10 @@ interface CredentialReplayLogOptions {
   data?: Readonly<Record<string, unknown>>
 }
 
-function logCredentialReplay(options: CredentialReplayLogOptions): void {
+function logCredentialReplay(
+  logger: ReturnType<typeof createAppStructuredLogger>,
+  options: CredentialReplayLogOptions
+): void {
   const context = createReplayLogContext(
     options.socket,
     options.sessionState,
@@ -231,7 +232,7 @@ function logCredentialReplay(options: CredentialReplayLogOptions): void {
     ...(data === null ? {} : { data })
   }
 
-  const result = structuredLogger.log(entry)
+  const result = logger.log(entry)
   if (!result.ok) {
     debug('Failed to emit credential replay log:', result.error)
   }
@@ -294,6 +295,11 @@ export function handleReplayCredentials(
   sessionState: SessionState,
   shellStream: (EventEmitter & { write?: (data: string) => void }) | null
 ): void {
+  const replayLogger = createAppStructuredLogger({
+    namespace: 'webssh2:socket:control',
+    config
+  })
+
   const req = socket.request as ExtendedRequest
   const passwordLookup = getReplayPassword(req.session, sessionState)
   const validation = validateReplayRequest(config, passwordLookup, shellStream)
@@ -304,7 +310,7 @@ export function handleReplayCredentials(
   if (!validation.ok) {
     debug(`Replay credentials denied: ${validation.error}`)
     socket.emit(SOCKET_EVENTS.SSH_ERROR, validation.error)
-    logCredentialReplay({
+    logCredentialReplay(replayLogger, {
       level: 'warn',
       status: 'failure',
       message: 'Credential replay denied',
@@ -327,7 +333,7 @@ export function handleReplayCredentials(
 
   if (!writeResult.ok) {
     socket.emit(SOCKET_EVENTS.SSH_ERROR, writeResult.error.clientMessage)
-    logCredentialReplay({
+    logCredentialReplay(replayLogger, {
       level: 'error',
       status: 'failure',
       message: 'Credential replay failed to write',
@@ -344,7 +350,7 @@ export function handleReplayCredentials(
     return
   }
 
-  logCredentialReplay({
+  logCredentialReplay(replayLogger, {
     level: 'info',
     status: 'success',
     message: 'Credential replay completed',

@@ -211,7 +211,7 @@ WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
 | `WEBSSH2_LOGGING_SAMPLING_RULES` | string | `null` | JSON array of sampling overrides (`[{"target":"*","sampleRate":0.25}]`) |
 | `WEBSSH2_LOGGING_RATE_LIMIT_RULES` | string | `null` | JSON describing token-bucket rules (`[{"target":"ssh_command","limit":5,"intervalMs":1000,"burst":5}]`) |
 
-> **Note:** Syslog variables are part of the roadmap and are documented for planning only; the transport implementation ships in a later phase. When providing complex JSON values (such as `WEBSSH2_LOGGING_RATE_LIMIT_RULES` or `WEBSSH2_LOGGING_SAMPLING_RULES`), wrap the payload in single quotes to prevent shell interpolation. Sampling rules can be supplied via `config.json` for richer targeting (per-event overrides).
+> **Note:** Wrap complex JSON values (such as `WEBSSH2_LOGGING_RATE_LIMIT_RULES` or `WEBSSH2_LOGGING_SAMPLING_RULES`) in single quotes to prevent shell interpolation. Sampling rules can be supplied via `config.json` for richer targeting (per-event overrides).
 
 ## Quick Start Examples
 

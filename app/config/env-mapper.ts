@@ -61,6 +61,11 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_SSO_HEADER_PASSWORD: { path: 'sso.headerMapping.password', type: 'string' },
   WEBSSH2_SSO_HEADER_SESSION: { path: 'sso.headerMapping.session', type: 'string' },
   WEBSSH2_LOGGING_LEVEL: { path: 'logging.minimumLevel', type: 'string' },
+  WEBSSH2_LOGGING_STDOUT_ENABLED: { path: 'logging.stdout.enabled', type: 'boolean' },
+  WEBSSH2_LOGGING_STDOUT_MIN_LEVEL: {
+    path: 'logging.stdout.minimumLevel',
+    type: 'string'
+  },
   WEBSSH2_LOGGING_SAMPLING_DEFAULT_RATE: {
     path: 'logging.controls.sampling.defaultSampleRate',
     type: 'number'
@@ -72,6 +77,46 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_LOGGING_RATE_LIMIT_RULES: {
     path: 'logging.controls.rateLimit.rules',
     type: 'json'
+  },
+  WEBSSH2_LOGGING_SYSLOG_ENABLED: { path: 'logging.syslog.enabled', type: 'boolean' },
+  WEBSSH2_LOGGING_SYSLOG_HOST: { path: 'logging.syslog.host', type: 'string' },
+  WEBSSH2_LOGGING_SYSLOG_PORT: { path: 'logging.syslog.port', type: 'number' },
+  WEBSSH2_LOGGING_SYSLOG_APP_NAME: { path: 'logging.syslog.appName', type: 'string' },
+  WEBSSH2_LOGGING_SYSLOG_ENTERPRISE_ID: {
+    path: 'logging.syslog.enterpriseId',
+    type: 'number'
+  },
+  WEBSSH2_LOGGING_SYSLOG_BUFFER_SIZE: {
+    path: 'logging.syslog.bufferSize',
+    type: 'number'
+  },
+  WEBSSH2_LOGGING_SYSLOG_FLUSH_INTERVAL_MS: {
+    path: 'logging.syslog.flushIntervalMs',
+    type: 'number'
+  },
+  WEBSSH2_LOGGING_SYSLOG_INCLUDE_JSON: {
+    path: 'logging.syslog.includeJson',
+    type: 'boolean'
+  },
+  WEBSSH2_LOGGING_SYSLOG_TLS_ENABLED: {
+    path: 'logging.syslog.tls.enabled',
+    type: 'boolean'
+  },
+  WEBSSH2_LOGGING_SYSLOG_TLS_CA_FILE: {
+    path: 'logging.syslog.tls.caFile',
+    type: 'string'
+  },
+  WEBSSH2_LOGGING_SYSLOG_TLS_CERT_FILE: {
+    path: 'logging.syslog.tls.certFile',
+    type: 'string'
+  },
+  WEBSSH2_LOGGING_SYSLOG_TLS_KEY_FILE: {
+    path: 'logging.syslog.tls.keyFile',
+    type: 'string'
+  },
+  WEBSSH2_LOGGING_SYSLOG_TLS_REJECT_UNAUTHORIZED: {
+    path: 'logging.syslog.tls.rejectUnauthorized',
+    type: 'boolean'
   },
 }
 
