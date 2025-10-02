@@ -138,6 +138,11 @@ Both client and server components support file watching and automatic reloading:
 2. Client development server (3000) and WebSSH2 server (2222) must run simultaneously
 3. CORS is automatically handled in development mode
 4. The development configuration is only injected in development mode
+5. Session data uses the in-process `createEphemeralSessionStore`, which intentionally keeps sessions ephemeral—this aligns with SSH lifecycle expectations, but replace it with a durable store if you ever need persistence across restarts
+
+### Session storage behaviour
+
+The server wraps `express-session` with `createEphemeralSessionStore`, which mirrors the default memory store without triggering the production warning. Because SSH connections are short-lived and the process itself is treated as disposable, this design is intentional: session state is lost when the process exits. If you deploy in an environment where processes recycle frequently and you need resumable sessions, swap the store implementation for a durable backend (for example Redis) and configure it via the session middleware.
 
 ## Troubleshooting
 
