@@ -52,6 +52,7 @@
   },
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
+    "prepare:runtime": "node scripts/postinstall.js",
     "prestart": "node scripts/prestart.js",
     "start": "node dist/index.js",
     "lint": "eslint app tests",

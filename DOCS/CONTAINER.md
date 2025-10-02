@@ -25,13 +25,19 @@ All commands must execute from this extracted root so the npm scripts resolve co
 3. Extract the tarball into your build context.
 4. Install production dependencies for the target platform.
    ```bash
-   npm ci --omit=dev
+   npm ci --omit=dev --ignore-scripts
    ```
-5. Build architecture-specific native modules (handled by `scripts/postinstall.js`).
+5. Optionally install native helpers if your runtime requires them.
+   ```bash
+   npm run prepare:runtime
+   ```
 6. Launch WebSSH2.
    ```bash
    NODE_ENV=production npm start
    ```
+
+`npm run prepare:runtime` currently loads any optional native dependencies. It becomes a no-op when
+`dist/` and `manifest.json` are already present.
 
 `npm start` triggers `scripts/prestart.js`, which detects that the TypeScript sources are absent.
 The prestart script skips rebuilding, so startup stays fast inside the container.

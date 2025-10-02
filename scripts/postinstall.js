@@ -1,5 +1,18 @@
 import {execSync} from 'child_process';
+import {existsSync} from 'node:fs';
+import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import os from 'os';
+
+const projectRoot = dirname(fileURLToPath(import.meta.url));
+const releaseRoot = join(projectRoot, '..');
+
+const hasPrebuiltBundle = existsSync(join(releaseRoot, 'dist')) && existsSync(join(releaseRoot, 'manifest.json'));
+
+if (hasPrebuiltBundle) {
+  process.stdout.write('postinstall: prebuilt dist detected; skipping optional native dependency install\n');
+  process.exit(0);
+}
 
 const platform = os.platform();
 const arch = os.arch();
