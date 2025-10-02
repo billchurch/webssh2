@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.1...webssh2-server-v2.3.2) (2025-10-02)
+
+
+### Chores
+
+* **release:** 2.3.2 ([d5e5c22](https://github.com/billchurch/webssh2/commit/d5e5c22baa8b3ccc1c08f8e0c9815bc07cd30596))
+
 ## [2.3.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.0...webssh2-server-v2.3.1) (2025-10-02)
 
 
