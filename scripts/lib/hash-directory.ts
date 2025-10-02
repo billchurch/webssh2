@@ -52,7 +52,7 @@ async function listFiles(directory: string, basePath: string): Promise<Result<re
       }
     }
 
-    files.sort()
+    files.sort((first, second) => first.localeCompare(second))
     return ok(files)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'unknown error'

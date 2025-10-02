@@ -2,6 +2,7 @@
 // Session store that mirrors MemoryStore without triggering production warnings
 
 import session, { type SessionData } from 'express-session'
+import { deserialize, serialize } from 'node:v8'
 
 interface StoredSession {
   readonly payload: string
@@ -53,8 +54,16 @@ const isExpired = (data: SessionData): boolean => {
   return expiration <= Date.now()
 }
 
-const cloneSession = (data: SessionData): SessionData =>
-  JSON.parse(JSON.stringify(data)) as SessionData
+const cloneValue = <T>(value: T): T => {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone<T>(value)
+  }
+
+  const serialized = serialize(value)
+  return deserialize(serialized) as T
+}
+
+const cloneSession = (data: SessionData): SessionData => cloneValue(data)
 
 type SessionsCallback = (
   error: unknown,
