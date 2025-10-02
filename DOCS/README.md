@@ -57,7 +57,12 @@ For contributors and developers:
 - **[Development Setup](./development/SETUP.md)** - Setting up development environment
 - **[Testing Guide](./development/TESTING.md)** - Running and writing tests
 - **[Build Process](./development/BUILD.md)** - Building and packaging
+- **[Build & Packaging Guide](./BUILD.md)** - Reproducible release artifact workflow
 - **[PR Checklist](./development/LOCAL-PR-CHECKLIST.md)** - Before submitting pull requests
+
+### 🚢 Deployment
+
+- **[Container & Downstream Integration](./CONTAINER.md)** - Consuming release artifacts in CI/CD
 
 ### 📖 Reference
 

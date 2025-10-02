@@ -38,6 +38,34 @@ jobs:
       - run: npm run build
         if: ${{ steps.release.outputs.release_created }}
         
+      # Build reproducible release artifact
+      - name: Package release artifact
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          RELEASE_ARTIFACT_DIR: release-artifacts
+        run: node dist/scripts/create-release-artifact.js
+
+      # Upload tarball and checksum to GitHub release
+      - name: Upload release assets
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          set -eu
+          tarball_path=$(find release-artifacts -maxdepth 1 -name 'webssh2-*.tar.gz' -print -quit)
+          if [ -z "$tarball_path" ]; then
+            echo 'tarball not found' >&2
+            exit 1
+          fi
+          checksum_path="${tarball_path}.sha256"
+          if [ ! -f "$checksum_path" ]; then
+            echo 'checksum file not found' >&2
+            exit 1
+          fi
+          gh release upload "$RELEASE_TAG" "$tarball_path" "$checksum_path" --clobber
+
       # Publish to npm
       - run: npm publish --access public
         if: ${{ steps.release.outputs.release_created }}

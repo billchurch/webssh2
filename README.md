@@ -103,6 +103,11 @@ docker run --rm -it \
 - [Development Setup](./DOCS/development/SETUP.md) - Setting up development environment
 - [API Documentation](./DOCS/api/) - WebSocket and REST APIs
 
+### Release Artifacts
+
+- [Build & Packaging Guide](./DOCS/BUILD.md) - Reproducible release flow and manifest format
+- [Container Integration](./DOCS/CONTAINER.md) - Using the packaged bundle in images and CI
+
 ### Reference
 
 - [Troubleshooting](./DOCS/reference/TROUBLESHOOTING.md) - Common issues and solutions
@@ -119,6 +124,12 @@ docker run --rm -it \
 - 🔧 **Exec Channel** - Run commands without opening a shell
 - 🌍 **Environment Variables** - Pass custom environment to SSH sessions
 - 🛡️ **Subnet Restrictions** - IPv4/IPv6 CIDR subnet validation for access control
+
+## Release Workflow Overview
+
+- **Development**: Run `npm install` (or `npm ci`) and continue using scripts such as `npm run dev` and `npm run build`. The TypeScript sources remain the source of truth.
+- **Release pipeline**: Use `npm ci --omit=dev`, `npm run build`, then `node dist/scripts/create-release-artifact.js` to produce `webssh2-<version>.tar.gz`, `manifest.json`, and a `.sha256` checksum. GNU tar is required to guarantee deterministic archives.
+- **Packaged consumers (containers, downstream services)**: Download and verify the tarball, extract it, run `npm ci --omit=dev` from the extracted root (alongside `package.json`), and start with `NODE_ENV=production npm start`. The `prestart` script detects the precompiled bundle and skips rebuilding.
 
 ## Support
 

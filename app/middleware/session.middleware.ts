@@ -4,6 +4,7 @@
 import type { RequestHandler } from 'express'
 import session from 'express-session'
 import type { Config } from '../types/config.js'
+import { createEphemeralSessionStore } from './ephemeral-session-store.js'
 
 /**
  * Create session management middleware
@@ -16,5 +17,6 @@ export function createSessionMiddleware(config: Config): RequestHandler {
     resave: false,
     saveUninitialized: true,
     name: config.session.name,
+    store: createEphemeralSessionStore(),
   })
 }
