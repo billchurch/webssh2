@@ -52,7 +52,7 @@
     "zod": "^4.1.11"
   },
   "scripts": {
-    "postinstall": "node -e \"const os = require('os'); const platform = os.platform(); const arch = os.arch(); if (platform === 'darwin' && arch === 'arm64') { require('child_process').execSync('npm install @rollup/rollup-darwin-arm64 --no-save', {stdio: 'inherit'}); } else if (platform === 'linux' && arch === 'x64') { require('child_process').execSync('npm install @rollup/rollup-linux-x64-gnu --no-save', {stdio: 'inherit'}); }\"",
+    "postinstall": "node scripts/postinstall.js",
     "prestart": "npm run build",
     "start": "node dist/index.js",
     "lint": "eslint app tests",
