@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.0...webssh2-server-v2.3.1) (2025-10-02)
+
+
+### Bug Fixes
+
+* install rollup binary for musl-based builds ([ae03d07](https://github.com/billchurch/webssh2/commit/ae03d07e976eddc82322c50896ba6feddf208c54))
+
 ## [2.3.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.2.0...webssh2-server-v2.3.0) (2025-10-02)
 
 
