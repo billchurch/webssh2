@@ -27,7 +27,13 @@ const STRUCTURED_FIELDS = [
   'target_host',
   'status',
   'connection_id'
- ] as const
+] as const
+
+const STRUCTURED_VALUE_ESCAPES: ReadonlyArray<readonly [string, string]> = [
+  [String.raw`\\`, String.raw`\\\\`],
+  [String.raw`]`, String.raw`\]`],
+  [String.raw`"`, String.raw`\"`]
+] as const
 
 type StructuredField = typeof STRUCTURED_FIELDS[number]
 
@@ -124,10 +130,10 @@ function buildMessageBody(
 }
 
 function escapeStructuredValue(value: string): string {
-  return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\]/g, '\\]')
-    .replace(/"/g, '\\"')
+  return STRUCTURED_VALUE_ESCAPES.reduce(
+    (escaped, [target, replacement]) => escaped.replaceAll(target, replacement),
+    value
+  )
 }
 
 function pickStructuredValue(

@@ -13,6 +13,7 @@ const SAMPLE_PAYLOAD = JSON.stringify({
 
 class MemorySocket extends Duplex {
   private readonly onWrite: (chunk: string) => void
+  private readClosed = false
 
   constructor(onWrite: (chunk: string) => void) {
     super()
@@ -22,7 +23,13 @@ class MemorySocket extends Duplex {
     })
   }
 
-  _read(): void {}
+  _read(): void {
+    if (this.readClosed) {
+      return
+    }
+    this.readClosed = true
+    this.push(null)
+  }
 
   _write(chunk: Buffer, _encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
     this.onWrite(chunk.toString('utf8'))

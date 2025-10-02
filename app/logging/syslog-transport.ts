@@ -49,15 +49,23 @@ export function createSyslogTransport(options: SyslogTransportOptions): Result<L
     return tlsResult
   }
 
-  const state: SyslogTransportState = {
+  type BaseSyslogTransportState = Omit<SyslogTransportState, 'tls' | 'socketFactory'>
+
+  const baseState: BaseSyslogTransportState = {
     host: validated.value.host,
     port: validated.value.port,
     formatter: createFormatterOptions(options),
     bufferSize: options.bufferSize ?? DEFAULT_BUFFER_SIZE,
-    flushIntervalMs: options.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS,
-    ...(tlsResult.value === undefined ? {} : { tls: tlsResult.value }),
-    ...(options.socketFactory === undefined ? {} : { socketFactory: options.socketFactory })
+    flushIntervalMs: options.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS
   }
+
+  const withTls: Omit<SyslogTransportState, 'socketFactory'> =
+    tlsResult.value === undefined ? baseState : { ...baseState, tls: tlsResult.value }
+
+  const state: SyslogTransportState =
+    options.socketFactory === undefined
+      ? withTls
+      : { ...withTls, socketFactory: options.socketFactory }
 
   const transport = new SyslogTransportImpl(state)
 
