@@ -6,14 +6,16 @@ import { spawn } from 'node:child_process'
 const testsDir = join(process.cwd(), 'tests')
 
 function walk(dir) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- dir is derived from controlled repository test folder
   const entries = readdirSync(dir)
   const files = []
   for (const entry of entries) {
     const full = join(dir, entry)
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- full is constrained to discovered files under tests/
     const st = statSync(full)
     if (st.isDirectory()) {
       // Skip Playwright tests from node test runner
-      if (full.includes(`${join('tests', 'playwright')}`)) continue
+      if (full.includes(`${join('tests', 'playwright')}`)) {continue}
       files.push(...walk(full))
     } else if (entry.endsWith('.test.js')) {
       files.push(full)

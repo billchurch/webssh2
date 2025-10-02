@@ -5,6 +5,7 @@
   },
   "include": [
     "app/**/*.ts",
+    "scripts/**/*.ts",
     "*.config.mjs",
     "tests/**/*.ts",
     "eslint.config.mjs",

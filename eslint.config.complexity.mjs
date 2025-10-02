@@ -24,5 +24,22 @@ export default [
         skipComments: true
       }]
     }
+  },
+  {
+    files: ['scripts/run-node-tests.mjs'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off'
+    }
+  },
+  {
+    files: [
+      'scripts/create-release-artifact.ts',
+      'scripts/lib/hash-directory.ts',
+      'scripts/lib/release-fs.ts',
+      'scripts/lib/release-checksum.ts'
+    ],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off'
+    }
   }
 ]

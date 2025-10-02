@@ -1,8 +1,8 @@
-import {execSync} from 'child_process';
+import {execSync} from 'node:child_process';
 import {existsSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import os from 'os';
+import os from 'node:os';
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const releaseRoot = join(projectRoot, '..');
