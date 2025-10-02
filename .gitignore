@@ -58,3 +58,6 @@ dist/
 
 .regression/
 config.json.backup
+
+release-artifacts/
+

@@ -33,6 +33,7 @@
   "include": [
     "index.ts",
     "app/**/*.ts",
+    "scripts/**/*.ts",
     "types/**/*.d.ts"
   ],
   "exclude": [
