@@ -172,9 +172,13 @@ async function handlePostAuthRoute(
   const routeRequest = extractRouteRequest(expressReq)
 
   // Merge host from URL into body if not present
-  const bodyWithHost = hostOverride != null && routeRequest.body?.['host'] == null
-    ? { ...(routeRequest.body ?? {}), host: hostOverride }
-    : routeRequest.body ?? {}
+  const baseBody: Record<string, unknown> = routeRequest.body ?? {}
+  const shouldMergeHost = hostOverride != null && routeRequest.body?.['host'] == null
+  let bodyWithHost: Record<string, unknown> = baseBody
+
+  if (shouldMergeHost && typeof hostOverride === 'string') {
+    bodyWithHost = { ...baseBody, host: hostOverride }
+  }
 
   // Process POST authentication request
   const authResult = processPostAuthRequest(
