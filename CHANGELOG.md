@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.2.0...webssh2-server-v2.3.0) (2025-10-02)
+
+
+### Features
+
+* enhance local logging ([7fb516f](https://github.com/billchurch/webssh2/commit/7fb516f47b288a1a6ffc49be59dbb5972a7f8815))
+
 ## [2.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.1.0...webssh2-server-v2.2.0) (2025-09-30)
 
 
