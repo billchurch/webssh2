@@ -39,6 +39,9 @@ All commands must execute from this extracted root so the npm scripts resolve co
 `npm run prepare:runtime` currently loads any optional native dependencies. It becomes a no-op when
 `dist/` and `manifest.json` are already present.
 
+> **Note:** Extraction via `tar` preserves file permissions. If your pipeline rewrites the
+> bundle, make sure the JavaScript files in `scripts/` stay readable so Node can execute them.
+
 `npm start` triggers `scripts/prestart.js`, which detects that the TypeScript sources are absent.
 The prestart script skips rebuilding, so startup stays fast inside the container.
 
@@ -54,7 +57,8 @@ sha256sum --check "${ASSET}.tar.gz.sha256"
 mkdir -p /opt/webssh2
 tar -xzf "${ASSET}.tar.gz" -C /opt/webssh2 --strip-components=0
 cd /opt/webssh2
-npm ci --omit=dev
+npm ci --omit=dev --ignore-scripts
+npm run prepare:runtime
 NODE_ENV=production npm start
 ```
 
