@@ -107,13 +107,19 @@ function createTlsCredentials(options: SyslogTlsOptions | undefined): Result<Tls
   }
 
   try {
-    const credentials: TlsCredentials = {
-      enabled: true,
-      rejectUnauthorized: options.rejectUnauthorized ?? true,
-      ...(readOptionalFile(options.caFile) ?? {}),
-      ...(readOptionalFile(options.certFile, 'cert') ?? {}),
-      ...(readOptionalFile(options.keyFile, 'key') ?? {})
-    }
+    const credentialParts = [
+      readOptionalFile(options.caFile),
+      readOptionalFile(options.certFile, 'cert'),
+      readOptionalFile(options.keyFile, 'key')
+    ].filter((part): part is Partial<TlsCredentials> => part !== undefined)
+
+    const credentials = credentialParts.reduce<TlsCredentials>(
+      (acc, part) => ({ ...acc, ...part }),
+      {
+        enabled: true,
+        rejectUnauthorized: options.rejectUnauthorized ?? true
+      }
+    )
     return ok(credentials)
   } catch (error) {
     const failure = error instanceof Error ? error : new Error('Failed to read syslog TLS credentials')
