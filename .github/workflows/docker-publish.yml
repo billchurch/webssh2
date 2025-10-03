@@ -29,8 +29,8 @@ jobs:
       contents: read
       packages: write
     env:
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
       - name: Check required secrets
         if: ${{ env.DOCKERHUB_USER == '' || env.DOCKERHUB_TOKEN == '' }}
