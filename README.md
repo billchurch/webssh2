@@ -30,10 +30,35 @@ npm start
 
 Access WebSSH2 at: `http://localhost:2222/ssh`
 
-### Docker
+### Official Containers
+
+- Preferred registry: `ghcr.io/billchurch/webssh2`
+- Docker Hub mirror: `docker.io/billchurch/webssh2`
+- Architectures: `linux/amd64`, `linux/arm64`
+
+Pull the latest build from GitHub Container Registry:
 
 ```bash
-docker run --rm -p 2222:2222 billchurch/webssh2
+docker pull ghcr.io/billchurch/webssh2:latest
+```
+
+Run the container exposing the default port:
+
+```bash
+docker run --rm -p 2222:2222 ghcr.io/billchurch/webssh2:latest
+```
+
+To pin to a specific release (example: `webssh2-server-v2.3.2`):
+
+```bash
+docker run --rm -p 2222:2222 \
+  ghcr.io/billchurch/webssh2:2.3.2
+```
+
+The same tags are available on Docker Hub if you prefer the legacy namespace:
+
+```bash
+docker run --rm -p 2222:2222 docker.io/billchurch/webssh2:2.3.2
 ```
 
 ## Configuration
@@ -72,8 +97,10 @@ docker run --rm -it \
   -p 2222:2222 \
   -e WEBSSH2_SSH_HOST=ssh.example.com \
   -e WEBSSH2_SSH_ALGORITHMS_PRESET=modern \
-  billchurch/webssh2
+  ghcr.io/billchurch/webssh2:latest
 ```
+
+Need the Docker Hub mirror instead? Use `docker.io/billchurch/webssh2:latest`.
 
 ## Documentation
 
