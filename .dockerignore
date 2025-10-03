@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+dist
+coverage
+release-artifacts
+tests
+test-results
+DOCS
+examples
+*.log
+*.local
+.env*
+Dockerfile*
+docker-compose*
