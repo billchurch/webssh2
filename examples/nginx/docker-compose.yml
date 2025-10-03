@@ -1,0 +1,39 @@
+services:
+  webssh2:
+    image: ghcr.io/billchurch/webssh2:latest
+    container_name: webssh2
+    environment:
+      WEBSSH2_LISTEN_PORT: 2222
+      WEBSSH2_HTTP_ORIGINS: https://localhost
+      WEBSSH2_SSO_TRUSTED_PROXIES: 127.0.0.1,172.20.0.18
+      WEBSSH2_SSO_HEADER_USERNAME: x-apm-username
+      WEBSSH2_SSO_HEADER_PASSWORD: x-apm-password
+      WEBSSH2_SSO_HEADER_SESSION: x-apm-session
+    expose:
+      - '2222'
+    restart: unless-stopped
+    networks:
+      - webssh
+
+  nginx:
+    image: ghcr.io/linuxserver/nginx:latest
+    container_name: webssh2-proxy
+    depends_on:
+      - webssh2
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/New_York
+    volumes:
+      - ./nginx.conf:/config/nginx/site-confs/webssh2.conf
+      - ./fullchain.pem:/config/keys/fullchain.pem
+      - ./privkey.pem:/config/keys/privkey.pem
+    ports:
+      - '443:443'
+    restart: unless-stopped
+    networks:
+      - webssh
+
+networks:
+  webssh:
+    driver: bridge
