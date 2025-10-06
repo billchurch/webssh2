@@ -30,7 +30,7 @@ export default defineConfig({
   ],
   webServer: {
     // Keep server logs quiet by default; opt-in with E2E_DEBUG
-    command: 'node ./tests/playwright/scripts/start-server.mjs',
+    command: 'tsx ./tests/playwright/scripts/start-server.ts',
     url: `${BASE_URL}/ssh`,
     reuseExistingServer: true,
     timeout: TIMEOUTS.WEB_SERVER,
