@@ -103,14 +103,15 @@ describe('validateConnectionParams', () => {
   it('should fallback to config host', () => {
     const config = createDefaultConfig()
     config.ssh.host = 'default.com'
-    
+    config.ssh.port = 2022
+
     const params = { config }
-    
+
     const result = validateConnectionParams(params)
-    
+
     expect(result).toEqual({
       host: 'default.com',
-      port: 22,
+      port: 2022,
       term: 'xterm-256color'
     })
   })
@@ -135,15 +136,16 @@ describe('validateConnectionParams', () => {
     expect(() => validateConnectionParams(params)).toThrow('Host is required')
   })
   
-  it('should use default port when not provided', () => {
+  it('should use config port when not provided', () => {
     const config = createDefaultConfig()
     config.ssh.host = 'example.com'
-    
-    const params = { config }
-    
+    config.ssh.port = 3022
+
+    const params = { host: 'example.com', config }
+
     const result = validateConnectionParams(params)
-    
-    expect(result.port).toBe(22)
+
+    expect(result.port).toBe(3022)
   })
 })
 

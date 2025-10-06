@@ -97,8 +97,8 @@ export function validateConnectionParams(params: ConnectionParams): ValidatedCon
     throw new Error('Host is required but not provided')
   }
   
-  // Determine port
-  const port = getValidatedPort(params.port)
+  // Determine port - fall back to configured SSH port when not provided
+  const port = getValidatedPort(params.port ?? params.config.ssh.port)
   
   // Determine terminal
   const term = params.sshterm == null
