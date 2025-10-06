@@ -7,16 +7,16 @@
       "changelog-sections": [
         {"type": "feat", "section": "Features", "hidden": false},
         {"type": "fix", "section": "Bug Fixes", "hidden": false},
+        {"type": "package", "section": "Package Updates", "hidden": false},
+        {"type": "perf", "section": "Performance Improvements", "hidden": false},
+        {"type": "refactor", "section": "Code Refactoring", "hidden": true},
         {"type": "chore", "section": "Chores", "hidden": true},
         {"type": "docs", "section": "Documentation", "hidden": true},
         {"type": "style", "section": "Styles", "hidden": true},
-        {"type": "refactor", "section": "Code Refactoring", "hidden": true},
-        {"type": "perf", "section": "Performance Improvements", "hidden": false},
         {"type": "test", "section": "Tests", "hidden": true},
         {"type": "build", "section": "Build System", "hidden": true},
         {"type": "ci", "section": "Continuous Integration", "hidden": true}
-      ],
-      "bootstrap-sha": "cf4d8c3"
+      ]
     }
   }
 }
