@@ -1,9 +1,14 @@
 name: Downstream Notifier
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to notify downstream about'
+        required: true
+      dispatch_repo:
+        description: 'Override owner/repo target; defaults to secrets.DOWNSTREAM_REPO'
+        required: false
 
 jobs:
   notify:
@@ -12,9 +17,10 @@ jobs:
     steps:
       - name: Dispatch downstream repository
         env:
-          DISPATCH_REPO: ${{ secrets.DOWNSTREAM_REPO }}
+          DISPATCH_REPO: ${{ github.event.inputs.dispatch_repo }}
           DOWNSTREAM_TOKEN: ${{ secrets.DOWNSTREAM_TOKEN }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          FALLBACK_DISPATCH_REPO: ${{ secrets.DOWNSTREAM_REPO }}
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         run: |
           set -euo pipefail
           if [ -z "${DOWNSTREAM_TOKEN:-}" ]; then
@@ -22,8 +28,19 @@ jobs:
             exit 1
           fi
 
-          if [ -z "${DISPATCH_REPO:-}" ]; then
-            echo 'DISPATCH_REPO secret is not configured' >&2
+          if [ -z "${RELEASE_TAG:-}" ]; then
+            echo 'release_tag input is required' >&2
+            exit 1
+          fi
+
+          if [ -n "${DISPATCH_REPO:-}" ]; then
+            target_repo="${DISPATCH_REPO}"
+          else
+            target_repo="${FALLBACK_DISPATCH_REPO:-}"
+          fi
+
+          if [ -z "${target_repo}" ]; then
+            echo 'dispatch repo not provided and DISPATCH_REPO secret is not configured' >&2
             exit 1
           fi
 
@@ -34,11 +51,11 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${DOWNSTREAM_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${DISPATCH_REPO}/dispatches \
+            https://api.github.com/repos/${target_repo}/dispatches \
             -d "${payload}" 2>&1)
 
           if [ -n "${response}" ]; then
             echo "Dispatch response: ${response}"
           fi
 
-          echo "Dispatched webssh2-release for tag ${RELEASE_TAG}"
+          echo "Dispatched webssh2-release for tag ${RELEASE_TAG} to ${target_repo}"
