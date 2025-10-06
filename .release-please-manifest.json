@@ -1,3 +1,6 @@
 {
-  ".": "2.3.2"
+  ".": {
+    "version": "2.3.2",
+    "last-release-sha": "9a8af1ed5b42331c63c2af278cf53eb7c35eaf20"
+  }
 }
