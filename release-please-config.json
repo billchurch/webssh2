@@ -16,7 +16,8 @@
         {"type": "test", "section": "Tests", "hidden": true},
         {"type": "build", "section": "Build System", "hidden": true},
         {"type": "ci", "section": "Continuous Integration", "hidden": true}
-      ]
+      ],
+      "bootstrap-sha": "9a8af1ed5b42331c63c2af278cf53eb7c35eaf20"
     }
   }
 }
