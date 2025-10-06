@@ -168,16 +168,30 @@ export async function connectV2(page: Page, options: {
 /**
  * Builds a Basic Auth URL for SSH connection
  */
-export function buildBasicAuthUrl(baseUrl: string, username: string, password: string, host: string, port: string | number): string {
+export function buildBasicAuthUrl(
+  baseUrl: string,
+  username: string,
+  password: string,
+  host: string,
+  port?: string | number
+): string {
   const basicAuth = `${username}:${password}`
   const baseUrlWithAuth = baseUrl.replace('://', `://${basicAuth}@`)
-  return `${baseUrlWithAuth}/ssh/host/${host}?port=${port}`
+  const portQuery = port == null ? '' : `?port=${port}`
+  return `${baseUrlWithAuth}/ssh/host/${host}${portQuery}`
 }
 
 /**
  * Navigates to SSH with Basic Auth and waits for connection
  */
-export async function connectWithBasicAuth(page: Page, baseUrl: string, username: string, password: string, host: string, port: string | number): Promise<void> {
+export async function connectWithBasicAuth(
+  page: Page,
+  baseUrl: string,
+  username: string,
+  password: string,
+  host: string,
+  port?: string | number
+): Promise<void> {
   const url = buildBasicAuthUrl(baseUrl, username, password, host, port)
   await page.goto(url)
   await waitForV2Connection(page)
