@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.2...webssh2-server-v2.3.3) (2025-10-06)
+
+
+### Bug Fixes
+
+* respect config ssh port ([#432](https://github.com/billchurch/webssh2/issues/432)) ([dcaf257](https://github.com/billchurch/webssh2/commit/dcaf2574fade5f517c13dbb7e88eccc61c2e1fcd))
+
 ## [2.3.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.1...webssh2-server-v2.3.2) (2025-10-02)
 
 
