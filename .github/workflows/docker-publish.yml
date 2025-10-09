@@ -74,10 +74,12 @@ jobs:
             docker.io/billchurch/webssh2
             ${{ steps.ghcr.outputs.image }}
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
             type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
-            type=semver,pattern=webssh2-server-v{{version}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
-            type=semver,pattern=webssh2-server-v{{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value=main,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            type=match,pattern=webssh2-server-v(.*),group=1,prefix=v,enable=${{ startsWith(github.ref, 'refs/tags/webssh2-server-v') }}
+            type=match,pattern=webssh2-server-v(\d+\.\d+),group=1,prefix=v,enable=${{ startsWith(github.ref, 'refs/tags/webssh2-server-v') }}
+            type=match,pattern=webssh2-server-v(\d+),group=1,prefix=v,enable=${{ startsWith(github.ref, 'refs/tags/webssh2-server-v') }}
             type=ref,event=branch,enable=${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
             type=sha
 
