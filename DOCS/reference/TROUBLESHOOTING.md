@@ -192,7 +192,7 @@ See [Environment Forwarding](../features/ENVIRONMENT-FORWARDING.md) for detailed
 - Environment variables overriding
 
 **Solutions:**
-1. Mount to correct path: `/usr/src/app/config.json`
+1. Mount to correct path: `/srv/webssh2/config.json`
 2. Check environment variables: `docker exec <container> env`
 3. Verify file permissions in container
 

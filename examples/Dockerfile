@@ -5,7 +5,7 @@ FROM node:22-alpine
 # No need to install bash unless specifically required
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /srv/webssh2
 
 # Copy package.json and package-lock.json (if available)
 COPY package*.json index.js ./

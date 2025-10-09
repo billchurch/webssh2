@@ -161,9 +161,47 @@ The client is now distributed as a separate npm package. Installation automatica
 
 **Required Action:** Update your Docker setup
 
+### Docker Working Directory Change (v2.3.3+)
+
+**BREAKING CHANGE:** The Docker container working directory has changed:
+- **Old path:** `/usr/src/app` (used in v2.0 - v2.3.2)
+- **New path:** `/srv/webssh2` (v2.3.3+)
+
+**Impact:** If you mount `config.json` or other files into the container, you must update your mount paths.
+
+**Before (v2.3.2 and earlier):**
+```bash
+docker run -d \
+  -v "$(pwd)/config.json:/usr/src/app/config.json:ro" \
+  billchurch/webssh2:2.3.2
+```
+
+**After (v2.3.3+):**
+```bash
+docker run -d \
+  -v "$(pwd)/config.json:/srv/webssh2/config.json:ro" \
+  billchurch/webssh2:latest
+```
+
+**Docker Compose Update:**
+```yaml
+# Before
+volumes:
+  - ./config.json:/usr/src/app/config.json:ro
+
+# After
+volumes:
+  - ./config.json:/srv/webssh2/config.json:ro
+```
+
+### Custom Dockerfiles
+
 ```dockerfile
 # Use Node.js 22 base image
 FROM node:22-alpine
+
+# Update WORKDIR to new path
+WORKDIR /srv/webssh2
 
 # Your existing Dockerfile should work with minimal changes
 ```

@@ -43,14 +43,14 @@ Create a custom `Dockerfile`:
 ```dockerfile
 # Build stage
 FROM node:22-alpine AS builder
-WORKDIR /usr/src/app
+WORKDIR /srv/webssh2
 COPY package*.json ./
 RUN npm ci --only=production
 
 # Runtime stage
 FROM node:22-alpine
-WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+WORKDIR /srv/webssh2
+COPY --from=builder /srv/webssh2/node_modules ./node_modules
 COPY . .
 EXPOSE 2222
 CMD ["node", "index.js"]
@@ -93,7 +93,7 @@ EOF
 docker run -d \
   --name webssh2 \
   -p 2222:2222 \
-  -v "$(pwd)/config.json:/usr/src/app/config.json:ro" \
+  -v "$(pwd)/config.json:/srv/webssh2/config.json:ro" \
   billchurch/webssh2
 ```
 
@@ -121,7 +121,7 @@ services:
       - DEBUG=webssh2:*
     # Optional: mount config file
     # volumes:
-    #   - ./config.json:/usr/src/app/config.json:ro
+    #   - ./config.json:/srv/webssh2/config.json:ro
     networks:
       - webssh2-network
 
@@ -148,10 +148,10 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 docker run -d \
   --name webssh2-ssl \
   -p 2222:2222 \
-  -v "$(pwd)/key.pem:/usr/src/app/key.pem:ro" \
-  -v "$(pwd)/cert.pem:/usr/src/app/cert.pem:ro" \
-  -e WEBSSH2_SSL_KEY=/usr/src/app/key.pem \
-  -e WEBSSH2_SSL_CERT=/usr/src/app/cert.pem \
+  -v "$(pwd)/key.pem:/srv/webssh2/key.pem:ro" \
+  -v "$(pwd)/cert.pem:/srv/webssh2/cert.pem:ro" \
+  -e WEBSSH2_SSL_KEY=/srv/webssh2/key.pem \
+  -e WEBSSH2_SSL_CERT=/srv/webssh2/cert.pem \
   billchurch/webssh2
 ```
 
@@ -400,7 +400,7 @@ docker volume create webssh2-sessions
 # Mount volume
 docker run -d \
   --name webssh2 \
-  -v webssh2-sessions:/usr/src/app/sessions \
+  -v webssh2-sessions:/srv/webssh2/sessions \
   -p 2222:2222 \
   billchurch/webssh2
 ```
@@ -427,7 +427,7 @@ Ensure your reverse proxy supports WebSocket:
 
 ```bash
 # Fix permissions
-docker exec webssh2 chown -R node:node /usr/src/app
+docker exec webssh2 chown -R node:node /srv/webssh2
 ```
 
 ## Best Practices
