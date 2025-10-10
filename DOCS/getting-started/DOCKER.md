@@ -5,26 +5,34 @@
 ## Quick Start
 
 ```bash
-docker run --rm -p 2222:2222 billchurch/webssh2
+docker run --rm -p 2222:2222 ghcr.io/billchurch/webssh2:latest
 ```
 
 Access WebSSH2 at: `http://localhost:2222/ssh`
+
+Images are published to both GitHub Container Registry and Docker Hub; the examples below default to GHCR.
 
 ## Docker Images
 
 ### Official Images
 
-- `billchurch/webssh2:latest` - Latest stable release
-- `billchurch/webssh2:v2` - Version 2.x
-- `billchurch/webssh2:alpine` - Alpine Linux based (smaller size)
+- `ghcr.io/billchurch/webssh2:latest` - Multi-arch image promoted from the latest stable release
+- `ghcr.io/billchurch/webssh2:main` - Rolling build produced from the tip of the `main` branch
+- `ghcr.io/billchurch/webssh2:2.3.3`, `ghcr.io/billchurch/webssh2:2.3`, `ghcr.io/billchurch/webssh2:2` - Immutable semantic-version tags for WebSSH2 2.3.3
+- `ghcr.io/billchurch/webssh2:sha-<short>` - Exact commit builds (for example `sha-14ab49f`)
+
+> All tags are also mirrored to Docker Hub as `billchurch/webssh2:<tag>` when you prefer that registry.
 
 ### Image Details
 
-| Image | Base | Size | Use Case |
-|-------|------|------|----------|
-| `latest` | Node:22 | ~300MB | Production |
-| `alpine` | Node:22-alpine | ~150MB | Minimal deployments |
-| `dev` | Node:22 | ~400MB | Development with tools |
+| Tag | Source | Notes |
+|-----|--------|-------|
+| `latest` | Latest git release (e.g. `webssh2-server-v2.3.3`) | Promoted after automated release pipeline succeeds |
+| `main` | Current `main` branch | Best for testing upcoming changes; may change frequently |
+| `2.3.3` / `2.3` / `2` | Release `webssh2-server-v2.3.3` | Choose exactness: patch (`2.3.3`), minor (`2.3`), or major (`2`) |
+| `sha-<short>` | Specific commit (e.g. `sha-14ab49f`) | Ideal for reproducible rollbacks |
+
+All tags reference the same multi-architecture manifest (`linux/amd64` and `linux/arm64`) and use the Node 22 Alpine runtime.
 
 ## Building Custom Image
 
@@ -74,7 +82,7 @@ docker run -d \
   -e WEBSSH2_SSH_PORT=22 \
   -e WEBSSH2_HEADER_TEXT="Docker WebSSH2" \
   -e WEBSSH2_HTTP_ORIGINS="*:*" \
-  billchurch/webssh2
+  ghcr.io/billchurch/webssh2:latest
 ```
 
 ### 2. Using config.json
@@ -94,7 +102,7 @@ docker run -d \
   --name webssh2 \
   -p 2222:2222 \
   -v "$(pwd)/config.json:/srv/webssh2/config.json:ro" \
-  billchurch/webssh2
+  ghcr.io/billchurch/webssh2:latest
 ```
 
 ### 3. Docker Compose
@@ -106,7 +114,7 @@ version: '3.8'
 
 services:
   webssh2:
-    image: billchurch/webssh2:latest
+    image: ghcr.io/billchurch/webssh2:latest
     container_name: webssh2
     restart: unless-stopped
     ports:
@@ -152,7 +160,7 @@ docker run -d \
   -v "$(pwd)/cert.pem:/srv/webssh2/cert.pem:ro" \
   -e WEBSSH2_SSL_KEY=/srv/webssh2/key.pem \
   -e WEBSSH2_SSL_CERT=/srv/webssh2/cert.pem \
-  billchurch/webssh2
+  ghcr.io/billchurch/webssh2:latest
 ```
 
 ### With SSH Private Key
@@ -167,7 +175,7 @@ docker run -d \
   -p 2222:2222 \
   -e WEBSSH2_USER_NAME=myuser \
   -e WEBSSH2_USER_PRIVATE_KEY="$KEY" \
-  billchurch/webssh2
+  ghcr.io/billchurch/webssh2:latest
 ```
 
 ### Behind Reverse Proxy (nginx)
