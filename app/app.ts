@@ -24,6 +24,7 @@ export function createAppAsync(appConfig: Config): {
   sessionMiddleware: RequestHandler
 } {
   const app = express()
+  app.disable('x-powered-by')
   try {
     const clientPath = getClientPublicPath()
     const { sessionMiddleware } = applyMiddleware(app, appConfig) as unknown as {

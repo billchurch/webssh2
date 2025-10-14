@@ -16,7 +16,6 @@ export const CSP_CONFIG: Record<string, string[]> = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'", 'https:'],
-  'upgrade-insecure-requests': [],
 }
 
 export function generateCSPHeader(): string {
