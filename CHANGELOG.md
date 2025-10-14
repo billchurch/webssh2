@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.4](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.3...webssh2-server-v2.3.4) (2025-10-14)
+
+
+### Bug Fixes
+
+* csp headers upgrade-insecure-requests cause browser to attempt https, removed. fixes [#434](https://github.com/billchurch/webssh2/issues/434) ([#435](https://github.com/billchurch/webssh2/issues/435)) ([ac87aaf](https://github.com/billchurch/webssh2/commit/ac87aaf833158029c94570ab56c936de7bdd0611))
+
 ## [2.3.3](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.2...webssh2-server-v2.3.3) (2025-10-06)
 
 
