@@ -23,16 +23,20 @@ export interface SshValidationResult {
  * @param host - SSH host
  * @param port - SSH port
  * @param username - SSH username
- * @param password - SSH password
+ * @param password - SSH password (optional if privateKey is provided)
  * @param config - Application configuration
+ * @param privateKey - SSH private key (optional if password is provided)
+ * @param passphrase - Passphrase for encrypted private key (optional)
  * @returns Validation result with error details if failed
  */
 export async function validateSshCredentials(
   host: string,
   port: number,
   username: string,
-  password: string,
-  _config: Config
+  password: string | undefined,
+  _config: Config,
+  privateKey?: string,
+  passphrase?: string
 ): Promise<SshValidationResult> {
   debug(`Validating SSH credentials for ${username}@${host}:${port}`)
 
@@ -55,8 +59,20 @@ export async function validateSshCredentials(
     sessionId,
     host,
     port,
-    username,
-    password,
+    username
+  }
+
+  // Add authentication method
+  if (password !== undefined && password !== '') {
+    sshConfig.password = password
+  }
+
+  if (privateKey !== undefined && privateKey !== '') {
+    sshConfig.privateKey = privateKey
+
+    if (passphrase !== undefined && passphrase !== '') {
+      sshConfig.passphrase = passphrase
+    }
   }
 
   // Attempt connection

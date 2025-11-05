@@ -137,31 +137,37 @@ export function processAuthentication(
 /**
  * Create session data from authentication result
  * Pure function - no side effects
- * 
+ *
  * @param authResult - Authentication result
+ * @param config - Application configuration for SSH host/port
  * @returns Session data object
  */
-export function createSessionData(authResult: AuthResult): Record<string, unknown> {
+export function createSessionData(
+  authResult: AuthResult,
+  config: Config
+): Record<string, unknown> {
   const sessionData: Record<string, unknown> = {
     sshCredentials: {
-      username: authResult.credentials.username
+      username: authResult.credentials.username,
+      host: config.ssh.host,
+      port: config.ssh.port
     },
     usedBasicAuth: authResult.usedBasicAuth
   }
-  
+
   const creds = sessionData['sshCredentials'] as Record<string, unknown>
-  
+
   if (authResult.credentials.password != null && authResult.credentials.password !== '') {
     creds['password'] = authResult.credentials.password
   }
-  
+
   if (authResult.credentials.privateKey != null && authResult.credentials.privateKey !== '') {
     creds['privateKey'] = authResult.credentials.privateKey
   }
-  
+
   if (authResult.credentials.passphrase != null && authResult.credentials.passphrase !== '') {
     creds['passphrase'] = authResult.credentials.passphrase
   }
-  
+
   return sessionData
 }
