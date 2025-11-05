@@ -22,22 +22,42 @@ import {
   TEST_PORTS
 } from '../../test-constants.js'
 
+// Helper functions to reduce duplication
+interface ConfigOptions {
+  username?: string
+  password?: string | null
+  privateKey?: string | null
+  passphrase?: string | null
+  host?: string
+  port?: number
+}
+
+function createTestConfig(options: ConfigOptions = {}): Config {
+  const config = createDefaultConfig()
+  config.user.name = options.username ?? TEST_USERNAME
+  config.user.password = 'password' in options ? options.password : null
+  config.user.privateKey = 'privateKey' in options ? options.privateKey : TEST_SSH_PRIVATE_KEY_VALID
+  config.user.passphrase = 'passphrase' in options ? options.passphrase : null
+  config.ssh.host = options.host ?? TEST_SSH.HOST
+  config.ssh.port = options.port ?? TEST_SSH.PORT
+  return config
+}
+
+function processAuthAndCreateSession(config: Config) {
+  const authResult = processAuthentication(config, null)
+  expect(authResult.ok).toBe(true)
+  if (!authResult.ok) {
+    throw new Error('Auth failed')
+  }
+  const sessionData = createSessionData(authResult.value, config)
+  return { authResult, sessionData, sshCreds: sessionData.sshCredentials as Record<string, unknown> }
+}
+
 describe('Private Key Authentication - Issue #441', () => {
   describe('Bug #1: Session data includes host and port', () => {
     it('should include host and port in session credentials from config', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = TEST_SSH.HOST
-      config.ssh.port = TEST_SSH.PORT
-
-      const authResult = processAuthentication(config, null)
-
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig()
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       expect(sshCreds).toHaveProperty('username', TEST_USERNAME)
       expect(sshCreds).toHaveProperty('host', TEST_SSH.HOST)
@@ -47,18 +67,12 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should use config SSH host and port when creating session', () => {
-      const config = createDefaultConfig()
-      config.user.name = 'keyuser'
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = TEST_IPS.PRIVATE_192_100
-      config.ssh.port = TEST_PORTS.sshServerUnit
-
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig({
+        username: 'keyuser',
+        host: TEST_IPS.PRIVATE_192_100,
+        port: TEST_PORTS.sshServerUnit
+      })
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       expect(sshCreds.host).toBe(TEST_IPS.PRIVATE_192_100)
       expect(sshCreds.port).toBe(TEST_PORTS.sshServerUnit)
@@ -67,18 +81,8 @@ describe('Private Key Authentication - Issue #441', () => {
 
   describe('Bug #2: convertToAuthCredentials validates successfully', () => {
     it('should convert session credentials with privateKey to AuthCredentials', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = TEST_SSH.HOST
-      config.ssh.port = TEST_SSH.PORT
-
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig()
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       // This is what BasicAuthProvider.getCredentials() does
       const credentials = convertToAuthCredentials(sshCreds)
@@ -118,10 +122,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
   describe('Bug #3: Private key extraction from config', () => {
     it('should extract privateKey from config.user', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-
+      const config = createTestConfig()
       const extracted = extractConfigCredentials(config)
 
       expect(extracted).not.toBe(null)
@@ -130,11 +131,7 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should extract privateKey and passphrase from config', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.user.passphrase = TEST_PASSPHRASE
-
+      const config = createTestConfig({ passphrase: TEST_PASSPHRASE })
       const extracted = extractConfigCredentials(config)
 
       expect(extracted).not.toBe(null)
@@ -143,20 +140,13 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should validate config has credentials with privateKey', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-
+      const config = createTestConfig()
       const hasCredentials = hasConfigCredentials(config)
       expect(hasCredentials).toBe(true)
     })
 
     it('should not validate config without privateKey or password', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = null
-      config.user.password = null
-
+      const config = createTestConfig({ privateKey: null, password: null })
       const hasCredentials = hasConfigCredentials(config)
       expect(hasCredentials).toBe(false)
     })
@@ -164,11 +154,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
   describe('Complete authentication flow with privateKey', () => {
     it('should successfully authenticate with privateKey from config', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = TEST_SSH.HOST
-      config.ssh.port = TEST_SSH.PORT
+      const config = createTestConfig()
 
       // Step 1: Process authentication
       const authResult = processAuthentication(config, null)
@@ -196,19 +182,8 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should handle privateKey with passphrase', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.user.passphrase = TEST_PASSPHRASE
-      config.ssh.host = TEST_SSH.HOST
-      config.ssh.port = TEST_SSH.PORT
-
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig({ passphrase: TEST_PASSPHRASE })
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       expect(sshCreds.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
       expect(sshCreds.passphrase).toBe(TEST_PASSPHRASE)
@@ -218,19 +193,8 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should include both password and privateKey when both exist', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.password = TEST_PASSWORD
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = TEST_SSH.HOST
-      config.ssh.port = TEST_SSH.PORT
-
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig({ password: TEST_PASSWORD })
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       // Both should be present
       expect(sshCreds.password).toBe(TEST_PASSWORD)
@@ -240,19 +204,13 @@ describe('Private Key Authentication - Issue #441', () => {
 
   describe('Edge cases and validation', () => {
     it('should handle empty privateKey string', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = ''
-
+      const config = createTestConfig({ privateKey: '' })
       const hasCredentials = hasConfigCredentials(config)
       expect(hasCredentials).toBe(false)
     })
 
     it('should handle null privateKey', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = null
-
+      const config = createTestConfig({ privateKey: null })
       const hasCredentials = hasConfigCredentials(config)
       expect(hasCredentials).toBe(false)
     })
@@ -270,18 +228,11 @@ describe('Private Key Authentication - Issue #441', () => {
     })
 
     it('should handle custom SSH port with privateKey', () => {
-      const config = createDefaultConfig()
-      config.user.name = TEST_USERNAME
-      config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
-      config.ssh.host = 'custom.host'
-      config.ssh.port = TEST_PORTS.sshServerUnit
-
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const config = createTestConfig({
+        host: 'custom.host',
+        port: TEST_PORTS.sshServerUnit
+      })
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       expect(sshCreds.port).toBe(TEST_PORTS.sshServerUnit)
 
@@ -311,27 +262,12 @@ describe('Private Key Authentication - Issue #441', () => {
 
     it('should include host and port when creating session from config auth', () => {
       // This was the root cause - session data did not include host/port
-      const config: Config = {
-        ...createDefaultConfig(),
-        user: {
-          name: 'keyuser',
-          password: null,
-          privateKey: TEST_SSH_PRIVATE_KEY_VALID,
-          passphrase: null
-        },
-        ssh: {
-          ...createDefaultConfig().ssh,
-          host: TEST_IPS.PRIVATE_192_2_1,
-          port: TEST_SSH.PORT
-        }
-      }
+      const config = createTestConfig({
+        username: 'keyuser',
+        host: TEST_IPS.PRIVATE_192_2_1
+      })
 
-      const authResult = processAuthentication(config, null)
-      expect(authResult.ok).toBe(true)
-      if (!authResult.ok) {return}
-
-      const sessionData = createSessionData(authResult.value, config)
-      const sshCreds = sessionData.sshCredentials as Record<string, unknown>
+      const { sshCreds } = processAuthAndCreateSession(config)
 
       // Bug was: host and port were missing
       // Fix: they should be present
