@@ -132,7 +132,9 @@ async function handleSshGetRoute(
     connectionResult.value.port,
     credentialResult.value.username,
     credentialResult.value.password,
-    config
+    config,
+    credentialResult.value.privateKey,
+    credentialResult.value.passphrase
   )
 
   if (!validationResult.success) {

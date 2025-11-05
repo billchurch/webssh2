@@ -136,11 +136,22 @@ export class ServiceSocketAuthentication {
       return true
     }
 
-    const pipelineCredentials = {
+    const pipelineCredentials: Record<string, unknown> = {
       username: credentials.username,
-      password: credentials.password,
       host: credentials.host,
       port: credentials.port
+    }
+
+    if (credentials.password !== undefined) {
+      pipelineCredentials['password'] = credentials.password
+    }
+
+    if (credentials.privateKey !== undefined) {
+      pipelineCredentials['privateKey'] = credentials.privateKey
+    }
+
+    if (credentials.passphrase !== undefined) {
+      pipelineCredentials['passphrase'] = credentials.passphrase
     }
 
     if (!this.context.authPipeline.setManualCredentials(pipelineCredentials)) {

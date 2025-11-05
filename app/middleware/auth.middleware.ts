@@ -38,7 +38,7 @@ export function createAuthMiddleware(config: Config): RequestHandler {
     }
     
     // Create session data from auth result
-    const sessionData = createSessionData(authResult.value)
+    const sessionData = createSessionData(authResult.value, config)
     
     const session = r.session as SavableSession | undefined
     if (session == null) {
