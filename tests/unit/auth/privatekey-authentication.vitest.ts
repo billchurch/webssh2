@@ -14,6 +14,7 @@ import { createDefaultConfig } from '../../../app/config/config-processor.js'
 import type { Config } from '../../../app/types/config.js'
 import {
   TEST_USERNAME,
+  TEST_PASSWORD,
   TEST_SSH_PRIVATE_KEY_VALID,
   TEST_PASSPHRASE,
   TEST_SSH,
@@ -33,7 +34,7 @@ describe('Private Key Authentication - Issue #441', () => {
       const authResult = processAuthentication(config, null)
 
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
@@ -54,7 +55,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
@@ -74,7 +75,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
@@ -172,7 +173,7 @@ describe('Private Key Authentication - Issue #441', () => {
       // Step 1: Process authentication
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       expect(authResult.value.source).toBe('config')
       expect(authResult.value.credentials.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
@@ -204,7 +205,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
@@ -219,20 +220,20 @@ describe('Private Key Authentication - Issue #441', () => {
     it('should include both password and privateKey when both exist', () => {
       const config = createDefaultConfig()
       config.user.name = TEST_USERNAME
-      config.user.password = 'testpass'
+      config.user.password = TEST_PASSWORD
       config.user.privateKey = TEST_SSH_PRIVATE_KEY_VALID
       config.ssh.host = TEST_SSH.HOST
       config.ssh.port = TEST_SSH.PORT
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
 
       // Both should be present
-      expect(sshCreds.password).toBe('testpass')
+      expect(sshCreds.password).toBe(TEST_PASSWORD)
       expect(sshCreds.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
     })
   })
@@ -277,7 +278,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
@@ -327,7 +328,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       const authResult = processAuthentication(config, null)
       expect(authResult.ok).toBe(true)
-      if (!authResult.ok) return
+      if (!authResult.ok) {return}
 
       const sessionData = createSessionData(authResult.value, config)
       const sshCreds = sessionData.sshCredentials as Record<string, unknown>
