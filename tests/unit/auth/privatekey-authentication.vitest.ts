@@ -43,7 +43,11 @@ function createTestConfig(options: ConfigOptions = {}): Config {
   return config
 }
 
-function processAuthAndCreateSession(config: Config) {
+function processAuthAndCreateSession(config: Config): {
+  authResult: ReturnType<typeof processAuthentication> & { ok: true }
+  sessionData: ReturnType<typeof createSessionData>
+  sshCreds: Record<string, unknown>
+} {
   const authResult = processAuthentication(config, null)
   expect(authResult.ok).toBe(true)
   if (!authResult.ok) {
