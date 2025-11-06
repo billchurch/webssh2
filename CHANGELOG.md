@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.5](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.4...webssh2-server-v2.3.5) (2025-11-06)
+
+
+### Bug Fixes
+
+* package.json & package-lock.json to reduce vulnerabilities ([#440](https://github.com/billchurch/webssh2/issues/440)) ([6e3261b](https://github.com/billchurch/webssh2/commit/6e3261b6a9aaf1b7ea685831afb48779593d962b))
+* private key authentication not working with config credentials ([#443](https://github.com/billchurch/webssh2/issues/443)) ([e43c811](https://github.com/billchurch/webssh2/commit/e43c811ce38eddb2ddf3d04a50c5158af46a0532))
+
 ## [2.3.4](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.3...webssh2-server-v2.3.4) (2025-10-14)
 
 
