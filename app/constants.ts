@@ -3,6 +3,7 @@
 
 import { fileURLToPath } from 'node:url'
 import * as path from 'node:path'
+import type { AuthMethodToken } from './types/branded.js'
 
 const FILENAME = fileURLToPath(import.meta.url)
 const DIRNAME = path.dirname(FILENAME)
@@ -56,6 +57,22 @@ export const ENV_LIMITS = {
   MAX_KEY_LENGTH: 32,
   MAX_VALUE_LENGTH: 512,
 } as const
+
+export const AUTH_METHOD_TOKENS = {
+  PASSWORD: 'password',
+  KEYBOARD_INTERACTIVE: 'keyboard-interactive',
+  PUBLIC_KEY: 'publickey',
+} as const satisfies {
+  readonly PASSWORD: AuthMethodToken
+  readonly KEYBOARD_INTERACTIVE: AuthMethodToken
+  readonly PUBLIC_KEY: AuthMethodToken
+}
+
+export const DEFAULT_AUTH_METHODS = [
+  AUTH_METHOD_TOKENS.PASSWORD,
+  AUTH_METHOD_TOKENS.KEYBOARD_INTERACTIVE,
+  AUTH_METHOD_TOKENS.PUBLIC_KEY,
+] as const satisfies readonly AuthMethodToken[]
 
 export const HTTP = {
   OK: 200,

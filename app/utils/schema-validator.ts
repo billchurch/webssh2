@@ -16,8 +16,8 @@ export function validateConfigSchema(config: unknown): Result<Config, ConfigVali
   const result = ConfigSchema.safeParse(config)
 
   if (result.success) {
-    // Cast to Config type since our schema matches the interface
-    return ok(result.data as Config)
+    // Cast through unknown to align branded types that are enforced downstream
+    return ok(result.data as unknown as Config)
   }
 
   // Transform Zod errors into our ConfigValidationError format
@@ -41,7 +41,7 @@ export function validatePartialConfigSchema(config: unknown): Result<Partial<Con
   const result = ConfigSchema.partial().safeParse(config)
 
   if (result.success) {
-    return ok(result.data as Partial<Config>)
+    return ok(result.data as unknown as Partial<Config>)
   }
 
   const errors: ConfigValidationError[] = result.error.issues.map(issue => ({

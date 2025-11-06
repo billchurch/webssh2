@@ -8,6 +8,8 @@ import type { Config } from '../../app/config.js'
 import type { Server } from 'node:http'
 import type { Express } from 'express'
 import { TEST_SECRET_KEY, TEST_PORTS, TEST_TIMEOUTS } from '../test-constants.js'
+import { DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { createAuthMethod } from '../../app/types/branded.js'
 
 /**
  * Environment variable map for testing
@@ -143,7 +145,8 @@ export const DEFAULT_TEST_CONFIG: Config = {
     readyTimeout: 20000,
     keepaliveInterval: 120000,
     keepaliveCountMax: 10,
-    disableInteractiveAuth: false
+    disableInteractiveAuth: false,
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
   },
   header: {
     text: null,

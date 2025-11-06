@@ -22,9 +22,10 @@ import type { StructuredLogInput } from '../app/logging/structured-log.js'
 import type { LogLevel } from '../app/logging/levels.js'
 import type { TestEnvironment, AuthStatus } from './types/index.js'
 import { TEST_USERNAME, TEST_SSH, TEST_SECRET } from './test-constants.js'
-import { DEFAULTS } from '../app/constants.js'
+import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../app/constants.js'
 import type { Result } from '../app/types/result.js'
 import { ok, err, isErr } from '../app/utils/result.js'
+import { createAuthMethod } from '../app/types/branded.js'
 
 // Re-export Result utility functions for test use
 export { ok, err, isErr }
@@ -186,7 +187,9 @@ export function createMockDependencies(): ServiceDependencies {
         readyTimeout: 20000,
         keepaliveInterval: 30000,
         keepaliveCountMax: 10,
-        alwaysSendKeyboardInteractivePrompts: false
+        alwaysSendKeyboardInteractivePrompts: false,
+        disableInteractiveAuth: false,
+        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
       },
       options: {
         challengeButton: false,
@@ -493,6 +496,7 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
         compress: [],
         hmac: []
       },
+      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
       ...overrides.ssh,
     },
     options: {

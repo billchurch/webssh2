@@ -15,6 +15,8 @@ import {
   type SessionState,
 } from '../../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../../app/types/config.js'
+import { DEFAULT_AUTH_METHODS, AUTH_METHOD_TOKENS } from '../../../../app/constants.js'
+import { createAuthMethod } from '../../../../app/types/branded.js'
 import {
   TEST_USERNAME,
   TEST_PASSWORDS,
@@ -153,6 +155,7 @@ describe('Auth Handler', () => {
         keepaliveInterval: 60000,
         keepaliveCountMax: 10,
         readyTimeout: 20000,
+        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
       },
       options: {
         allowReauth: true,
@@ -275,7 +278,11 @@ describe('Auth Handler', () => {
   describe('handleAuthRequest', () => {
     const mockConfig = {
       user: { privateKey: '' },
-      ssh: { term: 'xterm-color', disableInteractiveAuth: false },
+      ssh: {
+        term: 'xterm-color',
+        disableInteractiveAuth: false,
+        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+      },
     } as Config
 
     it('should successfully handle valid auth request', () => {
@@ -339,7 +346,10 @@ describe('Auth Handler', () => {
 
   describe('requiresInteractiveAuth', () => {
     const mockConfig = {
-      ssh: { disableInteractiveAuth: false },
+      ssh: {
+        disableInteractiveAuth: false,
+        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+      },
     } as Config
 
     it('should not require auth if already authenticated', () => {
@@ -376,6 +386,19 @@ describe('Auth Handler', () => {
       }
       
       expect(requiresInteractiveAuth(sessionState, mockConfig)).toBe(false)
+    })
+
+    it('should skip interactive auth when method disabled', () => {
+      const sessionState = createInitialSessionState()
+      const config = {
+        ...mockConfig,
+        ssh: {
+          ...mockConfig.ssh,
+          allowedAuthMethods: [createAuthMethod(AUTH_METHOD_TOKENS.PUBLIC_KEY)]
+        }
+      } as Config
+
+      expect(requiresInteractiveAuth(sessionState, config)).toBe(false)
     })
   })
 

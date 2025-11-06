@@ -29,6 +29,7 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_SSH_LOCAL_PORT: { path: 'ssh.localPort', type: 'number' },
   WEBSSH2_SSH_TERM: { path: 'ssh.term', type: 'string' },
   WEBSSH2_SSH_ENV_ALLOWLIST: { path: 'ssh.envAllowlist', type: 'array' },
+  WEBSSH2_AUTH_ALLOWED: { path: 'ssh.allowedAuthMethods', type: 'array' },
   WEBSSH2_SSH_READY_TIMEOUT: { path: 'ssh.readyTimeout', type: 'number' },
   WEBSSH2_SSH_KEEPALIVE_INTERVAL: { path: 'ssh.keepaliveInterval', type: 'number' },
   WEBSSH2_SSH_KEEPALIVE_COUNT_MAX: { path: 'ssh.keepaliveCountMax', type: 'number' },

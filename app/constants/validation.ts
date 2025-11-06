@@ -76,6 +76,7 @@ export const VALIDATION_MESSAGES = {
   CONNECTION_CLOSED: 'Connection closed',
   NO_SSH_CONNECTION: 'No SSH connection',
   NO_ACTIVE_TERMINAL: 'No active terminal to receive replayed credentials',
+  AUTH_METHOD_DISABLED: 'Authentication method disabled by server policy',
   
   // Configuration messages
   REPLAY_DISABLED: 'Replay disabled by server configuration',

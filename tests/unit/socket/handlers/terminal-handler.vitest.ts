@@ -12,8 +12,9 @@ import {
   mergeTerminalConfig,
   type TerminalConfig,
 } from '../../../../app/socket/handlers/terminal-handler.js'
-import { DEFAULTS } from '../../../../app/constants.js'
+import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../../../app/constants.js'
 import type { Config } from '../../../../app/types/config.js'
+import { createAuthMethod } from '../../../../app/types/branded.js'
 
 describe('Terminal Handler', () => {
   const mockConfig: Config = {
@@ -25,6 +26,7 @@ describe('Terminal Handler', () => {
       keepaliveInterval: 60000,
       keepaliveCountMax: 10,
       readyTimeout: 20000,
+      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
     },
     user: {},
     options: {},

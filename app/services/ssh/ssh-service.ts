@@ -30,6 +30,7 @@ import {
 } from './connection-logger.js'
 import { registerConnectionHandlers } from './connection-handlers.js'
 import { executeSshCommand } from './exec-command.js'
+import { isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 
 const logger = debug('webssh2:services:ssh')
 
@@ -39,6 +40,7 @@ export class SSHServiceImpl implements SSHService {
   private readonly keepaliveInterval: number
   private readonly keepaliveCountMax: number
   private readonly connectionLogger: ConnectionLogger
+  private readonly keyboardInteractiveAllowed: boolean
 
   constructor(
     private readonly deps: ServiceDependencies,
@@ -52,6 +54,13 @@ export class SSHServiceImpl implements SSHService {
       structuredLogger,
       fallbackLogger: deps.logger
     })
+    this.keyboardInteractiveAllowed = isAuthMethodAllowed(
+      deps.config.ssh.allowedAuthMethods,
+      'keyboard-interactive'
+    )
+    if (!this.keyboardInteractiveAllowed) {
+      deps.logger.info('Keyboard-interactive authentication disabled by server policy')
+    }
   }
 
   private buildConnectConfig(config: SSHConfig): Parameters<SSH2Client['connect']>[0] {
@@ -62,7 +71,7 @@ export class SSHServiceImpl implements SSHService {
       readyTimeout: config.readyTimeout ?? this.connectionTimeout,
       keepaliveInterval: config.keepaliveInterval ?? this.keepaliveInterval,
       keepaliveCountMax: config.keepaliveCountMax ?? this.keepaliveCountMax,
-      tryKeyboard: true // Enable keyboard-interactive authentication
+      tryKeyboard: this.keyboardInteractiveAllowed
     }
 
     // Add authentication method

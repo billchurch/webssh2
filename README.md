@@ -70,6 +70,8 @@ WebSSH2 prefers environment variables for configuration (following 12-factor app
 export WEBSSH2_LISTEN_PORT=2222
 export WEBSSH2_SSH_HOST=ssh.example.com
 export WEBSSH2_HEADER_TEXT="My WebSSH2"
+# Allow only password and keyboard-interactive authentication methods (default allows all)
+export WEBSSH2_AUTH_ALLOWED=password,keyboard-interactive
 
 npm start
 ```
@@ -97,6 +99,7 @@ docker run --rm -it \
   -p 2222:2222 \
   -e WEBSSH2_SSH_HOST=ssh.example.com \
   -e WEBSSH2_SSH_ALGORITHMS_PRESET=modern \
+  -e WEBSSH2_AUTH_ALLOWED=password,publickey \
   ghcr.io/billchurch/webssh2:latest
 ```
 

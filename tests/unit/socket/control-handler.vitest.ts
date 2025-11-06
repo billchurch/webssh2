@@ -2,11 +2,13 @@ import { describe, beforeEach, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Socket } from 'socket.io'
 import { SOCKET_EVENTS, VALIDATION_MESSAGES } from '../../../app/constants/index.js'
+import { DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
 import {
   createInitialSessionState,
   type SessionState
 } from '../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../app/types/config.js'
+import { createAuthMethod } from '../../../app/types/branded.js'
 import { createStructuredLoggerStub, type StructuredLoggerStub } from '../../test-utils.js'
 import {
   TEST_PASSWORDS,
@@ -52,7 +54,8 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
         hmac: [],
         kex: [],
         serverHostKey: []
-      }
+      },
+      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
     },
     header: {
       text: null,

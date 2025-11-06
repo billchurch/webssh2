@@ -22,6 +22,11 @@
     "allowedSubnets": [],
     "alwaysSendKeyboardInteractivePrompts": false,
     "disableInteractiveAuth": false,
+    "allowedAuthMethods": [
+      "password",
+      "keyboard-interactive",
+      "publickey"
+    ],
     "algorithms": {
       "cipher": [
         "chacha20-poly1305@openssh.com",

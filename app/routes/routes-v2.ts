@@ -10,6 +10,7 @@ import { validateSshCredentials } from '../connection/index.js'
 import { HTTP } from '../constants.js'
 import type { Config } from '../types/config.js'
 import { createSafeKey, safeGet } from '../utils/safe-property-access.js'
+import { evaluateAuthMethodPolicy } from '../auth/auth-method-policy.js'
 
 // Import pure handlers
 import {
@@ -23,6 +24,7 @@ import {
   type SshRouteRequest,
   type SshConnectionParams
 } from './handlers/ssh-handler.js'
+import { createSshConfigResponse } from './handlers/ssh-config-handler.js'
 
 // Import adapters
 import {
@@ -115,6 +117,20 @@ async function handleSshGetRoute(
     return
   }
 
+  const policyResult = evaluateAuthMethodPolicy(config.ssh.allowedAuthMethods, {
+    password: credentialResult.value.password,
+    privateKey: credentialResult.value.privateKey
+  })
+
+  if (!policyResult.ok) {
+    debug('Blocking SSH GET due to disallowed auth method: %s', policyResult.error.method)
+    applyRouteResponse({
+      status: HTTP.FORBIDDEN,
+      data: policyResult.error
+    }, res)
+    return
+  }
+
   const connectionResult = validateConnectionParameters(
     buildConnectionParams(routeRequest.query, hostOverride),
     config
@@ -199,6 +215,20 @@ async function handlePostAuthRoute(
     return
   }
 
+  const postPolicyResult = evaluateAuthMethodPolicy(config.ssh.allowedAuthMethods, {
+    password: authResult.value.credentials.password,
+    privateKey: authResult.value.credentials.privateKey
+  })
+
+  if (!postPolicyResult.ok) {
+    debug('Blocking POST auth due to disallowed auth method: %s', postPolicyResult.error.method)
+    applyRouteResponse({
+      status: HTTP.FORBIDDEN,
+      data: postPolicyResult.error
+    }, res)
+    return
+  }
+
   // Create and apply session updates
   const sessionUpdates = createAuthSessionUpdates(
     authResult.value.credentials,
@@ -241,6 +271,11 @@ export function createRoutesV2(config: Config): Router {
     processAuthParameters(expressReq.query, expressReq.session)
     await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res)
   }))
+
+  /**
+   * Expose server configuration capabilities to clients
+   */
+  router.get('/config', createRouteHandler(createSshConfigResponse, config))
 
   /**
    * Host route without parameter - uses config default

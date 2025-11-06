@@ -4,6 +4,7 @@
 import type { AuthCredentials } from '../../types/contracts/v1/socket.js'
 import type { Config } from '../../types/config.js'
 import { VALIDATION_MESSAGES } from '../../constants/index.js'
+import { isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 import { extractAuthCredentials } from '../../utils/index.js'
 
 export interface SessionState {
@@ -197,6 +198,10 @@ export function requiresInteractiveAuth(
 
   // Interactive auth disabled
   if (config.ssh.disableInteractiveAuth) {
+    return false
+  }
+
+  if (!isAuthMethodAllowed(config.ssh.allowedAuthMethods, 'keyboard-interactive')) {
     return false
   }
 
