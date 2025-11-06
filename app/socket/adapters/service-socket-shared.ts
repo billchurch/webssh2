@@ -31,6 +31,7 @@ export interface AdapterSharedState {
   targetPort: number | null
   username: string | null
   userAgent: string | null
+  requestedKeyboardInteractive: boolean
 }
 
 export interface AdapterContext {
@@ -57,6 +58,7 @@ export function createAdapterSharedState(): AdapterSharedState {
     targetHost: null,
     targetPort: null,
     username: null,
-    userAgent: null
+    userAgent: null,
+    requestedKeyboardInteractive: false
   }
 }

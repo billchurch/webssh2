@@ -88,6 +88,17 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_ALWAYS_SEND_KEYBOARD_INTERACTIVE` | boolean | `false` | Always send keyboard-interactive prompts to client |
 | `WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH` | boolean | `false` | Disable interactive authentication |
 | `WEBSSH2_SSH_ENV_ALLOWLIST` | array | `[]` | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Caps: max 50 pairs; key length ≤ 32; value length ≤ 512. |
+| `WEBSSH2_AUTH_ALLOWED` | array | `password,keyboard-interactive,publickey` | Ordered allow list of SSH auth methods. Unknown tokens are ignored. If the list resolves to empty, startup fails. |
+
+#### Authentication Allow List
+
+`WEBSSH2_AUTH_ALLOWED` lets administrators enforce which SSH authentication methods can be used. Supported tokens are:
+
+- `password`
+- `keyboard-interactive`
+- `publickey`
+
+The list is evaluated in order and duplicates are removed automatically. Methods not included in the list are rejected before credentials are forwarded to the SSH server, and the UI exposes only the allowed choices. When the variable is unset, all three methods remain available (backward-compatible behaviour).
 
 ### SSH Subnet Restrictions
 

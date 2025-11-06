@@ -12,7 +12,8 @@ import type {
   LoggingSyslogConfig,
   LoggingSyslogTlsConfig
 } from '../types/config.js'
-import { DEFAULTS } from '../constants.js'
+import { DEFAULT_AUTH_METHODS, DEFAULTS } from '../constants.js'
+import { createAuthMethod } from '../types/branded.js'
 
 /**
  * Default SSH algorithms configuration
@@ -77,6 +78,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     alwaysSendKeyboardInteractivePrompts: false,
     disableInteractiveAuth: false,
     algorithms: DEFAULT_SSH_ALGORITHMS,
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
   },
   header: { text: null, background: 'green' },
   options: {
@@ -132,6 +134,7 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
         serverHostKey: [...DEFAULT_CONFIG_BASE.ssh.algorithms.serverHostKey],
       },
       allowedSubnets: DEFAULT_CONFIG_BASE.ssh.allowedSubnets == null ? [] : [...DEFAULT_CONFIG_BASE.ssh.allowedSubnets],
+      allowedAuthMethods: [...DEFAULT_CONFIG_BASE.ssh.allowedAuthMethods],
     },
     header: { ...DEFAULT_CONFIG_BASE.header },
     options: { ...DEFAULT_CONFIG_BASE.options },

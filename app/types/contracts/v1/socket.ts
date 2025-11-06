@@ -75,6 +75,7 @@ export interface ServerToClientEvents {
   data: (chunk: string) => void
   // Auth flow
   authentication: (payload: AuthenticationEvent) => void
+  authFailure: (payload: { error: string; method: string }) => void
   // Permissions negotiated post-auth
   permissions: (p: {
     autoLog: boolean

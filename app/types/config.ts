@@ -1,9 +1,10 @@
 // app/types/config.ts
 // Configuration type definitions
 
-import type { Result } from './result.js'
 import type { LogLevel } from '../logging/levels.js'
 import type { LogEventName } from '../logging/event-catalog.js'
+import type { AuthMethod } from './branded.js'
+import type { Result } from './result.js'
 
 /**
  * SSH algorithms configuration
@@ -33,6 +34,7 @@ export interface SSHConfig {
   disableInteractiveAuth: boolean
   algorithms: AlgorithmsConfig
   envAllowlist?: string[]
+  allowedAuthMethods: AuthMethod[]
 }
 
 /**

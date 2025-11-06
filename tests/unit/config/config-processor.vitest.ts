@@ -10,6 +10,7 @@ import {
   createCorsConfig
 } from '../../../app/config/config-processor.js'
 import type { Config } from '../../../app/types/config.js'
+import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
 import { TEST_SECRET_123, TEST_PASSWORDS, TEST_IPS, TEST_SECRET } from '../../test-constants.js'
 
 void describe('createDefaultConfig', () => {
@@ -41,6 +42,13 @@ void describe('createDefaultConfig', () => {
     expect(config.ssh.algorithms.cipher).toContain('chacha20-poly1305@openssh.com')
     expect(config.ssh.algorithms.kex).toContain('curve25519-sha256')
     expect(config.ssh.algorithms.serverHostKey).toContain('ssh-ed25519')
+  })
+
+  it('should include default allowed auth methods in order', () => {
+    const config = createDefaultConfig()
+
+    expect(config.ssh.allowedAuthMethods.map(method => `${method}`)).toEqual(DEFAULT_AUTH_METHODS)
+    expect(config.ssh.allowedAuthMethods[0]).toBe(AUTH_METHOD_TOKENS.PASSWORD)
   })
 })
 

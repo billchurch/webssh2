@@ -1,11 +1,12 @@
 import type { AuthCredentials } from '../../types/contracts/v1/socket.js'
 import type { Credentials } from '../../validation/credentials.js'
-import type { SessionId } from '../../types/branded.js'
+import type { SessionId, AuthMethodToken } from '../../types/branded.js'
 import type { AdapterContext } from './service-socket-shared.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildSSHConfig } from './ssh-config.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
+import { evaluateAuthMethodPolicy, isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 
 export class ServiceSocketAuthentication {
   constructor(private readonly context: AdapterContext) {}
@@ -14,6 +15,7 @@ export class ServiceSocketAuthentication {
     const { authPipeline, socket, debug } = this.context
 
     debug(`Checking initial auth state for client ${socket.id}`)
+    this.context.state.requestedKeyboardInteractive = false
 
     if (authPipeline.isAuthenticated()) {
       const creds = authPipeline.getCredentials()
@@ -42,12 +44,20 @@ export class ServiceSocketAuthentication {
   }
 
   requestAuthentication(): void {
+    this.context.state.requestedKeyboardInteractive = false
     const method = this.context.authPipeline.getAuthMethod()
     this.context.debug(`Requesting authentication from client ${this.context.socket.id}, method: ${method ?? 'manual'}`)
     this.context.socket.emit(SOCKET_EVENTS.AUTHENTICATION, { action: 'request_auth' })
   }
 
   requestKeyboardInteractiveAuth(): void {
+    if (!isAuthMethodAllowed(this.context.config.ssh.allowedAuthMethods, 'keyboard-interactive')) {
+      this.context.debug('Keyboard-interactive auth request skipped due to disallowed method')
+      this.requestAuthentication()
+      return
+    }
+
+    this.context.state.requestedKeyboardInteractive = true
     this.context.debug(`Requesting keyboard-interactive auth from client ${this.context.socket.id}`)
 
     this.context.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
@@ -78,6 +88,7 @@ export class ServiceSocketAuthentication {
       host: this.context.config.ssh.host,
       port: this.context.config.ssh.port
     }
+    this.context.state.requestedKeyboardInteractive = true
 
     await this.handleAuthentication(credentials)
   }
@@ -122,6 +133,10 @@ export class ServiceSocketAuthentication {
     const validatedCreds = this.context.authPipeline.getCredentials()
 
     if (!this.validateCredentials(validatedCreds)) {
+      return null
+    }
+
+    if (!this.enforceAuthMethodPolicy(validatedCreds)) {
       return null
     }
 
@@ -281,16 +296,47 @@ export class ServiceSocketAuthentication {
 
     const method = this.context.state.originalAuthMethod ?? 'manual'
     this.context.debug(`Authentication successful via ${method}, socket=${this.context.socket.id}`)
+    this.context.state.requestedKeyboardInteractive = false
   }
 
-  private emitAuthFailure(message: string): void {
+  private emitAuthFailure(message: string, data?: Record<string, unknown>): void {
     this.context.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
       action: 'auth_result',
       success: false,
       message
     })
 
-    this.logAuthFailure(message)
+    this.logAuthFailure(message, data)
+  }
+
+  private enforceAuthMethodPolicy(credentials: Credentials): boolean {
+    const policyResult = evaluateAuthMethodPolicy(
+      this.context.config.ssh.allowedAuthMethods,
+      {
+        password: credentials.password,
+        privateKey: credentials.privateKey,
+        requestedKeyboardInteractive: this.context.state.requestedKeyboardInteractive
+      }
+    )
+
+    if (policyResult.ok) {
+      return true
+    }
+
+    this.emitAuthMethodViolation(policyResult.error.method)
+    return false
+  }
+
+  private emitAuthMethodViolation(method: AuthMethodToken): void {
+    const payload = {
+      error: 'auth_method_disabled' as const,
+      method
+    }
+
+    this.context.debug('Authentication blocked: method %s disabled by policy', method)
+    this.context.state.requestedKeyboardInteractive = false
+    this.context.socket.emit(SOCKET_EVENTS.SSH_AUTH_FAILURE, payload)
+    this.emitAuthFailure(VALIDATION_MESSAGES.AUTH_METHOD_DISABLED, { method })
   }
 
   private handleAuthenticationError(error: unknown): void {
@@ -338,11 +384,16 @@ export class ServiceSocketAuthentication {
     })
   }
 
-  private logAuthFailure(reason: string): void {
+  private logAuthFailure(reason: string, data?: Record<string, unknown>): void {
+    const combinedData =
+      data === undefined || Object.keys(data).length === 0
+        ? { reason }
+        : { reason, ...data }
+
     emitSocketLog(this.context, 'warn', 'auth_failure', 'Authentication failed', {
       status: 'failure',
       reason,
-      data: { reason }
+      data: combinedData
     })
   }
 

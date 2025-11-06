@@ -4,7 +4,8 @@
 import { vi, type Mock } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
-import { DEFAULTS } from '../../app/constants.js'
+import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { createAuthMethod, type AuthMethod } from '../../app/types/branded.js'
 
 // Type definitions for mock objects
 interface MockSession {
@@ -38,6 +39,7 @@ interface MockConfig {
     readyTimeout: number
     keepaliveInterval: number
     keepaliveCountMax: number
+    allowedAuthMethods: AuthMethod[]
   }
   options: {
     allowReauth: boolean
@@ -135,7 +137,8 @@ export const createMockConfig = (): MockConfig => ({
     disableInteractiveAuth: false,
     readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
     keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
-    keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX
+    keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
   },
   options: {
     allowReauth: true,

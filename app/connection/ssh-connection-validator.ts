@@ -9,6 +9,8 @@ import type { SSHService, SSHConfig } from '../services/interfaces.js'
 import { getGlobalContainer } from '../services/setup.js'
 import { TOKENS } from '../services/container.js'
 import { createSessionId } from '../types/branded.js'
+import { evaluateAuthMethodPolicy } from '../auth/auth-method-policy.js'
+import { VALIDATION_MESSAGES } from '../constants/index.js'
 
 const debug = createNamespacedDebug('connection:validator')
 
@@ -34,11 +36,25 @@ export async function validateSshCredentials(
   port: number,
   username: string,
   password: string | undefined,
-  _config: Config,
+  config: Config,
   privateKey?: string,
   passphrase?: string
 ): Promise<SshValidationResult> {
   debug(`Validating SSH credentials for ${username}@${host}:${port}`)
+
+  const policyResult = evaluateAuthMethodPolicy(config.ssh.allowedAuthMethods, {
+    password,
+    privateKey
+  })
+
+  if (!policyResult.ok) {
+    debug('Policy denied authentication method: %s', policyResult.error.method)
+    return {
+      success: false,
+      errorType: 'auth',
+      errorMessage: VALIDATION_MESSAGES.AUTH_METHOD_DISABLED
+    }
+  }
 
   // Get SSHService from DI container
   const container = getGlobalContainer()

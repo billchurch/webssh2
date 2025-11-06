@@ -1,10 +1,17 @@
 // Contract test: verify expected HTTP routes are registered without invoking handlers
 import { it, expect } from 'vitest'
 import { createRoutesV2 as createRoutes } from '../../app/routes/routes-v2.js'
+import { DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { createAuthMethod } from '../../app/types/branded.js'
 import { TEST_SECRET } from '../test-constants.js'
 
 const minimalConfig = {
-  ssh: { host: 'example.com', port: 22, term: 'xterm-256color' },
+  ssh: {
+    host: 'example.com',
+    port: 22,
+    term: 'xterm-256color',
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
+  },
   http: { origins: ['*:*'] },
   user: { name: null, password: null },
   session: { secret: TEST_SECRET, name: 'y' },
@@ -61,6 +68,7 @@ it('router registers expected paths and methods', () => {
   }
 
   assertRoute('/', 'get')
+  assertRoute('/config', 'get')
   assertRoute('/host/', 'get')
   assertRoute('/host/:host', 'get')
 

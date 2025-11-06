@@ -20,6 +20,7 @@ import {
 } from './config/config-processor.js'
 import { maskSensitiveConfig } from './config/safe-logging.js'
 import type { Result } from './types/result.js'
+import { resolveAllowedAuthMethods } from './config/auth-method-parser.js'
 
 const debug = createNamespacedDebug('config')
 
@@ -77,16 +78,41 @@ async function loadEnhancedConfig(
     envConfig as Partial<Config>
   )
   
-  if (processResult.ok) {
-    // Enhance with branded types validation
-    return enhanceConfig(processResult.value)
-  } else {
+  if (!processResult.ok) {
     return err([{
       path: '',
       message: processResult.error.message,
       value: processResult.error.originalConfig,
     }])
   }
+
+  const authResolution = resolveAllowedAuthMethods({
+    rawValues: processResult.value.ssh.allowedAuthMethods,
+  })
+
+  if (!authResolution.ok) {
+    return err([{
+      path: 'ssh.allowedAuthMethods',
+      message: authResolution.error.message,
+    }])
+  }
+
+  if (authResolution.value.warnings.length > 0) {
+    for (const warning of authResolution.value.warnings) {
+      debug('Ignoring unknown SSH auth method token: %s', warning.token)
+    }
+  }
+
+  const configWithAuthMethods: Config = {
+    ...processResult.value,
+    ssh: {
+      ...processResult.value.ssh,
+      allowedAuthMethods: [...authResolution.value.methods],
+    },
+  }
+
+  // Enhance with branded types validation
+  return enhanceConfig(configWithAuthMethods)
 }
 
 export async function loadConfigAsync(): Promise<Config> {

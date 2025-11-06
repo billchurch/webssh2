@@ -78,7 +78,8 @@ const SSHSchema = z.object({
   alwaysSendKeyboardInteractivePrompts: z.boolean(),
   disableInteractiveAuth: z.boolean(),
   algorithms: AlgorithmsSchema,
-  envAllowlist: z.array(z.string()).optional()
+  envAllowlist: z.array(z.string()).optional(),
+  allowedAuthMethods: z.array(z.string()).optional()
 })
 
 /**

@@ -14,6 +14,8 @@ export type SocketId = string & { readonly __brand: 'SocketId' }
 // SSH-related branded types
 export type SshHost = string & { readonly __brand: 'SshHost' }
 export type SshPort = number & { readonly __brand: 'SshPort' }
+export type AuthMethodToken = 'password' | 'keyboard-interactive' | 'publickey'
+export type AuthMethod = Branded<AuthMethodToken, 'AuthMethod'>
 
 // File system branded types
 export type FilePath = string & { readonly __brand: 'FilePath' }
@@ -26,6 +28,7 @@ export const createSessionId = (id: string): SessionId => id as SessionId
 export const createUserId = (id: string): UserId => id as UserId
 export const createConnectionId = (id: string): ConnectionId => id as ConnectionId
 export const createSocketId = (id: string): SocketId => id as SocketId
+export const createAuthMethod = (method: AuthMethodToken): AuthMethod => method as AuthMethod
 
 // Type guards
 export const isSessionId = (value: unknown): value is SessionId =>
@@ -39,3 +42,8 @@ export const isConnectionId = (value: unknown): value is ConnectionId =>
 
 export const isSocketId = (value: unknown): value is SocketId =>
   typeof value === 'string' && value.length > 0
+
+export const isAuthMethod = (value: unknown): value is AuthMethod =>
+  value === 'password' ||
+  value === 'keyboard-interactive' ||
+  value === 'publickey'

@@ -4,6 +4,8 @@
 import { describe, it, expect } from 'vitest'
 import { maskSensitiveConfig } from '../../../app/config/safe-logging.js'
 import type { Config } from '../../../app/types/config.js'
+import { DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
+import { createAuthMethod } from '../../../app/types/branded.js'
 import { TEST_SESSION_SECRET_VALID, TEST_SSH, TEST_IPS, TEST_USERNAME, TEST_PASSWORD, SSO_HEADERS } from '../../test-constants.js'
 
 describe('Config Safe Logging', () => {
@@ -27,7 +29,8 @@ describe('Config Safe Logging', () => {
         hmac: ['hmac-sha2-256'],
         kex: ['curve25519-sha256'],
         serverHostKey: ['ssh-ed25519']
-      }
+      },
+      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
     },
     header: { text: null, background: 'green' },
     options: {

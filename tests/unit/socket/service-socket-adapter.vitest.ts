@@ -19,6 +19,8 @@ import {
   TEST_USER_AGENTS,
   TEST_SOCKET_CONSTANTS
 } from '../../test-constants.js'
+import { DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
+import { createAuthMethod } from '../../../app/types/branded.js'
 
 type EmitSocketLogArgs = [
   AdapterContext,
@@ -138,7 +140,8 @@ const createConfig = (): Config => ({
       hmac: [],
       kex: [],
       serverHostKey: []
-    }
+    },
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
   },
   header: {
     text: null,
