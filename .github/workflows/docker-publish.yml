@@ -72,11 +72,11 @@ jobs:
           ref="${GITHUB_REF:-}"
           ref_name="${GITHUB_REF_NAME:-}"
           release_tag="${RELEASE_TAG_NAME:-}"
-          if [ -z "$ref" ] && [ -n "$release_tag" ]; then
+          if [ -n "$release_tag" ]; then
             ref="refs/tags/$release_tag"
-          fi
-          if [ -z "$ref_name" ] && [ -n "$release_tag" ]; then
             ref_name="$release_tag"
+          elif [ -z "$ref" ] && [ -n "$ref_name" ]; then
+            ref="refs/tags/$ref_name"
           fi
           echo "EFFECTIVE_REF=$ref" >> "$GITHUB_ENV"
           echo "EFFECTIVE_REF_NAME=$ref_name" >> "$GITHUB_ENV"
