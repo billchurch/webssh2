@@ -77,6 +77,23 @@ jobs:
         env:
           RELEASE_TAG_NAME: ${{ github.event.release.tag_name || '' }}
 
+      - name: Derive release semver tags
+        id: release_meta
+        run: |
+          ref_name="${EFFECTIVE_REF_NAME:-}"
+          prefix='webssh2-server-v'
+          if [[ "$ref_name" =~ ^${prefix}([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            major="${BASH_REMATCH[1]}"
+            minor="${BASH_REMATCH[2]}"
+            patch="${BASH_REMATCH[3]}"
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+            echo "semver_full=${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+            echo "semver_minor=${major}.${minor}" >> "$GITHUB_OUTPUT"
+            echo "semver_major=${major}" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Derive GHCR image name
         id: ghcr
         run: |
@@ -93,9 +110,9 @@ jobs:
             type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
             type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
             type=raw,value=main,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-            type=match,pattern=webssh2-server-v(.*),group=1,value=${{ env.EFFECTIVE_REF_NAME }},enable=${{ startsWith(env.EFFECTIVE_REF, 'refs/tags/webssh2-server-v') }}
-            type=match,pattern=webssh2-server-v(\d+\.\d+),group=1,value=${{ env.EFFECTIVE_REF_NAME }},enable=${{ startsWith(env.EFFECTIVE_REF, 'refs/tags/webssh2-server-v') }}
-            type=match,pattern=webssh2-server-v(\d+),group=1,value=${{ env.EFFECTIVE_REF_NAME }},enable=${{ startsWith(env.EFFECTIVE_REF, 'refs/tags/webssh2-server-v') }}
+            type=raw,value=${{ steps.release_meta.outputs.semver_full }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
+            type=raw,value=${{ steps.release_meta.outputs.semver_minor }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
+            type=raw,value=${{ steps.release_meta.outputs.semver_major }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
             type=ref,event=branch,enable=${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
             type=sha
 
