@@ -123,6 +123,7 @@ jobs:
             type=sha
 
       - name: Build and push docker image
+        id: build
         uses: docker/build-push-action@v6
         timeout-minutes: 60
         with:
@@ -134,3 +135,47 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update release notes with Docker images
+        if: ${{ steps.release_meta.outputs.has_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ env.EFFECTIVE_REF_NAME }}
+          SEMVER_FULL: ${{ steps.release_meta.outputs.semver_full }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          # Get current release body
+          CURRENT_BODY=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
+
+          # Create Docker images section
+          DOCKER_SECTION="
+
+          ## 🐳 Docker Images
+
+          This release is available as multi-platform Docker images (linux/amd64, linux/arm64):
+
+          ### Docker Hub
+          \`\`\`bash
+          docker pull billchurch/webssh2:latest
+          docker pull billchurch/webssh2:${SEMVER_FULL}
+          docker pull billchurch/webssh2:${{ steps.release_meta.outputs.semver_minor }}
+          docker pull billchurch/webssh2:${{ steps.release_meta.outputs.semver_major }}
+          \`\`\`
+
+          ### GitHub Container Registry
+          \`\`\`bash
+          docker pull ghcr.io/billchurch/webssh2:latest
+          docker pull ghcr.io/billchurch/webssh2:${SEMVER_FULL}
+          docker pull ghcr.io/billchurch/webssh2:${{ steps.release_meta.outputs.semver_minor }}
+          docker pull ghcr.io/billchurch/webssh2:${{ steps.release_meta.outputs.semver_major }}
+          \`\`\`
+
+          **Image Digest:** \`${IMAGE_DIGEST}\`
+
+          **Links:**
+          - [Docker Hub Repository](https://hub.docker.com/r/billchurch/webssh2)
+          - [GitHub Container Registry](https://github.com/billchurch/webssh2/pkgs/container/webssh2)
+          "
+
+          # Append Docker section to release notes
+          gh release edit "$RELEASE_TAG" --notes "${CURRENT_BODY}${DOCKER_SECTION}"
