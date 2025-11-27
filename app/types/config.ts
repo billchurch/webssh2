@@ -35,6 +35,9 @@ export interface SSHConfig {
   algorithms: AlgorithmsConfig
   envAllowlist?: string[]
   allowedAuthMethods: AuthMethod[]
+  maxExecOutputBytes?: number
+  outputRateLimitBytesPerSec?: number
+  socketHighWaterMark?: number
 }
 
 /**

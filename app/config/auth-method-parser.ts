@@ -1,7 +1,7 @@
 // app/config/auth-method-parser.ts
 // Pure parser for resolving allowed SSH authentication methods from configuration
 
-import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../constants.js'
+import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../constants/index.js'
 import { createAuthMethod, type AuthMethod, type AuthMethodToken } from '../types/branded.js'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/index.js'

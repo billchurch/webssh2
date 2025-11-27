@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { MESSAGES, DEFAULTS, HTTP } from '../app/constants.js'
+import { MESSAGES, DEFAULTS, HTTP } from '../app/constants/index.js'
 
 describe('constants.ts', () => {
   it('has expected defaults', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resolveAllowedAuthMethods } from '../../../app/config/auth-method-parser.js'
-import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
+import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 
 describe('resolveAllowedAuthMethods', () => {
   it('returns default methods when no raw values provided', () => {

@@ -89,6 +89,9 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH` | boolean | `false` | Disable interactive authentication |
 | `WEBSSH2_SSH_ENV_ALLOWLIST` | array | `[]` | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Caps: max 50 pairs; key length ≤ 32; value length ≤ 512. |
 | `WEBSSH2_AUTH_ALLOWED` | array | `password,keyboard-interactive,publickey` | Ordered allow list of SSH auth methods. Unknown tokens are ignored. If the list resolves to empty, startup fails. |
+| `WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES` | number | `10485760` (10MB) | Maximum bytes buffered for exec command output before truncation |
+| `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Rate limit for shell output streams (bytes/second). `0` disables rate limiting |
+| `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK` | number | `16384` (16KB) | Socket.IO buffer threshold for stream backpressure control |
 
 #### Authentication Allow List
 
@@ -189,6 +192,89 @@ WEBSSH2_SSH_ALGORITHMS_PRESET=modern
 WEBSSH2_SSH_ALGORITHMS_CIPHER="aes256-gcm@openssh.com,aes128-gcm@openssh.com"
 WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
 ```
+
+### SSH Stream Backpressure and Output Limits
+
+Prevent out-of-memory (OOM) crashes from high-volume SSH output.
+
+WebSSH2 includes built-in protection against resource exhaustion when SSH commands or shell sessions generate large amounts of data. This prevents scenarios where commands like `cat /dev/urandom | base64` or processing very large files could crash the Node.js process.
+
+#### Configuration Variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES` | number | `10485760` (10MB) | Maximum output size for exec commands before truncation |
+| `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Rate limit for shell output streams (bytes/second) |
+| `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK` | number | `16384` (16KB) | Socket.IO buffer threshold for backpressure |
+
+#### How It Works
+
+**Exec Command Limits**: When using the Socket.IO `exec` event to run commands, output is buffered in memory. If output exceeds `maxExecOutputBytes`, it's truncated with a `[OUTPUT TRUNCATED: Exceeded maximum output size]` message.
+
+**Shell Rate Limiting**: When `outputRateLimitBytesPerSec` is non-zero, the SSH stream is throttled to prevent overwhelming the WebSocket connection. The stream automatically pauses and resumes to maintain the configured rate.
+
+**Backpressure Control**: When Socket.IO's send buffer exceeds `socketHighWaterMark`, the SSH stream pauses until the buffer drains, preventing unbounded memory growth.
+
+#### Usage Examples
+
+**Production environment with OOM protection:**
+
+```bash
+# Enable 1MB/s rate limiting to prevent crashes
+WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC=1048576
+WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES=10485760
+WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK=16384
+```
+
+**High-throughput trusted environment:**
+
+```bash
+# Allow larger buffers and higher throughput
+WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES=52428800          # 50MB
+WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC=5242880 # 5MB/s
+WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK=65536            # 64KB
+```
+
+**Restricted/untrusted environment:**
+
+```bash
+# Strict limits for resource-constrained or multi-tenant deployments
+WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES=1048576           # 1MB
+WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC=262144  # 256KB/s
+WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK=8192             # 8KB
+```
+
+**Development (unlimited):**
+
+```bash
+# No rate limiting (default behavior)
+WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC=0
+```
+
+#### Testing
+
+Test the protection with high-volume commands:
+
+```bash
+# Small test (should work fine)
+cat /dev/urandom | base64 | head -c 10M
+
+# Large test (will be rate-limited if configured)
+cat /dev/urandom | base64 | head -c 100M
+
+# Infinite stream (will be throttled indefinitely)
+cat /dev/urandom | base64
+```
+
+With rate limiting enabled, you'll see gradual output instead of rapid data flood, and the Node.js process will remain stable.
+
+#### Performance Impact
+
+- **Rate limiting disabled** (`0`): No performance impact, maximum throughput
+- **Rate limiting enabled**: Slight CPU overhead for throttling logic, but prevents memory exhaustion
+- **Recommended for production**: Enable rate limiting at 1-5 MB/s depending on use case
+
+See [CONFIG-JSON.md](./CONFIG-JSON.md) for `config.json` examples and additional details.
 
 ### Web Interface
 

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import process from 'node:process'
-import { DEFAULTS } from '../../../app/constants.js'
+import { DEFAULTS } from '../../../app/constants/index.js'
 import {
   createTestConfigFile,
   removeTestConfigFile,

@@ -1,7 +1,7 @@
 // Contract test: verify expected HTTP routes are registered without invoking handlers
 import { it, expect } from 'vitest'
 import { createRoutesV2 as createRoutes } from '../../app/routes/routes-v2.js'
-import { DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { DEFAULT_AUTH_METHODS } from '../../app/constants/index.js'
 import { createAuthMethod } from '../../app/types/branded.js'
 import { TEST_SECRET } from '../test-constants.js'
 

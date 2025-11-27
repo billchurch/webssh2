@@ -1,7 +1,7 @@
 // app/validation/environment.ts
 // Pure validation functions for environment variables
 
-import { ENV_LIMITS } from '../constants.js'
+import { ENV_LIMITS } from '../constants/index.js'
 
 /**
  * Validates environment variable key format

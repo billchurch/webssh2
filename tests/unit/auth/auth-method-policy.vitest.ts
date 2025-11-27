@@ -4,7 +4,7 @@ import {
   resolveRequestedAuthMethods,
   isAuthMethodAllowed
 } from '../../../app/auth/auth-method-policy.js'
-import { DEFAULT_AUTH_METHODS, AUTH_METHOD_TOKENS } from '../../../app/constants.js'
+import { DEFAULT_AUTH_METHODS, AUTH_METHOD_TOKENS } from '../../../app/constants/index.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
 
 describe('auth-method-policy', () => {

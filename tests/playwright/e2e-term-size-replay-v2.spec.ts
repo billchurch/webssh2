@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { test, expect, type Page, type Browser, type BrowserContext } from '@playwright/test'
-import { DEFAULTS } from '../../app/constants.js'
+import { DEFAULTS } from '../../app/constants/index.js'
 import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'

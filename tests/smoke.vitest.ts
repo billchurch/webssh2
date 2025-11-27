@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { deepMerge } from '../app/utils/index.js'
 import { validateSshTerm } from '../app/validation/index.js'
-import { MESSAGES, DEFAULTS } from '../app/constants.js'
+import { MESSAGES, DEFAULTS } from '../app/constants/index.js'
 
 describe('smoke', () => {
   it('deepMerge merges nested objects', () => {

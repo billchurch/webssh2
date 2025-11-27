@@ -12,7 +12,7 @@ import {
   mergeTerminalConfig,
   type TerminalConfig,
 } from '../../../../app/socket/handlers/terminal-handler.js'
-import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../../../app/constants.js'
+import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../../../app/constants/index.js'
 import type { Config } from '../../../../app/types/config.js'
 import { createAuthMethod } from '../../../../app/types/branded.js'
 

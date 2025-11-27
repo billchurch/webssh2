@@ -1,7 +1,7 @@
 // app/routes/handlers/ssh-config-handler.ts
 // Pure handler for exposing SSH configuration to clients
 
-import { HTTP } from '../../constants.js'
+import { HTTP } from '../../constants/index.js'
 import type { Config } from '../../types/config.js'
 import type { Result } from '../../types/result.js'
 import { ok } from '../../utils/index.js'

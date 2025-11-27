@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSshConfigResponse } from '../../../app/routes/handlers/ssh-config-handler.js'
 import { createDefaultConfig } from '../../../app/config/config-processor.js'
-import { AUTH_METHOD_TOKENS } from '../../../app/constants.js'
+import { AUTH_METHOD_TOKENS } from '../../../app/constants/index.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
 import type { SshRouteRequest } from '../../../app/routes/handlers/ssh-handler.js'
 import type { AuthSession } from '../../../app/auth/auth-utils.js'

@@ -17,7 +17,7 @@ import {
 } from '../../types/branded.js'
 import { ok, err, type Result } from '../../state/types.js'
 import type { SessionStore } from '../../state/store.js'
-import { DEFAULTS } from '../../constants.js'
+import { DEFAULTS } from '../../constants/index.js'
 // import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js' // Not used yet
 import debug from 'debug'
 

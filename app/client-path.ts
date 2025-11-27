@@ -1,5 +1,5 @@
 import webssh2Client from 'webssh2_client'
-import { DEFAULTS } from './constants.js'
+import { DEFAULTS } from './constants/index.js'
 import { createNamespacedDebug } from './logger.js'
 
 const debug = createNamespacedDebug('client-path')

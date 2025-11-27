@@ -5,7 +5,7 @@ import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
 import type { SshValidationResult } from '../../connection/index.js'
-import { HTTP } from '../../constants.js'
+import { HTTP } from '../../constants/index.js'
 
 export interface SshRouteRequest {
   session: AuthSession

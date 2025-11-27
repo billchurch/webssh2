@@ -12,6 +12,7 @@ interface ExecDependencies {
   readonly pool: ConnectionPool
   readonly connectionLogger: ConnectionLogger
   readonly debug: DebugLogger
+  readonly maxExecOutputBytes: number
 }
 interface ExecInput {
   readonly connectionId: ConnectionId
@@ -93,7 +94,8 @@ function runCommand(
           start,
           resolve,
           debug: deps.debug,
-          connectionLogger: deps.connectionLogger
+          connectionLogger: deps.connectionLogger,
+          maxExecOutputBytes: deps.maxExecOutputBytes
         })
       )
     } catch (error) {
@@ -104,8 +106,12 @@ function runCommand(
   })
 }
 
+interface ExecCallbackContextWithConfig extends ExecCallbackContext {
+  readonly maxExecOutputBytes: number
+}
+
 function createExecCallback(
-  context: ExecCallbackContext
+  context: ExecCallbackContextWithConfig
 ): (error: Error | undefined, stream: ClientChannel) => void {
   return (error, stream) => {
     if (error !== undefined) {
@@ -135,15 +141,43 @@ function handleExecStartError(error: Error, context: ExecCallbackContext): void 
   context.resolve(err(error))
 }
 
-function monitorStream(context: ExecStreamContext): void {
+interface ExecStreamContextWithConfig extends ExecStreamContext {
+  readonly maxExecOutputBytes: number
+}
+
+function monitorStream(context: ExecStreamContextWithConfig): void {
+  const maxOutputBytes = context.maxExecOutputBytes
   let stdout = ''
   let stderr = ''
+  let stdoutTruncated = false
+  let stderrTruncated = false
+
   context.stream.on('data', (data: Buffer) => {
-    stdout += data.toString()
+    const dataStr = data.toString()
+    if (stdout.length + dataStr.length > maxOutputBytes) {
+      if (!stdoutTruncated) {
+        stdout += '\n[OUTPUT TRUNCATED: Exceeded maximum output size]\n'
+        stdoutTruncated = true
+        context.debug(`Exec stdout truncated at ${maxOutputBytes} bytes`)
+      }
+    } else {
+      stdout += dataStr
+    }
   })
+
   context.stream.stderr.on('data', (data: Buffer) => {
-    stderr += data.toString()
+    const dataStr = data.toString()
+    if (stderr.length + dataStr.length > maxOutputBytes) {
+      if (!stderrTruncated) {
+        stderr += '\n[STDERR TRUNCATED: Exceeded maximum output size]\n'
+        stderrTruncated = true
+        context.debug(`Exec stderr truncated at ${maxOutputBytes} bytes`)
+      }
+    } else {
+      stderr += dataStr
+    }
   })
+
   context.stream.on('close', (code: number) => {
     handleStreamClose({ ...context, stdout, stderr, code })
   })

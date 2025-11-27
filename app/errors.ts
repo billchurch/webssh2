@@ -2,7 +2,7 @@
 // app/errors.ts
 
 import { logError, createNamespacedDebug } from './logger.js'
-import { HTTP, MESSAGES } from './constants.js'
+import { HTTP, MESSAGES } from './constants/index.js'
 import { WebSSH2Error } from './errors/webssh2-error.js'
 
 export { WebSSH2Error }

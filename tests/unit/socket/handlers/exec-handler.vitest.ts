@@ -15,7 +15,7 @@ import {
   filterEnvironmentVariables,
   type ExecState,
 } from '../../../../app/socket/handlers/exec-handler.js'
-import { DEFAULTS } from '../../../../app/constants.js'
+import { DEFAULTS } from '../../../../app/constants/index.js'
 import { TEST_PASSWORDS } from '../../../test-constants.js'
 
 describe('Exec Handler', () => {

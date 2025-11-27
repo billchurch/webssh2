@@ -1,7 +1,7 @@
 // app/routes/route-error-handler.ts
 // Pure functions for route error handling
 
-import { HTTP } from '../constants.js'
+import { HTTP } from '../constants/index.js'
 
 /**
  * SSH validation error types

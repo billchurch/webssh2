@@ -1,4 +1,4 @@
-import { MESSAGES } from '../constants.js'
+import { MESSAGES } from '../constants/index.js'
 import { WebSSH2Error } from './webssh2-error.js'
 
 export class SSHConnectionError extends WebSSH2Error {

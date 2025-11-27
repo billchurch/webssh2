@@ -182,7 +182,10 @@ These settings are now managed client-side.
         "ssh-rsa"
       ]
     },
-    "envAllowlist": ["ONLY_THIS", "AND_THAT"]
+    "envAllowlist": ["ONLY_THIS", "AND_THAT"],
+    "maxExecOutputBytes": 10485760,
+    "outputRateLimitBytesPerSec": 0,
+    "socketHighWaterMark": 16384
   },
   "options": {
     "challengeButton": true,
@@ -232,3 +235,72 @@ Control which environment variable names are forwarded to the SSH session. If un
 Notes:
 - Keys must still match `^[A-Z][A-Z0-9_]*$` and values must not contain `; & | \` $` characters.
 - A safety cap limits forwarding to the first 50 pairs.
+
+### SSH Stream Backpressure and Output Limits
+
+**New in v2.4.0** - Prevent OOM crashes from high-volume SSH output streams.
+
+Control resource usage when SSH commands or shell sessions generate large amounts of data (e.g., `cat large_file.txt` or `cat /dev/urandom | base64`).
+
+#### Configuration Options
+
+- `ssh.maxExecOutputBytes` (number, default: `10485760` = 10MB): Maximum bytes buffered for exec command output. When exceeded, output is truncated with a `[OUTPUT TRUNCATED]` message.
+
+- `ssh.outputRateLimitBytesPerSec` (number, default: `0` = unlimited): Rate limit for shell stream output in bytes per second. When non-zero, SSH streams are throttled to prevent overwhelming the WebSocket connection and browser. Set to `0` to disable rate limiting.
+
+- `ssh.socketHighWaterMark` (number, default: `16384` = 16KB): Socket.IO buffer high-water mark for backpressure control. SSH streams pause when Socket.IO send buffer exceeds this threshold.
+
+#### Use Cases
+
+**Prevent OOM from infinite streams:**
+```json
+{
+  "ssh": {
+    "outputRateLimitBytesPerSec": 1048576
+  }
+}
+```
+This limits shell output to 1MB/s, preventing Node.js heap exhaustion from commands like `cat /dev/urandom | base64`.
+
+**Limit exec command output:**
+```json
+{
+  "ssh": {
+    "maxExecOutputBytes": 5242880
+  }
+}
+```
+Exec commands (via Socket.IO `exec` event) will truncate at 5MB instead of the default 10MB.
+
+**High-throughput environments:**
+```json
+{
+  "ssh": {
+    "maxExecOutputBytes": 52428800,
+    "outputRateLimitBytesPerSec": 5242880,
+    "socketHighWaterMark": 65536
+  }
+}
+```
+Allows 50MB exec output, 5MB/s rate limit, and 64KB socket buffer for trusted users with high-volume workflows.
+
+**Restricted environments:**
+```json
+{
+  "ssh": {
+    "maxExecOutputBytes": 1048576,
+    "outputRateLimitBytesPerSec": 262144,
+    "socketHighWaterMark": 8192
+  }
+}
+```
+Strict limits (1MB exec, 256KB/s rate, 8KB buffer) for untrusted users or resource-constrained deployments.
+
+#### Environment Variables
+
+These options can also be configured via environment variables:
+- `WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES`
+- `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC`
+- `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.

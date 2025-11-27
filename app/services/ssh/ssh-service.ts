@@ -31,6 +31,7 @@ import {
 import { registerConnectionHandlers } from './connection-handlers.js'
 import { executeSshCommand } from './exec-command.js'
 import { isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
+import { STREAM_LIMITS } from '../../constants/index.js'
 
 const logger = debug('webssh2:services:ssh')
 
@@ -321,11 +322,13 @@ export class SSHServiceImpl implements SSHService {
   }
 
   exec(connectionId: ConnectionId, command: string): Promise<Result<ExecResult>> {
+    const maxExecOutputBytes = this.deps.config.ssh.maxExecOutputBytes ?? STREAM_LIMITS.MAX_EXEC_OUTPUT_BYTES
     return executeSshCommand(
       {
         pool: this.pool,
         connectionLogger: this.connectionLogger,
-        debug: logger
+        debug: logger,
+        maxExecOutputBytes
       },
       { connectionId, command }
     )

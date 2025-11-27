@@ -178,11 +178,72 @@ export class ServiceSocketTerminal {
   private setupShellDataFlow(stream: SSH2Stream): void {
     this.context.state.shellStream = stream
 
+    // Get rate limit configuration (0 = unlimited)
+    const rateLimitBytesPerSec = this.context.config.ssh.outputRateLimitBytesPerSec ?? 0
+    const highWaterMark = this.context.config.ssh.socketHighWaterMark ?? 16384
+
+    let rateLimitState:
+      | { bytesInWindow: number; windowStart: number; paused: boolean }
+      | null = rateLimitBytesPerSec > 0 ? { bytesInWindow: 0, windowStart: Date.now(), paused: false } : null
+
     stream.on('data', (chunk: Buffer) => {
+      const chunkSize = chunk.length
+
+      // Apply rate limiting if configured
+      if (rateLimitState !== null) {
+        const now = Date.now()
+        const windowElapsed = now - rateLimitState.windowStart
+
+        // Reset window every second
+        if (windowElapsed >= 1000) {
+          rateLimitState.bytesInWindow = 0
+          rateLimitState.windowStart = now
+        }
+
+        // Check if we would exceed rate limit
+        if (rateLimitState.bytesInWindow + chunkSize > rateLimitBytesPerSec) {
+          if (!rateLimitState.paused) {
+            stream.pause()
+            rateLimitState.paused = true
+            this.context.debug('Rate limit reached, pausing SSH stream')
+          }
+
+          // Schedule resume at next window
+          const delayMs = 1000 - windowElapsed
+          setTimeout(() => {
+            if (rateLimitState !== null) {
+              rateLimitState.bytesInWindow = 0
+              rateLimitState.windowStart = Date.now()
+              rateLimitState.paused = false
+              stream.resume()
+              this.context.debug('Rate limit window reset, resuming SSH stream')
+            }
+          }, delayMs)
+
+          return
+        }
+
+        rateLimitState.bytesInWindow += chunkSize
+      }
+
+      // Check Socket.IO buffer backpressure
+      const bufferSize = this.context.socket.eventNames().length * highWaterMark
+      if (bufferSize > highWaterMark * 2) {
+        stream.pause()
+        this.context.debug('Socket.IO buffer high, pausing SSH stream')
+
+        // Resume when socket drains (use setImmediate to check on next tick)
+        setImmediate(() => {
+          stream.resume()
+          this.context.debug('Socket.IO buffer drained, resuming SSH stream')
+        })
+      }
+
       this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, chunk.toString('utf8'))
     })
 
     stream.on('close', () => {
+      rateLimitState = null
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.CONNECTION_CLOSED)
       this.context.socket.disconnect()
     })

@@ -8,7 +8,7 @@ import {
   type SshValidationResult,
   type ErrorResponse
 } from '../../../app/routes/route-error-handler.js'
-import { HTTP } from '../../../app/constants.js'
+import { HTTP } from '../../../app/constants/index.js'
 
 void describe('createSshValidationErrorResponse', () => {
   it('returns 401 with auth header for auth errors', () => {

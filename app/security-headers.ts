@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express'
 import createDebug from 'debug'
 import type { Config } from './types/config.js'
-import { DEFAULTS, HEADERS } from './constants.js'
+import { DEFAULTS, HEADERS } from './constants/index.js'
 
 const debug = createDebug('webssh2:security')
 

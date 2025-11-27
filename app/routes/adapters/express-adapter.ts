@@ -6,7 +6,7 @@ import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
 import { createNamespacedDebug } from '../../logger.js'
-import { HTTP } from '../../constants.js'
+import { HTTP } from '../../constants/index.js'
 import type { SshRouteResponse, SshRouteRequest } from '../handlers/ssh-handler.js'
 
 const debug = createNamespacedDebug('routes:adapter')

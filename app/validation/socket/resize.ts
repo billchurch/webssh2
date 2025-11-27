@@ -2,7 +2,7 @@ import type { Result } from '../../types/result.js'
 import type { ResizeParams } from './types.js'
 import { ensureRecord, parseIntInRange } from './helpers.js'
 import { ROWS_FIELD, COLS_FIELD } from './fields.js'
-import { TERMINAL_LIMITS } from '../../constants.js'
+import { TERMINAL_LIMITS } from '../../constants/index.js'
 import { safeGet } from '../../utils/safe-property-access.js'
 
 export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {

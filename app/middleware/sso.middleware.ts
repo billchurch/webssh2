@@ -2,7 +2,7 @@
 // Single Sign-On (SSO) authentication middleware
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
-import { DEFAULTS } from '../constants.js'
+import { DEFAULTS } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 
 /**

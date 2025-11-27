@@ -10,7 +10,7 @@ import {
   createCorsConfig
 } from '../../../app/config/config-processor.js'
 import type { Config } from '../../../app/types/config.js'
-import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
+import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 import { TEST_SECRET_123, TEST_PASSWORDS, TEST_IPS, TEST_SECRET } from '../../test-constants.js'
 
 void describe('createDefaultConfig', () => {

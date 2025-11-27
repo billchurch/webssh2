@@ -1,8 +1,7 @@
 import { describe, beforeEach, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Socket } from 'socket.io'
-import { SOCKET_EVENTS, VALIDATION_MESSAGES } from '../../../app/constants/index.js'
-import { DEFAULT_AUTH_METHODS } from '../../../app/constants.js'
+import { SOCKET_EVENTS, VALIDATION_MESSAGES, DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 import {
   createInitialSessionState,
   type SessionState

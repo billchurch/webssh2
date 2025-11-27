@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { promises as fs } from 'node:fs'
 import { createNamespacedDebug } from './logger.js'
-import { HTTP, MESSAGES, DEFAULTS } from './constants.js'
+import { HTTP, MESSAGES, DEFAULTS } from './constants/index.js'
 import { transformHtml } from './utils/html-transformer.js'
 import type { AuthSession } from './auth/auth-utils.js'
 

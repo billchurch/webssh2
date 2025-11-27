@@ -8,7 +8,7 @@ import type { Config } from '../../app/config.js'
 import type { Server } from 'node:http'
 import type { Express } from 'express'
 import { TEST_SECRET_KEY, TEST_PORTS, TEST_TIMEOUTS } from '../test-constants.js'
-import { DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { DEFAULT_AUTH_METHODS } from '../../app/constants/index.js'
 import { createAuthMethod } from '../../app/types/branded.js'
 
 /**

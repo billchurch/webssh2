@@ -2,7 +2,7 @@
 // Pure validation functions for SSH-related inputs
 
 import validator from 'validator'
-import { DEFAULTS } from '../constants.js'
+import { DEFAULTS } from '../constants/index.js'
 
 /**
  * Validates and sanitizes a hostname or IP address

@@ -79,7 +79,10 @@ const SSHSchema = z.object({
   disableInteractiveAuth: z.boolean(),
   algorithms: AlgorithmsSchema,
   envAllowlist: z.array(z.string()).optional(),
-  allowedAuthMethods: z.array(z.string()).optional()
+  allowedAuthMethods: z.array(z.string()).optional(),
+  maxExecOutputBytes: z.number().int().positive().optional(),
+  outputRateLimitBytesPerSec: z.number().int().nonnegative().optional(),
+  socketHighWaterMark: z.number().int().positive().optional()
 })
 
 /**

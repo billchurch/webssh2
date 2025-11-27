@@ -2,7 +2,7 @@
 // CSRF protection middleware
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
-import { HTTP, DEFAULTS } from '../constants.js'
+import { HTTP, DEFAULTS } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 
 /**

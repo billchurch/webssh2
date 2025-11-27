@@ -3,7 +3,7 @@
 // Delegates to pure function modules for business logic
 
 import { pickField } from '../utils/index.js'
-import { DEFAULTS } from '../constants.js'
+import { DEFAULTS } from '../constants/index.js'
 import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'
 

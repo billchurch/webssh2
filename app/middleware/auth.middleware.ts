@@ -3,7 +3,7 @@
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import basicAuth from 'basic-auth'
-import { HTTP } from '../constants.js'
+import { HTTP } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 import { processAuthentication, createSessionData } from './auth-processor.js'
 import { isErr } from '../utils/index.js'

@@ -4,7 +4,7 @@
 import { vi, type Mock } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { MOCK_CREDENTIALS } from '../test-constants.js'
-import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../app/constants.js'
+import { DEFAULTS, DEFAULT_AUTH_METHODS } from '../../app/constants/index.js'
 import { createAuthMethod, type AuthMethod } from '../../app/types/branded.js'
 
 // Type definitions for mock objects

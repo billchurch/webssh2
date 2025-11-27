@@ -12,7 +12,7 @@ import type {
   LoggingSyslogConfig,
   LoggingSyslogTlsConfig
 } from '../types/config.js'
-import { DEFAULT_AUTH_METHODS, DEFAULTS } from '../constants.js'
+import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS } from '../constants/index.js'
 import { createAuthMethod } from '../types/branded.js'
 
 /**
@@ -79,6 +79,9 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     disableInteractiveAuth: false,
     algorithms: DEFAULT_SSH_ALGORITHMS,
     allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+    maxExecOutputBytes: STREAM_LIMITS.MAX_EXEC_OUTPUT_BYTES,
+    outputRateLimitBytesPerSec: STREAM_LIMITS.OUTPUT_RATE_LIMIT_BYTES_PER_SEC,
+    socketHighWaterMark: STREAM_LIMITS.SOCKET_HIGH_WATER_MARK,
   },
   header: { text: null, background: 'green' },
   options: {

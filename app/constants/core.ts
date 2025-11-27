@@ -1,9 +1,9 @@
 // server
-// app/constants.ts
+// app/constants/core.ts
 
 import { fileURLToPath } from 'node:url'
 import * as path from 'node:path'
-import type { AuthMethodToken } from './types/branded.js'
+import type { AuthMethodToken } from '../types/branded.js'
 
 const FILENAME = fileURLToPath(import.meta.url)
 const DIRNAME = path.dirname(FILENAME)
@@ -107,4 +107,10 @@ export const HEADERS = {
   REFERRER_POLICY: 'Referrer-Policy',
   PERMISSIONS_POLICY: 'Permissions-Policy',
   STRICT_TRANSPORT_SECURITY: 'Strict-Transport-Security',
+} as const
+
+export const STREAM_LIMITS = {
+  MAX_EXEC_OUTPUT_BYTES: 10 * 1024 * 1024,      // 10MB
+  OUTPUT_RATE_LIMIT_BYTES_PER_SEC: 0,           // 0 = unlimited
+  SOCKET_HIGH_WATER_MARK: 16 * 1024,            // 16KB
 } as const

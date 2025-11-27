@@ -15,7 +15,7 @@ import {
   type SessionState,
 } from '../../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../../app/types/config.js'
-import { DEFAULT_AUTH_METHODS, AUTH_METHOD_TOKENS } from '../../../../app/constants.js'
+import { DEFAULT_AUTH_METHODS, AUTH_METHOD_TOKENS } from '../../../../app/constants/index.js'
 import { createAuthMethod } from '../../../../app/types/branded.js'
 import {
   TEST_USERNAME,

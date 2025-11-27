@@ -2,7 +2,7 @@ import type { Server as HttpServer } from 'node:http'
 import type { RequestHandler } from 'express'
 import { Server as SocketIOServer } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
-import { DEFAULTS } from './constants.js'
+import { DEFAULTS } from './constants/index.js'
 
 const debug = createNamespacedDebug('app')
 

@@ -2,7 +2,7 @@
 // Cookie management middleware
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
-import { HTTP } from '../constants.js'
+import { HTTP } from '../constants/index.js'
 
 /**
  * Create cookie middleware for storing connection information

@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import * as path from 'node:path'
 import type { Result } from '../../../app/types/result.js'
 import { ok, err, isRecord } from '../../../app/utils/index.js'
-import { DEFAULTS } from '../../../app/constants.js'
+import { DEFAULTS } from '../../../app/constants/index.js'
 
 type NumericPort = number & { readonly __brand: unique symbol }
 

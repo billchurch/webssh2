@@ -8,7 +8,7 @@ import {
   validatePrivateKey,
   isEncryptedKey
 } from '../../app/validation/ssh.js'
-import { DEFAULTS } from '../../app/constants.js'
+import { DEFAULTS } from '../../app/constants/index.js'
 import {
   TEST_IPS,
   TEST_KEY_OPENSSH,

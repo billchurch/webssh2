@@ -2,7 +2,7 @@
 // Pure functions for filtering environment variables
 
 import { isValidEnvKey, isValidEnvValue } from '../validation/environment.js'
-import { ENV_LIMITS } from '../constants.js'
+import { ENV_LIMITS } from '../constants/index.js'
 
 /**
  * Filter and validate environment variables for SSH connection

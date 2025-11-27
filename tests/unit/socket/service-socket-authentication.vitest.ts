@@ -10,7 +10,7 @@ import type { Config } from '../../../app/types/config.js'
 import type { Services } from '../../../app/services/interfaces.js'
 import type { UnifiedAuthPipeline } from '../../../app/auth/auth-pipeline.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
-import { AUTH_METHOD_TOKENS } from '../../../app/constants.js'
+import { AUTH_METHOD_TOKENS } from '../../../app/constants/index.js'
 import type { AuthCredentials } from '../../../app/types/contracts/v1/socket.js'
 
 const createStubPipeline = (): { pipeline: UnifiedAuthPipeline; store: Record<string, unknown> } => {
