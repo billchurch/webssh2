@@ -7,7 +7,7 @@ ENV NODE_ENV=development
 
 COPY package.json package-lock.json ./
 COPY scripts ./scripts
-RUN npm ci --include=optional --audit=false --fund=false
+RUN npm ci --omit=optional --audit=false --fund=false
 
 COPY . .
 RUN npm run build
