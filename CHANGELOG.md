@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.5...webssh2-server-v2.4.0) (2025-11-27)
+
+
+### Features
+
+* Implemented rate limiting and output truncation features in the SSH service to prevent memory overflow during high-volume output. fixes [#451](https://github.com/billchurch/webssh2/issues/451) ([b575bba](https://github.com/billchurch/webssh2/commit/b575bba1445ff15aba596f5a52314dfae506156b))
+
+
+### Bug Fixes
+
+* package.json & package-lock.json to reduce vulnerabilities ([#453](https://github.com/billchurch/webssh2/issues/453)) ([9a9719b](https://github.com/billchurch/webssh2/commit/9a9719b814a9f07a07f6bb5745be0611804e5018))
+* Refactor constants import paths and enhance SSH output handling ([b575bba](https://github.com/billchurch/webssh2/commit/b575bba1445ff15aba596f5a52314dfae506156b))
+
 ## [2.3.5](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.4...webssh2-server-v2.3.5) (2025-11-06)
 
 
