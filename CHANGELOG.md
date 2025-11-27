@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.4.0...webssh2-server-v2.4.1) (2025-11-27)
+
+
+### Bug Fixes
+
+* **docker:** optimize builder stage and add timeout ([d07df7b](https://github.com/billchurch/webssh2/commit/d07df7b9837c5a5ec5583f7c30eef2df78ae9097))
+
 ## [2.4.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.5...webssh2-server-v2.4.0) (2025-11-27)
 
 
