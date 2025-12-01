@@ -31,7 +31,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
@@ -72,14 +72,31 @@ jobs:
           ref="${GITHUB_REF:-}"
           ref_name="${GITHUB_REF_NAME:-}"
           release_tag="${RELEASE_TAG_NAME:-}"
+
+          # First, check if a release tag was explicitly provided (via event or workflow input)
           if [ -n "$release_tag" ]; then
             ref="refs/tags/$release_tag"
             ref_name="$release_tag"
           elif [ -z "$ref" ] && [ -n "$ref_name" ]; then
             ref="refs/tags/$ref_name"
           fi
+
+          # If we're on a push event (not an explicit release or tag), check if current commit has a release tag
+          # This handles the case where release-please creates a release AND pushes to main
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [[ "$ref_name" != webssh2-server-v* ]]; then
+            echo "Push event detected, checking for release tag on current commit..."
+            tag_at_head=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+            if [[ "$tag_at_head" =~ ^webssh2-server-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Found release tag at HEAD: $tag_at_head"
+              ref="refs/tags/$tag_at_head"
+              ref_name="$tag_at_head"
+            fi
+          fi
+
           echo "EFFECTIVE_REF=$ref" >> "$GITHUB_ENV"
           echo "EFFECTIVE_REF_NAME=$ref_name" >> "$GITHUB_ENV"
+          echo "Effective ref: $ref"
+          echo "Effective ref_name: $ref_name"
         env:
           RELEASE_TAG_NAME: ${{ github.event.release.tag_name || inputs.release_tag || '' }}
 
