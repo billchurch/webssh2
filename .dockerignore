@@ -1,15 +1,57 @@
+# Version control
 .git
 .github
+
+# Dependencies (will be installed in container)
 node_modules
+
+# Build artifacts (will be built in container)
 dist
-coverage
-release-artifacts
+*.tsbuildinfo
+
+# Testing
 tests
 test-results
+coverage
+playwright-report
+.playwright
+
+# Documentation
 DOCS
 examples
+*.md
+!README.md
+!LICENSE
+
+# Logs and local files
 *.log
 *.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
 .env*
+!.env.example
+
+# Docker files
 Dockerfile*
 docker-compose*
+.dockerignore
+
+# CI/CD artifacts
+release-artifacts
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Misc
+.cache
+.temp
+tmp
