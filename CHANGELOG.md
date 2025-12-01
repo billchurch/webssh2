@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.5.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.4.0...webssh2-server-v2.5.0) (2025-12-01)
+
+
+### Features
+
+* **docker:** append Docker image info to GitHub releases [skip ci] ([2911905](https://github.com/billchurch/webssh2/commit/29119059d695f457efdcc50183f67f416c184f12))
+* **docs:** add keyboard capture documentation and quick reference ([7b08ca5](https://github.com/billchurch/webssh2/commit/7b08ca512c7bc8c3a000f0cc4a61b18918575029))
+* update webssh2_client to version 2.2.0 ([ffdb9b7](https://github.com/billchurch/webssh2/commit/ffdb9b701fe7e6a86195dfd8a32d06e4a295f73d))
+
+
+### Bug Fixes
+
+* **docker:** optimize builder stage and add timeout ([d07df7b](https://github.com/billchurch/webssh2/commit/d07df7b9837c5a5ec5583f7c30eef2df78ae9097))
+
 ## [2.4.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.3.5...webssh2-server-v2.4.0) (2025-11-27)
 
 
