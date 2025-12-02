@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/billchurch/WebSSH2/security/advisories
+    about: Please report security vulnerabilities privately through GitHub Security Advisories
+  - name: Documentation
+    url: https://github.com/billchurch/WebSSH2#readme
+    about: Read the project documentation, README, and configuration guides
+  - name: Discussions
+    url: https://github.com/billchurch/WebSSH2/discussions
+    about: Ask questions and discuss ideas with the community

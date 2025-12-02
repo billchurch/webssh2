@@ -1,0 +1,138 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in WebSSH2
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported
+          required: true
+        - label: I am using the latest version of WebSSH2
+          required: true
+        - label: I have reviewed the documentation and configuration guides
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: WebSSH2 Version
+      description: What version of WebSSH2 are you running?
+      placeholder: "e.g., 2.5.0"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you running?
+      placeholder: "e.g., 22.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Method
+      description: How are you running WebSSH2?
+      options:
+        - Docker
+        - npm/Node.js directly
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Configure WebSSH2 with...
+        2. Connect to SSH server at...
+        3. Execute command...
+        4. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Relevant configuration (remove sensitive information!)
+      placeholder: |
+        Paste relevant parts of your config.json or environment variables
+        **IMPORTANT: Remove passwords, private keys, and sensitive data!**
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log output (remove sensitive information!)
+      placeholder: |
+        Paste relevant log output here
+        **IMPORTANT: Remove passwords, tokens, and sensitive data!**
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Additional environment information
+      placeholder: |
+        - OS: [e.g., Ubuntu 22.04, macOS 14, Windows 11]
+        - Browser: [e.g., Chrome 120, Firefox 121]
+        - SSH Server: [e.g., OpenSSH 8.9, Dropbear]
+        - Reverse Proxy: [e.g., nginx, Apache, none]
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Add any other relevant information, screenshots, or context
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security
+      description: Is this a security vulnerability?
+      options:
+        - label: This is a security vulnerability (if yes, please report via [Security Policy](https://github.com/billchurch/WebSSH2/security/advisories) instead)

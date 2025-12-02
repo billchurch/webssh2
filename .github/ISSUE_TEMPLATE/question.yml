@@ -1,0 +1,98 @@
+name: General Question
+description: Ask a question about WebSSH2 usage, configuration, or functionality
+title: "[Question]: "
+labels: ["question", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in WebSSH2! Please provide details about your question below.
+
+        **Note:** For bug reports or feature requests, please use the appropriate template instead.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have reviewed the documentation (README, DOCS/, configuration files)
+          required: true
+        - label: This is not a bug report or feature request (use the appropriate template for those)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Installation/Setup
+        - Configuration
+        - Authentication/Security
+        - SSH Connection Issues
+        - Deployment (Docker, nginx, etc.)
+        - Usage/How-to
+        - Architecture/Design
+        - Contributing/Development
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: WebSSH2 Version (if applicable)
+      description: What version of WebSSH2 are you using or asking about?
+      placeholder: "e.g., 2.5.0, latest, or N/A"
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: Please be as specific as possible to help us provide an accurate answer
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide context about your situation or what you're trying to achieve
+      placeholder: |
+        - What are you trying to accomplish?
+        - What have you already tried?
+        - What specific behavior are you unsure about?
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details (if relevant)
+      description: Environment information that might be relevant to your question
+      placeholder: |
+        - Deployment method: [Docker/npm/other]
+        - OS: [Ubuntu, macOS, Windows, etc.]
+        - Node.js version: [if applicable]
+        - SSH server type: [OpenSSH, Dropbear, etc.]
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What Have You Tried?
+      description: What steps have you already taken to find an answer?
+      placeholder: |
+        - Documentation reviewed
+        - Configuration attempts
+        - Troubleshooting steps
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other relevant information, links, or context
+      placeholder: |
+        Add any other details that might help us answer your question
+        **Remember to remove any sensitive information!**
