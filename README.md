@@ -1,6 +1,8 @@
 # WebSSH2 - Web SSH Client
 
-[![Contributors Guide](https://img.shields.io/badge/Contributors-Guide-blue?logo=github)](./DOCS/development/CONTRIBUTING.md)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/billchurch/webssh2)
+ ![Docker Pulls](https://img.shields.io/docker/pulls/billchurch/webssh2)
+ [![Contributors Guide](https://img.shields.io/badge/Contributors-Guide-blue?logo=github)](./DOCS/development/CONTRIBUTING.md)
 
 ![Orthrus Mascot](DOCS/images/orthrus2.png)
 
