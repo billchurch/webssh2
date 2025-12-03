@@ -122,6 +122,27 @@ export interface DownloadStreamCallbacks {
 }
 
 /**
+ * Context for an SFTP operation after validation and setup
+ */
+interface OperationContext {
+  readonly session: SftpSession
+  readonly resolvedPath: string
+}
+
+/**
+ * Options for setting up an operation
+ */
+interface OperationSetupOptions {
+  readonly connectionId: ConnectionId
+  readonly sessionId: SessionId
+  readonly path: string
+  /** Whether to check file extension against blocked list */
+  readonly checkExtension: boolean
+  /** Optional transfer ID for error context */
+  readonly transferId?: TransferId
+}
+
+/**
  * SFTP Service Implementation
  *
  * Provides high-level SFTP operations with:
@@ -192,6 +213,53 @@ export class SftpService {
   }
 
   /**
+   * Common setup for SFTP operations: validates enabled, path, session, and resolves tilde
+   *
+   * This consolidates the duplicated validation/setup logic across all SFTP operations.
+   */
+  private async setupOperation(
+    options: OperationSetupOptions
+  ): Promise<Result<OperationContext, SftpServiceError>> {
+    // Check if SFTP is enabled
+    if (!this.config.enabled) {
+      return err({
+        code: 'SFTP_NOT_ENABLED',
+        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED],
+        transferId: options.transferId
+      })
+    }
+
+    // Validate path
+    const pathResult = validatePath(options.path, this.getPathValidationOptions(options.checkExtension))
+    if (!pathResult.ok) {
+      const code = mapPathErrorCode(pathResult.error.code)
+      return err({
+        code,
+        message: pathResult.error.message,
+        path: options.path,
+        transferId: options.transferId
+      })
+    }
+
+    // Get or create session
+    const sessionResult = await this.ensureSession(options.connectionId, options.sessionId)
+    if (!sessionResult.ok) {
+      return err({ ...sessionResult.error, transferId: options.transferId })
+    }
+
+    // Resolve ~ paths
+    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
+    if (!resolveResult.ok) {
+      return err({ ...resolveResult.error, transferId: options.transferId })
+    }
+
+    return ok({
+      session: sessionResult.value,
+      resolvedPath: resolveResult.value
+    })
+  }
+
+  /**
    * Ensure SFTP session exists for a connection
    */
   private async ensureSession(
@@ -231,39 +299,21 @@ export class SftpService {
     path: string,
     showHidden: boolean = false
   ): Promise<Result<SftpDirectoryResponse, SftpServiceError>> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
+    const setup = await this.setupOperation({
+      connectionId,
+      sessionId,
+      path,
+      checkExtension: false
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    // Validate path
-    const pathResult = validatePath(path, this.getPathValidationOptions(false))
-    if (!pathResult.ok) {
-      return err({
-        code: pathResult.error.code === 'PATH_FORBIDDEN' ? 'SFTP_PATH_FORBIDDEN' : 'SFTP_INVALID_REQUEST',
-        message: pathResult.error.message,
-        path
-      })
-    }
-
-    // Get session
-    const sessionResult = await this.ensureSession(connectionId, sessionId)
-    if (!sessionResult.ok) {
-      return err(sessionResult.error)
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
-    if (!resolveResult.ok) {
-      return err(resolveResult.error)
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // List directory
     const listResult = await this.sessionManager.listDirectory(
-      sessionResult.value,
+      session,
       resolvedPath,
       { showHidden }
     )
@@ -286,38 +336,20 @@ export class SftpService {
     sessionId: SessionId,
     path: string
   ): Promise<Result<SftpStatResponse, SftpServiceError>> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
+    const setup = await this.setupOperation({
+      connectionId,
+      sessionId,
+      path,
+      checkExtension: false
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    // Validate path
-    const pathResult = validatePath(path, this.getPathValidationOptions(false))
-    if (!pathResult.ok) {
-      return err({
-        code: pathResult.error.code === 'PATH_FORBIDDEN' ? 'SFTP_PATH_FORBIDDEN' : 'SFTP_INVALID_REQUEST',
-        message: pathResult.error.message,
-        path
-      })
-    }
-
-    // Get session
-    const sessionResult = await this.ensureSession(connectionId, sessionId)
-    if (!sessionResult.ok) {
-      return err(sessionResult.error)
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
-    if (!resolveResult.ok) {
-      return err(resolveResult.error)
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // Stat file
-    const statResult = await this.sessionManager.stat(sessionResult.value, resolvedPath)
+    const statResult = await this.sessionManager.stat(session, resolvedPath)
 
     if (!statResult.ok) {
       return err(mapSessionError(statResult.error))
@@ -338,39 +370,21 @@ export class SftpService {
     path: string,
     mode?: number
   ): Promise<Result<SftpOperationResponse, SftpServiceError>> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
+    const setup = await this.setupOperation({
+      connectionId,
+      sessionId,
+      path,
+      checkExtension: false
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    // Validate path
-    const pathResult = validatePath(path, this.getPathValidationOptions(false))
-    if (!pathResult.ok) {
-      return err({
-        code: pathResult.error.code === 'PATH_FORBIDDEN' ? 'SFTP_PATH_FORBIDDEN' : 'SFTP_INVALID_REQUEST',
-        message: pathResult.error.message,
-        path
-      })
-    }
-
-    // Get session
-    const sessionResult = await this.ensureSession(connectionId, sessionId)
-    if (!sessionResult.ok) {
-      return err(sessionResult.error)
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
-    if (!resolveResult.ok) {
-      return err(resolveResult.error)
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // Create directory
     const mkdirResult = await this.sessionManager.mkdir(
-      sessionResult.value,
+      session,
       resolvedPath,
       mode ?? SFTP_DEFAULTS.DEFAULT_DIR_MODE
     )
@@ -396,76 +410,28 @@ export class SftpService {
     // Reserved for future recursive directory deletion implementation
     _recursive: boolean = false
   ): Promise<Result<SftpOperationResponse, SftpServiceError>> {
-    // Validate inputs first (no async operations)
-    const validationResult = this.validateDeleteRequest(path)
-    if (!validationResult.ok) {
-      return validationResult
-    }
-
-    // Execute the delete operation
-    return this.executeDelete(
+    const setup = await this.setupOperation({
       connectionId,
       sessionId,
-      validationResult.value
-    )
-  }
-
-  /**
-   * Validate delete request parameters
-   */
-  private validateDeleteRequest(
-    path: string
-  ): Result<string, SftpServiceError> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
+      path,
+      checkExtension: false
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    const pathResult = validatePath(path, this.getPathValidationOptions(false))
-    if (!pathResult.ok) {
-      return err({
-        code: pathResult.error.code === 'PATH_FORBIDDEN' ? 'SFTP_PATH_FORBIDDEN' : 'SFTP_INVALID_REQUEST',
-        message: pathResult.error.message,
-        path
-      })
-    }
-
-    return ok(pathResult.value)
-  }
-
-  /**
-   * Execute delete operation after validation
-   */
-  private async executeDelete(
-    connectionId: ConnectionId,
-    sessionId: SessionId,
-    validatedPath: string
-  ): Promise<Result<SftpOperationResponse, SftpServiceError>> {
-    // Get session
-    const sessionResult = await this.ensureSession(connectionId, sessionId)
-    if (!sessionResult.ok) {
-      return err(sessionResult.error)
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, validatedPath)
-    if (!resolveResult.ok) {
-      return err(resolveResult.error)
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // Stat to determine if file or directory
-    const statResult = await this.sessionManager.stat(sessionResult.value, resolvedPath)
+    const statResult = await this.sessionManager.stat(session, resolvedPath)
     if (!statResult.ok) {
       return err(mapSessionError(statResult.error))
     }
 
     // Delete based on type (recursive not yet implemented - only removes empty directories)
     const deleteResult = statResult.value.type === 'directory'
-      ? await this.sessionManager.rmdir(sessionResult.value, resolvedPath)
-      : await this.sessionManager.unlink(sessionResult.value, resolvedPath)
+      ? await this.sessionManager.rmdir(session, resolvedPath)
+      : await this.sessionManager.unlink(session, resolvedPath)
 
     if (!deleteResult.ok) {
       return err(mapSessionError(deleteResult.error))
@@ -484,14 +450,7 @@ export class SftpService {
   async startUpload(
     request: UploadStartRequest
   ): Promise<Result<SftpUploadReadyResponse, SftpServiceError>> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
-    }
-
-    // Check file size
+    // Validate file size (upload-specific check before common setup)
     if (request.fileSize > this.config.maxFileSize) {
       return err({
         code: 'SFTP_FILE_TOO_LARGE',
@@ -500,7 +459,7 @@ export class SftpService {
       })
     }
 
-    // Validate filename
+    // Validate filename (upload-specific check before common setup)
     const fileNameResult = validateFileName(request.fileName)
     if (!fileNameResult.ok) {
       return err({
@@ -510,34 +469,23 @@ export class SftpService {
       })
     }
 
-    // Validate path
-    const pathResult = validatePath(request.remotePath, this.getPathValidationOptions(true))
-    if (!pathResult.ok) {
-      const code = mapPathErrorCode(pathResult.error.code)
-      return err({
-        code,
-        message: pathResult.error.message,
-        path: request.remotePath,
-        transferId: request.transferId
-      })
+    // Common setup: enabled check, path validation, session, tilde resolution
+    const setup = await this.setupOperation({
+      connectionId: request.connectionId,
+      sessionId: request.sessionId,
+      path: request.remotePath,
+      checkExtension: true,
+      transferId: request.transferId
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    // Get session
-    const sessionResult = await this.ensureSession(request.connectionId, request.sessionId)
-    if (!sessionResult.ok) {
-      return err({ ...sessionResult.error, transferId: request.transferId })
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
-    if (!resolveResult.ok) {
-      return err({ ...resolveResult.error, transferId: request.transferId })
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // Check if file exists (if not overwriting)
     if (request.overwrite !== true) {
-      const statResult = await this.sessionManager.stat(sessionResult.value, resolvedPath)
+      const statResult = await this.sessionManager.stat(session, resolvedPath)
       if (statResult.ok) {
         return err({
           code: 'SFTP_ALREADY_EXISTS',
@@ -568,7 +516,7 @@ export class SftpService {
     }
 
     // Open file for writing
-    const sftp = sessionResult.value.sftp
+    const sftp = session.sftp
     const flags = request.overwrite === true ? 'w' : 'wx'
 
     return new Promise((resolve) => {
@@ -753,40 +701,22 @@ export class SftpService {
   async startDownload(
     request: DownloadStartRequest
   ): Promise<Result<SftpDownloadReadyResponse, SftpServiceError>> {
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED]
-      })
+    // Common setup: enabled check, path validation, session, tilde resolution
+    const setup = await this.setupOperation({
+      connectionId: request.connectionId,
+      sessionId: request.sessionId,
+      path: request.remotePath,
+      checkExtension: true,
+      transferId: request.transferId
+    })
+    if (!setup.ok) {
+      return setup
     }
 
-    // Validate path (checkExtension=true to enforce blocked extensions on downloads)
-    const pathResult = validatePath(request.remotePath, this.getPathValidationOptions(true))
-    if (!pathResult.ok) {
-      const code = mapPathErrorCode(pathResult.error.code)
-      return err({
-        code,
-        message: pathResult.error.message,
-        path: request.remotePath,
-        transferId: request.transferId
-      })
-    }
-
-    // Get session
-    const sessionResult = await this.ensureSession(request.connectionId, request.sessionId)
-    if (!sessionResult.ok) {
-      return err({ ...sessionResult.error, transferId: request.transferId })
-    }
-
-    // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
-    if (!resolveResult.ok) {
-      return err({ ...resolveResult.error, transferId: request.transferId })
-    }
-    const resolvedPath = resolveResult.value
+    const { session, resolvedPath } = setup.value
 
     // Get file info
-    const statResult = await this.sessionManager.stat(sessionResult.value, resolvedPath)
+    const statResult = await this.sessionManager.stat(session, resolvedPath)
     if (!statResult.ok) {
       return err({
         ...mapSessionError(statResult.error),
@@ -804,7 +734,7 @@ export class SftpService {
       })
     }
 
-    // Check file size
+    // Check file size (download-specific validation after stat)
     if (fileInfo.size > this.config.maxFileSize) {
       return err({
         code: 'SFTP_FILE_TOO_LARGE',
@@ -834,7 +764,7 @@ export class SftpService {
     }
 
     this.transferManager.activateTransfer(request.transferId)
-    logger('Download started:', request.transferId, pathResult.value)
+    logger('Download started:', request.transferId, resolvedPath)
 
     return ok({
       transferId: request.transferId,

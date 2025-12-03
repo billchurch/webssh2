@@ -383,38 +383,5 @@ export interface Transfer {
   nextChunkIndex: number
 }
 
-// =============================================================================
-// Socket Event Maps (for Socket.IO typing)
-// =============================================================================
-
-/**
- * SFTP client-to-server events
- */
-export interface SftpClientToServerEvents {
-  'sftp-list': (request: SftpListRequest) => void
-  'sftp-stat': (request: SftpStatRequest) => void
-  'sftp-mkdir': (request: SftpMkdirRequest) => void
-  'sftp-delete': (request: SftpDeleteRequest) => void
-  'sftp-upload-start': (request: SftpUploadStartRequest) => void
-  'sftp-upload-chunk': (request: SftpUploadChunkRequest) => void
-  'sftp-upload-cancel': (request: SftpUploadCancelRequest) => void
-  'sftp-download-start': (request: SftpDownloadStartRequest) => void
-  'sftp-download-cancel': (request: SftpDownloadCancelRequest) => void
-}
-
-/**
- * SFTP server-to-client events
- */
-export interface SftpServerToClientEvents {
-  'sftp-status': (response: SftpStatusResponse) => void
-  'sftp-directory': (response: SftpDirectoryResponse) => void
-  'sftp-stat-result': (response: SftpStatResponse) => void
-  'sftp-operation-result': (response: SftpOperationResponse) => void
-  'sftp-upload-ready': (response: SftpUploadReadyResponse) => void
-  'sftp-upload-ack': (response: SftpUploadAckResponse) => void
-  'sftp-download-ready': (response: SftpDownloadReadyResponse) => void
-  'sftp-download-chunk': (response: SftpDownloadChunkResponse) => void
-  'sftp-progress': (response: SftpProgressResponse) => void
-  'sftp-complete': (response: SftpCompleteResponse) => void
-  'sftp-error': (response: SftpErrorResponse) => void
-}
+// Note: Socket event maps are defined in socket.ts which imports these types.
+// This avoids duplication while keeping SFTP request/response types centralized here.

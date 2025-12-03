@@ -130,7 +130,7 @@
         
         .env-production {
             background: #dc3545;
-            color: white;
+            color: #000;
         }
         
         .env-staging {
@@ -140,7 +140,7 @@
         
         .env-development {
             background: #28a745;
-            color: white;
+            color: #000;
         }
         
         .hidden {
@@ -385,7 +385,7 @@ when HTTP_REQUEST {
         ];
 
         // Check for APM-injected credentials on page load
-        window.addEventListener('DOMContentLoaded', function() {
+        globalThis.addEventListener('DOMContentLoaded', function() {
             checkAPMCredentials();
             renderServerList();
             updateFormActions();
@@ -412,7 +412,7 @@ when HTTP_REQUEST {
             
             // Check if APM has injected values (simulated here)
             // In production, APM would populate these fields
-            if (window.location.search.includes('apm=true')) {
+            if (globalThis.location.search.includes('apm=true')) {
                 // Simulate APM credential injection
                 document.getElementById('apmUsername').value = 'apm_user';
                 document.getElementById('apmPassword').value = 'apm_pass';
@@ -431,21 +431,21 @@ when HTTP_REQUEST {
 
         function renderServerList() {
             const container = document.getElementById('serverList');
-            
-            servers.forEach(server => {
+
+            for (const server of servers) {
                 const card = document.createElement('div');
                 card.className = 'server-card';
                 card.onclick = () => connectToServer(server);
-                
+
                 card.innerHTML = `
                     <h3>${server.name}</h3>
                     <p><strong>Host:</strong> ${server.host}</p>
                     <p><strong>Port:</strong> ${server.port}</p>
                     <p><span class="env-badge env-${server.env}">${server.env}</span></p>
                 `;
-                
+
                 container.appendChild(card);
-            });
+            }
         }
 
         function connectToServer(server) {
@@ -510,7 +510,7 @@ when HTTP_REQUEST {
                 
                 if (response.ok) {
                     console.log('Connection successful');
-                    window.location.href = response.url;
+                    globalThis.location.href = response.url;
                 } else {
                     console.error('Connection failed:', response.status);
                     alert('Connection failed. Please check your credentials.');

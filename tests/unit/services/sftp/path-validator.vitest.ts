@@ -16,6 +16,18 @@ import {
 } from '../../../../app/services/sftp/path-validator.js'
 import { SFTP_LIMITS } from '../../../../app/constants/sftp.js'
 
+/**
+ * Factory function to create PathValidationOptions with defaults
+ */
+const createOptions = (
+  overrides: Partial<PathValidationOptions> = {}
+): PathValidationOptions => ({
+  allowedPaths: null,
+  blockedExtensions: [],
+  checkExtension: false,
+  ...overrides
+})
+
 describe('path-validator', () => {
   describe('normalizePath', () => {
     it('normalizes simple paths', () => {
@@ -45,11 +57,7 @@ describe('path-validator', () => {
   })
 
   describe('validatePath', () => {
-    const defaultOptions: PathValidationOptions = {
-      allowedPaths: null,
-      blockedExtensions: [],
-      checkExtension: false
-    }
+    const defaultOptions = createOptions()
 
     it('validates simple paths', () => {
       const result = validatePath('/home/user/file.txt', defaultOptions)
@@ -93,11 +101,7 @@ describe('path-validator', () => {
     })
 
     describe('allowed paths', () => {
-      const restrictedOptions: PathValidationOptions = {
-        allowedPaths: ['/home', '/tmp'],
-        blockedExtensions: [],
-        checkExtension: false
-      }
+      const restrictedOptions = createOptions({ allowedPaths: ['/home', '/tmp'] })
 
       it('allows paths within allowed directories', () => {
         const result = validatePath('/home/user/file.txt', restrictedOptions)
@@ -118,22 +122,17 @@ describe('path-validator', () => {
       })
 
       it('handles home directory with allowed ~ path', () => {
-        const homeOptions: PathValidationOptions = {
-          allowedPaths: ['~', '/tmp'],
-          blockedExtensions: [],
-          checkExtension: false
-        }
+        const homeOptions = createOptions({ allowedPaths: ['~', '/tmp'] })
         const result = validatePath('~/documents/file.txt', homeOptions)
         expect(result.ok).toBe(true)
       })
     })
 
     describe('blocked extensions', () => {
-      const extensionOptions: PathValidationOptions = {
-        allowedPaths: null,
+      const extensionOptions = createOptions({
         blockedExtensions: ['.exe', '.dll', '.sh'],
         checkExtension: true
-      }
+      })
 
       it('allows files with non-blocked extensions', () => {
         const result = validatePath('/home/user/file.txt', extensionOptions)
@@ -162,21 +161,16 @@ describe('path-validator', () => {
       })
 
       it('skips extension check when checkExtension is false', () => {
-        const noCheckOptions: PathValidationOptions = {
-          allowedPaths: null,
-          blockedExtensions: ['.exe'],
-          checkExtension: false
-        }
+        const noCheckOptions = createOptions({ blockedExtensions: ['.exe'] })
         const result = validatePath('/home/user/file.exe', noCheckOptions)
         expect(result.ok).toBe(true)
       })
 
       it('handles extensions without leading dots', () => {
-        const noDotOptions: PathValidationOptions = {
-          allowedPaths: null,
+        const noDotOptions = createOptions({
           blockedExtensions: ['exe', 'dll', 'sh'],
           checkExtension: true
-        }
+        })
         const result = validatePath('/home/user/virus.exe', noDotOptions)
         expect(result.ok).toBe(false)
         if (!result.ok) {
@@ -185,11 +179,10 @@ describe('path-validator', () => {
       })
 
       it('handles mixed extensions with and without dots', () => {
-        const mixedOptions: PathValidationOptions = {
-          allowedPaths: null,
+        const mixedOptions = createOptions({
           blockedExtensions: ['exe', '.dll', 'sh'],
           checkExtension: true
-        }
+        })
         const result1 = validatePath('/home/user/file.exe', mixedOptions)
         expect(result1.ok).toBe(false)
 

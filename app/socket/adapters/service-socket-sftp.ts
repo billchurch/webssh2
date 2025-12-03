@@ -27,6 +27,7 @@ import {
   validateSftpDownloadStartRequest,
   validateSftpDownloadCancelRequest
 } from '../../validation/socket/sftp.js'
+import type { SftpOperation } from '../../types/contracts/v1/sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import type {
   SftpService,
@@ -518,7 +519,7 @@ export class ServiceSocketSftp {
 
   private emitValidationError(operation: string, message: string): void {
     this.context.socket.emit(SOCKET_EVENTS.SFTP_ERROR, {
-      operation: operation as 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download',
+      operation: operation as SftpOperation,
       code: 'SFTP_INVALID_REQUEST' as const,
       message
     })
@@ -526,12 +527,12 @@ export class ServiceSocketSftp {
 
   private emitNoConnectionError(operation: string, transferId?: TransferId): void {
     const response: {
-      operation: 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download'
+      operation: SftpOperation
       code: 'SFTP_NO_CONNECTION'
       message: string
       transferId?: TransferId
     } = {
-      operation: operation as 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download',
+      operation: operation as SftpOperation,
       code: 'SFTP_NO_CONNECTION',
       message: 'No SSH connection established'
     }
@@ -545,12 +546,12 @@ export class ServiceSocketSftp {
 
   private emitNotEnabledError(operation: string, transferId?: TransferId): void {
     const response: {
-      operation: 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download'
+      operation: SftpOperation
       code: 'SFTP_NOT_ENABLED'
       message: string
       transferId?: TransferId
     } = {
-      operation: operation as 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download',
+      operation: operation as SftpOperation,
       code: 'SFTP_NOT_ENABLED',
       message: 'SFTP is not enabled'
     }
@@ -564,13 +565,13 @@ export class ServiceSocketSftp {
 
   private emitSftpError(operation: string, error: SftpServiceError): void {
     const response: {
-      operation: 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download'
+      operation: SftpOperation
       code: SftpServiceError['code']
       message: string
       path?: string
       transferId?: TransferId
     } = {
-      operation: operation as 'list' | 'stat' | 'mkdir' | 'delete' | 'upload' | 'download',
+      operation: operation as SftpOperation,
       code: error.code,
       message: error.message
     }

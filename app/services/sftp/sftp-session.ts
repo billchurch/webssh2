@@ -28,6 +28,63 @@ export interface SftpSessionError {
 }
 
 /**
+ * Configuration for SFTP operation wrapper
+ */
+interface SftpOperationConfig<T, R> {
+  readonly session: SftpSession
+  readonly timeout: number
+  readonly timeoutMessage: string
+  readonly failureMessage: string
+  readonly path?: string
+  readonly execute: (
+    callback: (error: Error | null | undefined, result: T) => void
+  ) => void
+  readonly onSuccess: (result: T) => Result<R, SftpSessionError>
+}
+
+/**
+ * Generic wrapper for SFTP callback-based operations
+ *
+ * Handles timeout, error mapping, and lastActivity updates consistently.
+ */
+function wrapSftpOperation<T, R>(
+  config: SftpOperationConfig<T, R>
+): Promise<Result<R, SftpSessionError>> {
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      resolve(err({
+        code: 'TIMEOUT',
+        message: config.timeoutMessage,
+        path: config.path
+      }))
+    }, config.timeout)
+
+    try {
+      config.execute((error: Error | null | undefined, result: T) => {
+        clearTimeout(timeoutId)
+        config.session.lastActivity = Date.now()
+
+        if (error !== undefined && error !== null) {
+          resolve(err(mapSftpError(error, config.path)))
+          return
+        }
+
+        resolve(config.onSuccess(result))
+      })
+    } catch (error) {
+      clearTimeout(timeoutId)
+      const errMsg = error instanceof Error ? error.message : 'Unknown error'
+      resolve(err({
+        code: 'OPERATION_FAILED',
+        message: `${config.failureMessage}: ${errMsg}`,
+        path: config.path,
+        originalError: error instanceof Error ? error : undefined
+      }))
+    }
+  })
+}
+
+/**
  * SFTP session state
  */
 export interface SftpSession {
@@ -170,48 +227,22 @@ export class SftpSessionManager {
     path: string,
     options?: ListDirectoryOptions
   ): Promise<Result<SftpFileEntry[], SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Directory listing timeout',
-          path
-        }))
-      }, this.timeout)
+    const showHidden = options?.showHidden ?? false
 
-      try {
-        session.sftp.readdir(path, (error: Error | undefined, list: SSH2FileEntry[]) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          // Limit number of entries
-          const limitedList = list.slice(0, SFTP_LIMITS.MAX_DIRECTORY_ENTRIES)
-
-          // Filter hidden files if requested
-          const showHidden = options?.showHidden ?? false
-          const filteredList = showHidden
-            ? limitedList
-            : limitedList.filter(entry => !entry.filename.startsWith('.'))
-
-          // Transform to our format
-          const entries = filteredList.map(entry => transformFileEntry(entry, path))
-
-          resolve(ok(entries))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to list directory: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
+    return wrapSftpOperation<SSH2FileEntry[], SftpFileEntry[]>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Directory listing timeout',
+      failureMessage: 'Failed to list directory',
+      path,
+      execute: (callback) => session.sftp.readdir(path, callback),
+      onSuccess: (list) => {
+        const limitedList = list.slice(0, SFTP_LIMITS.MAX_DIRECTORY_ENTRIES)
+        const filteredList = showHidden
+          ? limitedList
+          : limitedList.filter(entry => !entry.filename.startsWith('.'))
+        const entries = filteredList.map(entry => transformFileEntry(entry, path))
+        return ok(entries)
       }
     })
   }
@@ -220,38 +251,14 @@ export class SftpSessionManager {
    * Get file/directory stats
    */
   stat(session: SftpSession, path: string): Promise<Result<SftpFileEntry, SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Stat operation timeout',
-          path
-        }))
-      }, this.timeout)
-
-      try {
-        session.sftp.stat(path, (error: Error | undefined, stats: Stats) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          const entry = transformStats(path, stats)
-          resolve(ok(entry))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to stat: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
-      }
+    return wrapSftpOperation<Stats, SftpFileEntry>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Stat operation timeout',
+      failureMessage: 'Failed to stat',
+      path,
+      execute: (callback) => session.sftp.stat(path, callback),
+      onSuccess: (stats) => ok(transformStats(path, stats))
     })
   }
 
@@ -263,39 +270,16 @@ export class SftpSessionManager {
     path: string,
     mode?: number
   ): Promise<Result<void, SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Mkdir operation timeout',
-          path
-        }))
-      }, this.timeout)
+    const attrs = mode === undefined ? {} : { mode }
 
-      try {
-        const attrs = mode === undefined ? {} : { mode }
-
-        session.sftp.mkdir(path, attrs, (error: Error | null | undefined) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined && error !== null) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          resolve(ok(undefined))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to create directory: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
-      }
+    return wrapSftpOperation<void, void>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Mkdir operation timeout',
+      failureMessage: 'Failed to create directory',
+      path,
+      execute: (callback) => session.sftp.mkdir(path, attrs, callback),
+      onSuccess: () => ok(undefined)
     })
   }
 
@@ -303,37 +287,14 @@ export class SftpSessionManager {
    * Remove a file
    */
   unlink(session: SftpSession, path: string): Promise<Result<void, SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Unlink operation timeout',
-          path
-        }))
-      }, this.timeout)
-
-      try {
-        session.sftp.unlink(path, (error: Error | null | undefined) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined && error !== null) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          resolve(ok(undefined))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to delete file: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
-      }
+    return wrapSftpOperation<void, void>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Unlink operation timeout',
+      failureMessage: 'Failed to delete file',
+      path,
+      execute: (callback) => session.sftp.unlink(path, callback),
+      onSuccess: () => ok(undefined)
     })
   }
 
@@ -341,37 +302,14 @@ export class SftpSessionManager {
    * Remove a directory
    */
   rmdir(session: SftpSession, path: string): Promise<Result<void, SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Rmdir operation timeout',
-          path
-        }))
-      }, this.timeout)
-
-      try {
-        session.sftp.rmdir(path, (error: Error | null | undefined) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined && error !== null) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          resolve(ok(undefined))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to remove directory: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
-      }
+    return wrapSftpOperation<void, void>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Rmdir operation timeout',
+      failureMessage: 'Failed to remove directory',
+      path,
+      execute: (callback) => session.sftp.rmdir(path, callback),
+      onSuccess: () => ok(undefined)
     })
   }
 
@@ -381,37 +319,14 @@ export class SftpSessionManager {
    * Note: realpath does NOT expand ~ (tilde). Use expandTildePath for that.
    */
   realpath(session: SftpSession, path: string): Promise<Result<string, SftpSessionError>> {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Realpath operation timeout',
-          path
-        }))
-      }, this.timeout)
-
-      try {
-        session.sftp.realpath(path, (error: Error | undefined, resolvedPath: string) => {
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          resolve(ok(resolvedPath))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to resolve path: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
-      }
+    return wrapSftpOperation<string, string>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Realpath operation timeout',
+      failureMessage: 'Failed to resolve path',
+      path,
+      execute: (callback) => session.sftp.realpath(path, callback),
+      onSuccess: (resolvedPath) => ok(resolvedPath)
     })
   }
 
@@ -426,58 +341,27 @@ export class SftpSessionManager {
    * is typically the user's home directory.
    */
   expandTildePath(session: SftpSession, path: string): Promise<Result<string, SftpSessionError>> {
-    return new Promise((resolve) => {
-      // If path doesn't start with ~, just return it as-is
-      if (path !== '~' && !path.startsWith('~/')) {
-        resolve(ok(path))
-        return
-      }
+    // If path doesn't start with ~, just return it as-is
+    if (path !== '~' && !path.startsWith('~/')) {
+      return Promise.resolve(ok(path))
+    }
 
-      const timeoutId = setTimeout(() => {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: 'Expand path timeout',
-          path
-        }))
-      }, this.timeout)
+    logger('Calling realpath(".") for tilde expansion, session: %s', session.id)
 
-      try {
-        // Get the current directory (typically home directory for SFTP)
-        logger('Calling realpath(".") for tilde expansion, session: %s', session.id)
-        session.sftp.realpath('.', (error: Error | undefined, homeDir: string) => {
-          logger('realpath(".") callback received, error: %s, homeDir: %s', error?.message, homeDir)
-          clearTimeout(timeoutId)
-          session.lastActivity = Date.now()
-
-          if (error !== undefined) {
-            resolve(err(mapSftpError(error, path)))
-            return
-          }
-
-          // Replace ~ with the home directory
-          let expandedPath: string
-          if (path === '~') {
-            expandedPath = homeDir
-          } else {
-            // path starts with ~/
-            const subPath = path.slice(2) // Remove ~/
-            expandedPath = homeDir.endsWith('/')
-              ? `${homeDir}${subPath}`
-              : `${homeDir}/${subPath}`
-          }
-
-          logger('Expanded tilde path: %s -> %s', path, expandedPath)
-          resolve(ok(expandedPath))
-        })
-      } catch (error) {
-        clearTimeout(timeoutId)
-        const errMsg = error instanceof Error ? error.message : 'Unknown error'
-        resolve(err({
-          code: 'OPERATION_FAILED',
-          message: `Failed to expand path: ${errMsg}`,
-          path,
-          originalError: error instanceof Error ? error : undefined
-        }))
+    return wrapSftpOperation<string, string>({
+      session,
+      timeout: this.timeout,
+      timeoutMessage: 'Expand path timeout',
+      failureMessage: 'Failed to expand path',
+      path,
+      execute: (callback) => session.sftp.realpath('.', callback),
+      onSuccess: (homeDir) => {
+        logger('realpath(".") returned homeDir: %s', homeDir)
+        const expandedPath = path === '~'
+          ? homeDir
+          : `${homeDir.endsWith('/') ? homeDir : `${homeDir}/`}${path.slice(2)}`
+        logger('Expanded tilde path: %s -> %s', path, expandedPath)
+        return ok(expandedPath)
       }
     })
   }
