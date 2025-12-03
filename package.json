@@ -15,7 +15,7 @@
     "terminal",
     "webterminal"
   ],
-  "license": "SEE LICENSE IN FILE - LICENSE",
+  "license": "MIT",
   "private": false,
   "repository": {
     "type": "git",

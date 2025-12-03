@@ -1,4 +1,4 @@
-import {execSync} from 'node:child_process';
+import {execFileSync} from 'node:child_process';
 import {existsSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -18,7 +18,7 @@ const platform = os.platform();
 const arch = os.arch();
 
 const install = (pkg) => {
-  execSync(`npm install ${pkg} --no-save`, {stdio: 'inherit'});
+  execFileSync('npm', ['install', pkg, '--no-save'], {stdio: 'inherit'}); // NOSONAR
 };
 
 const getLibcFamily = () => {

@@ -12,7 +12,7 @@ import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 import { waitForV2Terminal, waitForV2Connection, waitForV2Prompt } from './v2-helpers.js'
 import { SFTP_TEST_CONFIG } from '../test-constants.js'
 
-const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
+const E2E_ENABLED = process.env['ENABLE_E2E_SSH'] === '1'
 
 // =============================================================================
 // SFTP Test Helpers
@@ -119,7 +119,7 @@ async function deleteEntry(page: Page, entryName: string): Promise<void> {
   // Find the file entry row in the file browser list (not the transfer list)
   // The row has accessible name like "filename.txt 55 B Dec 3, 2025 rw-r--r--"
   // We need to match rows that START with the filename to avoid matching transfer items
-  const escapedName = entryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const escapedName = entryName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
   const row = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
 
@@ -167,7 +167,7 @@ async function uploadFile(page: Page, fileName: string, content: string): Promis
 async function downloadFile(page: Page, fileName: string): Promise<void> {
   // Find the file entry row in the file browser list (not the transfer list)
   // The row has accessible name like "filename.txt 55 B Dec 3, 2025 rw-r--r--"
-  const escapedName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const escapedName = fileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
   const row = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
 
@@ -417,7 +417,7 @@ test.describe('SFTP E2E Tests', () => {
 
     // Verify the file was NOT added to the file browser list (only in transfer list with error)
     // File browser entries have accessible name starting with filename followed by size
-    const escapedName = blockedFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const escapedName = blockedFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
     const fileInBrowserList = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
     await expect(fileInBrowserList).toBeHidden({ timeout: TIMEOUTS.SHORT_WAIT })
@@ -494,7 +494,7 @@ test.describe('SFTP E2E Tests', () => {
 
     // Wait for upload to complete - file should appear in the file browser list
     // The file browser entry has accessible name starting with filename followed by size
-    const escapedName = testFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const escapedName = testFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
     const fileEntry = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
     await expect(fileEntry).toBeVisible({ timeout: TIMEOUTS.ACTION })

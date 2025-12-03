@@ -210,22 +210,22 @@
         <form id="manualAuthForm" action="http://localhost:2222/ssh" method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" required autocomplete="username">
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
-            
+
             <div class="form-group">
                 <label for="host">SSH Host:</label>
-                <input type="text" id="host" name="host" value="localhost" required>
+                <input type="text" id="host" name="host" value="localhost" required autocomplete="off">
             </div>
-            
+
             <div class="form-group">
                 <label for="port">SSH Port:</label>
-                <input type="number" id="port" name="port" value="22" min="1" max="65535">
+                <input type="number" id="port" name="port" value="22" min="1" max="65535" autocomplete="off">
             </div>
             
             <div class="advanced-options">
@@ -233,9 +233,9 @@
                 
                 <div class="form-group">
                     <label for="headerName">Header Text:</label>
-                    <input type="text" id="headerName" name="header.name" placeholder="e.g., Production Server">
+                    <input type="text" id="headerName" name="header.name" placeholder="e.g., Production Server" autocomplete="off">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="headerBg">Header Background:</label>
                     <select id="headerBg" name="header.background">
@@ -247,12 +247,12 @@
                         <option value="purple">Purple</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="headerColor">Header Text Color:</label>
-                    <input type="text" id="headerColor" name="header.color" placeholder="e.g., white">
+                    <input type="text" id="headerColor" name="header.color" placeholder="e.g., white" autocomplete="off">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="sshterm">Terminal Type:</label>
                     <select id="sshterm" name="sshterm">
@@ -263,15 +263,15 @@
                         <option value="linux">linux</option>
                     </select>
                 </div>
-                
+
                 <div class="checkbox-group">
                     <input type="checkbox" id="allowreplay" name="allowreplay" value="true">
                     <label for="allowreplay">Allow Session Replay</label>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="readyTimeout">Connection Timeout (ms):</label>
-                    <input type="number" id="readyTimeout" name="readyTimeout" value="20000" min="1000" max="60000">
+                    <input type="number" id="readyTimeout" name="readyTimeout" value="20000" min="1000" max="60000" autocomplete="off">
                 </div>
             </div>
             
@@ -281,8 +281,10 @@
 
         <!-- Hidden APM Auto-Submit Form -->
         <form id="apmAutoForm" method="POST" action="/ssh/host/localhost" style="display:none;">
-            <input type="text" name="username" id="apmUsername">
-            <input type="password" name="password" id="apmPassword">
+            <label for="apmUsername" class="hidden">Username</label>
+            <input type="text" name="username" id="apmUsername" autocomplete="username">
+            <label for="apmPassword" class="hidden">Password</label>
+            <input type="password" name="password" id="apmPassword" autocomplete="current-password">
             <input type="hidden" name="host" id="apmHost">
             <input type="hidden" name="port" id="apmPort" value="22">
             <input type="hidden" name="header.name" id="apmHeaderName">
