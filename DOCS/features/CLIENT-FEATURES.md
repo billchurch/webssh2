@@ -240,5 +240,6 @@ See [SFTP Documentation](./SFTP.md) for complete details.
 ## Troubleshooting
 
 For common issues and solutions, see:
+
 - [Troubleshooting Guide](../reference/TROUBLESHOOTING.md)
 - [Browser Clipboard Issues](../reference/TROUBLESHOOTING.md#copypaste-not-working)

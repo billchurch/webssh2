@@ -102,7 +102,7 @@ interface TlsCredentials {
 }
 
 function createTlsCredentials(options: SyslogTlsOptions | undefined): Result<TlsCredentials | undefined> {
-  if (options === undefined || options.enabled !== true) {
+  if (options?.enabled !== true) {
     return ok(undefined)
   }
 
