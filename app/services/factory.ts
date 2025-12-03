@@ -16,6 +16,7 @@ import { AuthServiceImpl } from './auth/auth-service.js'
 import { SSHServiceImpl } from './ssh/ssh-service.js'
 import { TerminalServiceImpl } from './terminal/terminal-service.js'
 import { SessionServiceImpl } from './session/session-service.js'
+import { createSftpService } from './sftp/sftp-service.js'
 import { SessionStore } from '../state/store.js'
 import { createSessionId, createUserId, createConnectionId } from '../types/branded.js'
 import { createInitialState } from '../state/types.js'
@@ -24,6 +25,7 @@ import type { Duplex } from 'node:stream'
 import debug from 'debug'
 import { createAppStructuredLogger } from '../logger.js'
 import type { StructuredLogger, StructuredLoggerOptions } from '../logging/structured-logger.js'
+import { DEFAULT_SFTP_CONFIG } from '../config/default-config.js'
 
 const factoryLogger = debug('webssh2:services:factory')
 
@@ -95,11 +97,24 @@ export function createServices(
   const terminal = new TerminalServiceImpl(deps, deps.store)
   const session = new SessionServiceImpl(deps, deps.store)
 
+  // Create SFTP service if configured
+  const sftpConfig = deps.config.ssh.sftp ?? DEFAULT_SFTP_CONFIG
+  const sftp = createSftpService(sftpConfig, {
+    getSSHClient: (connectionId) => {
+      const result = ssh.getConnectionStatus(connectionId)
+      if (result.ok && result.value !== null) {
+        return result.value.client
+      }
+      return undefined
+    }
+  })
+
   const services: Services = {
     auth,
     ssh,
     terminal,
-    session
+    session,
+    sftp
   }
 
   factoryLogger('Services created successfully')

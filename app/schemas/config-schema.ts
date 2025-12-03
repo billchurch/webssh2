@@ -38,6 +38,20 @@ const AlgorithmsSchema = z.object({
 })
 
 /**
+ * SFTP configuration schema
+ */
+const SftpSchema = z.object({
+  enabled: z.boolean(),
+  maxFileSize: z.number().int().positive(),
+  transferRateLimitBytesPerSec: z.number().int().nonnegative(),
+  chunkSize: z.number().int().positive(),
+  maxConcurrentTransfers: z.number().int().positive(),
+  allowedPaths: z.array(z.string()).nullable(),
+  blockedExtensions: z.array(z.string()),
+  timeout: z.number().int().positive()
+})
+
+/**
  * Listen configuration schema
  */
 const ListenSchema = z.object({
@@ -82,7 +96,8 @@ const SSHSchema = z.object({
   allowedAuthMethods: z.array(z.string()).optional(),
   maxExecOutputBytes: z.number().int().positive().optional(),
   outputRateLimitBytesPerSec: z.number().int().nonnegative().optional(),
-  socketHighWaterMark: z.number().int().positive().optional()
+  socketHighWaterMark: z.number().int().positive().optional(),
+  sftp: SftpSchema.optional()
 })
 
 /**

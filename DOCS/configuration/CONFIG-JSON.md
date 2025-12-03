@@ -304,3 +304,118 @@ These options can also be configured via environment variables:
 - `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK`
 
 See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
+
+### SFTP Configuration
+
+The SFTP feature provides a web-based file browser for uploading and downloading files through the SSH connection.
+
+#### Configuration Options
+
+- `ssh.sftp.enabled` (boolean, default: `false`): Enable or disable SFTP functionality. When disabled (the default), the file browser UI is hidden.
+
+- `ssh.sftp.maxFileSize` (number, default: `104857600` = 100MB): Maximum file size for uploads and downloads in bytes.
+
+- `ssh.sftp.transferRateLimitBytesPerSec` (number, default: `0` = unlimited): Rate limit for file transfers in bytes per second. Set to `0` to disable rate limiting.
+
+- `ssh.sftp.chunkSize` (number, default: `32768` = 32KB): Chunk size for file transfers. Larger chunks may improve throughput but use more memory. Valid range: 1KB - 1MB.
+
+- `ssh.sftp.maxConcurrentTransfers` (number, default: `2`): Maximum number of simultaneous file transfers per session.
+
+- `ssh.sftp.allowedPaths` (array of strings | null, default: `null`): Restrict SFTP access to specific directories. When `null`, all paths accessible by the SSH user are allowed. The tilde (`~`) is expanded to the user's home directory.
+
+- `ssh.sftp.blockedExtensions` (array of strings, default: `[]`): File extensions to block from uploads and downloads (e.g., `[".exe", ".sh"]`).
+
+- `ssh.sftp.timeout` (number, default: `30000` = 30s): Operation timeout in milliseconds for SFTP commands.
+
+#### Default SFTP Configuration
+
+```json
+{
+  "ssh": {
+    "sftp": {
+      "enabled": false,
+      "maxFileSize": 104857600,
+      "transferRateLimitBytesPerSec": 0,
+      "chunkSize": 32768,
+      "maxConcurrentTransfers": 2,
+      "allowedPaths": null,
+      "blockedExtensions": [],
+      "timeout": 30000
+    }
+  }
+}
+```
+
+> **Note:** SFTP is disabled by default. Set `enabled` to `true` to enable the file browser functionality.
+
+#### Use Cases
+
+**Enable SFTP with basic settings:**
+```json
+{
+  "ssh": {
+    "sftp": {
+      "enabled": true
+    }
+  }
+}
+```
+This enables SFTP with all default settings (100MB file limit, no rate limiting).
+
+**Restricted file access for shared hosting:**
+```json
+{
+  "ssh": {
+    "sftp": {
+      "enabled": true,
+      "maxFileSize": 52428800,
+      "allowedPaths": ["~", "/var/www"],
+      "blockedExtensions": [".exe", ".sh", ".bash", ".py", ".php", ".pl"],
+      "transferRateLimitBytesPerSec": 1048576
+    }
+  }
+}
+```
+This configuration enables SFTP, limits uploads to 50MB, restricts browsing to home and `/var/www` directories, blocks executable files, and limits transfer speed to 1MB/s.
+
+**High-performance for trusted environments:**
+```json
+{
+  "ssh": {
+    "sftp": {
+      "enabled": true,
+      "maxFileSize": 524288000,
+      "chunkSize": 65536,
+      "maxConcurrentTransfers": 5,
+      "transferRateLimitBytesPerSec": 0
+    }
+  }
+}
+```
+This enables SFTP and allows 500MB files, uses 64KB chunks for better throughput, allows 5 concurrent transfers, and has no rate limiting.
+
+**Disable SFTP (default):**
+```json
+{
+  "ssh": {
+    "sftp": {
+      "enabled": false
+    }
+  }
+}
+```
+SFTP is disabled by default. This configuration is only needed if you want to explicitly disable it after previously enabling it.
+
+#### Environment Variables
+
+These options can also be configured via environment variables:
+- `WEBSSH2_SSH_SFTP_ENABLED`
+- `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE`
+- `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC`
+- `WEBSSH2_SSH_SFTP_CHUNK_SIZE`
+- `WEBSSH2_SSH_SFTP_MAX_CONCURRENT_TRANSFERS`
+- `WEBSSH2_SSH_SFTP_ALLOWED_PATHS`
+- `WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS`
+- `WEBSSH2_SSH_SFTP_TIMEOUT`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details on environment variable format and examples.

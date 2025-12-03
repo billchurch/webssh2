@@ -18,6 +18,28 @@ export interface AlgorithmsConfig {
 }
 
 /**
+ * SFTP configuration
+ */
+export interface SftpConfig {
+  /** Whether SFTP file transfer is enabled */
+  enabled: boolean
+  /** Maximum file size in bytes for upload/download */
+  maxFileSize: number
+  /** Transfer rate limit in bytes per second (0 = unlimited) */
+  transferRateLimitBytesPerSec: number
+  /** Chunk size for transfers in bytes */
+  chunkSize: number
+  /** Maximum concurrent transfers per session */
+  maxConcurrentTransfers: number
+  /** Paths that are allowed for SFTP operations (null = allow all) */
+  allowedPaths: string[] | null
+  /** File extensions that are blocked from upload */
+  blockedExtensions: string[]
+  /** Operation timeout in milliseconds */
+  timeout: number
+}
+
+/**
  * SSH configuration
  */
 export interface SSHConfig {
@@ -38,6 +60,8 @@ export interface SSHConfig {
   maxExecOutputBytes?: number
   outputRateLimitBytesPerSec?: number
   socketHighWaterMark?: number
+  /** SFTP file transfer configuration */
+  sftp?: SftpConfig
 }
 
 /**

@@ -13,7 +13,20 @@ export const LOG_EVENT_NAMES = [
   'idle_timeout',
   'policy_block',
   'error',
-  'credential_replay'
+  'credential_replay',
+  // SFTP events
+  'sftp_list',
+  'sftp_stat',
+  'sftp_mkdir',
+  'sftp_delete',
+  'sftp_upload_start',
+  'sftp_upload_chunk',
+  'sftp_upload_complete',
+  'sftp_upload_cancel',
+  'sftp_download_start',
+  'sftp_download_chunk',
+  'sftp_download_complete',
+  'sftp_download_cancel'
 ] as const
 
 export type LogEventName = typeof LOG_EVENT_NAMES[number]

@@ -23,6 +23,7 @@ import {
 import { ServiceSocketAuthentication } from './service-socket-authentication.js'
 import { ServiceSocketTerminal } from './service-socket-terminal.js'
 import { ServiceSocketControl } from './service-socket-control.js'
+import { ServiceSocketSftp } from './service-socket-sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 
 const debug = createNamespacedDebug('socket:service-adapter')
@@ -48,6 +49,7 @@ export class ServiceSocketAdapter {
   private readonly auth: ServiceSocketAuthentication
   private readonly terminal: ServiceSocketTerminal
   private readonly control: ServiceSocketControl
+  private readonly sftp: ServiceSocketSftp
 
   constructor(
     private readonly socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
@@ -76,6 +78,7 @@ export class ServiceSocketAdapter {
     this.auth = new ServiceSocketAuthentication(this.context)
     this.terminal = new ServiceSocketTerminal(this.context)
     this.control = new ServiceSocketControl(this.context)
+    this.sftp = new ServiceSocketSftp(this.context)
 
     this.setupEventHandlers()
     this.logSessionInit()
@@ -130,6 +133,44 @@ export class ServiceSocketAdapter {
 
     this.socket.on(SOCKET_EVENTS.DISCONNECT, () => {
       this.control.handleDisconnect()
+      this.sftp.handleDisconnect()
+    })
+
+    // SFTP event handlers
+    this.socket.on(SOCKET_EVENTS.SFTP_LIST, request => {
+      void this.sftp.handleList(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_STAT, request => {
+      void this.sftp.handleStat(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_MKDIR, request => {
+      void this.sftp.handleMkdir(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_DELETE, request => {
+      void this.sftp.handleDelete(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_START, request => {
+      void this.sftp.handleUploadStart(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CHUNK, request => {
+      void this.sftp.handleUploadChunk(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CANCEL, request => {
+      this.sftp.handleUploadCancel(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_START, request => {
+      void this.sftp.handleDownloadStart(request)
+    })
+
+    this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_CANCEL, request => {
+      this.sftp.handleDownloadCancel(request)
     })
   }
 

@@ -10,10 +10,26 @@ import type {
   LoggingRateLimitConfig,
   LoggingStdoutConfig,
   LoggingSyslogConfig,
-  LoggingSyslogTlsConfig
+  LoggingSyslogTlsConfig,
+  SftpConfig
 } from '../types/config.js'
 import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS } from '../constants/index.js'
+import { SFTP_DEFAULTS } from '../constants/sftp.js'
 import { createAuthMethod } from '../types/branded.js'
+
+/**
+ * Default SFTP configuration
+ */
+export const DEFAULT_SFTP_CONFIG: SftpConfig = {
+  enabled: SFTP_DEFAULTS.ENABLED,
+  maxFileSize: SFTP_DEFAULTS.MAX_FILE_SIZE,
+  transferRateLimitBytesPerSec: SFTP_DEFAULTS.TRANSFER_RATE_LIMIT_BYTES_PER_SEC,
+  chunkSize: SFTP_DEFAULTS.CHUNK_SIZE,
+  maxConcurrentTransfers: SFTP_DEFAULTS.MAX_CONCURRENT_TRANSFERS,
+  allowedPaths: null,
+  blockedExtensions: [],
+  timeout: SFTP_DEFAULTS.TIMEOUT,
+}
 
 /**
  * Default SSH algorithms configuration
@@ -82,6 +98,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     maxExecOutputBytes: STREAM_LIMITS.MAX_EXEC_OUTPUT_BYTES,
     outputRateLimitBytesPerSec: STREAM_LIMITS.OUTPUT_RATE_LIMIT_BYTES_PER_SEC,
     socketHighWaterMark: STREAM_LIMITS.SOCKET_HIGH_WATER_MARK,
+    sftp: DEFAULT_SFTP_CONFIG,
   },
   header: { text: null, background: 'green' },
   options: {
@@ -115,6 +132,48 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
 }
 
 /**
+ * Build a deep-cloned SSH config from defaults
+ */
+function buildSshConfig(): Config['ssh'] {
+  const base = DEFAULT_CONFIG_BASE.ssh
+  const result: Config['ssh'] = {
+    host: base.host,
+    port: base.port,
+    term: base.term,
+    readyTimeout: base.readyTimeout,
+    keepaliveInterval: base.keepaliveInterval,
+    keepaliveCountMax: base.keepaliveCountMax,
+    alwaysSendKeyboardInteractivePrompts: base.alwaysSendKeyboardInteractivePrompts,
+    disableInteractiveAuth: base.disableInteractiveAuth,
+    algorithms: {
+      cipher: [...base.algorithms.cipher],
+      compress: [...base.algorithms.compress],
+      hmac: [...base.algorithms.hmac],
+      kex: [...base.algorithms.kex],
+      serverHostKey: [...base.algorithms.serverHostKey],
+    },
+    allowedSubnets: base.allowedSubnets == null ? [] : [...base.allowedSubnets],
+    allowedAuthMethods: [...base.allowedAuthMethods],
+  }
+
+  // Conditionally add optional properties to satisfy exactOptionalPropertyTypes
+  if (base.maxExecOutputBytes !== undefined) {
+    result.maxExecOutputBytes = base.maxExecOutputBytes
+  }
+  if (base.outputRateLimitBytesPerSec !== undefined) {
+    result.outputRateLimitBytesPerSec = base.outputRateLimitBytesPerSec
+  }
+  if (base.socketHighWaterMark !== undefined) {
+    result.socketHighWaterMark = base.socketHighWaterMark
+  }
+  if (base.sftp !== undefined) {
+    result.sftp = cloneSftpConfig(base.sftp)
+  }
+
+  return result
+}
+
+/**
  * Create a complete default configuration with session secret
  * Deep clones nested objects to prevent mutation
  * If no sessionSecret is provided, generates a secure one
@@ -127,18 +186,7 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
     user: { ...DEFAULT_CONFIG_BASE.user },
-    ssh: {
-      ...DEFAULT_CONFIG_BASE.ssh,
-      algorithms: {
-        cipher: [...DEFAULT_CONFIG_BASE.ssh.algorithms.cipher],
-        compress: [...DEFAULT_CONFIG_BASE.ssh.algorithms.compress],
-        hmac: [...DEFAULT_CONFIG_BASE.ssh.algorithms.hmac],
-        kex: [...DEFAULT_CONFIG_BASE.ssh.algorithms.kex],
-        serverHostKey: [...DEFAULT_CONFIG_BASE.ssh.algorithms.serverHostKey],
-      },
-      allowedSubnets: DEFAULT_CONFIG_BASE.ssh.allowedSubnets == null ? [] : [...DEFAULT_CONFIG_BASE.ssh.allowedSubnets],
-      allowedAuthMethods: [...DEFAULT_CONFIG_BASE.ssh.allowedAuthMethods],
-    },
+    ssh: buildSshConfig(),
     header: { ...DEFAULT_CONFIG_BASE.header },
     options: { ...DEFAULT_CONFIG_BASE.options },
     session: {
@@ -274,5 +322,21 @@ function cloneLoggingSyslogTls(
     ...(tls.certFile === undefined ? {} : { certFile: tls.certFile }),
     ...(tls.keyFile === undefined ? {} : { keyFile: tls.keyFile }),
     ...(tls.rejectUnauthorized === undefined ? {} : { rejectUnauthorized: tls.rejectUnauthorized })
+  }
+}
+
+/**
+ * Deep clone SFTP configuration
+ */
+function cloneSftpConfig(sftp: SftpConfig): SftpConfig {
+  return {
+    enabled: sftp.enabled,
+    maxFileSize: sftp.maxFileSize,
+    transferRateLimitBytesPerSec: sftp.transferRateLimitBytesPerSec,
+    chunkSize: sftp.chunkSize,
+    maxConcurrentTransfers: sftp.maxConcurrentTransfers,
+    allowedPaths: sftp.allowedPaths === null ? null : [...sftp.allowedPaths],
+    blockedExtensions: [...sftp.blockedExtensions],
+    timeout: sftp.timeout,
   }
 }

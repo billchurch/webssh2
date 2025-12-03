@@ -1,4 +1,5 @@
 import type { AuthCredentials } from '../../types/contracts/v1/socket.js'
+import type { SftpStatusResponse } from '../../types/contracts/v1/sftp.js'
 import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
 import type { AdapterContext } from './service-socket-shared.js'
@@ -360,11 +361,47 @@ export class ServiceSocketAuthentication {
       allowReauth: config.options.allowReauth
     })
 
+    // Emit SFTP status after successful authentication
+    this.emitSftpStatus()
+
     socket.emit(SOCKET_EVENTS.GET_TERMINAL, true)
 
     const connectionString = `ssh://${credentials.host}:${credentials.port}`
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'footer', value: connectionString })
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'status', value: 'Connected' })
+  }
+
+  /**
+   * Emit SFTP status to client after authentication success.
+   * Informs the client about SFTP feature availability and configuration limits.
+   */
+  private emitSftpStatus(): void {
+    const { socket, config, debug: log } = this.context
+    const sftpConfig = config.ssh.sftp
+
+    // If SFTP is not configured or disabled, emit disabled status
+    if (sftpConfig?.enabled !== true) {
+      const statusResponse: SftpStatusResponse = { enabled: false }
+      socket.emit(SOCKET_EVENTS.SFTP_STATUS, statusResponse)
+      log('SFTP status emitted: disabled')
+      return
+    }
+
+    // SFTP is enabled, emit configuration limits
+    const hasPathRestrictions = sftpConfig.allowedPaths !== null && sftpConfig.allowedPaths.length > 0
+    const statusResponse: SftpStatusResponse = {
+      enabled: true,
+      config: {
+        maxFileSize: sftpConfig.maxFileSize,
+        chunkSize: sftpConfig.chunkSize,
+        maxConcurrentTransfers: sftpConfig.maxConcurrentTransfers,
+        hasPathRestrictions,
+        blockedExtensions: sftpConfig.blockedExtensions
+      }
+    }
+
+    socket.emit(SOCKET_EVENTS.SFTP_STATUS, statusResponse)
+    log('SFTP status emitted: enabled with config', statusResponse.config)
   }
 
   private logAuthAttempt(credentials: AuthCredentials): void {

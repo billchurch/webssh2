@@ -263,6 +263,16 @@ export interface Logger {
 }
 
 /**
+ * SFTP service interface
+ *
+ * Note: The actual implementation (SftpService class in sftp-service.ts) has
+ * additional methods for uploads and downloads. This interface defines the
+ * minimal contract needed by the socket adapter.
+ */
+import type { SftpService } from './sftp/sftp-service.js'
+export type { SftpService }
+
+/**
  * Collection of all services
  */
 export interface Services {
@@ -270,6 +280,7 @@ export interface Services {
   ssh: SSHService
   terminal: TerminalService
   session: SessionService
+  sftp?: SftpService
 }
 
 /**
