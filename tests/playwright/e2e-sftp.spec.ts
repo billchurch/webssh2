@@ -100,7 +100,7 @@ async function navigateToPath(page: Page, targetPath: string): Promise<void> {
  */
 async function createFolder(page: Page, folderName: string): Promise<void> {
   // Click the new folder button using accessible name
-  await page.getByRole('button', { name: 'New folder' }).click()
+  await page.getByRole('button', { name: 'Create new folder' }).click()
 
   // Wait for the input field to appear and fill it
   const folderInput = page.locator('input[placeholder*="folder"]').or(page.locator('input').first())
@@ -116,12 +116,11 @@ async function createFolder(page: Page, folderName: string): Promise<void> {
  * Deletes a file or folder by clicking its delete button
  */
 async function deleteEntry(page: Page, entryName: string): Promise<void> {
-  // Find the file entry row in the file browser list (not the transfer list)
-  // The row has accessible name like "filename.txt 55 B Dec 3, 2025 rw-r--r--"
-  // We need to match rows that START with the filename to avoid matching transfer items
+  // Find the file entry in the file browser list
+  // File entries are listitems with accessible name like "File: filename.txt, 55 B" or "Folder: foldername"
   const escapedName = entryName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-  const row = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
+  const row = page.getByRole('listitem', { name: new RegExp(String.raw`(File|Folder): ${escapedName}`) })
 
   // Hover to show action buttons
   await row.hover()
@@ -131,8 +130,8 @@ async function deleteEntry(page: Page, entryName: string): Promise<void> {
     await dialog.accept()
   })
 
-  // Click the delete button (has title="Delete")
-  await row.locator('button[title="Delete"]').click()
+  // Click the delete button (has accessible name "Delete {filename}")
+  await page.getByRole('button', { name: `Delete ${entryName}` }).click()
 
   // Wait for entry to be removed from the file list
   await expect(row).toBeHidden({ timeout: TIMEOUTS.CONNECTION })
@@ -165,19 +164,19 @@ async function uploadFile(page: Page, fileName: string, content: string): Promis
  * Triggers a file download and waits for it to complete
  */
 async function downloadFile(page: Page, fileName: string): Promise<void> {
-  // Find the file entry row in the file browser list (not the transfer list)
-  // The row has accessible name like "filename.txt 55 B Dec 3, 2025 rw-r--r--"
+  // Find the file entry in the file browser list
+  // File entries are listitems with accessible name like "File: filename.txt, 55 B"
   const escapedName = fileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-  const row = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
+  const row = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
 
   await row.hover()
 
   // Start waiting for download before clicking
   const downloadPromise = page.waitForEvent('download', { timeout: TIMEOUTS.ACTION })
 
-  // Click download button (has title="Download")
-  await row.locator('button[title="Download"]').click()
+  // Click download button (has accessible name "Download {filename}")
+  await page.getByRole('button', { name: `Download ${fileName}` }).click()
 
   // Wait for download to start
   const download = await downloadPromise
@@ -416,10 +415,10 @@ test.describe('SFTP E2E Tests', () => {
     await test.info().attach('blocked-extension-screenshot', { path: shotPath, contentType: 'image/png' })
 
     // Verify the file was NOT added to the file browser list (only in transfer list with error)
-    // File browser entries have accessible name starting with filename followed by size
+    // File browser entries are listitems with accessible name like "File: filename.txt, 55 B"
     const escapedName = blockedFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-    const fileInBrowserList = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
+    const fileInBrowserList = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
     await expect(fileInBrowserList).toBeHidden({ timeout: TIMEOUTS.SHORT_WAIT })
   })
 
@@ -493,10 +492,10 @@ test.describe('SFTP E2E Tests', () => {
     await test.info().attach('upload-progress-screenshot', { path: shotPath, contentType: 'image/png' })
 
     // Wait for upload to complete - file should appear in the file browser list
-    // The file browser entry has accessible name starting with filename followed by size
+    // File browser entries are listitems with accessible name like "File: filename.txt, 97.7 KB"
     const escapedName = testFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-    const fileEntry = page.getByRole('button', { name: new RegExp(`^${escapedName}\\s`) })
+    const fileEntry = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
     await expect(fileEntry).toBeVisible({ timeout: TIMEOUTS.ACTION })
 
     // Cleanup
