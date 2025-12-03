@@ -13,25 +13,25 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          
+
       # Checkout code if release was created
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         if: ${{ steps.release.outputs.release_created }}
-        
+
       # Setup Node.js for npm publishing
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: ${{ steps.release.outputs.release_created }}
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
-          
+
       # Install dependencies
-      - run: npm ci
+      - run: npm ci --ignore-scripts
         if: ${{ steps.release.outputs.release_created }}
         
       # Build the project
