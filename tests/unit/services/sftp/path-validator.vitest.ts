@@ -12,9 +12,19 @@ import {
   validateFileName,
   normalizePath,
   joinPathSafely,
-  type PathValidationOptions
+  type PathValidationOptions,
 } from '../../../../app/services/sftp/path-validator.js'
 import { SFTP_LIMITS } from '../../../../app/constants/sftp.js'
+import type { Err } from '../../../../app/types/result.js'
+
+/**
+ * Helper to assert error result and extract error
+ */
+function assertErr<E>(result: { ok: boolean; error?: E }): asserts result is Err<E> {
+  if (result.ok) {
+    throw new Error('Expected error result but got success')
+  }
+}
 
 /**
  * Factory function to create PathValidationOptions with defaults
@@ -78,26 +88,23 @@ describe('path-validator', () => {
     it('rejects paths with null bytes', () => {
       const result = validatePath('/home/user\0/file.txt', defaultOptions)
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('INVALID_PATH')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('INVALID_PATH')
     })
 
     it('rejects paths that are too long', () => {
       const longPath = `/${'a'.repeat(SFTP_LIMITS.MAX_PATH_LENGTH + 1)}`
       const result = validatePath(longPath, defaultOptions)
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('PATH_TOO_LONG')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('PATH_TOO_LONG')
     })
 
     it('detects path traversal attempts', () => {
       const result = validatePath('../../../etc/passwd', defaultOptions)
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('PATH_TRAVERSAL')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('PATH_TRAVERSAL')
     })
 
     describe('allowed paths', () => {
@@ -116,9 +123,8 @@ describe('path-validator', () => {
       it('rejects paths outside allowed directories', () => {
         const result = validatePath('/etc/passwd', restrictedOptions)
         expect(result.ok).toBe(false)
-        if (!result.ok) {
-          expect(result.error.code).toBe('PATH_FORBIDDEN')
-        }
+        assertErr(result)
+        expect(result.error.code).toBe('PATH_FORBIDDEN')
       })
 
       it('handles home directory with allowed ~ path', () => {
@@ -142,17 +148,15 @@ describe('path-validator', () => {
       it('blocks files with blocked extensions', () => {
         const result = validatePath('/home/user/virus.exe', extensionOptions)
         expect(result.ok).toBe(false)
-        if (!result.ok) {
-          expect(result.error.code).toBe('EXTENSION_BLOCKED')
-        }
+        assertErr(result)
+        expect(result.error.code).toBe('EXTENSION_BLOCKED')
       })
 
       it('handles case-insensitive extension matching', () => {
         const result = validatePath('/home/user/file.EXE', extensionOptions)
         expect(result.ok).toBe(false)
-        if (!result.ok) {
-          expect(result.error.code).toBe('EXTENSION_BLOCKED')
-        }
+        assertErr(result)
+        expect(result.error.code).toBe('EXTENSION_BLOCKED')
       })
 
       it('allows files without extension', () => {
@@ -173,9 +177,8 @@ describe('path-validator', () => {
         })
         const result = validatePath('/home/user/virus.exe', noDotOptions)
         expect(result.ok).toBe(false)
-        if (!result.ok) {
-          expect(result.error.code).toBe('EXTENSION_BLOCKED')
-        }
+        assertErr(result)
+        expect(result.error.code).toBe('EXTENSION_BLOCKED')
       })
 
       it('handles mixed extensions with and without dots', () => {
@@ -210,25 +213,23 @@ describe('path-validator', () => {
     it('rejects filenames with null bytes', () => {
       const result = validateFileName('file\0.txt')
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('INVALID_PATH')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('INVALID_PATH')
     })
 
     it('rejects filenames that are too long', () => {
       const longName = 'a'.repeat(SFTP_LIMITS.MAX_FILENAME_LENGTH + 1)
       const result = validateFileName(longName)
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('PATH_TOO_LONG')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('PATH_TOO_LONG')
     })
 
     it('rejects filenames with path separators', () => {
       const result1 = validateFileName('path/file.txt')
       expect(result1.ok).toBe(false)
 
-      const result2 = validateFileName('path\\file.txt')
+      const result2 = validateFileName(String.raw`path\file.txt`)
       expect(result2.ok).toBe(false)
     })
 
@@ -255,17 +256,15 @@ describe('path-validator', () => {
     it('rejects absolute relative paths', () => {
       const result = joinPathSafely('/home/user', '/etc/passwd')
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('PATH_TRAVERSAL')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('PATH_TRAVERSAL')
     })
 
     it('rejects parent directory escape', () => {
       const result = joinPathSafely('/home/user', '../admin/files')
       expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.code).toBe('PATH_TRAVERSAL')
-      }
+      assertErr(result)
+      expect(result.error.code).toBe('PATH_TRAVERSAL')
     })
 
     it('handles home directory base', () => {

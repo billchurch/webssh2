@@ -78,20 +78,20 @@ export function validatePath(
   // Check for path traversal attempts
   const traversalCheck = checkPathTraversal(normalized, requestedPath)
   if (!traversalCheck.ok) {
-    return traversalCheck
+    return err(traversalCheck.error)
   }
 
   // Check against allowed paths
   const allowedCheck = checkAllowedPaths(normalized, options.allowedPaths)
   if (!allowedCheck.ok) {
-    return allowedCheck
+    return err(allowedCheck.error)
   }
 
   // Check extension if requested
   if (options.checkExtension === true) {
     const extensionCheck = checkBlockedExtension(normalized, options.blockedExtensions)
     if (!extensionCheck.ok) {
-      return extensionCheck
+      return err(extensionCheck.error)
     }
   }
 

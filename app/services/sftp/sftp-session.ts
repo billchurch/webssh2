@@ -357,9 +357,13 @@ export class SftpSessionManager {
       execute: (callback) => session.sftp.realpath('.', callback),
       onSuccess: (homeDir) => {
         logger('realpath(".") returned homeDir: %s', homeDir)
-        const expandedPath = path === '~'
-          ? homeDir
-          : `${homeDir.endsWith('/') ? homeDir : `${homeDir}/`}${path.slice(2)}`
+        let expandedPath: string
+        if (path === '~') {
+          expandedPath = homeDir
+        } else {
+          const normalizedHome = homeDir.endsWith('/') ? homeDir : `${homeDir}/`
+          expandedPath = `${normalizedHome}${path.slice(2)}`
+        }
         logger('Expanded tilde path: %s -> %s', path, expandedPath)
         return ok(expandedPath)
       }
