@@ -27,6 +27,16 @@
       "keyboard-interactive",
       "publickey"
     ],
+    "sftp": {
+      "enabled": true,
+      "maxFileSize": 10485760,
+      "transferRateLimitBytesPerSec": 0,
+      "chunkSize": 32768,
+      "maxConcurrentTransfers": 2,
+      "allowedPaths": null,
+      "blockedExtensions": [".exe", ".dll", ".so"],
+      "timeout": 30000
+    },
     "algorithms": {
       "cipher": [
         "chacha20-poly1305@openssh.com",

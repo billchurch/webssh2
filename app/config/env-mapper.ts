@@ -122,6 +122,21 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
     path: 'logging.syslog.tls.rejectUnauthorized',
     type: 'boolean'
   },
+  // SFTP configuration
+  WEBSSH2_SSH_SFTP_ENABLED: { path: 'ssh.sftp.enabled', type: 'boolean' },
+  WEBSSH2_SSH_SFTP_MAX_FILE_SIZE: { path: 'ssh.sftp.maxFileSize', type: 'number' },
+  WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC: {
+    path: 'ssh.sftp.transferRateLimitBytesPerSec',
+    type: 'number'
+  },
+  WEBSSH2_SSH_SFTP_CHUNK_SIZE: { path: 'ssh.sftp.chunkSize', type: 'number' },
+  WEBSSH2_SSH_SFTP_MAX_CONCURRENT_TRANSFERS: {
+    path: 'ssh.sftp.maxConcurrentTransfers',
+    type: 'number'
+  },
+  WEBSSH2_SSH_SFTP_ALLOWED_PATHS: { path: 'ssh.sftp.allowedPaths', type: 'array' },
+  WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS: { path: 'ssh.sftp.blockedExtensions', type: 'array' },
+  WEBSSH2_SSH_SFTP_TIMEOUT: { path: 'ssh.sftp.timeout', type: 'number' },
 }
 
 /**

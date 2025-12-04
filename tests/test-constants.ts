@@ -446,6 +446,76 @@ export const TEST_CUSTOM_PORTS = {
 } as const
 
 // ============================================================================
+// SFTP TEST CONSTANTS
+// ============================================================================
+
+/**
+ * SFTP test configuration constants
+ */
+export const SFTP_TEST_CONFIG = {
+  /** Maximum file size for test uploads (10MB) */
+  MAX_FILE_SIZE: 10_485_760,
+  /** Chunk size for transfers */
+  CHUNK_SIZE: 32_768,
+  /** Extensions that should be blocked */
+  BLOCKED_EXTENSIONS: ['.exe', '.dll', '.so'],
+  /** Test directory name for SFTP operations */
+  TEST_DIR_NAME: 'webssh2-sftp-test',
+  /** Test file name for uploads */
+  TEST_FILE_NAME: 'test-upload.txt',
+  /** Test file content */
+  TEST_FILE_CONTENT: 'Hello from WebSSH2 SFTP E2E test!\nThis is test content.',
+  /** Blocked extension test file */
+  BLOCKED_FILE_NAME: 'malicious.exe',
+  /** Large file content (for chunked upload testing) */
+  LARGE_FILE_SIZE: 100_000,
+} as const
+
+/**
+ * SFTP socket event names for E2E tests
+ */
+export const SFTP_EVENTS = {
+  // Client → Server
+  LIST: 'sftp-list',
+  STAT: 'sftp-stat',
+  MKDIR: 'sftp-mkdir',
+  DELETE: 'sftp-delete',
+  UPLOAD_START: 'sftp-upload-start',
+  UPLOAD_CHUNK: 'sftp-upload-chunk',
+  UPLOAD_CANCEL: 'sftp-upload-cancel',
+  DOWNLOAD_START: 'sftp-download-start',
+  DOWNLOAD_CANCEL: 'sftp-download-cancel',
+  // Server → Client
+  STATUS: 'sftp-status',
+  DIRECTORY: 'sftp-directory',
+  STAT_RESULT: 'sftp-stat-result',
+  OPERATION_RESULT: 'sftp-operation-result',
+  UPLOAD_READY: 'sftp-upload-ready',
+  UPLOAD_ACK: 'sftp-upload-ack',
+  DOWNLOAD_READY: 'sftp-download-ready',
+  DOWNLOAD_CHUNK: 'sftp-download-chunk',
+  PROGRESS: 'sftp-progress',
+  COMPLETE: 'sftp-complete',
+  ERROR: 'sftp-error',
+} as const
+
+/**
+ * SFTP error codes for test assertions
+ */
+export const SFTP_ERROR_CODES = {
+  NOT_ENABLED: 'SFTP_NOT_ENABLED',
+  NO_CONNECTION: 'SFTP_NO_CONNECTION',
+  SESSION_ERROR: 'SFTP_SESSION_ERROR',
+  NOT_FOUND: 'SFTP_NOT_FOUND',
+  PERMISSION_DENIED: 'SFTP_PERMISSION_DENIED',
+  PATH_FORBIDDEN: 'SFTP_PATH_FORBIDDEN',
+  EXTENSION_BLOCKED: 'SFTP_EXTENSION_BLOCKED',
+  FILE_TOO_LARGE: 'SFTP_FILE_TOO_LARGE',
+  ALREADY_EXISTS: 'SFTP_ALREADY_EXISTS',
+  INVALID_REQUEST: 'SFTP_INVALID_REQUEST',
+} as const
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 

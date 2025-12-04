@@ -14,6 +14,8 @@ jobs:
   notify:
     name: Notify Downstream
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Dispatch downstream repository
         env:

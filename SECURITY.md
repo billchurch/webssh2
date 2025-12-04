@@ -54,3 +54,37 @@ When deploying WebSSH2:
 - **Public Advisory**: Once a fix is released, we will publish a security advisory detailing the vulnerability, the fix, and assigning credit.
 
 Thank you for helping keep WebSSH2 and its users secure!
+
+## Shai-hulud 2.0 supply chain risk
+
+As of 2025-12-03, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
+
+The scanner performed the following checks:
+
+- Searched for risky npm lifecycle scripts (preinstall, postinstall)
+- Checked for known Shai-hulud 2.0 payload files (setup_bun.js, bun_environment.js)
+- Inspected GitHub Actions workflows for discussion-triggered backdoor patterns and secret-dumping jobs
+- Searched for known self-hosted runner and Docker breakout markers
+- Checked for leaked cloud credentials and unsafe npm token usage
+- Compared dependencies against a supplied list of known compromised npm packages (if provided)
+
+No matches were found. This is not a guarantee of safety, but it indicates that this project does not currently exhibit known Shai-hulud 2.0 patterns.
+
+### Hardening against Shai-hulud-style attacks
+
+Regardless of current status, this project aims to reduce supply chain risk through the following practices:
+
+- Dependencies are pinned, with automated checks to avoid adopting very recent releases until they age out an organization-defined delay window.
+- CI/CD tokens and cloud credentials follow least-privilege and short-lived patterns.
+- GitHub Actions workflows are restricted to known, reviewed actions from trusted sources.
+- Secret scanning is enabled for this repository.
+- npm lifecycle scripts are avoided where possible and are never used to download and execute remote code.
+- Cloud IAM policies are configured so that developer or CI credentials cannot directly access production infrastructure.
+
+For more information about detection logic or mitigations, contact the security team via [GitHub Security Advisories](https://github.com/billchurch/WebSSH2/security/advisories).
+
+---
+
+**Last updated:** 2025-12-03
+
+**Next review:** 2026-01-03

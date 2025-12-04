@@ -96,7 +96,7 @@ export class AuthServiceImpl implements AuthService {
 
     // Check store state
     const state = this.store.getState(sessionId)
-    if (state === undefined || state.auth.status !== 'authenticated') {
+    if (state?.auth.status !== 'authenticated') {
       logger('Session not authenticated in store:', sessionId)
       return ok(false)
     }

@@ -50,9 +50,9 @@ const createMockClient = (): MockClientWithTrigger => {
   }
 }
 
-// Mock SSH2 Client
+// Mock SSH2 Client - use function syntax for Vitest 4.0 constructor mock compatibility
 vi.mock('ssh2', () => ({
-  Client: vi.fn(() => createMockClient()),
+  Client: vi.fn(function() { return createMockClient() }),
 }))
 
 // Helper functions defined outside describe block to reduce nesting
@@ -143,7 +143,8 @@ describe('SSHService', () => {
 
     // Create mock client with event handling capability
     mockClient = createMockClient()
-    ;(SSH2Client as unknown as Mock).mockReturnValue(mockClient)
+    // Use mockImplementation with function syntax for Vitest 4.0 constructor mock compatibility
+    ;(SSH2Client as unknown as Mock).mockImplementation(function() { return mockClient })
 
     sshService = new SSHServiceImpl(mockDeps, mockStore)
   })

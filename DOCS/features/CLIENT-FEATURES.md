@@ -217,15 +217,29 @@ localStorage.setItem('webssh2.settings.global', JSON.stringify(settings))
 - LocalStorage API
 - CSS Grid and Flexbox
 
+## File Transfer
+
+WebSSH2 includes integrated SFTP support for file uploads and downloads directly through the web interface.
+
+### Features
+
+- **File Browser**: Graphical directory navigation
+- **Upload**: Drag-and-drop or file picker upload
+- **Download**: One-click file downloads
+- **Directory Operations**: Create and delete folders
+- **Progress Tracking**: Real-time transfer progress
+
+See [SFTP Documentation](./SFTP.md) for complete details.
+
 ## Known Limitations
 
 1. **Clipboard Security**: Some browsers restrict clipboard access without user interaction
 2. **Mobile Support**: Limited functionality on mobile devices
-3. **File Transfer**: No built-in SCP/SFTP support (use separate tools)
-4. **Multiple Sessions**: Each browser tab is a separate session
+3. **Multiple Sessions**: Each browser tab is a separate session
 
 ## Troubleshooting
 
 For common issues and solutions, see:
+
 - [Troubleshooting Guide](../reference/TROUBLESHOOTING.md)
 - [Browser Clipboard Issues](../reference/TROUBLESHOOTING.md#copypaste-not-working)

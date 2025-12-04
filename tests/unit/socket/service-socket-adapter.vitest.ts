@@ -65,9 +65,10 @@ class StubAuthPipeline implements Partial<UnifiedAuthPipeline> {
 }
 
 vi.mock('../../../app/auth/auth-pipeline.js', () => ({
-  UnifiedAuthPipeline: vi.fn(
-    (_request: unknown, _config: unknown) => new StubAuthPipeline()
-  )
+  // Use function syntax for Vitest 4.0 constructor mock compatibility
+  UnifiedAuthPipeline: vi.fn(function(_request: unknown, _config: unknown) {
+    return new StubAuthPipeline()
+  })
 }))
 
 vi.mock('../../../app/socket/adapters/service-socket-authentication.js', () => ({

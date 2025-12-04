@@ -1,3 +1,26 @@
+import type {
+  SftpListRequest,
+  SftpStatRequest,
+  SftpMkdirRequest,
+  SftpDeleteRequest,
+  SftpUploadStartRequest,
+  SftpUploadChunkRequest,
+  SftpUploadCancelRequest,
+  SftpDownloadStartRequest,
+  SftpDownloadCancelRequest,
+  SftpStatusResponse,
+  SftpDirectoryResponse,
+  SftpStatResponse,
+  SftpOperationResponse,
+  SftpUploadReadyResponse,
+  SftpUploadAckResponse,
+  SftpDownloadReadyResponse,
+  SftpDownloadChunkResponse,
+  SftpProgressResponse,
+  SftpCompleteResponse,
+  SftpErrorResponse
+} from './sftp.js'
+
 // Client → Server: credential authentication
 export interface AuthCredentials {
   username: string
@@ -55,6 +78,16 @@ export interface ClientToServerEvents {
   authenticate: (creds: AuthCredentials) => void
   // Single-command execution
   exec: (payload: ExecRequestPayload) => void
+  // SFTP operations
+  'sftp-list': (request: SftpListRequest) => void
+  'sftp-stat': (request: SftpStatRequest) => void
+  'sftp-mkdir': (request: SftpMkdirRequest) => void
+  'sftp-delete': (request: SftpDeleteRequest) => void
+  'sftp-upload-start': (request: SftpUploadStartRequest) => void
+  'sftp-upload-chunk': (request: SftpUploadChunkRequest) => void
+  'sftp-upload-cancel': (request: SftpUploadCancelRequest) => void
+  'sftp-download-start': (request: SftpDownloadStartRequest) => void
+  'sftp-download-cancel': (request: SftpDownloadCancelRequest) => void
 }
 
 // Server → Client: authentication protocol messages
@@ -93,6 +126,18 @@ export interface ServerToClientEvents {
   // Error channels
   ssherror: (message: string) => void
   error?: (message: string) => void
+  // SFTP responses
+  'sftp-status': (response: SftpStatusResponse) => void
+  'sftp-directory': (response: SftpDirectoryResponse) => void
+  'sftp-stat-result': (response: SftpStatResponse) => void
+  'sftp-operation-result': (response: SftpOperationResponse) => void
+  'sftp-upload-ready': (response: SftpUploadReadyResponse) => void
+  'sftp-upload-ack': (response: SftpUploadAckResponse) => void
+  'sftp-download-ready': (response: SftpDownloadReadyResponse) => void
+  'sftp-download-chunk': (response: SftpDownloadChunkResponse) => void
+  'sftp-progress': (response: SftpProgressResponse) => void
+  'sftp-complete': (response: SftpCompleteResponse) => void
+  'sftp-error': (response: SftpErrorResponse) => void
 }
 
 export interface InterServerEvents {}

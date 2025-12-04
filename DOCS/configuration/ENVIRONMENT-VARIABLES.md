@@ -93,6 +93,71 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Rate limit for shell output streams (bytes/second). `0` disables rate limiting |
 | `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK` | number | `16384` (16KB) | Socket.IO buffer threshold for stream backpressure control |
 
+### SFTP Configuration
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_SSH_SFTP_ENABLED` | boolean | `false` | Enable or disable SFTP file browser functionality |
+| `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE` | number | `104857600` (100MB) | Maximum file size for uploads/downloads in bytes |
+| `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Transfer rate limit in bytes/second. `0` disables rate limiting |
+| `WEBSSH2_SSH_SFTP_CHUNK_SIZE` | number | `32768` (32KB) | Chunk size for file transfers in bytes |
+| `WEBSSH2_SSH_SFTP_MAX_CONCURRENT_TRANSFERS` | number | `2` | Maximum concurrent file transfers per session |
+| `WEBSSH2_SSH_SFTP_ALLOWED_PATHS` | array | `null` (all paths) | Restrict SFTP access to specific directories (comma-separated or JSON) |
+| `WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS` | array | `[]` | File extensions to block from uploads/downloads (comma-separated or JSON) |
+| `WEBSSH2_SSH_SFTP_TIMEOUT` | number | `30000` (30s) | Operation timeout in milliseconds |
+
+#### SFTP Configuration Examples
+
+**Enable SFTP with size limit:**
+
+```bash
+# Enable SFTP with 50MB file size limit (SFTP is disabled by default)
+WEBSSH2_SSH_SFTP_ENABLED=true
+WEBSSH2_SSH_SFTP_MAX_FILE_SIZE=52428800
+```
+
+**Restricted SFTP for shared hosting:**
+
+```bash
+# Enable SFTP (disabled by default)
+WEBSSH2_SSH_SFTP_ENABLED=true
+
+# Restrict to home directory only
+WEBSSH2_SSH_SFTP_ALLOWED_PATHS="~,/home"
+
+# Block dangerous file extensions
+WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS=".exe,.sh,.bash,.py,.php,.pl"
+
+# Rate limit transfers to 1MB/s
+WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC=1048576
+```
+
+**High-performance SFTP for trusted environments:**
+
+```bash
+# Enable SFTP (disabled by default)
+WEBSSH2_SSH_SFTP_ENABLED=true
+
+# Larger file size limit (500MB)
+WEBSSH2_SSH_SFTP_MAX_FILE_SIZE=524288000
+
+# Larger chunks for faster transfers
+WEBSSH2_SSH_SFTP_CHUNK_SIZE=65536
+
+# Allow more concurrent transfers
+WEBSSH2_SSH_SFTP_MAX_CONCURRENT_TRANSFERS=5
+
+# No rate limiting
+WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC=0
+```
+
+**Disable SFTP entirely (default):**
+
+```bash
+# SFTP is disabled by default, but you can explicitly disable it
+WEBSSH2_SSH_SFTP_ENABLED=false
+```
+
 #### Authentication Allow List
 
 `WEBSSH2_AUTH_ALLOWED` lets administrators enforce which SSH authentication methods can be used. Supported tokens are:

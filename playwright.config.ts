@@ -44,10 +44,12 @@ export default defineConfig({
       WEBSSH2_SSH_READY_TIMEOUT: '10000' // Faster timeout for test suite
     },
   },
+  // Always run global teardown to clean up config.json
+  // Only run global setup when E2E SSH tests are enabled (to start the container)
+  globalTeardown: './tests/playwright/global-teardown.ts',
   ...(enableE2E
     ? {
         globalSetup: './tests/playwright/global-setup.ts',
-        globalTeardown: './tests/playwright/global-teardown.ts',
       }
     : {}),
 })

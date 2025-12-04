@@ -17,6 +17,9 @@ export type SshPort = number & { readonly __brand: 'SshPort' }
 export type AuthMethodToken = 'password' | 'keyboard-interactive' | 'publickey'
 export type AuthMethod = Branded<AuthMethodToken, 'AuthMethod'>
 
+// SFTP-related branded types
+export type TransferId = string & { readonly __brand: 'TransferId' }
+
 // File system branded types
 export type FilePath = string & { readonly __brand: 'FilePath' }
 
@@ -29,6 +32,7 @@ export const createUserId = (id: string): UserId => id as UserId
 export const createConnectionId = (id: string): ConnectionId => id as ConnectionId
 export const createSocketId = (id: string): SocketId => id as SocketId
 export const createAuthMethod = (method: AuthMethodToken): AuthMethod => method as AuthMethod
+export const createTransferId = (id: string): TransferId => id as TransferId
 
 // Type guards
 export const isSessionId = (value: unknown): value is SessionId =>
@@ -47,3 +51,6 @@ export const isAuthMethod = (value: unknown): value is AuthMethod =>
   value === 'password' ||
   value === 'keyboard-interactive' ||
   value === 'publickey'
+
+export const isTransferId = (value: unknown): value is TransferId =>
+  typeof value === 'string' && value.length > 0

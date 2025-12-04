@@ -142,6 +142,35 @@ export const createSessionCleaner = (
 }
 
 /**
+ * Error handler implementation
+ */
+function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+  debug('Route error:', err)
+
+  // Check if response already sent
+  if (res.headersSent) {
+    return
+  }
+
+  // Map error types to HTTP responses
+  let statusCode: number
+  if (err.name === 'ValidationError') {
+    statusCode = 400
+  } else if (err.name === 'AuthenticationError') {
+    statusCode = HTTP.UNAUTHORIZED
+  } else if (err.name === 'ConfigError') {
+    statusCode = HTTP.INTERNAL_SERVER_ERROR
+  } else {
+    statusCode = HTTP.INTERNAL_SERVER_ERROR
+  }
+
+  res.status(statusCode).json({
+    error: err.message,
+    type: err.name
+  })
+}
+
+/**
  * Create error response handler
  */
 export const createErrorHandler = (): ((
@@ -150,31 +179,7 @@ export const createErrorHandler = (): ((
   res: Response,
   next: NextFunction
 ) => void) => {
-  return (err: Error, _req: Request, res: Response, _next: NextFunction): void => {
-    debug('Route error:', err)
-    
-    // Check if response already sent
-    if (res.headersSent) {
-      return
-    }
-
-    // Map error types to HTTP responses
-    let statusCode: number
-    if (err.name === 'ValidationError') {
-      statusCode = 400
-    } else if (err.name === 'AuthenticationError') {
-      statusCode = HTTP.UNAUTHORIZED
-    } else if (err.name === 'ConfigError') {
-      statusCode = HTTP.INTERNAL_SERVER_ERROR
-    } else {
-      statusCode = HTTP.INTERNAL_SERVER_ERROR
-    }
-
-    res.status(statusCode).json({
-      error: err.message,
-      type: err.name
-    })
-  }
+  return errorHandler
 }
 
 /**

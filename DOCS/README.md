@@ -27,6 +27,8 @@ Learn how to configure WebSSH2:
 
 Explore WebSSH2 capabilities:
 
+- **[Client Features](./features/CLIENT-FEATURES.md)** - Terminal, clipboard, search, and UI features
+- **[SFTP File Transfer](./features/SFTP.md)** - Upload and download files through the browser
 - **[Authentication Methods](./features/AUTHENTICATION.md)** - Password, key-based, and SSO authentication
 - **[Private Key Authentication](./features/PRIVATE-KEYS.md)** - SSH key setup and usage
 - **[Keyboard Interactive](./features/KEYBOARD-INTERACTIVE.md)** - Multi-factor authentication support
@@ -96,6 +98,10 @@ Historical and reference documentation:
 #### Customize the Interface
 - [URL Parameters](./configuration/URL-PARAMETERS.md)
 - [Environment Variables](./configuration/ENVIRONMENT-VARIABLES.md)
+
+#### Transfer Files
+- [SFTP File Browser](./features/SFTP.md)
+- [Client Features](./features/CLIENT-FEATURES.md)
 
 #### Integrate with My Application
 - [Routes API](./api/ROUTES.md)
