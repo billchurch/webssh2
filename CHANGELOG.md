@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.5.0...webssh2-server-v2.6.0) (2025-12-04)
+
+
+### Features
+
+* add SFTP support, fixes [#322](https://github.com/billchurch/webssh2/issues/322) ([cc5d932](https://github.com/billchurch/webssh2/commit/cc5d93214b244cac5692ecd6ebb6871d508f1f39))
+
 ## [2.5.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.4.0...webssh2-server-v2.5.0) (2025-12-01)
 
 
