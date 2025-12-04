@@ -24,12 +24,16 @@ on:
       - main
 
 concurrency:
-  group: docker-publish-${{ github.ref }}
+  group: docker-publish-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # Skip push events if this commit has a release tag (release event will handle it)
+    if: |
+      github.event_name != 'push' ||
+      !startsWith(github.event.head_commit.message, 'chore(main): release webssh2-server')
     permissions:
       contents: write
       packages: write
@@ -46,6 +50,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          fetch-tags: true
           ref: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref }}
 
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -132,7 +137,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
             type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
-            type=raw,value=main,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            type=raw,value=main,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
             type=raw,value=${{ steps.release_meta.outputs.semver_full }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
             type=raw,value=${{ steps.release_meta.outputs.semver_minor }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
             type=raw,value=${{ steps.release_meta.outputs.semver_major }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
