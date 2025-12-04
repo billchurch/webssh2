@@ -89,6 +89,7 @@ Click on any **file** (not folder) to open a detailed information modal that dis
 | **Group** | File group name |
 
 The modal includes action buttons:
+
 - **Download** - Download the file to your computer
 - **Delete** - Delete the file (with confirmation prompt)
 
