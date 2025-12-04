@@ -68,11 +68,31 @@ Different file types are indicated by icons:
 
 ### Navigating Directories
 
-- **click** a folder to open it
-- Click **..** (parent entry) to go up one level
-- Use the **←** (back) button to go to parent directory
+- **Click** a folder to open it
+- Click **..** or **←** (parent entry) to go up one level
 - Use the **Home** button to return to your home directory
 - Type a path directly in the path bar and press Enter
+
+### Viewing File Details
+
+Click on any **file** (not folder) to open a detailed information modal that displays:
+
+| Field | Description |
+|-------|-------------|
+| **File Name** | Name with file type icon |
+| **Path** | Full path to the file |
+| **Size** | File size in human-readable format |
+| **Modified** | Date the file was last modified |
+| **Time** | Time the file was last modified |
+| **Permissions** | Unix permission string (e.g., `rwxr-xr-x`) |
+| **Owner** | File owner username |
+| **Group** | File group name |
+
+The modal includes action buttons:
+- **Download** - Download the file to your computer
+- **Delete** - Delete the file (with confirmation prompt)
+
+> **Tip**: Use the file info modal for a cleaner view of file details, especially on smaller screens where some columns may be hidden in the list view.
 
 ### Downloading Files
 
@@ -183,6 +203,7 @@ The SFTP feature behavior is controlled by server configuration. Administrators 
 2. **Directory listing is empty or incomplete**
    - Try clicking the Refresh button
    - Check if you have read permissions
+   - Directory is actually empty
 
 3. **Upload fails immediately**
    - Check if you have write permissions
