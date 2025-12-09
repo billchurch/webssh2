@@ -90,7 +90,7 @@ describe('Config Safe Logging', () => {
       expect(masked.session.name).toBe('webssh2')
     })
 
-    it('should show count of origins instead of values', () => {
+    it('should show actual origins array', () => {
       const config: Config = {
         ...baseConfig,
         http: { origins: ['http://localhost:3000', 'https://example.com'] }
@@ -98,15 +98,58 @@ describe('Config Safe Logging', () => {
 
       const masked = maskSensitiveConfig(config)
 
-      expect(masked.http.origins).toBe('2 origin(s)')
+      expect(masked.http.origins).toEqual(['http://localhost:3000', 'https://example.com'])
     })
 
-    it('should show algorithm counts', () => {
+    it('should show actual algorithm arrays', () => {
       const masked = maskSensitiveConfig(baseConfig)
 
-      expect(masked.ssh.algorithms.cipher).toBe(1)
-      expect(masked.ssh.algorithms.kex).toBe(1)
-      expect(masked.ssh.algorithms.serverHostKey).toBe(1)
+      expect(masked.ssh.algorithms.cipher).toEqual(['aes256-ctr'])
+      expect(masked.ssh.algorithms.kex).toEqual(['curve25519-sha256'])
+      expect(masked.ssh.algorithms.hmac).toEqual(['hmac-sha2-256'])
+      expect(masked.ssh.algorithms.compress).toEqual(['none'])
+      expect(masked.ssh.algorithms.serverHostKey).toEqual(['ssh-ed25519'])
+    })
+
+    it('should show all algorithm names for debugging with multiple algorithms', () => {
+      const config: Config = {
+        ...baseConfig,
+        ssh: {
+          ...baseConfig.ssh,
+          algorithms: {
+            cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com', 'aes256-ctr'],
+            kex: ['ecdh-sha2-nistp256', 'ecdh-sha2-nistp384'],
+            hmac: ['hmac-sha2-256', 'hmac-sha2-512'],
+            compress: ['none', 'zlib@openssh.com'],
+            serverHostKey: ['ecdsa-sha2-nistp256', 'ssh-rsa', 'ssh-ed25519']
+          }
+        }
+      }
+
+      const masked = maskSensitiveConfig(config)
+
+      // Verify all algorithm names are present
+      expect(masked.ssh.algorithms.cipher).toHaveLength(3)
+      expect(masked.ssh.algorithms.cipher).toContain('aes256-gcm@openssh.com')
+      expect(masked.ssh.algorithms.cipher).toContain('aes128-gcm@openssh.com')
+      expect(masked.ssh.algorithms.cipher).toContain('aes256-ctr')
+
+      expect(masked.ssh.algorithms.kex).toHaveLength(2)
+      expect(masked.ssh.algorithms.kex).toContain('ecdh-sha2-nistp256')
+      expect(masked.ssh.algorithms.kex).toContain('ecdh-sha2-nistp384')
+
+      expect(masked.ssh.algorithms.hmac).toHaveLength(2)
+      expect(masked.ssh.algorithms.hmac).toContain('hmac-sha2-256')
+      expect(masked.ssh.algorithms.hmac).toContain('hmac-sha2-512')
+
+      expect(masked.ssh.algorithms.compress).toHaveLength(2)
+      expect(masked.ssh.algorithms.compress).toContain('none')
+      expect(masked.ssh.algorithms.compress).toContain('zlib@openssh.com')
+
+      expect(masked.ssh.algorithms.serverHostKey).toHaveLength(3)
+      expect(masked.ssh.algorithms.serverHostKey).toContain('ecdsa-sha2-nistp256')
+      expect(masked.ssh.algorithms.serverHostKey).toContain('ssh-rsa')
+      expect(masked.ssh.algorithms.serverHostKey).toContain('ssh-ed25519')
     })
   })
 })
