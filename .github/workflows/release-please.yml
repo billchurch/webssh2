@@ -145,3 +145,19 @@ jobs:
           fi
 
           echo "Dispatched webssh2-release for tag ${RELEASE_TAG}"
+
+      # Trigger docker-publish workflow
+      # Note: Using repository_dispatch because release events triggered by GITHUB_TOKEN
+      # do not cascade to other workflows (GitHub security feature to prevent loops)
+      - name: Trigger Docker image build
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          gh workflow run docker-publish.yml \
+            --ref "${RELEASE_TAG}" \
+            -f release_tag="${RELEASE_TAG}" \
+            -f publish_latest="true"
+
+          echo "Triggered docker-publish workflow for ${RELEASE_TAG}"

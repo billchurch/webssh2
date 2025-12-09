@@ -16,6 +16,9 @@ on:
         default: ''
         required: false
         type: string
+  # Note: release events triggered by GITHUB_TOKEN do not cascade to other workflows.
+  # This is a GitHub security feature to prevent infinite loops. The release-please
+  # workflow explicitly triggers this workflow via workflow_dispatch instead.
   release:
     types:
       - published
@@ -30,7 +33,8 @@ concurrency:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    # Skip push events if this commit has a release tag (release event will handle it)
+    # Skip push events from release-please commits since those are explicitly triggered
+    # via workflow_dispatch by the release-please workflow after publishing
     if: |
       github.event_name != 'push' ||
       !startsWith(github.event.head_commit.message, 'chore(main): release webssh2-server')
