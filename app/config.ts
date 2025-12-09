@@ -1,6 +1,7 @@
 // server
 // app/config.ts
 
+import { inspect } from 'node:util'
 import { generateSecureSecret, enhanceConfig, err } from './utils/index.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
@@ -153,7 +154,9 @@ export async function loadConfigAsync(): Promise<Config> {
   }
   
   const finalConfig = result.value
-  debug('Loaded configuration: %O', maskSensitiveConfig(finalConfig))
+  const maskedConfig = maskSensitiveConfig(finalConfig)
+  // Use util.inspect with depth=null to show all nested arrays (especially algorithms)
+  debug('Loaded configuration: %s', inspect(maskedConfig, { depth: null, colors: false }))
   return finalConfig
 }
 

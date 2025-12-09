@@ -247,15 +247,50 @@ You can configure SSH algorithms in two ways:
 | `WEBSSH2_SSH_ALGORITHMS_COMPRESS` | array | Compression algorithms |
 | `WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY` | array | Server host key algorithms |
 
-#### Algorithm Examples
+#### Algorithm Precedence
+
+**Individual algorithm settings override preset values.** When both a preset and individual algorithm variables are specified, the preset is applied first as a baseline, then individual settings override specific algorithm types.
+
+This allows you to extend presets with additional algorithms for legacy compatibility:
 
 ```bash
-# Using preset (recommended)
+# Use modern preset as baseline, but add hmac-sha1 for legacy server support
 WEBSSH2_SSH_ALGORITHMS_PRESET=modern
+WEBSSH2_SSH_ALGORITHMS_HMAC="hmac-sha1,hmac-sha2-256,hmac-sha2-512"
 
-# Using individual arrays
+# Result: Modern preset algorithms are used, except HMAC which uses your custom list
+```
+
+#### Algorithm Examples
+
+**Using preset (recommended):**
+
+```bash
+# Simple modern security profile
+WEBSSH2_SSH_ALGORITHMS_PRESET=modern
+```
+
+**Using individual arrays only:**
+
+```bash
+# Full manual configuration (no preset)
 WEBSSH2_SSH_ALGORITHMS_CIPHER="aes256-gcm@openssh.com,aes128-gcm@openssh.com"
 WEBSSH2_SSH_ALGORITHMS_KEX="ecdh-sha2-nistp256,ecdh-sha2-nistp384"
+WEBSSH2_SSH_ALGORITHMS_HMAC="hmac-sha2-256,hmac-sha2-512"
+WEBSSH2_SSH_ALGORITHMS_COMPRESS="none,zlib@openssh.com"
+WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY="ecdsa-sha2-nistp256,ssh-rsa"
+```
+
+**Extending preset with legacy compatibility:**
+
+```bash
+# Government/legacy server requiring hmac-sha1 alongside modern algorithms
+WEBSSH2_SSH_ALGORITHMS_PRESET=modern
+WEBSSH2_SSH_ALGORITHMS_HMAC="hmac-sha1,hmac-sha2-256,hmac-sha2-512"
+
+# FIPS environment with custom host keys
+WEBSSH2_SSH_ALGORITHMS_PRESET=strict
+WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY="rsa-sha2-256,rsa-sha2-512"
 ```
 
 ### SSH Stream Backpressure and Output Limits
@@ -621,6 +656,7 @@ Once satisfied with environment variable configuration, you can remove `config.j
 1. Use presets (`modern`, `legacy`, `strict`) for simplicity
 2. Individual algorithms must be valid SSH algorithm names
 3. Check SSH2 library documentation for supported algorithms
+4. Individual algorithm variables override preset values - use this to extend presets with legacy algorithms
 
 ## Support
 

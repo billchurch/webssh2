@@ -141,29 +141,50 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
 
 /**
  * Map environment variables to configuration object
+ * Individual algorithm settings take precedence over preset values
  * @param env - Environment variables object
  * @returns Configuration object with mapped values
  * @pure
  */
 export function mapEnvironmentVariables(env: Record<string, string | undefined>): Record<string, unknown> {
   const config: Record<string, unknown> = {}
-  
-  for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
-    // Access restricted to known keys from ENV_VAR_MAPPING
-    const envValue = safeGet(env, createSafeKey(envVar))
-    if (envValue !== undefined && typeof envValue === 'string') {
-      if (mapping.type === 'preset') {
-        const preset = getAlgorithmPreset(envValue)
-        if (preset != null) {
-          setNestedProperty(config, mapping.path, preset)
+
+  // First pass: process preset if it exists (provides base algorithm values)
+  const presetVar = 'WEBSSH2_SSH_ALGORITHMS_PRESET'
+  const presetValue = safeGet(env, createSafeKey(presetVar))
+  if (presetValue !== undefined && typeof presetValue === 'string') {
+    const preset = getAlgorithmPreset(presetValue)
+    if (preset != null) {
+      const presetMapping = safeGet(ENV_VAR_MAPPING, createSafeKey(presetVar)) as EnvVarMap | undefined
+      if (presetMapping !== undefined) {
+        // Clone the preset to avoid mutating the global ALGORITHM_PRESETS object
+        const presetClone = {
+          cipher: [...preset.cipher],
+          kex: [...preset.kex],
+          hmac: [...preset.hmac],
+          compress: [...preset.compress],
+          serverHostKey: [...preset.serverHostKey]
         }
-      } else {
-        const parsedValue = parseEnvValue(envValue, mapping.type)
-        setNestedProperty(config, mapping.path, parsedValue)
+        setNestedProperty(config, presetMapping.path, presetClone)
       }
     }
   }
-  
+
+  // Second pass: process all non-preset variables (individual overrides take precedence)
+  for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
+    // Skip preset since it was already processed
+    if (mapping.type === 'preset') {
+      continue
+    }
+
+    // Access restricted to known keys from ENV_VAR_MAPPING
+    const envValue = safeGet(env, createSafeKey(envVar))
+    if (envValue !== undefined && typeof envValue === 'string') {
+      const parsedValue = parseEnvValue(envValue, mapping.type)
+      setNestedProperty(config, mapping.path, parsedValue)
+    }
+  }
+
   return config
 }
 

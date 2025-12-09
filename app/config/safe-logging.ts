@@ -6,7 +6,7 @@ import type { Config } from '../types/config.js'
 export interface MaskedConfig {
   listen: Config['listen']
   http: {
-    origins: string
+    origins: string[]
   }
   user: {
     name: string | null
@@ -25,11 +25,11 @@ export interface MaskedConfig {
     keepaliveCountMax: Config['ssh']['keepaliveCountMax']
     allowedSubnets: number
     algorithms: {
-      cipher: number
-      kex: number
-      hmac: number
-      compress: number
-      serverHostKey: number
+      cipher: string[]
+      kex: string[]
+      hmac: string[]
+      compress: string[]
+      serverHostKey: string[]
     }
   }
   header: Config['header']
@@ -55,13 +55,6 @@ const maskWhenFilled = (value: string | null | undefined): string | null => {
   return '***'
 }
 
-const describeOrigins = (origins: string[]): string => {
-  if (origins.length === 0) {
-    return 'none'
-  }
-  return `${origins.length} origin(s)`
-}
-
 const maskSessionSecret = (secret: string): string => {
   if (secret.length === 0) {
     return 'not set'
@@ -79,7 +72,7 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
   return {
     listen: config.listen,
     http: {
-      origins: describeOrigins(config.http.origins)
+      origins: [...config.http.origins]
     },
     user: {
       name: maskWhenFilled(config.user.name),
@@ -98,11 +91,11 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
       keepaliveCountMax: config.ssh.keepaliveCountMax,
       allowedSubnets: config.ssh.allowedSubnets?.length ?? 0,
       algorithms: {
-        cipher: config.ssh.algorithms.cipher.length,
-        kex: config.ssh.algorithms.kex.length,
-        hmac: config.ssh.algorithms.hmac.length,
-        compress: config.ssh.algorithms.compress.length,
-        serverHostKey: config.ssh.algorithms.serverHostKey.length
+        cipher: [...config.ssh.algorithms.cipher],
+        kex: [...config.ssh.algorithms.kex],
+        hmac: [...config.ssh.algorithms.hmac],
+        compress: [...config.ssh.algorithms.compress],
+        serverHostKey: [...config.ssh.algorithms.serverHostKey]
       }
     },
     header: config.header,
