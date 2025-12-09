@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.6.0...webssh2-server-v2.6.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* SSH algorithm env var precedence and debug output improvements ([#460](https://github.com/billchurch/webssh2/issues/460)) ([bceb5b8](https://github.com/billchurch/webssh2/commit/bceb5b85bc7faeac610ec28957fd0640b2247e38)), closes [#459](https://github.com/billchurch/webssh2/issues/459)
+
 ## [2.6.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.5.0...webssh2-server-v2.6.0) (2025-12-04)
 
 
