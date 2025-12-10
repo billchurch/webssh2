@@ -174,16 +174,44 @@ See [Environment Forwarding](../features/ENVIRONMENT-FORWARDING.md) for detailed
 
 ### Docker Issues
 
+#### Container Can't Resolve SSH Hostnames
+
+**Symptoms:**
+- Error: `DNS resolution failed for 'myhost'`
+- `getaddrinfo ENOTFOUND hostname` in logs
+- IP addresses work but hostnames don't
+
+**Causes:**
+- Docker's internal DNS resolver (127.0.0.11) can't resolve external hostnames
+
+**Solutions:**
+1. **Configure DNS servers (recommended):**
+   ```bash
+   docker run -d --dns 8.8.8.8 --dns 8.8.4.4 -p 2222:2222 ghcr.io/billchurch/webssh2:latest
+   ```
+
+2. **Mount host's resolv.conf:**
+   ```bash
+   docker run -d -v /etc/resolv.conf:/etc/resolv.conf:ro -p 2222:2222 ghcr.io/billchurch/webssh2:latest
+   ```
+
+3. **Use host network (not recommended):**
+   ```bash
+   docker run -d --network host -e WEBSSH2_LISTEN_PORT=2222 ghcr.io/billchurch/webssh2:latest
+   ```
+
+See [Docker DNS Resolution](../getting-started/DOCKER.md#dns-resolution-for-ssh-hostnames) for detailed configuration examples.
+
 #### Container Can't Connect to SSH Hosts
 
 **Causes:**
 - Network isolation
-- DNS resolution issues
+- Firewall rules
 
 **Solutions:**
 1. Use host network: `--network host`
-2. Configure DNS: `--dns 8.8.8.8`
-3. Check container networking: `docker network ls`
+2. Check container networking: `docker network ls`
+3. Verify connectivity: `docker exec <container> ping <target>`
 
 #### Configuration Not Loading
 

@@ -415,6 +415,81 @@ docker run -d \
 
 ## Common Issues
 
+### DNS Resolution for SSH Hostnames
+
+Docker containers use an internal DNS resolver (127.0.0.11) by default, which may not resolve external hostnames properly. If you see errors like `getaddrinfo ENOTFOUND hostname` when trying to connect to SSH servers by hostname, you need to configure DNS resolution.
+
+**Symptoms:**
+- Error: `DNS resolution failed for 'myhost'`
+- Connecting by IP address works, but hostnames fail
+- `getaddrinfo ENOTFOUND` errors in logs
+
+**Solutions (in order of preference):**
+
+#### 1. Configure DNS Servers (Recommended)
+
+Add DNS servers to your Docker run command or Compose file:
+
+```bash
+# Docker run
+docker run -d \
+  --name webssh2 \
+  --dns 8.8.8.8 \
+  --dns 8.8.4.4 \
+  -p 2222:2222 \
+  ghcr.io/billchurch/webssh2:latest
+```
+
+```yaml
+# Docker Compose
+services:
+  webssh2:
+    image: ghcr.io/billchurch/webssh2:latest
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "2222:2222"
+```
+
+#### 2. Mount Host's resolv.conf
+
+Inherit DNS settings from the host system:
+
+```bash
+# Docker run
+docker run -d \
+  --name webssh2 \
+  -v /etc/resolv.conf:/etc/resolv.conf:ro \
+  -p 2222:2222 \
+  ghcr.io/billchurch/webssh2:latest
+```
+
+```yaml
+# Docker Compose
+services:
+  webssh2:
+    image: ghcr.io/billchurch/webssh2:latest
+    volumes:
+      - /etc/resolv.conf:/etc/resolv.conf:ro
+    ports:
+      - "2222:2222"
+```
+
+#### 3. Use Host Network Mode (Not Recommended)
+
+This bypasses Docker's network isolation entirely (security implications):
+
+```bash
+docker run -d \
+  --name webssh2 \
+  --network host \
+  -e WEBSSH2_LISTEN_PORT=2222 \
+  ghcr.io/billchurch/webssh2:latest
+```
+
+**Note:** IP addresses will work without any DNS configuration. Only hostnames require DNS setup.
+
 ### Cannot Connect to SSH Hosts
 
 ```bash
