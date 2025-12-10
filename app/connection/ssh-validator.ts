@@ -77,6 +77,58 @@ export function analyzeConnectionError(error: {
   return 'unknown'
 }
 
+/**
+ * Enhance SSH connection error message with helpful context
+ * @param error - Error object from SSH connection
+ * @returns Enhanced error message
+ * @pure
+ */
+export function enhanceErrorMessage(error: {
+  code?: string
+  message: string
+}): string {
+  const normalizedMessage = error.message.toLowerCase()
+
+  // DNS resolution errors - add Docker troubleshooting hint
+  if (isDnsResolutionIssue(error.code, normalizedMessage)) {
+    // Extract hostname from error message (limited length for safety)
+    const hostname = extractHostnameFromDnsError(error.message)
+
+    return `DNS resolution failed for '${hostname}'. ` +
+           'If running in Docker, ensure DNS is configured (e.g., --dns 8.8.8.8). ' +
+           'See: https://github.com/billchurch/webssh2/blob/main/DOCS/getting-started/DOCKER.md#dns-resolution-for-ssh-hostnames'
+  }
+
+  // Return original message for other error types
+  return error.message
+}
+
+const extractHostnameFromDnsError = (message: string): string => {
+  // Find 'getaddrinfo' followed by optional 'ENOTFOUND' and capture next word
+  // Limit to reasonable hostname length to prevent catastrophic backtracking
+  const parts = message.split(/\s+/)
+  const getaddrinfoIndex = parts.findIndex(part => part.toLowerCase().includes('getaddrinfo'))
+
+  if (getaddrinfoIndex === -1) {
+    return 'hostname'
+  }
+
+  // Look for ENOTFOUND or hostname in next 2 parts
+  const searchEnd = Math.min(getaddrinfoIndex + 3, parts.length)
+  for (let i = getaddrinfoIndex + 1; i < searchEnd; i += 1) {
+    const part = parts.at(i)
+    if (part === undefined || part === '') {
+      continue
+    }
+    if (part.toUpperCase() !== 'ENOTFOUND') {
+      // Sanitize hostname - only allow valid hostname characters
+      return part.replace(/[^a-zA-Z0-9.-]/g, '').slice(0, 253)
+    }
+  }
+
+  return 'hostname'
+}
+
 const isDnsResolutionIssue = (code: string | undefined, message: string): boolean => {
   if (codeMatches(code, DNS_ERROR_CODES)) {
     return true

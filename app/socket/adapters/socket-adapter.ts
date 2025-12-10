@@ -13,6 +13,7 @@ import {
   createInitialSessionState,
   type SessionState,
 } from '../handlers/auth-handler.js'
+import { enhanceErrorMessage } from '../../connection/ssh-validator.js'
 import {
   handleTerminalSetup,
   handleTerminalResize,
@@ -171,7 +172,7 @@ export class SocketAdapter {
             this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
               debug('Auth handler error:', error)
               // Emit auth failure to client when handler fails
-              const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+              const errorMessage = error instanceof Error ? enhanceErrorMessage(error) : 'Authentication failed'
               this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
                 action: 'auth_result',
                 success: false,
@@ -209,7 +210,7 @@ export class SocketAdapter {
         this.handlers?.onAuth(result.credentials, this.sessionState).catch((error: unknown) => {
           debug('Auth handler error:', error)
           // Emit auth failure to client when handler fails
-          const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+          const errorMessage = error instanceof Error ? enhanceErrorMessage(error) : 'Authentication failed'
           this.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
             action: 'auth_result',
             success: false,
