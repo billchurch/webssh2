@@ -445,12 +445,15 @@ docker run -d \
 services:
   webssh2:
     image: ghcr.io/billchurch/webssh2:latest
+    network_mode: "bridge"  # Required for custom DNS in Docker Compose
     dns:
       - 8.8.8.8
       - 8.8.4.4
     ports:
       - "2222:2222"
 ```
+
+**Note:** The `network_mode: "bridge"` setting is required for custom DNS to take effect in Docker Compose. Without it, the `dns` configuration may be ignored.
 
 #### 2. Mount Host's resolv.conf
 
