@@ -20,6 +20,9 @@ export type AuthMethod = Branded<AuthMethodToken, 'AuthMethod'>
 // SFTP-related branded types
 export type TransferId = string & { readonly __brand: 'TransferId' }
 
+// Prompt-related branded types
+export type PromptId = string & { readonly __brand: 'PromptId' }
+
 // File system branded types
 export type FilePath = string & { readonly __brand: 'FilePath' }
 
@@ -33,6 +36,7 @@ export const createConnectionId = (id: string): ConnectionId => id as Connection
 export const createSocketId = (id: string): SocketId => id as SocketId
 export const createAuthMethod = (method: AuthMethodToken): AuthMethod => method as AuthMethod
 export const createTransferId = (id: string): TransferId => id as TransferId
+export const createPromptId = (id: string): PromptId => id as PromptId
 
 // Type guards
 export const isSessionId = (value: unknown): value is SessionId =>
@@ -54,3 +58,6 @@ export const isAuthMethod = (value: unknown): value is AuthMethod =>
 
 export const isTransferId = (value: unknown): value is TransferId =>
   typeof value === 'string' && value.length > 0
+
+export const isPromptId = (value: unknown): value is PromptId =>
+  typeof value === 'string' && value.length > 0 && value.length <= 128

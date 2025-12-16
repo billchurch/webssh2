@@ -24,6 +24,7 @@ import { ServiceSocketAuthentication } from './service-socket-authentication.js'
 import { ServiceSocketTerminal } from './service-socket-terminal.js'
 import { ServiceSocketControl } from './service-socket-control.js'
 import { ServiceSocketSftp } from './service-socket-sftp.js'
+import { ServiceSocketPrompt } from './service-socket-prompt.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 
 const debug = createNamespacedDebug('socket:service-adapter')
@@ -50,6 +51,7 @@ export class ServiceSocketAdapter {
   private readonly terminal: ServiceSocketTerminal
   private readonly control: ServiceSocketControl
   private readonly sftp: ServiceSocketSftp
+  private readonly prompt: ServiceSocketPrompt
 
   constructor(
     private readonly socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
@@ -75,7 +77,8 @@ export class ServiceSocketAdapter {
       logger: createAppStructuredLogger({ namespace: 'webssh2:socket', config })
     }
 
-    this.auth = new ServiceSocketAuthentication(this.context)
+    this.prompt = new ServiceSocketPrompt(this.context)
+    this.auth = new ServiceSocketAuthentication(this.context, this.prompt)
     this.terminal = new ServiceSocketTerminal(this.context)
     this.control = new ServiceSocketControl(this.context)
     this.sftp = new ServiceSocketSftp(this.context)
@@ -134,6 +137,12 @@ export class ServiceSocketAdapter {
     this.socket.on(SOCKET_EVENTS.DISCONNECT, () => {
       this.control.handleDisconnect()
       this.sftp.handleDisconnect()
+      this.prompt.handleDisconnect()
+    })
+
+    // Prompt system event handler
+    this.socket.on(SOCKET_EVENTS.PROMPT_RESPONSE, response => {
+      void this.prompt.handlePromptResponse(response)
     })
 
     // SFTP event handlers

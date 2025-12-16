@@ -20,6 +20,89 @@ import type {
   SftpCompleteResponse,
   SftpErrorResponse
 } from './sftp.js'
+import type { PromptId } from '../../branded.js'
+
+// =============================================================================
+// Prompt System Types
+// =============================================================================
+
+/**
+ * Button configuration for prompts
+ */
+export interface PromptButton {
+  /** Action identifier sent back in response */
+  readonly action: string
+  /** Display label for the button */
+  readonly label: string
+  /** Visual style variant */
+  readonly variant?: 'primary' | 'secondary' | 'danger'
+}
+
+/**
+ * Input field configuration for input-type prompts
+ */
+export interface PromptInput {
+  /** Key for the input value in response */
+  readonly key: string
+  /** Display label for the input */
+  readonly label: string
+  /** Input type determining rendering */
+  readonly type: 'text' | 'password' | 'textarea'
+  /** Placeholder text */
+  readonly placeholder?: string
+  /** Pre-filled default value */
+  readonly defaultValue?: string
+  /** Whether this field is required */
+  readonly required?: boolean
+}
+
+/**
+ * Main prompt payload sent from server to client
+ */
+export interface PromptPayload {
+  /** Unique identifier for tracking responses */
+  readonly id: PromptId
+  /** Type of prompt determining behavior */
+  readonly type: 'input' | 'confirm' | 'notice' | 'toast'
+  /** Title displayed at top of prompt */
+  readonly title: string
+  /** Main message content */
+  readonly message?: string
+  /** Button configurations */
+  readonly buttons?: readonly PromptButton[]
+  /** Input field configurations (only for type: 'input') */
+  readonly inputs?: readonly PromptInput[]
+  /** Severity level for styling */
+  readonly severity?: 'info' | 'warning' | 'error' | 'success'
+  /** Icon name from allowed list */
+  readonly icon?: string
+  /** Whether to auto-focus the prompt */
+  readonly autoFocus?: boolean
+  /** Auto-dismiss timeout in milliseconds */
+  readonly timeout?: number
+  /** Allow clicking backdrop to close */
+  readonly closeOnBackdrop?: boolean
+}
+
+/**
+ * Response payload sent from client to server
+ */
+export interface PromptResponsePayload {
+  /** Matches the prompt ID */
+  readonly id: PromptId
+  /** Action taken: button action, 'dismissed', or 'timeout' */
+  readonly action: string
+  /** Input values keyed by input key (only for type: 'input') */
+  readonly inputs?: Readonly<Record<string, string>>
+}
+
+/**
+ * Acknowledgement for prompt delivery
+ */
+export interface PromptAck {
+  /** Confirmation that prompt was received */
+  readonly received: true
+}
 
 // Client → Server: credential authentication
 export interface AuthCredentials {
@@ -88,6 +171,8 @@ export interface ClientToServerEvents {
   'sftp-upload-cancel': (request: SftpUploadCancelRequest) => void
   'sftp-download-start': (request: SftpDownloadStartRequest) => void
   'sftp-download-cancel': (request: SftpDownloadCancelRequest) => void
+  // Prompt system
+  'prompt-response': (response: PromptResponsePayload) => void
 }
 
 // Server → Client: authentication protocol messages
@@ -138,6 +223,8 @@ export interface ServerToClientEvents {
   'sftp-progress': (response: SftpProgressResponse) => void
   'sftp-complete': (response: SftpCompleteResponse) => void
   'sftp-error': (response: SftpErrorResponse) => void
+  // Prompt system (with optional ack callback for delivery confirmation)
+  prompt: (payload: PromptPayload, ack?: (response: PromptAck) => void) => void
 }
 
 export interface InterServerEvents {}

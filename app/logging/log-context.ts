@@ -2,7 +2,7 @@
 // Context metadata accepted by structured logging events
 
 export type LogProtocol = 'ssh' | 'sftp' | 'scp'
-export type LogSubsystem = 'shell' | 'sftp' | 'scp' | 'exec'
+export type LogSubsystem = 'shell' | 'sftp' | 'scp' | 'exec' | 'prompt'
 export type LogStatus = 'success' | 'failure'
 export type LogAuthMethod =
   | 'publickey'

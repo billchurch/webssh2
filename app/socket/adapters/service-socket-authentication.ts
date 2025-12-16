@@ -1,16 +1,21 @@
-import type { AuthCredentials } from '../../types/contracts/v1/socket.js'
+import type { AuthCredentials, PromptInput } from '../../types/contracts/v1/socket.js'
 import type { SftpStatusResponse } from '../../types/contracts/v1/sftp.js'
 import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
 import type { AdapterContext } from './service-socket-shared.js'
+import type { ServiceSocketPrompt } from './service-socket-prompt.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
+import { PROMPT_INPUT_TYPES } from '../../constants/prompt.js'
 import { buildSSHConfig } from './ssh-config.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import { evaluateAuthMethodPolicy, isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 
 export class ServiceSocketAuthentication {
-  constructor(private readonly context: AdapterContext) {}
+  constructor(
+    private readonly context: AdapterContext,
+    private readonly promptAdapter: ServiceSocketPrompt
+  ) {}
 
   checkInitialAuth(): void {
     const { authPipeline, socket, debug } = this.context
@@ -61,15 +66,105 @@ export class ServiceSocketAuthentication {
     this.context.state.requestedKeyboardInteractive = true
     this.context.debug(`Requesting keyboard-interactive auth from client ${this.context.socket.id}`)
 
-    this.context.socket.emit(SOCKET_EVENTS.AUTHENTICATION, {
-      action: 'keyboard-interactive',
-      prompts: [
-        { prompt: 'Username: ', echo: true },
-        { prompt: 'Password: ', echo: false }
-      ],
-      name: 'SSH Authentication',
-      instructions: 'Please provide your credentials'
-    })
+    // Use the new prompt system for keyboard-interactive auth
+    const inputs: PromptInput[] = [
+      {
+        key: 'username',
+        label: 'Username:',
+        type: PROMPT_INPUT_TYPES.TEXT,
+        required: true
+      },
+      {
+        key: 'password',
+        label: 'Password:',
+        type: PROMPT_INPUT_TYPES.PASSWORD,
+        required: true
+      }
+    ]
+
+    this.promptAdapter.sendInputPrompt(
+      {
+        title: 'SSH Authentication',
+        message: 'Please provide your credentials',
+        inputs,
+        submitLabel: 'Connect',
+        cancelLabel: 'Cancel',
+        icon: 'lock',
+        severity: 'info'
+      },
+      async (response) => {
+        if (response.action === 'cancel' || response.action === 'dismissed' || response.action === 'timeout') {
+          this.emitAuthFailure('Authentication cancelled')
+          return
+        }
+
+        const username = response.inputs?.['username']
+        const password = response.inputs?.['password']
+
+        if (username === undefined || password === undefined) {
+          this.emitAuthFailure('Invalid authentication response')
+          return
+        }
+
+        // Process as keyboard-interactive response
+        await this.handleKeyboardInteractiveResponse([username, password])
+      }
+    )
+  }
+
+  /**
+   * Handle SSH2 keyboard-interactive prompts from the server.
+   * Converts SSH2 prompts to the unified prompt system.
+   */
+  handleSSHKeyboardInteractive(
+    name: string,
+    instructions: string,
+    prompts: Array<{ prompt: string; echo: boolean }>,
+    finishCallback: (responses: string[]) => void
+  ): void {
+    // Convert SSH2 prompts to our PromptInput format
+    const inputs: PromptInput[] = prompts.map((p, index) => ({
+      key: `prompt_${index}`,
+      label: p.prompt,
+      type: p.echo ? PROMPT_INPUT_TYPES.TEXT : PROMPT_INPUT_TYPES.PASSWORD,
+      required: true
+    }))
+
+    const promptOptions = {
+      title: name === '' ? 'Authentication Required' : name,
+      inputs,
+      submitLabel: 'Submit',
+      cancelLabel: 'Cancel',
+      icon: 'key',
+      severity: 'info' as const
+    }
+
+    // Only include message if instructions are non-empty
+    const optionsWithMessage = instructions === ''
+      ? promptOptions
+      : { ...promptOptions, message: instructions }
+
+    this.promptAdapter.sendInputPrompt(
+      optionsWithMessage,
+      (response) => {
+        if (response.action === 'cancel' || response.action === 'dismissed' || response.action === 'timeout') {
+          // Return empty responses to indicate cancellation
+          finishCallback([])
+          return
+        }
+
+        // Extract responses in the correct order
+        const responses: string[] = []
+        for (let i = 0; i < prompts.length; i++) {
+          const key = `prompt_${i}`
+          // Key is a controlled format (prompt_N) so this is safe
+          // eslint-disable-next-line security/detect-object-injection
+          responses.push(response.inputs?.[key] ?? '')
+        }
+
+        finishCallback(responses)
+      }
+    )
   }
 
   async handleKeyboardInteractiveResponse(responses: string[]): Promise<void> {
