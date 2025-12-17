@@ -242,9 +242,9 @@ describe('Prompt Validator', () => {
 
   describe('validateResponseInputKeys', () => {
     const inputs: readonly PromptInput[] = [
-      { key: 'username', label: 'Username', type: 'text', required: true },
-      { key: 'password', label: 'Password', type: 'password', required: true },
-      { key: 'remember', label: 'Remember me', type: 'text', required: false }
+      { id: 'username', label: 'Username', type: 'text', required: true },
+      { id: 'password', label: 'Password', type: 'password', required: true },
+      { id: 'remember', label: 'Remember me', type: 'text', required: false }
     ]
 
     it('should accept valid input keys', () => {
@@ -309,7 +309,7 @@ describe('Prompt Validator', () => {
 
     it('should accept no inputs when none required', () => {
       const optionalInputs: readonly PromptInput[] = [
-        { key: 'optional', label: 'Optional', type: 'text', required: false }
+        { id: 'optional', label: 'Optional', type: 'text', required: false }
       ]
 
       const result = validateResponseInputKeys(undefined, optionalInputs)
@@ -352,7 +352,7 @@ describe('Prompt Validator', () => {
     })
 
     it('should accept common icons', () => {
-      for (const icon of ['lock', 'key', 'info', 'warning', 'error', 'success']) {
+      for (const icon of ['Lock', 'Key', 'Info', 'TriangleAlert', 'CircleAlert', 'CircleCheckBig']) {
         const result = validateIcon(icon)
         expect(result.ok).toBe(true)
       }

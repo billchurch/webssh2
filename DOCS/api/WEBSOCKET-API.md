@@ -72,9 +72,11 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
        port: number,
        term?: string, // Optional terminal type
        cols?: number, // Optional terminal columns (added for early dimension setup)
-       rows?: number  // Optional terminal rows (added for early dimension setup)
+       rows?: number, // Optional terminal rows (added for early dimension setup)
+       forwardAllKeyboardInteractivePrompts?: boolean // When true, all keyboard-interactive prompts are forwarded to client
      }
      ```
+   - The `forwardAllKeyboardInteractivePrompts` option bypasses the automatic password handling for keyboard-interactive auth. When set to `true`, all prompts (including password prompts) will be forwarded to the client for user input. This is useful for debugging or when explicit user interaction is required.
 
 2. `terminal`
    - Emit this event to provide terminal dimensions.
@@ -113,8 +115,22 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
 
 1. The server emits `authentication` with `action: "request_auth"`.
 2. The client emits `authenticate` with credentials.
-3. The server may emit `authentication` with `action: "keyboard-interactive"` for additional authentication steps.
+3. For keyboard-interactive authentication, the server may emit multiple `prompt` events:
+   - Each prompt contains fields for user input (password or text fields)
+   - The client should display these prompts and collect user responses
+   - The client responds via `prompt-response` with the user's answers
+   - This loop continues until authentication completes
 4. The server emits `authentication` with `action: "auth_result"` and `success: true/false`.
+
+### Keyboard-Interactive Behavior
+
+By default:
+- **First round**: If all prompts contain "password", the server auto-responds with the stored password
+- **Subsequent rounds**: All prompts are forwarded to the client (e.g., 2FA verification codes)
+
+This behavior can be overridden:
+- Set `forwardAllKeyboardInteractivePrompts: true` in the authenticate payload to forward all prompts
+- Or configure `alwaysSendKeyboardInteractivePrompts: true` on the server
 
 ## Establishing SSH Session
 

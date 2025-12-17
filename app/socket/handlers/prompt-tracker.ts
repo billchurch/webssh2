@@ -108,7 +108,7 @@ export function createPromptTracker(): PromptTracker {
 
     // Extract expected buttons and inputs
     const expectedButtons = (payload.buttons ?? []).map(b => b.action)
-    const expectedInputs = (payload.inputs ?? []).map(i => i.key)
+    const expectedInputs = (payload.inputs ?? []).map(i => i.id)
 
     const tracked: TrackedPrompt = {
       id: payload.id,

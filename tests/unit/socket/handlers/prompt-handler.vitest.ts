@@ -39,7 +39,7 @@ describe('Prompt Handler', () => {
       const result = createInputPrompt({
         title: PROMPT_TEST_CONSTANTS.TITLES.NORMAL,
         inputs: [
-          { key: 'username', label: 'Username', type: 'text', required: true }
+          { id: 'username', label: 'Username', type: 'text', required: true }
         ]
       })
 

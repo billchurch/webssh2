@@ -17,7 +17,7 @@ const createTestPayload = (id: string, options?: Partial<PromptPayload>): Prompt
     { action: 'cancel', label: 'Cancel' }
   ],
   inputs: [
-    { key: 'username', label: 'Username', type: 'text', required: true }
+    { id: 'username', label: 'Username', type: 'text', required: true }
   ],
   ...options
 })

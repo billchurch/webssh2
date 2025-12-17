@@ -42,8 +42,8 @@ export interface PromptButton {
  * Input field configuration for input-type prompts
  */
 export interface PromptInput {
-  /** Key for the input value in response */
-  readonly key: string
+  /** Unique identifier for this input field, used as key in response */
+  readonly id: string
   /** Display label for the input */
   readonly label: string
   /** Input type determining rendering */
@@ -51,7 +51,7 @@ export interface PromptInput {
   /** Placeholder text */
   readonly placeholder?: string
   /** Pre-filled default value */
-  readonly defaultValue?: string
+  readonly value?: string
   /** Whether this field is required */
   readonly required?: boolean
 }
@@ -115,6 +115,12 @@ export interface AuthCredentials {
   term?: string
   cols?: number
   rows?: number
+  /**
+   * When true, all keyboard-interactive prompts are forwarded to the client,
+   * bypassing auto-answer logic for password prompts in the first round.
+   * Useful for authentication flows that require explicit user interaction.
+   */
+  forwardAllKeyboardInteractivePrompts?: boolean
 }
 
 // Client → Server: terminal settings update

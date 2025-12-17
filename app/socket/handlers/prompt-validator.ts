@@ -201,10 +201,10 @@ export function validateResponseInputKeys(
     return { ok: true, value: undefined }
   }
 
-  // Build expected keys set
-  const expectedKeys = new Set(expectedInputs.map(i => i.key))
+  // Build expected keys set (using 'id' field from PromptInput)
+  const expectedKeys = new Set(expectedInputs.map(i => i.id))
   const requiredKeys = new Set(
-    expectedInputs.filter(i => i.required === true).map(i => i.key)
+    expectedInputs.filter(i => i.required === true).map(i => i.id)
   )
 
   // No inputs provided

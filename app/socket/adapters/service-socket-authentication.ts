@@ -4,10 +4,11 @@ import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
 import type { AdapterContext } from './service-socket-shared.js'
 import type { ServiceSocketPrompt } from './service-socket-prompt.js'
+import type { KeyboardInteractiveContext, KeyboardInteractiveHandler } from '../../services/interfaces.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { PROMPT_INPUT_TYPES } from '../../constants/prompt.js'
-import { buildSSHConfig } from './ssh-config.js'
+import { buildSSHConfig, type KeyboardInteractiveOptions } from './ssh-config.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import { evaluateAuthMethodPolicy, isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 
@@ -69,13 +70,13 @@ export class ServiceSocketAuthentication {
     // Use the new prompt system for keyboard-interactive auth
     const inputs: PromptInput[] = [
       {
-        key: 'username',
+        id: 'username',
         label: 'Username:',
         type: PROMPT_INPUT_TYPES.TEXT,
         required: true
       },
       {
-        key: 'password',
+        id: 'password',
         label: 'Password:',
         type: PROMPT_INPUT_TYPES.PASSWORD,
         required: true
@@ -89,7 +90,7 @@ export class ServiceSocketAuthentication {
         inputs,
         submitLabel: 'Connect',
         cancelLabel: 'Cancel',
-        icon: 'lock',
+        icon: 'Lock',
         severity: 'info'
       },
       async (response) => {
@@ -124,7 +125,7 @@ export class ServiceSocketAuthentication {
   ): void {
     // Convert SSH2 prompts to our PromptInput format
     const inputs: PromptInput[] = prompts.map((p, index) => ({
-      key: `prompt_${index}`,
+      id: `prompt_${index}`,
       label: p.prompt,
       type: p.echo ? PROMPT_INPUT_TYPES.TEXT : PROMPT_INPUT_TYPES.PASSWORD,
       required: true
@@ -135,7 +136,7 @@ export class ServiceSocketAuthentication {
       inputs,
       submitLabel: 'Submit',
       cancelLabel: 'Cancel',
-      icon: 'key',
+      icon: 'Key',
       severity: 'info' as const
     }
 
@@ -363,11 +364,52 @@ export class ServiceSocketAuthentication {
     return message
   }
 
+  /**
+   * Keyboard-interactive handler that forwards prompts to the client.
+   * This handler is called by the SSH service when the SSH server requests
+   * keyboard-interactive authentication.
+   *
+   * Bound to `this` in constructor or method that uses it.
+   */
+  private readonly keyboardInteractiveHandler: KeyboardInteractiveHandler = (
+    context: KeyboardInteractiveContext,
+    respond: (responses: string[]) => void
+  ) => {
+    this.context.debug('Forwarding keyboard-interactive prompts to client:', {
+      name: context.name,
+      instructions: context.instructions,
+      promptCount: context.prompts.length
+    })
+
+    // Use the existing method that converts SSH2 prompts to our prompt system
+    this.handleSSHKeyboardInteractive(
+      context.name,
+      context.instructions,
+      context.prompts,
+      respond
+    )
+  }
+
   private async connectSSH(
     authCredentials: AuthCredentials,
     sessionId: SessionId
   ): Promise<{ id: string } | null> {
-    const sshConfig = buildSSHConfig(authCredentials, sessionId, this.context.config)
+    // Create keyboard-interactive options with our handler
+    const keyboardInteractiveOptions: KeyboardInteractiveOptions = {
+      onKeyboardInteractive: this.keyboardInteractiveHandler
+    }
+
+    // Only set forwardAllPrompts if explicitly requested
+    if (authCredentials.forwardAllKeyboardInteractivePrompts === true) {
+      keyboardInteractiveOptions.forwardAllPrompts = true
+    }
+
+    const sshConfig = buildSSHConfig(
+      authCredentials,
+      sessionId,
+      this.context.config,
+      keyboardInteractiveOptions
+    )
     const sshResult = await this.context.services.ssh.connect(sshConfig)
 
     if (sshResult.ok) {
