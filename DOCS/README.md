@@ -70,6 +70,7 @@ For contributors and developers:
 
 Additional resources:
 
+- **[Supported Algorithms](./reference/ALGORITHMS.md)** - SSH ciphers, HMACs, KEX, and FIPS mode
 - **[Troubleshooting Guide](./reference/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Breaking Changes](./reference/BREAKING-CHANGES.md)** - Version migration notes
 - **[Deprecated Features](./reference/DEPRECATED.md)** - Features being phased out
