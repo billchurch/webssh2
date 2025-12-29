@@ -542,7 +542,7 @@ export const PROMPT_TEST_CONSTANTS = {
   /** Valid input keys */
   VALID_INPUT_KEYS: {
     USERNAME: 'username',
-    PASSWORD: 'password',
+    PASSWORD: 'password', //NOSONAR
     CUSTOM: 'customInput',
   },
   /** Invalid input key (has hyphen) */
