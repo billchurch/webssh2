@@ -227,6 +227,8 @@ Currently, the file browser supports mouse-based interaction. Keyboard navigatio
 - **Server Permissions**: File operations respect server-side permissions
 - **Path Restrictions**: Administrators can limit accessible paths
 - **Extension Filtering**: Dangerous file types can be blocked
+- **Transfer Authorization**: Each transfer is assigned a unique server-generated ID and verified against your session - other users cannot interfere with your transfers
+- **Audit Logging**: Unauthorized access attempts are logged for security monitoring
 
 ## Limitations
 
