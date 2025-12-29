@@ -36,12 +36,12 @@ describe('Prompt Validator', () => {
       const result = validatePromptResponse({
         id: PROMPT_TEST_CONSTANTS.VALID_PROMPT_ID,
         action: 'submit',
-        inputs: { username: 'testuser', password: 'testpass' }
+        inputs: { username: 'testuser', password: 'testpass' } //NOSONAR - Test data
       })
 
       expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.value.inputs).toEqual({ username: 'testuser', password: 'testpass' })
+        expect(result.value.inputs).toEqual({ username: 'testuser', password: 'testpass' }) //NOSONAR
       }
     })
 
@@ -243,13 +243,13 @@ describe('Prompt Validator', () => {
   describe('validateResponseInputKeys', () => {
     const inputs: readonly PromptInput[] = [
       { id: 'username', label: 'Username', type: 'text', required: true },
-      { id: 'password', label: 'Password', type: 'password', required: true },
+      { id: 'password', label: 'Password', type: 'password', required: true }, //NOSONAR - Field metadata
       { id: 'remember', label: 'Remember me', type: 'text', required: false }
     ]
 
     it('should accept valid input keys', () => {
       const result = validateResponseInputKeys(
-        { username: 'test', password: 'pass' },
+        { username: 'test', password: 'pass' }, //NOSONAR - Test data
         inputs
       )
 
@@ -258,7 +258,7 @@ describe('Prompt Validator', () => {
 
     it('should accept all inputs including optional', () => {
       const result = validateResponseInputKeys(
-        { username: 'test', password: 'pass', remember: 'yes' },
+        { username: 'test', password: 'pass', remember: 'yes' }, //NOSONAR - Test data
         inputs
       )
 
@@ -267,7 +267,7 @@ describe('Prompt Validator', () => {
 
     it('should reject unexpected input keys', () => {
       const result = validateResponseInputKeys(
-        { username: 'test', password: 'pass', extraField: 'value' },
+        { username: 'test', password: 'pass', extraField: 'value' }, //NOSONAR - Test data
         inputs
       )
 
@@ -291,7 +291,7 @@ describe('Prompt Validator', () => {
 
     it('should reject empty required inputs', () => {
       const result = validateResponseInputKeys(
-        { username: 'test', password: '' },
+        { username: 'test', password: '' }, //NOSONAR - Test data (empty value)
         inputs
       )
 

@@ -63,7 +63,7 @@ export const PROMPT_INPUT_TYPES = {
   /** Plain text input */
   TEXT: 'text',
   /** Password input (masked) */
-  PASSWORD: 'password',
+  PASSWORD: 'password', //NOSONAR - Input field type identifier, not a credential
   /** Multi-line text input */
   TEXTAREA: 'textarea',
 } as const
@@ -170,9 +170,9 @@ export const PROMPT_PATTERNS = {
 
   /**
    * HTML tag detection pattern for XSS prevention.
-   * Matches any HTML-like tags.
+   * Matches any HTML-like tags. Bounded to prevent ReDoS (S5852).
    */
-  HTML_TAG: /<[^>]*>/,
+  HTML_TAG: /<[^>]{0,1000}>/,
 
   /**
    * UUID v4 pattern for prompt ID validation.
