@@ -26,7 +26,12 @@ export const LOG_EVENT_NAMES = [
   'sftp_download_start',
   'sftp_download_chunk',
   'sftp_download_complete',
-  'sftp_download_cancel'
+  'sftp_download_cancel',
+  // Prompt events
+  'prompt_sent',
+  'prompt_response',
+  'prompt_timeout',
+  'prompt_error'
 ] as const
 
 export type LogEventName = typeof LOG_EVENT_NAMES[number]

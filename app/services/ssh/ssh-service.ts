@@ -97,25 +97,94 @@ export class SSHServiceImpl implements SSHService {
     return connectConfig
   }
 
+  /**
+   * Handle keyboard-interactive prompts with legacy fallback behavior.
+   * Used when no onKeyboardInteractive callback is provided.
+   */
+  private handleFallbackResponse(
+    config: SSHConfig,
+    prompts: Array<{ prompt: string; echo: boolean }>,
+    finish: (responses: string[]) => void
+  ): void {
+    if (config.password !== undefined && config.password !== '' && prompts.length > 0) {
+      const responses = prompts.map(prompt => {
+        if (prompt.prompt.toLowerCase().includes('password')) {
+          logger('Fallback: Responding to password prompt')
+          return config.password as string
+        }
+        logger(`Fallback: Unknown prompt (returning empty): ${prompt.prompt}`)
+        return ''
+      })
+      finish(responses)
+    } else {
+      logger('Fallback: No password available for keyboard-interactive')
+      finish([])
+    }
+  }
+
+  /**
+   * Set up the keyboard-interactive authentication handler.
+   *
+   * Behavior depends on configuration:
+   * - If forwardAllPrompts is true (per-session or server config): all prompts are forwarded
+   * - Otherwise (default): first round auto-answers if ALL prompts contain "password"
+   * - Subsequent rounds are always forwarded to the callback
+   * - If no callback is provided, falls back to legacy behavior
+   */
   private setupKeyboardInteractiveHandler(client: SSH2Client, config: SSHConfig): void {
+    let isFirstRound = true
+    const forwardAll = config.forwardAllPrompts === true ||
+      this.deps.config.ssh.alwaysSendKeyboardInteractivePrompts === true
+
     client.on('keyboard-interactive', (name, instructions, instructionsLang, prompts, finish) => {
       logger('Keyboard-interactive authentication requested')
+      logger('Name:', name)
+      logger('Instructions:', instructions)
       logger('Prompts:', prompts.map(p => ({ prompt: p.prompt, echo: p.echo })))
+      logger('Round:', isFirstRound ? 'first' : 'subsequent')
+      logger('ForwardAll:', forwardAll)
 
-      if (config.password !== undefined && config.password !== '' && prompts.length > 0) {
-        const responses = prompts.map(prompt => {
-          if (prompt.prompt.toLowerCase().includes('password')) {
-            logger('Responding to password prompt')
-            return config.password as string // We've already checked it's defined and not empty
-          }
-          logger(`Unknown prompt: ${prompt.prompt}`)
-          return '' // Empty response for unknown prompts
-        })
-        finish(responses)
-      } else {
-        logger('No password available for keyboard-interactive')
-        finish([])
+      // Normalize prompts to ensure echo is always boolean
+      const normalizedPrompts = prompts.map(p => ({
+        prompt: p.prompt,
+        echo: p.echo ?? false
+      }))
+
+      // If no callback provided, use legacy fallback behavior
+      if (config.onKeyboardInteractive === undefined) {
+        logger('No callback provided, using fallback behavior')
+        this.handleFallbackResponse(config, normalizedPrompts, finish)
+        return
       }
+
+      // First round auto-password logic (unless forwardAll is set)
+      if (isFirstRound && !forwardAll) {
+        isFirstRound = false // Mark first round as consumed
+
+        // Check if ALL prompts in first round are password prompts
+        const allPasswordPrompts = normalizedPrompts.length > 0 &&
+          normalizedPrompts.every(p => p.prompt.toLowerCase().includes('password'))
+
+        if (allPasswordPrompts && config.password !== undefined && config.password !== '') {
+          logger('First round: All prompts are password prompts, auto-answering')
+          finish(normalizedPrompts.map(() => config.password as string))
+          return
+        }
+
+        logger('First round: Non-password prompts detected, forwarding to client')
+      } else {
+        isFirstRound = false
+        logger('Subsequent round or forwardAll mode: forwarding to client')
+      }
+
+      // Forward to client via callback (normalizedPrompts already has correct type)
+      config.onKeyboardInteractive(
+        { name, instructions, prompts: normalizedPrompts },
+        (responses) => {
+          logger('Received responses from client, count:', responses.length)
+          finish(responses)
+        }
+      )
     })
   }
 

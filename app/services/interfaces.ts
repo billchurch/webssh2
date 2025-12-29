@@ -36,6 +36,40 @@ export interface AuthResult {
 }
 
 /**
+ * A single prompt in a keyboard-interactive authentication request
+ */
+export interface KeyboardInteractivePrompt {
+  /** The prompt text to display to the user */
+  prompt: string
+  /** Whether the user's input should be echoed (false for passwords) */
+  echo: boolean
+}
+
+/**
+ * Context for a keyboard-interactive authentication request
+ */
+export interface KeyboardInteractiveContext {
+  /** Name of the authentication method (may be empty) */
+  name: string
+  /** Instructions to display to the user (may be empty) */
+  instructions: string
+  /** Array of prompts requiring user responses */
+  prompts: KeyboardInteractivePrompt[]
+}
+
+/**
+ * Handler function for keyboard-interactive authentication prompts.
+ * Called when the SSH server requests user input during authentication.
+ *
+ * @param context - The authentication context with prompts
+ * @param respond - Callback to provide responses (one per prompt, in order)
+ */
+export type KeyboardInteractiveHandler = (
+  context: KeyboardInteractiveContext,
+  respond: (responses: string[]) => void
+) => void
+
+/**
  * SSH configuration
  */
 export interface SSHConfig {
@@ -50,6 +84,17 @@ export interface SSHConfig {
   keepaliveInterval?: number
   keepaliveCountMax?: number
   algorithms?: Record<string, string[]>
+  /**
+   * Handler for keyboard-interactive authentication prompts.
+   * When provided, prompts that cannot be auto-answered will be forwarded
+   * to this handler for user interaction.
+   */
+  onKeyboardInteractive?: KeyboardInteractiveHandler
+  /**
+   * When true, all keyboard-interactive prompts are forwarded to the handler,
+   * bypassing auto-answer logic for password prompts.
+   */
+  forwardAllPrompts?: boolean
 }
 
 /**

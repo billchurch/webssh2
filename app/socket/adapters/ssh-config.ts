@@ -1,11 +1,21 @@
 import type { AuthCredentials, TerminalSettings } from '../../types/contracts/v1/socket.js'
 import type { Config } from '../../types/config.js'
 import { createConnectionId, type SessionId } from '../../types/branded.js'
-import type { Services } from '../../services/interfaces.js'
+import type { Services, KeyboardInteractiveHandler } from '../../services/interfaces.js'
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
 import type { AdapterContext } from './service-socket-shared.js'
 
 type OptionalCredentials = Pick<AuthCredentials, 'password' | 'privateKey' | 'passphrase'>
+
+/**
+ * Options for keyboard-interactive authentication handling
+ */
+export interface KeyboardInteractiveOptions {
+  /** Handler callback for forwarding prompts to the client */
+  onKeyboardInteractive?: KeyboardInteractiveHandler
+  /** When true, all prompts are forwarded (bypasses auto-password for first round) */
+  forwardAllPrompts?: boolean
+}
 
 function mapOptionalCredentials(credentials: OptionalCredentials): Partial<OptionalCredentials> {
   const result: Partial<OptionalCredentials> = {}
@@ -28,7 +38,8 @@ function mapOptionalCredentials(credentials: OptionalCredentials): Partial<Optio
 export function buildSSHConfig(
   credentials: AuthCredentials,
   sessionId: SessionId,
-  config: Config
+  config: Config,
+  keyboardInteractiveOptions?: KeyboardInteractiveOptions
 ): Parameters<Services['ssh']['connect']>[0] {
   const algorithms: Record<string, string[]> = {
     cipher: config.ssh.algorithms.cipher,
@@ -40,7 +51,11 @@ export function buildSSHConfig(
 
   const optionalCreds = mapOptionalCredentials(credentials)
 
-  return {
+  // Determine forwardAllPrompts from credentials or options
+  const forwardAllPrompts = credentials.forwardAllKeyboardInteractivePrompts === true ||
+    keyboardInteractiveOptions?.forwardAllPrompts === true
+
+  const result: Parameters<Services['ssh']['connect']>[0] = {
     sessionId,
     host: credentials.host,
     port: credentials.port,
@@ -50,6 +65,17 @@ export function buildSSHConfig(
     algorithms,
     ...optionalCreds
   }
+
+  // Add keyboard-interactive options if handler provided
+  if (keyboardInteractiveOptions?.onKeyboardInteractive !== undefined) {
+    result.onKeyboardInteractive = keyboardInteractiveOptions.onKeyboardInteractive
+  }
+
+  if (forwardAllPrompts) {
+    result.forwardAllPrompts = true
+  }
+
+  return result
 }
 
 export function buildTerminalDefaults(

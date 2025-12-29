@@ -47,7 +47,7 @@ const AUTH_METHODS = new Set([
   'gssapi'
 ])
 const PROTOCOLS = new Set(['ssh', 'sftp', 'scp'])
-const SUBSYSTEMS = new Set(['shell', 'sftp', 'scp', 'exec'])
+const SUBSYSTEMS = new Set(['shell', 'sftp', 'scp', 'exec', 'prompt'])
 const STATUSES = new Set(['success', 'failure'])
 const CONTEXT_FIELD_KEY_SET = new Set(Object.keys(CONTEXT_FIELD_MAP))
 const CONTEXT_VALIDATORS = createContextValidators()

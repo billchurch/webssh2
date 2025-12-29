@@ -63,6 +63,12 @@ export const SOCKET_EVENTS = {
   SFTP_PROGRESS: 'sftp-progress',
   SFTP_COMPLETE: 'sftp-complete',
   SFTP_ERROR: 'sftp-error',
+
+  // Prompt system events
+  /** Server → Client: Send a prompt to the client */
+  PROMPT: 'prompt',
+  /** Client → Server: Response to a prompt */
+  PROMPT_RESPONSE: 'prompt-response',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]

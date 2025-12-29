@@ -516,6 +516,72 @@ export const SFTP_ERROR_CODES = {
 } as const
 
 // ============================================================================
+// PROMPT TEST CONSTANTS
+// ============================================================================
+
+/**
+ * Prompt system test constants
+ */
+export const PROMPT_TEST_CONSTANTS = {
+  /** Valid UUID v4 for testing */
+  VALID_PROMPT_ID: 'a1b2c3d4-e5f6-4890-abcd-ef1234567890',
+  /** Another valid UUID for multiple prompt tests */
+  VALID_PROMPT_ID_2: 'b2c3d4e5-f6a7-4901-bcde-f12345678901',
+  /** Invalid prompt ID (not UUID) */
+  INVALID_PROMPT_ID: 'not-a-valid-uuid',
+  /** Valid action names */
+  VALID_ACTIONS: {
+    SUBMIT: 'submit',
+    CANCEL: 'cancel',
+    CONFIRM: 'confirm',
+    OK: 'ok',
+    CUSTOM: 'customAction',
+  },
+  /** Invalid action (starts with number) */
+  INVALID_ACTION: '123invalid',
+  /** Valid input keys */
+  VALID_INPUT_KEYS: {
+    USERNAME: 'username',
+    PASSWORD: 'password', //NOSONAR
+    CUSTOM: 'customInput',
+  },
+  /** Invalid input key (has hyphen) */
+  INVALID_INPUT_KEY: 'invalid-key',
+  /** Test titles */
+  TITLES: {
+    SHORT: 'Test',
+    NORMAL: 'Test Prompt Title',
+    MAX: 'a'.repeat(256),
+    OVER_MAX: 'a'.repeat(257),
+  },
+  /** Test messages */
+  MESSAGES: {
+    SHORT: 'Hi',
+    NORMAL: 'Please enter your credentials',
+    MAX: 'a'.repeat(4096),
+    OVER_MAX: 'a'.repeat(4097),
+  },
+  /** HTML injection test strings */
+  HTML_INJECTION: {
+    SCRIPT: '<script>alert("xss")</script>',
+    IMG: '<img src="x" onerror="alert(1)">',
+    LINK: '<a href="javascript:alert(1)">click</a>',
+  },
+  /** Valid icons */
+  VALID_ICONS: ['info', 'warning', 'error', 'success', 'lock', 'key'],
+  /** Invalid icon (not in whitelist) */
+  INVALID_ICON: 'malicious-icon',
+} as const
+
+/**
+ * Prompt socket event names for tests
+ */
+export const PROMPT_EVENTS = {
+  PROMPT: 'prompt',
+  PROMPT_RESPONSE: 'prompt-response',
+} as const
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
