@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.6.1...webssh2-server-v3.0.0) (2025-12-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sftp:** SFTP protocol updated - clients must not send transferId in start requests; use server-provided ID from response.
+
+### Features
+
+* add server-side generic prompt interface ([#465](https://github.com/billchurch/webssh2/issues/465)) ([e96f979](https://github.com/billchurch/webssh2/commit/e96f979cbf3b034ff075b6e6d783fe56c164320b))
+
+
+### Bug Fixes
+
+* **sftp:** server-side transfer ID generation and ownership verification ([#467](https://github.com/billchurch/webssh2/issues/467)) ([e3ebea2](https://github.com/billchurch/webssh2/commit/e3ebea2776611a601491b97f96c89cd69ada0bfb))
+
 ## [2.6.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.6.0...webssh2-server-v2.6.1) (2025-12-09)
 
 
