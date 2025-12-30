@@ -371,6 +371,32 @@ export class TransferManager {
   }
 
   /**
+   * Verify that a session owns a transfer.
+   *
+   * Returns TRANSFER_NOT_FOUND for both missing transfers AND wrong-session
+   * to prevent enumeration attacks (attackers cannot discover valid transfer IDs
+   * by observing different error codes).
+   */
+  verifyOwnership(
+    transferId: TransferId,
+    sessionId: SessionId
+  ): Result<ManagedTransfer, TransferError> {
+    const transfer = this.transfers.get(transferId)
+
+    // Same error for not found AND wrong session (security: prevents enumeration)
+    // Note: optional chain works because sessionId is never undefined
+    if (transfer?.sessionId !== sessionId) {
+      return err({
+        code: 'TRANSFER_NOT_FOUND',
+        message: 'Transfer not found',
+        transferId
+      })
+    }
+
+    return ok(transfer)
+  }
+
+  /**
    * Get active transfer count for a session
    */
   getActiveCount(sessionId: SessionId): number {

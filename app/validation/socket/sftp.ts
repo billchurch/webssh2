@@ -363,6 +363,9 @@ export interface UploadStartValidationOptions {
 
 /**
  * Validate sftp-upload-start request
+ *
+ * Note: transferId is NOT validated here - it is generated server-side.
+ * Any client-provided transferId is ignored.
  */
 export const validateSftpUploadStartRequest = (
   data: unknown,
@@ -375,10 +378,7 @@ export const validateSftpUploadStartRequest = (
 
   const obj = recordResult.value
 
-  const transferIdResult = validateTransferId(obj)
-  if (!transferIdResult.ok) {
-    return transferIdResult as Result<SftpUploadStartRequest>
-  }
+  // Note: transferId is NOT validated - server generates it
 
   const remotePathResult = validateRequiredString(obj, REMOTE_PATH_KEY, 'remotePath')
   if (!remotePathResult.ok) {
@@ -422,7 +422,6 @@ export const validateSftpUploadStartRequest = (
     return {
       ok: true,
       value: {
-        transferId: transferIdResult.value,
         remotePath: remotePathResult.value,
         fileName: fileNameResult.value,
         fileSize: fileSizeResult.value,
@@ -436,7 +435,6 @@ export const validateSftpUploadStartRequest = (
     return {
       ok: true,
       value: {
-        transferId: transferIdResult.value,
         remotePath: remotePathResult.value,
         fileName: fileNameResult.value,
         fileSize: fileSizeResult.value,
@@ -449,7 +447,6 @@ export const validateSftpUploadStartRequest = (
     return {
       ok: true,
       value: {
-        transferId: transferIdResult.value,
         remotePath: remotePathResult.value,
         fileName: fileNameResult.value,
         fileSize: fileSizeResult.value,
@@ -461,7 +458,6 @@ export const validateSftpUploadStartRequest = (
   return {
     ok: true,
     value: {
-      transferId: transferIdResult.value,
       remotePath: remotePathResult.value,
       fileName: fileNameResult.value,
       fileSize: fileSizeResult.value
@@ -542,6 +538,9 @@ export const validateSftpUploadCancelRequest = (
 
 /**
  * Validate sftp-download-start request
+ *
+ * Note: transferId is NOT validated here - it is generated server-side.
+ * Any client-provided transferId is ignored.
  */
 export const validateSftpDownloadStartRequest = (
   data: unknown
@@ -553,10 +552,7 @@ export const validateSftpDownloadStartRequest = (
 
   const obj = recordResult.value
 
-  const transferIdResult = validateTransferId(obj)
-  if (!transferIdResult.ok) {
-    return transferIdResult as Result<SftpDownloadStartRequest>
-  }
+  // Note: transferId is NOT validated - server generates it
 
   const remotePathResult = validateRequiredString(obj, REMOTE_PATH_KEY, 'remotePath')
   if (!remotePathResult.ok) {
@@ -566,7 +562,6 @@ export const validateSftpDownloadStartRequest = (
   return {
     ok: true,
     value: {
-      transferId: transferIdResult.value,
       remotePath: remotePathResult.value
     }
   }

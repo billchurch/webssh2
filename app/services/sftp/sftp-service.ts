@@ -39,7 +39,9 @@ import {
 } from './path-validator.js'
 import {
   createTransferManager,
-  type TransferManager
+  type TransferManager,
+  type ManagedTransfer,
+  type TransferError
 } from './transfer-manager.js'
 import debug from 'debug'
 
@@ -693,6 +695,20 @@ export class SftpService {
       bytesPerSecond: result.value.bytesPerSecond,
       estimatedSecondsRemaining: result.value.estimatedSecondsRemaining
     })
+  }
+
+  /**
+   * Verify that a session owns a transfer.
+   *
+   * Used by socket handlers to verify ownership before processing
+   * chunk/cancel operations. Returns TRANSFER_NOT_FOUND for both
+   * missing transfers AND ownership failures to prevent enumeration.
+   */
+  verifyTransferOwnership(
+    transferId: TransferId,
+    sessionId: SessionId
+  ): Result<ManagedTransfer, TransferError> {
+    return this.transferManager.verifyOwnership(transferId, sessionId)
   }
 
   /**

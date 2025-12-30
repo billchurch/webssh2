@@ -13,7 +13,8 @@ import {
   type SessionId,
   type TransferId,
   createConnectionId,
-  createSessionId
+  createSessionId,
+  generateTransferId
 } from '../../types/branded.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import {
@@ -231,6 +232,9 @@ export class ServiceSocketSftp {
 
   /**
    * Handle sftp-upload-start event
+   *
+   * Server generates the transferId and returns it in the response.
+   * This ensures proper ownership tracking and prevents authorization bypass.
    */
   async handleUploadStart(data: unknown): Promise<void> {
     const startTime = Date.now()
@@ -250,19 +254,22 @@ export class ServiceSocketSftp {
     const request = validation.value
     const ids = this.getConnectionAndSessionIds()
     if (ids === null) {
-      this.emitNoConnectionError('upload', request.transferId)
+      this.emitNoConnectionError('upload')
       return
     }
 
     const sftp = this.getSftpService()
     if (sftp === undefined) {
-      this.emitNotEnabledError('upload', request.transferId)
+      this.emitNotEnabledError('upload')
       return
     }
 
+    // SERVER generates the transferId (security: prevents authorization bypass)
+    const transferId = generateTransferId()
+
     // Build upload request, conditionally adding optional fields
     const uploadRequest: Parameters<typeof sftp.startUpload>[0] = {
-      transferId: request.transferId,
+      transferId,
       sessionId: ids.sessionId,
       connectionId: ids.connectionId,
       remotePath: request.remotePath,
@@ -283,14 +290,14 @@ export class ServiceSocketSftp {
     if (result.ok) {
       this.context.socket.emit(SOCKET_EVENTS.SFTP_UPLOAD_READY, result.value)
       this.logSftpOperation('upload_start', 'success', Date.now() - startTime, {
-        transferId: request.transferId,
+        transferId,
         fileName: request.fileName,
         fileSize: request.fileSize
       })
     } else {
       this.emitSftpError('upload', result.error)
       this.logSftpOperation('upload_start', 'failure', Date.now() - startTime, {
-        transferId: request.transferId,
+        transferId,
         error: result.error.code
       })
     }
@@ -298,6 +305,9 @@ export class ServiceSocketSftp {
 
   /**
    * Handle sftp-upload-chunk event
+   *
+   * SECURITY: Verifies that the requesting session owns the transfer
+   * before processing the chunk to prevent authorization bypass attacks.
    */
   async handleUploadChunk(data: unknown): Promise<void> {
     const validation = validateSftpUploadChunkRequest(data)
@@ -310,6 +320,27 @@ export class ServiceSocketSftp {
     const sftp = this.getSftpService()
     if (sftp === undefined) {
       this.emitNotEnabledError('upload', request.transferId)
+      return
+    }
+
+    // Get session IDs for ownership verification
+    const ids = this.getConnectionAndSessionIds()
+    if (ids === null) {
+      this.emitNoConnectionError('upload', request.transferId)
+      return
+    }
+
+    // SECURITY: Verify ownership before processing chunk
+    const ownershipResult = sftp.verifyTransferOwnership(request.transferId, ids.sessionId)
+    if (!ownershipResult.ok) {
+      // Log authorization rejection for security audit
+      this.logAuthorizationRejection('upload_chunk', request.transferId, ids.sessionId)
+      // Return vague "not found" error to prevent enumeration
+      this.emitSftpError('upload', {
+        code: 'SFTP_NOT_FOUND',
+        message: 'Transfer not found',
+        transferId: request.transferId
+      })
       return
     }
 
@@ -344,6 +375,9 @@ export class ServiceSocketSftp {
 
   /**
    * Handle sftp-upload-cancel event
+   *
+   * SECURITY: Verifies that the requesting session owns the transfer
+   * before cancelling to prevent unauthorized cancellation attacks.
    */
   handleUploadCancel(data: unknown): void {
     const validation = validateSftpUploadCancelRequest(data)
@@ -358,12 +392,30 @@ export class ServiceSocketSftp {
       return
     }
 
+    // Get session IDs for ownership verification
+    const ids = this.getConnectionAndSessionIds()
+    if (ids === null) {
+      return // No session, nothing to cancel
+    }
+
+    // SECURITY: Verify ownership before cancelling
+    const ownershipResult = sftp.verifyTransferOwnership(request.transferId, ids.sessionId)
+    if (!ownershipResult.ok) {
+      // Log authorization rejection for security audit
+      this.logAuthorizationRejection('upload_cancel', request.transferId, ids.sessionId)
+      // Silent return - don't reveal transfer existence to potential attacker
+      return
+    }
+
     sftp.cancelUpload(request.transferId)
     this.logSftpOperation('upload_cancel', 'success', 0, { transferId: request.transferId })
   }
 
   /**
    * Handle sftp-download-start event
+   *
+   * Server generates the transferId and returns it in the response.
+   * This ensures proper ownership tracking and prevents authorization bypass.
    */
   async handleDownloadStart(data: unknown): Promise<void> {
     const startTime = Date.now()
@@ -381,18 +433,21 @@ export class ServiceSocketSftp {
     const request = validation.value
     const ids = this.getConnectionAndSessionIds()
     if (ids === null) {
-      this.emitNoConnectionError('download', request.transferId)
+      this.emitNoConnectionError('download')
       return
     }
 
     const sftp = this.getSftpService()
     if (sftp === undefined) {
-      this.emitNotEnabledError('download', request.transferId)
+      this.emitNotEnabledError('download')
       return
     }
 
+    // SERVER generates the transferId (security: prevents authorization bypass)
+    const transferId = generateTransferId()
+
     const result = await sftp.startDownload({
-      transferId: request.transferId,
+      transferId,
       sessionId: ids.sessionId,
       connectionId: ids.connectionId,
       remotePath: request.remotePath
@@ -401,7 +456,7 @@ export class ServiceSocketSftp {
     if (result.ok) {
       this.context.socket.emit(SOCKET_EVENTS.SFTP_DOWNLOAD_READY, result.value)
       this.logSftpOperation('download_start', 'success', Date.now() - startTime, {
-        transferId: request.transferId,
+        transferId,
         fileName: result.value.fileName,
         fileSize: result.value.fileSize
       })
@@ -417,14 +472,14 @@ export class ServiceSocketSftp {
         onComplete: (complete) => {
           this.context.socket.emit(SOCKET_EVENTS.SFTP_COMPLETE, complete)
           this.logSftpOperation('download_complete', 'success', complete.durationMs, {
-            transferId: request.transferId,
+            transferId,
             bytesTransferred: complete.bytesTransferred
           })
         },
         onError: (error) => {
           this.emitSftpError('download', error)
           this.logSftpOperation('download_chunk', 'failure', 0, {
-            transferId: request.transferId,
+            transferId,
             error: error.code
           })
         }
@@ -434,7 +489,7 @@ export class ServiceSocketSftp {
       // The streaming will emit events as chunks are read
       void sftp.streamDownloadChunks(
         ids.connectionId,
-        request.transferId,
+        transferId,
         request.remotePath,
         result.value.fileSize,
         downloadCallbacks
@@ -442,7 +497,7 @@ export class ServiceSocketSftp {
     } else {
       this.emitSftpError('download', result.error)
       this.logSftpOperation('download_start', 'failure', Date.now() - startTime, {
-        transferId: request.transferId,
+        transferId,
         error: result.error.code
       })
     }
@@ -450,6 +505,9 @@ export class ServiceSocketSftp {
 
   /**
    * Handle sftp-download-cancel event
+   *
+   * SECURITY: Verifies that the requesting session owns the transfer
+   * before cancelling to prevent unauthorized cancellation attacks.
    */
   handleDownloadCancel(data: unknown): void {
     const validation = validateSftpDownloadCancelRequest(data)
@@ -461,6 +519,21 @@ export class ServiceSocketSftp {
     const request = validation.value
     const sftp = this.getSftpService()
     if (sftp === undefined) {
+      return
+    }
+
+    // Get session IDs for ownership verification
+    const ids = this.getConnectionAndSessionIds()
+    if (ids === null) {
+      return // No session, nothing to cancel
+    }
+
+    // SECURITY: Verify ownership before cancelling
+    const ownershipResult = sftp.verifyTransferOwnership(request.transferId, ids.sessionId)
+    if (!ownershipResult.ok) {
+      // Log authorization rejection for security audit
+      this.logAuthorizationRejection('download_cancel', request.transferId, ids.sessionId)
+      // Silent return - don't reveal transfer existence to potential attacker
       return
     }
 
@@ -604,6 +677,35 @@ export class ServiceSocketSftp {
       durationMs,
       data
     })
+  }
+
+  /**
+   * Log an authorization rejection for security audit.
+   *
+   * Called when a session attempts to access a transfer it does not own.
+   * Uses 'policy_block' event type with SFTP-specific data.
+   */
+  private logAuthorizationRejection(
+    operation: string,
+    transferId: TransferId,
+    requestingSessionId: SessionId
+  ): void {
+    const clientIp = this.context.state.clientIp ?? 'unknown'
+    const timestamp = new Date().toISOString()
+
+    emitSocketLog(this.context, 'warn', 'policy_block',
+      `SFTP ${operation} authorization rejected`, {
+        status: 'failure',
+        subsystem: 'sftp',
+        data: {
+          operation,
+          transferId,
+          requestingSessionId,
+          clientIp,
+          timestamp,
+          reason: 'ownership_verification_failed'
+        }
+      })
   }
 }
 

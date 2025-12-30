@@ -2,6 +2,8 @@
  * Branded types for domain modeling and type safety
  */
 
+import { randomUUID } from 'node:crypto'
+
 // Generic branded type utility
 export type Branded<T, B> = T & { readonly __brand: B }
 
@@ -36,6 +38,7 @@ export const createConnectionId = (id: string): ConnectionId => id as Connection
 export const createSocketId = (id: string): SocketId => id as SocketId
 export const createAuthMethod = (method: AuthMethodToken): AuthMethod => method as AuthMethod
 export const createTransferId = (id: string): TransferId => id as TransferId
+export const generateTransferId = (): TransferId => createTransferId(randomUUID())
 export const createPromptId = (id: string): PromptId => id as PromptId
 
 // Type guards

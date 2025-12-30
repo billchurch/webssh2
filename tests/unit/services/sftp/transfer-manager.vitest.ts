@@ -11,7 +11,7 @@ import {
   TransferManager,
   createTransferManager
 } from '../../../../app/services/sftp/transfer-manager.js'
-import { createTransferId, createSessionId } from '../../../../app/types/branded.js'
+import { createTransferId, createSessionId, generateTransferId } from '../../../../app/types/branded.js'
 
 describe('transfer-manager', () => {
   const sessionId = createSessionId('test-session-1')
@@ -516,6 +516,60 @@ describe('transfer-manager', () => {
         expect(manager.getTotalCount()).toBe(0)
       })
     })
+
+    describe('verifyOwnership', () => {
+      it('returns transfer for valid owner', () => {
+        manager.startTransfer({
+          transferId,
+          sessionId,
+          direction: 'upload',
+          remotePath: '/file.txt',
+          fileName: 'file.txt',
+          totalBytes: 1000
+        })
+
+        const result = manager.verifyOwnership(transferId, sessionId)
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+          expect(result.value.id).toBe(transferId)
+          expect(result.value.sessionId).toBe(sessionId)
+        }
+      })
+
+      it('returns TRANSFER_NOT_FOUND for non-existent transfer', () => {
+        const result = manager.verifyOwnership(
+          createTransferId('nonexistent'),
+          sessionId
+        )
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+          expect(result.error.code).toBe('TRANSFER_NOT_FOUND')
+        }
+      })
+
+      it('returns TRANSFER_NOT_FOUND for wrong session (security: same error)', () => {
+        manager.startTransfer({
+          transferId,
+          sessionId,
+          direction: 'upload',
+          remotePath: '/file.txt',
+          fileName: 'file.txt',
+          totalBytes: 1000
+        })
+
+        const wrongSession = createSessionId('attacker-session')
+        const result = manager.verifyOwnership(transferId, wrongSession)
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+          // CRITICAL: Must be same error code as non-existent transfer
+          // This prevents enumeration attacks
+          expect(result.error.code).toBe('TRANSFER_NOT_FOUND')
+          expect(result.error.message).toBe('Transfer not found')
+        }
+      })
+    })
   })
 
   describe('createTransferManager', () => {
@@ -526,6 +580,32 @@ describe('transfer-manager', () => {
       })
 
       expect(manager).toBeInstanceOf(TransferManager)
+    })
+  })
+
+  describe('generateTransferId', () => {
+    it('generates valid UUID v4 format', () => {
+      const id = generateTransferId()
+      // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+      // where y is one of [89ab]
+      const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      expect(uuidV4Regex.test(id)).toBe(true)
+    })
+
+    it('generates unique IDs', () => {
+      const ids = new Set<string>()
+      for (let i = 0; i < 100; i++) {
+        ids.add(generateTransferId())
+      }
+      expect(ids.size).toBe(100)
+    })
+
+    it('returns branded TransferId type', () => {
+      const id = generateTransferId()
+      // TypeScript ensures this is a TransferId - if it compiles, it's correct
+      // Just verify it's a string at runtime
+      expect(typeof id).toBe('string')
+      expect(id.length).toBe(36) // UUID length
     })
   })
 })
