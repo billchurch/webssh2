@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.0.0...webssh2-server-v3.1.0) (2026-01-13)
+
+
+### Features
+
+* **debug:** add ssh2 protocol-level debug logging ([#469](https://github.com/billchurch/webssh2/issues/469)) ([e4ba8fa](https://github.com/billchurch/webssh2/commit/e4ba8fa62153e73ae496bd4c8054fdea4cad7f1a))
+
 ## [3.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v2.6.1...webssh2-server-v3.0.0) (2025-12-30)
 
 
