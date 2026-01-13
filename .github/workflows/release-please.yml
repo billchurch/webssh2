@@ -72,6 +72,20 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
+      # Trigger Docker build workflow
+      # Note: Releases created with GITHUB_TOKEN don't trigger other workflows,
+      # so we must explicitly dispatch the docker-publish workflow
+      - name: Trigger Docker build
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          gh workflow run docker-publish.yml \
+            --ref "$RELEASE_TAG" \
+            -f release_tag="$RELEASE_TAG" \
+            -f publish_latest=true
+
       - name: Dispatch downstream repository
         if: ${{ steps.release.outputs.release_created }}
         env:
