@@ -34,6 +34,7 @@ import { isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 import { STREAM_LIMITS } from '../../constants/index.js'
 
 const logger = debug('webssh2:services:ssh')
+const ssh2ProtocolLogger = debug('webssh2:ssh2')
 
 export class SSHServiceImpl implements SSHService {
   private readonly pool = new ConnectionPool()
@@ -92,6 +93,11 @@ export class SSHServiceImpl implements SSHService {
 
     if (config.algorithms !== undefined) {
       connectConfig.algorithms = config.algorithms
+    }
+
+    // Enable ssh2 protocol-level debug when webssh2:ssh2 namespace is active
+    if (ssh2ProtocolLogger.enabled) {
+      connectConfig.debug = (msg: string) => ssh2ProtocolLogger(msg)
     }
 
     return connectConfig

@@ -71,6 +71,57 @@ DEBUG=* npm run start
 3. Check SSH logs: `tail -f /var/log/auth.log`
 4. Verify network path: `ping target-host`
 
+#### "No matching key exchange method" or Algorithm Negotiation Failure
+
+**Causes:**
+- Target device only supports legacy algorithms (common with Cisco IOS, older network equipment)
+- WebSSH2 algorithms configuration not including required algorithms
+
+**Solutions:**
+1. Enable SSH2 protocol debug to see negotiation details:
+   ```bash
+   DEBUG=webssh2:ssh2 npm run start
+   ```
+
+2. Check the debug output for algorithm negotiation:
+   - Look for `Outgoing: Sending KEXINIT` to see what WebSSH2 offers
+   - Look for `Inbound: Received KEXINIT` to see what the server offers
+   - Compare the lists to find mismatches
+
+3. Configure required algorithms in `config.json`:
+   ```json
+   {
+     "ssh": {
+       "algorithms": {
+         "kex": [
+           "ecdh-sha2-nistp256",
+           "diffie-hellman-group14-sha1"
+         ],
+         "serverHostKey": [
+           "ssh-ed25519",
+           "ssh-rsa"
+         ],
+         "cipher": [
+           "aes256-ctr",
+           "aes128-ctr"
+         ],
+         "hmac": [
+           "hmac-sha2-256",
+           "hmac-sha1"
+         ]
+       }
+     }
+   }
+   ```
+
+4. For legacy devices (Cisco IOS, older equipment), ensure these algorithms are included:
+   - KEX: `diffie-hellman-group14-sha1`
+   - Host Key: `ssh-rsa`
+   - Cipher: `aes256-ctr` or `aes128-ctr`
+   - MAC: `hmac-sha2-256` or `hmac-sha1`
+
+See [Supported Algorithms](ALGORITHMS.md) for the full list of available algorithms.
+
 ### Authentication Issues
 
 #### "401 Unauthorized"
