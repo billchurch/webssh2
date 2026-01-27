@@ -40,6 +40,13 @@ interface MockConfig {
     keepaliveInterval: number
     keepaliveCountMax: number
     allowedAuthMethods: AuthMethod[]
+    algorithms: {
+      kex: string[]
+      cipher: string[]
+      serverHostKey: string[]
+      hmac: string[]
+      compress: string[]
+    }
   }
   options: {
     allowReauth: boolean
@@ -138,7 +145,14 @@ export const createMockConfig = (): MockConfig => ({
     readyTimeout: DEFAULTS.SSH_READY_TIMEOUT_MS,
     keepaliveInterval: DEFAULTS.SSH_KEEPALIVE_INTERVAL_MS,
     keepaliveCountMax: DEFAULTS.SSH_KEEPALIVE_COUNT_MAX,
-    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+    algorithms: {
+      kex: ['ecdh-sha2-nistp256', 'diffie-hellman-group14-sha1'],
+      cipher: ['aes128-ctr', 'aes256-ctr'],
+      serverHostKey: ['ssh-rsa', 'ssh-ed25519'],
+      hmac: ['hmac-sha2-256', 'hmac-sha1'],
+      compress: ['none']
+    }
   },
   options: {
     allowReauth: true,

@@ -31,8 +31,19 @@ async function loadEnhancedConfig(
   resolution: ConfigFileResolution,
   sessionSecret?: string
 ): Promise<Result<Config, ConfigValidationError[]>> {
+  const loadStartTime = Date.now()
+  debug('Config loading started', { timestamp: loadStartTime })
+
   // Start with default config
   const defaultConfig = createDefaultConfig(sessionSecret)
+  debug('Default config loaded', {
+    algorithms: {
+      kex: defaultConfig.ssh.algorithms.kex,
+      hmac: defaultConfig.ssh.algorithms.hmac,
+      cipher: defaultConfig.ssh.algorithms.cipher,
+      serverHostKey: defaultConfig.ssh.algorithms.serverHostKey
+    }
+  })
   const resolvedPath = configLocationToPath(resolution.location)
 
   // Load file config if a valid location exists
@@ -71,7 +82,19 @@ async function loadEnhancedConfig(
   
   // Load environment config
   const envConfig = mapEnvironmentVariables(process.env)
-  
+
+  // Log environment variables for algorithm debugging
+  debug('Environment variables mapped', {
+    envAlgorithms: (envConfig as { ssh?: { algorithms?: Record<string, unknown> } }).ssh?.algorithms,
+    rawEnvVars: {
+      preset: process.env['WEBSSH2_SSH_ALGORITHMS_PRESET'],
+      kex: process.env['WEBSSH2_SSH_ALGORITHMS_KEX'],
+      hmac: process.env['WEBSSH2_SSH_ALGORITHMS_HMAC'],
+      cipher: process.env['WEBSSH2_SSH_ALGORITHMS_CIPHER'],
+      serverHostKey: process.env['WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY']
+    }
+  })
+
   // Process and merge configs
   const processResult = processConfigPure(
     defaultConfig,
@@ -86,6 +109,18 @@ async function loadEnhancedConfig(
       value: processResult.error.originalConfig,
     }])
   }
+
+  // Log final merged config for algorithm debugging
+  const loadEndTime = Date.now()
+  debug('Final config merged', {
+    loadDurationMs: loadEndTime - loadStartTime,
+    algorithms: {
+      kex: processResult.value.ssh.algorithms.kex,
+      hmac: processResult.value.ssh.algorithms.hmac,
+      cipher: processResult.value.ssh.algorithms.cipher,
+      serverHostKey: processResult.value.ssh.algorithms.serverHostKey
+    }
+  })
 
   const authResolution = resolveAllowedAuthMethods({
     rawValues: processResult.value.ssh.allowedAuthMethods,
