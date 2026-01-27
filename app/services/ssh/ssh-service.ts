@@ -91,9 +91,23 @@ export class SSHServiceImpl implements SSHService {
       logger('WARNING: No authentication method configured (no password or private key)')
     }
 
-    if (config.algorithms !== undefined) {
-      connectConfig.algorithms = config.algorithms
+    // Always use algorithms - from connection config or fallback to server config defaults
+    // This ensures legacy SSH servers (e.g., only supporting diffie-hellman-group14-sha1) can connect
+    const serverAlgorithms = this.deps.config.ssh.algorithms
+    const algorithmsToUse = config.algorithms ?? {
+      kex: serverAlgorithms.kex,
+      cipher: serverAlgorithms.cipher,
+      serverHostKey: serverAlgorithms.serverHostKey,
+      hmac: serverAlgorithms.hmac,
+      compress: serverAlgorithms.compress
     }
+
+    if (config.algorithms === undefined) {
+      // This should never happen in normal operation but protects against race conditions
+      logger('WARNING: No algorithms in connection config, using server defaults')
+    }
+
+    connectConfig.algorithms = algorithmsToUse
 
     // Enable ssh2 protocol-level debug when webssh2:ssh2 namespace is active
     if (ssh2ProtocolLogger.enabled) {

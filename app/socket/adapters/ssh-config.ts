@@ -4,6 +4,9 @@ import { createConnectionId, type SessionId } from '../../types/branded.js'
 import type { Services, KeyboardInteractiveHandler } from '../../services/interfaces.js'
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
 import type { AdapterContext } from './service-socket-shared.js'
+import { createNamespacedDebug } from '../../logger.js'
+
+const debug = createNamespacedDebug('ssh-config')
 
 type OptionalCredentials = Pick<AuthCredentials, 'password' | 'privateKey' | 'passphrase'>
 
@@ -48,6 +51,19 @@ export function buildSSHConfig(
     kex: config.ssh.algorithms.kex,
     serverHostKey: config.ssh.algorithms.serverHostKey
   }
+
+  // Log algorithms being used for this SSH connection
+  debug('SSH connection config built', {
+    sessionId,
+    host: credentials.host,
+    port: credentials.port,
+    algorithms: {
+      kex: algorithms['kex'],
+      hmac: algorithms['hmac'],
+      cipher: algorithms['cipher'],
+      serverHostKey: algorithms['serverHostKey']
+    }
+  })
 
   const optionalCreds = mapOptionalCredentials(credentials)
 

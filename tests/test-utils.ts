@@ -189,7 +189,14 @@ export function createMockDependencies(): ServiceDependencies {
         keepaliveCountMax: 10,
         alwaysSendKeyboardInteractivePrompts: false,
         disableInteractiveAuth: false,
-        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
+        allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+        algorithms: {
+          kex: ['ecdh-sha2-nistp256', 'diffie-hellman-group14-sha1'],
+          cipher: ['aes128-ctr', 'aes256-ctr'],
+          serverHostKey: ['ssh-rsa', 'ssh-ed25519'],
+          hmac: ['hmac-sha2-256', 'hmac-sha1'],
+          compress: ['none']
+        }
       },
       options: {
         challengeButton: false,
@@ -492,9 +499,11 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
       disableInteractiveAuth: false,
       alwaysSendKeyboardInteractivePrompts: false,
       algorithms: {
-        cipher: [],
-        compress: [],
-        hmac: []
+        kex: ['ecdh-sha2-nistp256', 'diffie-hellman-group14-sha1'],
+        cipher: ['aes128-ctr', 'aes256-ctr'],
+        serverHostKey: ['ssh-rsa', 'ssh-ed25519'],
+        hmac: ['hmac-sha2-256', 'hmac-sha1'],
+        compress: ['none']
       },
       allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
       ...overrides.ssh,
