@@ -139,10 +139,32 @@ if (!validationResult.success) {
 
 This approach:
 - ✅ Prevents invalid credentials from reaching WebSocket layer
-- ✅ Provides immediate feedback on authentication failures  
+- ✅ Provides immediate feedback on authentication failures
 - ✅ Follows HTTP standards for proper status codes
 - ✅ Differentiates between auth failures and network issues
 - ✅ Prevents unnecessary re-authentication attempts for network problems
+
+#### Error Response Format
+
+WebSSH2 uses content negotiation to provide appropriate error responses:
+
+**Browser Requests** (`Accept: text/html`):
+- Returns a styled HTML error page
+- Shows error title, message, and connection details
+- Includes "Try Again" button for 401 errors
+
+**API Requests** (`Accept: application/json`):
+- Returns JSON with error details:
+  ```json
+  {
+    "error": "Authentication failed",
+    "message": "All configured authentication methods failed",
+    "host": "example.com",
+    "port": 22
+  }
+  ```
+
+This ensures browsers display user-friendly error pages while API clients receive machine-readable JSON.
 
 ## Migration Guide: Basic Auth → POST Auth
 
@@ -299,7 +321,9 @@ curl -u "username:password" "http://localhost:2222/ssh/host/example.com"
 - **200 OK**: SSH credentials valid, terminal interface served
 - **401 Unauthorized**: SSH credentials invalid, includes `WWW-Authenticate` header
 - **400 Bad Request**: Malformed request or invalid parameters
-- **500 Internal Server Error**: Server-side issues (SSH connection problems, etc.)
+- **500 Internal Server Error**: Server-side issues
+- **502 Bad Gateway**: SSH server unreachable (network/DNS issues)
+- **504 Gateway Timeout**: SSH connection timed out
 
 ### Headers
 

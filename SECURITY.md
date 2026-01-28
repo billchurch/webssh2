@@ -6,8 +6,8 @@ We currently support only the latest released version of WebSSH2 with security u
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.6.x   | :white_check_mark: |
-| < 2.6.0 | :x:                |
+| 3.1.x   | :white_check_mark: |
+| < 3.1.0 | :x:                |
 
 **We strongly recommend always using the latest release to ensure you have the most recent security patches and improvements.**
 
@@ -55,9 +55,43 @@ When deploying WebSSH2:
 
 Thank you for helping keep WebSSH2 and its users secure!
 
+## Solid-js and Seroval vulnerability assessment
+
+As of 2026-01-27, we evaluated the following vulnerabilities affecting our client dependencies:
+
+### CVE-2026-23737 (Seroval RCE)
+
+| Aspect | Status |
+|--------|--------|
+| Affected versions | seroval < 1.4.1 |
+| Our version | seroval@1.5.0 (transitive via solid-js) |
+| Status | **Not vulnerable** - already on patched version |
+
+This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in client-to-server transmission scenarios, requiring Solid Start server functions to exploit.
+
+**Why we are not affected:**
+- webssh2_client is a plain Solid.js SPA, not a Solid Start application
+- No `"use server"` directives or server functions are used
+- All client-server communication uses Socket.IO's native JSON serialization
+- seroval is only a transitive dependency and is not directly imported or used
+
+### CVE-2025-27109 (Solid-js XSS)
+
+| Aspect | Status |
+|--------|--------|
+| Vulnerability type | Cross-site Scripting (XSS) |
+| Status | **Not vulnerable** - safe coding patterns used |
+
+**Why we are not affected:**
+- No `innerHTML` or `dangerouslySetInnerHTML` usage in the codebase
+- All JSX uses Solid.js safe text binding
+- Terminal output is rendered through xterm.js which safely handles escape sequences
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
-As of 2025-12-03, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
+As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
 
 The scanner performed the following checks:
 
@@ -85,6 +119,6 @@ For more information about detection logic or mitigations, contact the security 
 
 ---
 
-**Last updated:** 2025-12-03
+**Last updated:** 2026-01-27
 
-**Next review:** 2026-01-03
+**Next review:** 2026-02-27
