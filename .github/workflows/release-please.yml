@@ -74,11 +74,12 @@ jobs:
 
       # Trigger Docker build workflow
       # Note: Releases created with GITHUB_TOKEN don't trigger other workflows,
-      # so we must explicitly dispatch the docker-publish workflow
+      # so we must explicitly dispatch the docker-publish workflow.
+      # GITHUB_TOKEN cannot trigger workflow_dispatch events, so we use a PAT.
       - name: Trigger Docker build
         if: ${{ steps.release.outputs.release_created }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_WORKFLOW }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           gh workflow run docker-publish.yml \
