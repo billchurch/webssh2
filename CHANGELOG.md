@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.1.0...webssh2-server-v3.1.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* **ssh:** ensure environment variable algorithms are always honored ([#473](https://github.com/billchurch/webssh2/issues/473)) ([9a9077b](https://github.com/billchurch/webssh2/commit/9a9077beb9d795cf5f266764972005a2222c9e07))
+
 ## [3.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.0.0...webssh2-server-v3.1.0) (2026-01-13)
 
 
