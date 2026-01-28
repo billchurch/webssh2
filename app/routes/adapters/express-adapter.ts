@@ -8,6 +8,7 @@ import type { AuthSession } from '../../auth/auth-utils.js'
 import { createNamespacedDebug } from '../../logger.js'
 import { HTTP } from '../../constants/index.js'
 import type { SshRouteResponse, SshRouteRequest } from '../handlers/ssh-handler.js'
+import { renderErrorPage } from '../templates/error-page.js'
 
 const debug = createNamespacedDebug('routes:adapter')
 
@@ -28,6 +29,43 @@ export const extractRouteRequest = (req: ExpressRequest): SshRouteRequest => {
     body: req.body as Record<string, unknown>,
     headers: req.headers as Record<string, unknown>
   }
+}
+
+/**
+ * Check if an error response data object has the expected structure
+ */
+const isErrorResponseData = (
+  data: unknown
+): data is { error: string; message: string; host: string; port: number } => {
+  if (data === null || typeof data !== 'object') {
+    return false
+  }
+  const obj = data as Record<string, unknown>
+  return (
+    typeof obj['error'] === 'string' &&
+    typeof obj['message'] === 'string' &&
+    typeof obj['host'] === 'string' &&
+    typeof obj['port'] === 'number'
+  )
+}
+
+/**
+ * Check if request prefers HTML response based on Accept header
+ */
+const prefersHtml = (req: Request): boolean => {
+  const acceptHeader = req.get('accept') ?? ''
+  // Check if text/html appears before application/json in Accept header
+  // or if text/html is present and application/json is not
+  const htmlIndex = acceptHeader.indexOf('text/html')
+  const jsonIndex = acceptHeader.indexOf('application/json')
+
+  if (htmlIndex === -1) {
+    return false
+  }
+  if (jsonIndex === -1) {
+    return true
+  }
+  return htmlIndex < jsonIndex
 }
 
 /**
@@ -53,8 +91,27 @@ export const applyRouteResponse = (
   // Send response
   res.status(response.status)
 
-  // For 502 Bad Gateway, send plain text for compatibility with tests
-  if (response.status === 502) {
+  // Check if this is an error response that should be rendered as HTML for browsers
+  const isErrorStatus = response.status >= 400
+  const req = res.req
+  const acceptsHtml = prefersHtml(req)
+
+  if (isErrorStatus && acceptsHtml && isErrorResponseData(response.data)) {
+    // Browser request with error - return HTML error page
+    const showRetry = response.status === HTTP.UNAUTHORIZED
+    const html = renderErrorPage({
+      title: response.data.error,
+      message: response.data.message,
+      host: response.data.host,
+      port: response.data.port,
+      showRetry
+    })
+    res.type('text/html').send(html)
+    return
+  }
+
+  // For 502 Bad Gateway without proper error data, send plain text for compatibility
+  if (response.status === HTTP.BAD_GATEWAY && !isErrorResponseData(response.data)) {
     res.send('Bad Gateway')
     return
   }

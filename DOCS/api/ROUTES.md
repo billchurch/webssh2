@@ -179,6 +179,53 @@ http://localhost:2222/ssh/host/example.com?port=2244&sshterm=xterm-256color&env=
 | 401 | Unauthorized (authentication required or failed) |
 | 404 | Not Found (invalid route) |
 | 500 | Internal Server Error |
+| 502 | Bad Gateway (SSH server unreachable) |
+| 504 | Gateway Timeout (SSH connection timed out) |
+
+## Error Response Format
+
+WebSSH2 uses content negotiation to return appropriate error responses based on the client type.
+
+### Browser Requests (Accept: text/html)
+
+When a browser requests a page and an SSH error occurs, WebSSH2 returns a styled HTML error page with:
+- Error title and description
+- Host and port details
+- "Try Again" button (for 401 authentication errors)
+
+This provides a user-friendly experience instead of raw JSON.
+
+### API Requests (Accept: application/json)
+
+API clients receive JSON error responses:
+
+```json
+{
+  "error": "Connection failed",
+  "message": "Handshake failed: no matching key exchange algorithm",
+  "host": "example.com",
+  "port": 22
+}
+```
+
+### Content Negotiation
+
+The response format is determined by the `Accept` header:
+- If `text/html` appears before `application/json` → HTML error page
+- Otherwise → JSON response
+
+**Examples:**
+
+```bash
+# Browser request - gets HTML error page
+curl -H "Accept: text/html" \
+  "http://localhost:2222/ssh/host/example.com"
+
+# API request - gets JSON response
+curl -H "Accept: application/json" \
+  -u "user:pass" \
+  "http://localhost:2222/ssh/host/example.com"
+```
 
 ## Migration Guide
 
