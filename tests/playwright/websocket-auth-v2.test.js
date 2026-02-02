@@ -97,7 +97,9 @@ test.describe('V2 WebSocket Basic Authentication', () => {
 
   test('should show auth error modal for invalid Basic Auth credentials', async ({ page }) => {
     // With client-side error handling, server returns 200 and shows error modal
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@`)}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    const authPrefix = `://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', authPrefix)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
 
     // Wait for the error modal to appear with authentication failure
@@ -106,7 +108,9 @@ test.describe('V2 WebSocket Basic Authentication', () => {
 
   test('should show connection error modal for Basic Auth with non-existent host', async ({ page }) => {
     // With client-side error handling, server returns 200 and shows error modal
-    const url = `${TEST_CONFIG.baseUrl.replace('://', `://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@`)}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    const authPrefix = `://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', authPrefix)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
     await page.goto(url)
 
     // Wait for the error modal to appear with connection failure

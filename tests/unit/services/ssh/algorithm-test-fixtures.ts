@@ -125,15 +125,9 @@ export const createCompatibleClientSet = (): AlgorithmSet => ({
 
 /**
  * Creates a modern client set for integration tests
- * Contains typical modern SSH client algorithms
+ * Contains typical modern SSH client algorithms (same as modern server)
  */
-export const createModernClientSet = (): AlgorithmSet => ({
-  kex: ['curve25519-sha256', 'ecdh-sha2-nistp256'],
-  serverHostKey: ['ssh-ed25519', 'ecdsa-sha2-nistp256'],
-  cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'],
-  mac: ['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-256'],
-  compress: ['none', 'zlib@openssh.com']
-})
+export const createModernClientSet = (): AlgorithmSet => createModernServerSet()
 
 // Re-export for convenience
-export { createEmptyAlgorithmSet, type AlgorithmSet }
+export { createEmptyAlgorithmSet, type AlgorithmSet } from '../../../../app/services/ssh/algorithm-capture.js'

@@ -6,7 +6,7 @@ import { ALGORITHM_PRESETS, type Algorithms } from '../../config/algorithm-prese
 import { CATEGORY_TO_ENV_VAR, type AlgorithmCategory } from '../../constants/algorithm-env-vars.js'
 
 // Re-export for consumers
-export type { AlgorithmCategory }
+export type { AlgorithmCategory } from '../../constants/algorithm-env-vars.js'
 
 /**
  * Analysis result for a single algorithm category

@@ -2,7 +2,7 @@
  * Normalize SSH error messages to ensure non-empty, meaningful error text.
  * SSH2 can emit errors with empty messages but useful codes (e.g., ECONNREFUSED).
  */
-export function normalizeSSHErrorMessage(error: Error | unknown): string {
+export function normalizeSSHErrorMessage(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Unknown SSH error'
   }
