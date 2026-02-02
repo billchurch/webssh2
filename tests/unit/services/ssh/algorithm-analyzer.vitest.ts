@@ -9,31 +9,14 @@ import {
   analyzeAlgorithms,
   type CategoryAnalysis
 } from '../../../../app/services/ssh/algorithm-analyzer.js'
-import { createEmptyAlgorithmSet, type AlgorithmSet } from '../../../../app/services/ssh/algorithm-capture.js'
-
-const createClientSet = (): AlgorithmSet => ({
-  kex: ['curve25519-sha256', 'ecdh-sha2-nistp256', 'diffie-hellman-group14-sha1'],
-  serverHostKey: ['ssh-ed25519', 'rsa-sha2-512', 'ssh-rsa'],
-  cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com', 'aes256-ctr'],
-  mac: ['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-256', 'hmac-sha1'],
-  compress: ['none', 'zlib@openssh.com']
-})
-
-const createLegacyServerSet = (): AlgorithmSet => ({
-  kex: ['diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1'],
-  serverHostKey: ['ssh-rsa', 'ssh-dss'],
-  cipher: ['aes128-cbc', '3des-cbc', 'aes256-cbc'],
-  mac: ['hmac-sha1', 'hmac-md5'],
-  compress: ['none']
-})
-
-const createModernServerSet = (): AlgorithmSet => ({
-  kex: ['curve25519-sha256', 'ecdh-sha2-nistp256'],
-  serverHostKey: ['ssh-ed25519', 'ecdsa-sha2-nistp256'],
-  cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'],
-  mac: ['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-256'],
-  compress: ['none', 'zlib@openssh.com']
-})
+import {
+  createEmptyAlgorithmSet,
+  createClientSet,
+  createLegacyServerSet,
+  createModernServerSet,
+  createSetWithCategory,
+  type AlgorithmSet
+} from './algorithm-test-fixtures.js'
 
 describe('findCommonAlgorithms', () => {
   it('returns empty array when no common algorithms', () => {
@@ -109,14 +92,8 @@ describe('analyzeAlgorithms', () => {
     })
 
     it('sets hasMatch false when no common algorithms', () => {
-      const client: AlgorithmSet = {
-        ...createEmptyAlgorithmSet(),
-        cipher: ['aes256-gcm@openssh.com']
-      }
-      const server: AlgorithmSet = {
-        ...createEmptyAlgorithmSet(),
-        cipher: ['3des-cbc']
-      }
+      const client = createSetWithCategory('cipher', ['aes256-gcm@openssh.com'])
+      const server = createSetWithCategory('cipher', ['3des-cbc'])
       const analysis = analyzeAlgorithms(client, server)
 
       const cipherAnalysis = analysis.categories.find(c => c.category === 'cipher')

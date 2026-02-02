@@ -5,11 +5,13 @@ import { describe, it, expect } from 'vitest'
 import {
   parseAlgorithmDebugMessage,
   createAlgorithmCapture,
-  createEmptyAlgorithmSet,
   createEmptyCapturedAlgorithms,
-  hasAlgorithmData,
-  type AlgorithmSet
+  hasAlgorithmData
 } from '../../../../app/services/ssh/algorithm-capture.js'
+import {
+  createEmptyAlgorithmSet,
+  createSetWithCategory
+} from './algorithm-test-fixtures.js'
 
 describe('parseAlgorithmDebugMessage', () => {
   describe('KEX method parsing', () => {
@@ -274,27 +276,27 @@ describe('hasAlgorithmData', () => {
   })
 
   it('returns true if kex has data', () => {
-    const set: AlgorithmSet = { ...createEmptyAlgorithmSet(), kex: ['curve25519-sha256'] }
+    const set = createSetWithCategory('kex', ['curve25519-sha256'])
     expect(hasAlgorithmData(set)).toBe(true)
   })
 
   it('returns true if serverHostKey has data', () => {
-    const set: AlgorithmSet = { ...createEmptyAlgorithmSet(), serverHostKey: ['ssh-ed25519'] }
+    const set = createSetWithCategory('serverHostKey', ['ssh-ed25519'])
     expect(hasAlgorithmData(set)).toBe(true)
   })
 
   it('returns true if cipher has data', () => {
-    const set: AlgorithmSet = { ...createEmptyAlgorithmSet(), cipher: ['aes256-gcm'] }
+    const set = createSetWithCategory('cipher', ['aes256-gcm'])
     expect(hasAlgorithmData(set)).toBe(true)
   })
 
   it('returns true if mac has data', () => {
-    const set: AlgorithmSet = { ...createEmptyAlgorithmSet(), mac: ['hmac-sha2-256'] }
+    const set = createSetWithCategory('mac', ['hmac-sha2-256'])
     expect(hasAlgorithmData(set)).toBe(true)
   })
 
   it('returns true if compress has data', () => {
-    const set: AlgorithmSet = { ...createEmptyAlgorithmSet(), compress: ['none'] }
+    const set = createSetWithCategory('compress', ['none'])
     expect(hasAlgorithmData(set)).toBe(true)
   })
 })
