@@ -54,6 +54,8 @@ export interface AuthSession {
   sessionId?: string
   sessionUsername?: string
   userHash?: string
+  /** Prevents auto-reconnect with cached failed credentials after auth failure */
+  authFailed?: boolean
   [k: string]: unknown
 }
 

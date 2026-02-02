@@ -46,7 +46,17 @@ export function createAuthMiddleware(config: Config): RequestHandler {
       return
     }
 
-    Object.assign(session, sessionData)
+    // Skip credential repopulation if auth recently failed
+    // This prevents cached Basic Auth from being re-used after SSH auth failure
+    if (session['authFailed'] === true) {
+      debug('Skipping credential repopulation due to recent auth failure')
+      // Clear the flag so user can try again
+      session['authFailed'] = undefined
+      session['usedBasicAuth'] = false
+      session['sshCredentials'] = undefined
+    } else {
+      Object.assign(session, sessionData)
+    }
 
     if (typeof session.save !== 'function') {
       next()

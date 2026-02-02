@@ -61,15 +61,16 @@ As of 2026-01-27, we evaluated the following vulnerabilities affecting our clien
 
 ### CVE-2026-23737 (Seroval RCE)
 
-| Aspect | Status |
-|--------|--------|
-| Affected versions | seroval < 1.4.1 |
-| Our version | seroval@1.5.0 (transitive via solid-js) |
-| Status | **Not vulnerable** - already on patched version |
+| Aspect            | Status                                           |
+| ----------------- | ------------------------------------------------ |
+| Affected versions | seroval < 1.4.1                                  |
+| Our version       | seroval@1.5.0 (transitive via solid-js)          |
+| Status            | **Not vulnerable** - already on patched version  |
 
 This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in client-to-server transmission scenarios, requiring Solid Start server functions to exploit.
 
 **Why we are not affected:**
+
 - webssh2_client is a plain Solid.js SPA, not a Solid Start application
 - No `"use server"` directives or server functions are used
 - All client-server communication uses Socket.IO's native JSON serialization
@@ -77,12 +78,13 @@ This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in clien
 
 ### CVE-2025-27109 (Solid-js XSS)
 
-| Aspect | Status |
-|--------|--------|
-| Vulnerability type | Cross-site Scripting (XSS) |
-| Status | **Not vulnerable** - safe coding patterns used |
+| Aspect             | Status                                          |
+| ------------------ | ----------------------------------------------- |
+| Vulnerability type | Cross-site Scripting (XSS)                      |
+| Status             | **Not vulnerable** - safe coding patterns used  |
 
 **Why we are not affected:**
+
 - No `innerHTML` or `dangerouslySetInnerHTML` usage in the codebase
 - All JSX uses Solid.js safe text binding
 - Terminal output is rendered through xterm.js which safely handles escape sequences

@@ -11,6 +11,8 @@ import { TOKENS } from '../services/container.js'
 import { createSessionId } from '../types/branded.js'
 import { evaluateAuthMethodPolicy } from '../auth/auth-method-policy.js'
 import { VALIDATION_MESSAGES } from '../constants/index.js'
+import type { CapturedAlgorithms } from '../services/ssh/algorithm-capture.js'
+import type { SSHConnectionError } from '../services/ssh/connection-handlers.js'
 
 const debug = createNamespacedDebug('connection:validator')
 
@@ -18,6 +20,8 @@ export interface SshValidationResult {
   success: boolean
   errorType?: 'network' | 'timeout' | 'auth' | 'unknown'
   errorMessage?: string
+  /** Captured algorithm information (only present in debug mode) */
+  capturedAlgorithms?: CapturedAlgorithms
 }
 
 /**
@@ -102,16 +106,24 @@ export async function validateSshCredentials(
   }
 
   // Connection failed - categorize error
-  const err = result.error as Error & { code?: string; level?: string }
-  debug(`SSH validation failed for ${username}@${host}:${port}:`, err.message)
-  debug(`Error details - code: ${err.code}, level: ${err.level}`)
+  const connectionError = result.error as SSHConnectionError & { code?: string; level?: string }
+  debug(`SSH validation failed for ${username}@${host}:${port}:`, connectionError.message)
+  debug(`Error details - code: ${connectionError.code}, level: ${connectionError.level}`)
 
-  const errorType = analyzeConnectionError(err)
+  const errorType = analyzeConnectionError(connectionError)
   debug(`Determined error type: ${errorType}`)
 
-  return {
+  // Include captured algorithms if available (debug mode only)
+  const validationResult: SshValidationResult = {
     success: false,
     errorType,
-    errorMessage: err.message,
+    errorMessage: connectionError.message,
   }
+
+  if (connectionError.capturedAlgorithms !== undefined) {
+    validationResult.capturedAlgorithms = connectionError.capturedAlgorithms
+    debug('Including captured algorithms in validation result')
+  }
+
+  return validationResult
 }

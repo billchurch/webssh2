@@ -67,10 +67,20 @@ const CLIENT_TEMPLATE_READERS: readonly TemplateReader[] = [
   readFromGrandParentRoot
 ]
 
+interface ConnectionOptions {
+  host?: string
+  /** Connection mode: 'full' allows editing host/port, 'host-locked' restricts to credentials only */
+  connectionMode?: 'full' | 'host-locked'
+  /** Host that cannot be changed (when connectionMode is 'host-locked') */
+  lockedHost?: string
+  /** Port that cannot be changed (when connectionMode is 'host-locked') */
+  lockedPort?: number
+}
+
 export default async function handleConnection(
   req: Request & { session?: Sess; sessionID?: string },
   res: Response,
-  _opts?: { host?: string }
+  opts?: ConnectionOptions
 ): Promise<void> {
   debug('Handling connection req.path:', (req as Request).path)
   const tempConfig: Record<string, unknown> = {
@@ -79,6 +89,22 @@ export default async function handleConnection(
       path: DEFAULTS.IO_PATH,
     },
     autoConnect: (req as Request).path.startsWith('/host/'),
+  }
+
+  // Add connection mode info for client-side LoginModal behavior
+  if (opts?.connectionMode !== undefined) {
+    tempConfig['connectionMode'] = opts.connectionMode
+    if (opts.lockedHost !== undefined) {
+      tempConfig['lockedHost'] = opts.lockedHost
+    }
+    if (opts.lockedPort !== undefined) {
+      tempConfig['lockedPort'] = opts.lockedPort
+    }
+    debug('Connection mode set:', {
+      mode: opts.connectionMode,
+      lockedHost: opts.lockedHost,
+      lockedPort: opts.lockedPort
+    })
   }
 
   const s = req.session

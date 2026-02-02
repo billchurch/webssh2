@@ -69,6 +69,10 @@ export const SOCKET_EVENTS = {
   PROMPT: 'prompt',
   /** Client → Server: Response to a prompt */
   PROMPT_RESPONSE: 'prompt-response',
+
+  // Connection error events
+  /** Server → Client: Structured connection error with debug info */
+  CONNECTION_ERROR: 'connection-error',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]

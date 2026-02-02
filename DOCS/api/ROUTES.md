@@ -20,10 +20,10 @@ WebSSH2 provides several HTTP routes for different authentication methods and ut
 **Screenshots:**
 
 Login Form:
-<img width="341" alt="Login Form" src="https://github.com/user-attachments/assets/829d1776-3bc5-4315-b0c6-9e96a648ce06">
+![Login Form](https://github.com/user-attachments/assets/829d1776-3bc5-4315-b0c6-9e96a648ce06)
 
 Terminal Configuration:
-<img width="341" alt="Terminal Configuration" src="https://github.com/user-attachments/assets/bf60f5ba-7221-4177-8d64-946907aed5ff">
+![Terminal Configuration](https://github.com/user-attachments/assets/bf60f5ba-7221-4177-8d64-946907aed5ff)
 
 ### 2. `/ssh/host/:host` - HTTP Basic Auth ⚠️ **DEPRECATED**
 
@@ -45,7 +45,7 @@ WebSSH2 validates SSH credentials immediately upon receiving HTTP Basic Auth cre
 **Expected Behavior:**
 
 1. **URL without embedded credentials:**
-   ```
+   ```text
    http://localhost:2222/ssh/host/example.com
    ```
    - Invalid credentials → 401 Unauthorized
@@ -54,7 +54,7 @@ WebSSH2 validates SSH credentials immediately upon receiving HTTP Basic Auth cre
    - Success
 
 2. **URL with embedded credentials:**
-   ```
+   ```text
    http://user:pass@localhost:2222/ssh/host/example.com
    ```
    - Browser always uses URL credentials
@@ -154,33 +154,33 @@ const response = await fetch('/ssh', {
 
 All routes support the following query parameters:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `port` | integer | 22 | SSH port to connect to |
-| `sshterm` | string | xterm-color | Terminal type |
-| `header` | string | - | Header text override |
-| `headerBackground` | string | green | Header background color |
-| `headerStyle` | string | - | Additional inline styles (e.g., `color: red`) |
-| `env` | string | - | Comma-separated env pairs (e.g., `FOO:bar,BAR:baz`) |
+| Parameter          | Type    | Default     | Description                                           |
+| ------------------ | ------- | ----------- | ----------------------------------------------------- |
+| `port`             | integer | 22          | SSH port to connect to                                |
+| `sshterm`          | string  | xterm-color | Terminal type                                         |
+| `header`           | string  | -           | Header text override                                  |
+| `headerBackground` | string  | green       | Header background color                               |
+| `headerStyle`      | string  | -           | Additional inline styles (e.g., `color: red`)         |
+| `env`              | string  | -           | Comma-separated env pairs (e.g., `FOO:bar,BAR:baz`)   |
 
 ### Example with Query Parameters
 
-```
+```text
 http://localhost:2222/ssh/host/example.com?port=2244&sshterm=xterm-256color&env=DEBUG:true,NODE_ENV:production
 ```
 
 ## Response Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 302 | Redirect (for reauth) |
-| 400 | Bad Request (invalid parameters) |
-| 401 | Unauthorized (authentication required or failed) |
-| 404 | Not Found (invalid route) |
-| 500 | Internal Server Error |
-| 502 | Bad Gateway (SSH server unreachable) |
-| 504 | Gateway Timeout (SSH connection timed out) |
+| Code | Description                                       |
+| ---- | ------------------------------------------------- |
+| 200  | Success                                           |
+| 302  | Redirect (for reauth)                             |
+| 400  | Bad Request (invalid parameters)                  |
+| 401  | Unauthorized (authentication required or failed)  |
+| 404  | Not Found (invalid route)                         |
+| 500  | Internal Server Error                             |
+| 502  | Bad Gateway (SSH server unreachable)              |
+| 504  | Gateway Timeout (SSH connection timed out)        |
 
 ## Error Response Format
 

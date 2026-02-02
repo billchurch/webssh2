@@ -6,7 +6,6 @@ import handleConnection from '../connectionHandler.js'
 import { createNamespacedDebug } from '../logger.js'
 import { createAuthMiddleware } from '../middleware.js'
 import { processAuthParameters, type AuthSession } from '../auth/auth-utils.js'
-import { validateSshCredentials } from '../connection/index.js'
 import { HTTP } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 import { createSafeKey, safeGet } from '../utils/safe-property-access.js'
@@ -15,7 +14,6 @@ import { evaluateAuthMethodPolicy } from '../auth/auth-method-policy.js'
 // Import pure handlers
 import {
   validateSshRouteCredentials,
-  processSshValidationResult,
   processPostAuthRequest,
   createAuthSessionUpdates,
   processReauthRequest,
@@ -96,7 +94,9 @@ function updateSessionCredentials(
 }
 
 /**
- * Internal helper to handle SSH GET route logic
+ * Internal helper to handle SSH GET route logic.
+ * Note: SSH validation is now performed via WebSocket after client loads.
+ * This allows the client to display rich error modals with algorithm debug info.
  */
 async function handleSshGetRoute(
   req: Request,
@@ -143,37 +143,35 @@ async function handleSshGetRoute(
     return
   }
 
-  const validationResult = await validateSshCredentials(
-    connectionResult.value.host,
-    connectionResult.value.port,
-    credentialResult.value.username,
-    credentialResult.value.password,
-    config,
-    credentialResult.value.privateKey,
-    credentialResult.value.passphrase
-  )
-
-  if (!validationResult.success) {
-    const errorResponse = processSshValidationResult(
-      validationResult,
-      connectionResult.value.host,
-      connectionResult.value.port
-    )
-    applyRouteResponse(errorResponse, res)
-    return
-  }
-
   debug(
-    'SSH validation passed:',
+    'SSH credentials validated (policy check only), serving client:',
     sanitizeCredentialsForLogging(credentialResult.value, connectionResult.value)
   )
 
   updateSessionCredentials(expressReq.session, connectionResult.value)
   processAuthParameters(routeRequest.query, expressReq.session)
+
+  // Determine connection mode based on whether host was provided in URL
+  // 'host-locked' means the host/port are fixed from the URL and cannot be changed
+  const isHostLocked = hostOverride !== undefined && hostOverride !== ''
+
+  // Build connection options, only including locked values if host is locked
+  const connectionOptions = isHostLocked
+    ? {
+        host: connectionResult.value.host,
+        connectionMode: 'host-locked' as const,
+        lockedHost: connectionResult.value.host,
+        lockedPort: connectionResult.value.port
+      }
+    : {
+        host: connectionResult.value.host,
+        connectionMode: 'full' as const
+      }
+
   await handleConnection(
     expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
     res,
-    { host: connectionResult.value.host }
+    connectionOptions
   )
 }
 
@@ -291,8 +289,10 @@ export function createRoutesV2(config: Config): Router {
   router.get('/host/:host', auth, asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     const hostParam = expressReq.params['host']
-    debug(`GET /host/${hostParam} - Specific host route`)
-    await handleSshGetRoute(req, res, config, hostParam)
+    // Express route params are always strings for named params, but type allows string[]
+    const host = typeof hostParam === 'string' ? hostParam : undefined
+    debug(`GET /host/${host} - Specific host route`)
+    await handleSshGetRoute(req, res, config, host)
   }))
 
   /**
@@ -310,8 +310,10 @@ export function createRoutesV2(config: Config): Router {
   router.post('/host/:host', asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     const hostParam = expressReq.params['host']
-    debug(`POST /host/${hostParam} - SSO authentication route with host`)
-    await handlePostAuthRoute(req, res, config, hostParam)
+    // Express route params are always strings for named params, but type allows string[]
+    const host = typeof hostParam === 'string' ? hostParam : undefined
+    debug(`POST /host/${host} - SSO authentication route with host`)
+    await handlePostAuthRoute(req, res, config, host)
   }))
 
   /**

@@ -71,6 +71,14 @@ export class UnifiedAuthPipeline {
    * Detect which authentication provider to use based on request
    */
   private detectAuthProvider(): void {
+    // Skip Basic Auth provider if auth recently failed
+    // This ensures fresh credentials are prompted instead of reusing cached failed ones
+    if (this.req.session?.authFailed === true) {
+      debug('Skipping Basic Auth due to recent auth failure, using Manual Auth provider')
+      this.provider = new ManualAuthProvider()
+      return
+    }
+
     // Check for Basic Auth first (session-based)
     if (this.req.session?.usedBasicAuth === true && this.req.session.sshCredentials != null) {
       debug('Detected Basic Auth provider')

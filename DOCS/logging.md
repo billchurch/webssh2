@@ -1,11 +1,13 @@
 # Logging Strategy
 
 ## Vision
+
 - Emit structured, security-focused telemetry for every critical SSH interaction, using JSON as the canonical event payload.
 - Support multiple transports (stdout by default, optional syslog) without forcing runtime restarts or code changes.
 - Preserve privacy by masking secrets, dropping high-volume clutter, and normalising metadata.
 
 ## Guiding Principles
+
 - Prefer pure data assembly functions that return `Result` objects so failures are observable and non-fatal.
 - Keep modules small and transport-agnostic; compose via dependency injection.
 - Never log credentials, private key material, or raw terminal content.
@@ -13,6 +15,7 @@
 - Reject events that exceed size thresholds or include unsafe characters for downstream systems.
 
 ## Event Model
+
 Each log event combines core metadata with an event-specific payload. Core fields:
 
 | Field | Type | Notes |
@@ -35,20 +38,97 @@ Each log event combines core metadata with an event-specific payload. Core field
 | `duration_ms` | number | Milliseconds captured via monotonic timers. |
 | `bytes_in`/`bytes_out` | number | Aggregate stream counters when available. |
 
-Event catalog (initial focus):
-- `auth_attempt`, `auth_success`, `auth_failure`
-- `session_init`, `session_start`, `session_end`
-- `ssh_command` (shell command execution)
-- `pty_resize` (terminal size changes)
-- `idle_timeout` (automatic disconnect)
-- `policy_block` (denied action)
-- `error` (unexpected failures, include `error_code` and `reason`)
+### Event Catalog
 
-Future events (`sftp_*`, `scp_*`) remain aspirational until those subsystems exist in `app/`.
+#### Authentication Events
+
+| Event | Description |
+| --- | --- |
+| `auth_attempt` | User initiated authentication (password or key) |
+| `auth_success` | Authentication completed successfully |
+| `auth_failure` | Authentication rejected by SSH server (wrong credentials) |
+| `credential_replay` | Stored credentials reused for reconnection |
+
+#### Connection Events
+
+| Event | Description |
+| --- | --- |
+| `connection_failure` | Connection failed before authentication (network, algorithm mismatch, timeout) |
+
+The `connection_failure` event differs from `auth_failure`:
+
+- `auth_failure`: SSH server rejected credentials (user error)
+- `connection_failure`: Connection could not be established (infrastructure/config issue)
+
+The `connection_failure` event includes an `errorType` field with one of:
+
+- `algorithm`: Server and client have no compatible algorithms
+- `network`: Network unreachable, connection refused, DNS failure
+- `timeout`: Connection or handshake timed out
+- `unknown`: Other unexpected failures
+
+#### Session Events
+
+| Event | Description |
+| --- | --- |
+| `session_init` | WebSocket connection established, session created |
+| `session_start` | SSH shell or subsystem opened |
+| `session_end` | Session terminated (user logout, disconnect, timeout) |
+
+#### Terminal Events
+
+| Event | Description |
+| --- | --- |
+| `ssh_command` | Shell command execution via exec channel |
+| `pty_resize` | Terminal dimensions changed |
+| `idle_timeout` | Session terminated due to inactivity |
+
+#### Policy Events
+
+| Event | Description |
+| --- | --- |
+| `policy_block` | Action denied by security policy |
+| `error` | Unexpected system failure (include `error_code` and `reason`) |
+
+#### SFTP Events
+
+| Event | Description |
+| --- | --- |
+| `sftp_list` | Directory listing requested |
+| `sftp_stat` | File metadata requested |
+| `sftp_mkdir` | Directory created |
+| `sftp_delete` | File or directory deleted |
+| `sftp_upload_start` | File upload initiated |
+| `sftp_upload_chunk` | Upload chunk transferred |
+| `sftp_upload_complete` | Upload finished successfully |
+| `sftp_upload_cancel` | Upload cancelled by user or error |
+| `sftp_download_start` | File download initiated |
+| `sftp_download_chunk` | Download chunk transferred |
+| `sftp_download_complete` | Download finished successfully |
+| `sftp_download_cancel` | Download cancelled by user or error |
+
+#### Prompt Events
+
+| Event | Description |
+| --- | --- |
+| `prompt_sent` | Interactive prompt sent to user |
+| `prompt_response` | User responded to prompt |
+| `prompt_timeout` | Prompt timed out waiting for response |
+| `prompt_error` | Error processing prompt |
+
+### Log Levels
+
+| Level | Usage |
+| --- | --- |
+| `error` | Unexpected system failures, bugs, unrecoverable conditions |
+| `warn` | Expected failure conditions (wrong password, config mismatch, recoverable errors) |
+| `info` | Normal operations (session start, auth success, significant state changes) |
+| `debug` | Detailed tracing, diagnostic information, verbose operational data |
 
 Event payloads should be defined in TypeScript using discriminated unions so the compiler enforces completeness.
 
 ## Transport Architecture
+
 1. **Stdout transport (default)**
    - Writes newline-delimited JSON to `process.stdout`.
    - Honors log level filtering per configuration.
@@ -62,7 +142,9 @@ Event payloads should be defined in TypeScript using discriminated unions so the
 Transports must be pluggable; attaching or detaching one cannot impact the core log formatting pipeline.
 
 ## Configuration Surface
+
 Environment variables (all prefixed `WEBSSH2_LOGGING_`):
+
 - `LEVEL`: minimum severity to emit (`info` default).
 - `STDOUT_ENABLED`: enable/disable stdout delivery (defaults to `true`).
 - `STDOUT_MIN_LEVEL`: override for stdout transport only.
@@ -133,6 +215,7 @@ Key behaviours:
 - TLS credentials are read during transport initialisation; invalid paths leave syslog disabled with a warning on stderr.
 
 ## Implementation Milestones
+
 1. Replace the current `Logger` interface with a structured logger accepting `{ level, event, data }`.
 2. Implement shared utilities for timestamps, correlation IDs, byte counters, and error serialisation (`Result` based).
 3. Instrument authentication, session, and SSH services to emit events with exhaustive metadata.
@@ -141,18 +224,21 @@ Key behaviours:
 5. Add integration tests that assert log production for representative socket flows.
 
 ## Testing Expectations
+
 - Unit tests for formatter correctness, field validation, and masking logic.
 - Integration tests (Vitest) that exercise authentication and command execution flows, asserting emitted events against Golden JSON snapshots.
 - Playwright smoke tests ensuring critical user actions result in log output.
 - Chaos tests (optional) simulating syslog disconnects to confirm buffered resend.
 
 ## Operational Guidance
+
 - stdout logs are container-friendly and should be shipped via the hosting platform.
 - Syslog transport is opt-in; operators must provision certificates and network routes.
 - Document the event schema in release notes so SIEM parsers stay in sync.
 - Provide scripts for validating syslog connectivity (e.g., `openssl s_client`).
 
 ## Current Progress
+
 - `app/logging/` contains the structured formatter, log level helpers, stdout transport, and application-facing logger factory.
 - `app/logger.ts` exposes `createAppStructuredLogger` and now emits structured `error` events in addition to legacy console output.
 - Socket authentication/terminal adapters publish structured events for auth attempts, successes/failures,
@@ -160,7 +246,8 @@ Key behaviours:
 - Unit coverage lives under `tests/unit/logging/`, validating formatting, level filtering, socket context derivation, and stdout backpressure handling.
 
 ## Future Enhancements
+
 - Support OpenTelemetry log record export once Node SDK stabilises.
-- Introduce demand-based sampling for high-frequency events (e.g., `pty_resize`).
-- Extend event catalog as new SSH features (SFTP/SCP) ship.
+- Introduce demand-based sampling for high-frequency events (e.g., `pty_resize`, `sftp_*_chunk`).
+- Extend event catalog as new features (SCP subsystem) ship.
 - Publish schema versioning to allow consumers to detect breaking changes.

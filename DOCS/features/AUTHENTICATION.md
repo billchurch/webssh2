@@ -52,6 +52,7 @@ POST authentication supports flexible parameter passing:
 - **Precedence:** Body parameters override query parameters
 
 This allows SSO systems to:
+
 1. Send credentials securely in POST body
 2. Specify target host via URL query parameters
 3. Mix and match based on security requirements
@@ -67,6 +68,7 @@ WebSSH2 validates SSH credentials **immediately** upon receiving HTTP Basic Auth
 **URL Format:** `http://localhost:2222/ssh/host/example.com`
 
 **Flow:**
+
 1. User navigates to URL
 2. Browser prompts for credentials (if not cached)
 3. WebSSH2 validates SSH credentials immediately
@@ -78,6 +80,7 @@ WebSSH2 validates SSH credentials **immediately** upon receiving HTTP Basic Auth
 **URL Format:** `http://user:pass@localhost:2222/ssh/host/example.com`
 
 **Flow:**
+
 1. Browser automatically uses embedded credentials
 2. WebSSH2 validates SSH credentials immediately
 3. **Invalid credentials** → 401 Unauthorized → **No re-authentication possible**
@@ -138,6 +141,7 @@ if (!validationResult.success) {
   - Re-authentication won't help
 
 This approach:
+
 - ✅ Prevents invalid credentials from reaching WebSocket layer
 - ✅ Provides immediate feedback on authentication failures
 - ✅ Follows HTTP standards for proper status codes
@@ -149,12 +153,15 @@ This approach:
 WebSSH2 uses content negotiation to provide appropriate error responses:
 
 **Browser Requests** (`Accept: text/html`):
+
 - Returns a styled HTML error page
 - Shows error title, message, and connection details
 - Includes "Try Again" button for 401 errors
 
 **API Requests** (`Accept: application/json`):
+
 - Returns JSON with error details:
+
   ```json
   {
     "error": "Authentication failed",
@@ -178,6 +185,7 @@ This ensures browsers display user-friendly error pages while API clients receiv
 ### Migration Examples
 
 #### Before (Basic Auth - Deprecated)
+
 ```bash
 # Browser-based
 curl -u "username:password" "http://localhost:2222/ssh/host/example.com"
@@ -187,6 +195,7 @@ curl "http://username:password@localhost:2222/ssh/host/example.com"
 ```
 
 #### After (POST Auth - Recommended)
+
 ```bash
 # Standard POST request - all parameters in body
 curl -X POST "http://localhost:2222/ssh" \
@@ -265,13 +274,15 @@ async function authenticateWithSSO(ssoToken, targetHost, targetPort = 22) {
 ### For Users
 
 1. **For interactive re-authentication:** Use URLs without embedded credentials
-   ```
+
+   ```text
    ✅ Good: http://localhost:2222/ssh/host/example.com
    ❌ Problematic: http://user:pass@localhost:2222/ssh/host/example.com
    ```
 
 2. **For scripted/automated access:** Embed credentials in URL (no retry needed)
-   ```
+
+   ```text
    ✅ Good: http://validuser:validpass@localhost:2222/ssh/host/example.com
    ```
 
@@ -299,6 +310,7 @@ async function authenticateWithSSO(ssoToken, targetHost, targetPort = 22) {
 **Symptom:** 401 response but no authentication dialog appears
 
 **Causes & Solutions:**
+
 1. **Embedded credentials in URL** → Remove credentials from URL
 2. **Browser cached credentials** → Clear browser auth cache or use incognito mode
 3. **CORS issues** → Check server CORS configuration
@@ -310,6 +322,7 @@ async function authenticateWithSSO(ssoToken, targetHost, targetPort = 22) {
 **Solution:** Ensure scripts are properly encoding credentials and handling 401 responses
 
 **Example curl command:**
+
 ```bash
 curl -u "username:password" "http://localhost:2222/ssh/host/example.com"
 ```
@@ -328,7 +341,8 @@ curl -u "username:password" "http://localhost:2222/ssh/host/example.com"
 ### Headers
 
 **401 Response Headers:**
-```
+
+```http
 HTTP/1.1 401 Unauthorized
 WWW-Authenticate: Basic realm="WebSSH2"
 ```
@@ -342,6 +356,7 @@ DEBUG=webssh2:routes npm start
 ```
 
 Look for log entries like:
+
 - `Validating SSH credentials for user@host:port`
 - `SSH validation successful for user@host:port`
 - `SSH validation failed for user@host:port`
