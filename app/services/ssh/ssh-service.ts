@@ -32,6 +32,10 @@ import { registerConnectionHandlers } from './connection-handlers.js'
 import { executeSshCommand } from './exec-command.js'
 import { isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
 import { STREAM_LIMITS } from '../../constants/index.js'
+import {
+  createAlgorithmCapture,
+  type AlgorithmCapture
+} from './algorithm-capture.js'
 
 const logger = debug('webssh2:services:ssh')
 const ssh2ProtocolLogger = debug('webssh2:ssh2')
@@ -65,7 +69,14 @@ export class SSHServiceImpl implements SSHService {
     }
   }
 
-  private buildConnectConfig(config: SSHConfig): Parameters<SSH2Client['connect']>[0] {
+  /**
+   * Build SSH2 connection config and optionally create algorithm capture
+   * @returns Object containing the connect config and optional algorithm capture
+   */
+  private buildConnectConfig(config: SSHConfig): {
+    connectConfig: Parameters<SSH2Client['connect']>[0]
+    algorithmCapture: AlgorithmCapture | null
+  } {
     const connectConfig: Parameters<SSH2Client['connect']>[0] = {
       host: config.host,
       port: config.port,
@@ -110,11 +121,17 @@ export class SSHServiceImpl implements SSHService {
     connectConfig.algorithms = algorithmsToUse
 
     // Enable ssh2 protocol-level debug when webssh2:ssh2 namespace is active
+    // Also capture algorithm information for debug error pages
+    let algorithmCapture: AlgorithmCapture | null = null
     if (ssh2ProtocolLogger.enabled) {
-      connectConfig.debug = (msg: string) => ssh2ProtocolLogger(msg)
+      algorithmCapture = createAlgorithmCapture()
+      connectConfig.debug = (msg: string) => {
+        ssh2ProtocolLogger(msg)
+        algorithmCapture?.parse(msg)
+      }
     }
 
-    return connectConfig
+    return { connectConfig, algorithmCapture }
   }
 
   /**
@@ -247,13 +264,16 @@ export class SSHServiceImpl implements SSHService {
           resolve(err(new Error('Connection timeout')))
         }, this.connectionTimeout)
 
+        const { connectConfig, algorithmCapture } = this.buildConnectConfig(config)
+
         this.setupKeyboardInteractiveHandler(client, config)
         registerConnectionHandlers(
           {
             pool: this.pool,
             store: this.store,
             connectionLogger: this.connectionLogger,
-            debug: logger
+            debug: logger,
+            algorithmCapture
           },
           {
             client,
@@ -264,8 +284,6 @@ export class SSHServiceImpl implements SSHService {
             onError: (error) => resolve(err(error))
           }
         )
-
-        const connectConfig = this.buildConnectConfig(config)
 
         logger('SSH2 client connect config:', {
           host: connectConfig.host,
@@ -278,7 +296,8 @@ export class SSHServiceImpl implements SSHService {
           readyTimeout: connectConfig.readyTimeout,
           keepaliveInterval: connectConfig.keepaliveInterval,
           keepaliveCountMax: connectConfig.keepaliveCountMax,
-          tryKeyboard: connectConfig.tryKeyboard
+          tryKeyboard: connectConfig.tryKeyboard,
+          algorithmCaptureEnabled: algorithmCapture !== null
         })
 
         client.connect(connectConfig)

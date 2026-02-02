@@ -1,4 +1,3 @@
-/* eslint-env browser */
 /* global document */
 /**
  * Playwright-specific test constants and helper functions

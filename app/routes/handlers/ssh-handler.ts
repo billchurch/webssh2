@@ -1,11 +1,11 @@
 // app/routes/handlers/ssh-handler.ts
 // Pure functions for SSH route handling logic
+// Note: SSH validation errors are now handled via WebSocket 'connection-error' events
+// and displayed in the client-side ConnectionErrorModal.
 
 import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
-import type { SshValidationResult } from '../../connection/index.js'
-import { HTTP } from '../../constants/index.js'
 
 export interface SshRouteRequest {
   session: AuthSession
@@ -76,72 +76,6 @@ export const validateSshRouteCredentials = (
       privateKey: creds['privateKey'] as string,
       passphrase: creds['passphrase'] as string
     }
-  }
-}
-
-/**
- * Process SSH route validation result into response
- */
-export const processSshValidationResult = (
-  result: SshValidationResult,
-  host: string,
-  port: number
-): SshRouteResponse => {
-  if (result.success) {
-    return {
-      status: HTTP.OK,
-      data: { validated: true }
-    }
-  }
-
-  // Map validation error types to HTTP responses
-  switch (result.errorType) {
-    case 'auth':
-      return {
-        status: HTTP.UNAUTHORIZED,
-        headers: { [HTTP.AUTHENTICATE]: HTTP.REALM },
-        data: {
-          error: 'Authentication failed',
-          message: result.errorMessage,
-          host,
-          port
-        }
-      }
-
-    case 'network':
-      return {
-        status: HTTP.BAD_GATEWAY,
-        data: {
-          error: 'Connection failed',
-          message: result.errorMessage,
-          host,
-          port
-        }
-      }
-
-    case 'timeout':
-      return {
-        status: HTTP.GATEWAY_TIMEOUT,
-        data: {
-          error: 'Connection timeout',
-          message: result.errorMessage,
-          host,
-          port
-        }
-      }
-
-    case undefined:
-    case 'unknown':
-    default:
-      return {
-        status: HTTP.INTERNAL_SERVER_ERROR,
-        data: {
-          error: 'SSH validation failed',
-          message: result.errorMessage ?? 'Unknown error',
-          host,
-          port
-        }
-      }
   }
 }
 

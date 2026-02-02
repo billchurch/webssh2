@@ -18,7 +18,9 @@ import {
   executeAndVerifyCommand,
   connectAndWaitForTerminal,
   fillFormDirectly,
-  testBasicAuthErrorResponse
+  validCredentials,
+  invalidCredentials,
+  credentialsWithPort
 } from './v2-helpers.js'
 
 test.describe('V2 WebSocket Interactive Authentication', () => {
@@ -28,12 +30,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should connect successfully with valid credentials', async ({ page }) => {
     // Use shared helper to connect and wait
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Verify terminal is functional
     await executeAndVerifyCommand(page, 'whoami', TEST_CONFIG.validUsername)
@@ -41,29 +38,22 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should show error with invalid credentials', async ({ page }) => {
     // Use shared helper to connect
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.invalidUsername,
-      password: TEST_CONFIG.invalidPassword
-    })
+    await connectV2(page, invalidCredentials())
 
     // Use shared helper to check for errors
     const errorFound = await checkForV2AuthError(page)
     expect(errorFound).toBeTruthy()
 
-    // Verify form is still visible for retry
+    // Click "Try Again" to dismiss error modal and show login form
+    await page.click('button:has-text("Try Again")')
+
+    // Verify form is visible for retry
     await expect(page.locator('[name="username"]')).toBeVisible()
   })
 
   test('should show connection error for wrong port', async ({ page }) => {
     // Use shared helper to connect with wrong port
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.invalidPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, credentialsWithPort(TEST_CONFIG.invalidPort))
 
     // V2 should show connection error
     await expect(page.locator('text=/Authentication failed|Connection refused|ECONNREFUSED/').first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
@@ -71,12 +61,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should handle page refresh gracefully', async ({ page }) => {
     // First, establish a connection
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Disable beforeunload handler and refresh
     await page.evaluate(() => {
@@ -89,12 +74,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
     await expect(page.locator('[name="username"]')).toBeVisible()
 
     // Re-authenticate
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
   })
 })
 
@@ -115,38 +95,26 @@ test.describe('V2 WebSocket Basic Authentication', () => {
     await executeAndVerifyCommand(page, 'echo "V2 Basic Auth works!"', 'V2 Basic Auth works!')
   })
 
-  test('should return 401 for invalid Basic Auth credentials', async ({ page }) => {
-    // Use helper to test Basic Auth with invalid credentials - expect 401
-    const response = await testBasicAuthErrorResponse(
-      page,
-      TEST_CONFIG.baseUrl,
-      TEST_CONFIG.invalidUsername,
-      TEST_CONFIG.invalidPassword,
-      TEST_CONFIG.sshHost,
-      TEST_CONFIG.sshPort,
-      401
-    )
+  test('should show auth error modal for invalid Basic Auth credentials', async ({ page }) => {
+    // With client-side error handling, server returns 200 and shows error modal
+    const authPrefix = `://${TEST_CONFIG.invalidUsername}:${TEST_CONFIG.invalidPassword}@`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', authPrefix)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.sshHost}?port=${TEST_CONFIG.sshPort}`
+    await page.goto(url)
 
-    // Verify the WWW-Authenticate header is set for proper HTTP Basic Auth behavior
-    const wwwAuthHeader = response?.headers()['www-authenticate']
-    expect(wwwAuthHeader).toContain('Basic')
+    // Wait for the error modal to appear with authentication failure
+    await expect(page.locator('text=/Authentication Failed/i').first()).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   })
 
-  test('should return 502 for Basic Auth with non-existent host', async ({ page }) => {
-    // Use helper to test Basic Auth with non-existent host - expect 502
-    const response = await testBasicAuthErrorResponse(
-      page,
-      TEST_CONFIG.baseUrl,
-      TEST_CONFIG.validUsername,
-      TEST_CONFIG.validPassword,
-      TEST_CONFIG.nonExistentHost,
-      TEST_CONFIG.sshPort,
-      502
-    )
+  test('should show connection error modal for Basic Auth with non-existent host', async ({ page }) => {
+    // With client-side error handling, server returns 200 and shows error modal
+    const authPrefix = `://${TEST_CONFIG.validUsername}:${TEST_CONFIG.validPassword}@`
+    const baseUrlWithAuth = TEST_CONFIG.baseUrl.replace('://', authPrefix)
+    const url = `${baseUrlWithAuth}/ssh/host/${TEST_CONFIG.nonExistentHost}?port=${TEST_CONFIG.sshPort}`
+    await page.goto(url)
 
-    // Response body should indicate it's a connectivity issue
-    const responseText = await response?.text()
-    expect(responseText).toContain('Bad Gateway')
+    // Wait for the error modal to appear with connection failure
+    await expect(page.locator('text=/Connection Failed|ENOTFOUND|getaddrinfo/i').first()).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   })
 
   test('should execute multiple commands with Basic Auth session', async ({ page }) => {

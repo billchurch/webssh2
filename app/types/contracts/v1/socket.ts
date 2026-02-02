@@ -21,6 +21,48 @@ import type {
   SftpErrorResponse
 } from './sftp.js'
 import type { PromptId } from '../../branded.js'
+import type { AlgorithmSet } from '../../../services/ssh/algorithm-capture.js'
+import type { AlgorithmAnalysis } from '../../../services/ssh/algorithm-analyzer.js'
+
+// =============================================================================
+// Connection Error Types
+// =============================================================================
+
+/**
+ * Debug information included with connection errors when debug mode is enabled.
+ * Contains algorithm negotiation details to help diagnose connection failures.
+ */
+export interface ConnectionErrorDebugInfo {
+  /** Algorithms offered by the WebSSH2 client (ssh2 library) */
+  readonly clientAlgorithms?: AlgorithmSet
+  /** Algorithms offered by the SSH server */
+  readonly serverAlgorithms?: AlgorithmSet
+  /** Analysis of algorithm compatibility between client and server */
+  readonly analysis?: AlgorithmAnalysis
+  /** Detailed error message for debugging */
+  readonly errorDetails?: string
+}
+
+/**
+ * Payload emitted via the 'connection-error' socket event when SSH connection fails.
+ * This replaces the previous HTML error page rendering with a client-side modal.
+ */
+export interface ConnectionErrorPayload {
+  /** Category of error for UI presentation and retry logic */
+  readonly errorType: 'network' | 'timeout' | 'auth' | 'algorithm' | 'unknown'
+  /** Short title for the error (e.g., "Authentication Failed") */
+  readonly title: string
+  /** User-friendly error message */
+  readonly message: string
+  /** SSH host that was being connected to */
+  readonly host: string
+  /** SSH port that was being connected to */
+  readonly port: number
+  /** Whether the user can retry the connection (shows retry button) */
+  readonly canRetry: boolean
+  /** Debug information (only included when DEBUG mode is enabled) */
+  readonly debugInfo?: ConnectionErrorDebugInfo
+}
 
 // =============================================================================
 // Prompt System Types
@@ -200,6 +242,8 @@ export interface ServerToClientEvents {
   // Auth flow
   authentication: (payload: AuthenticationEvent) => void
   authFailure: (payload: { error: string; method: string }) => void
+  // Connection error (replaces HTML error pages)
+  'connection-error': (payload: ConnectionErrorPayload) => void
   // Permissions negotiated post-auth
   permissions: (p: {
     autoLog: boolean

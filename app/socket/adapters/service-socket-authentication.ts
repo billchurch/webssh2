@@ -1,4 +1,9 @@
-import type { AuthCredentials, PromptInput } from '../../types/contracts/v1/socket.js'
+import type {
+  AuthCredentials,
+  PromptInput,
+  ConnectionErrorPayload,
+  ConnectionErrorDebugInfo
+} from '../../types/contracts/v1/socket.js'
 import type { SftpStatusResponse } from '../../types/contracts/v1/sftp.js'
 import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
@@ -11,6 +16,9 @@ import { PROMPT_INPUT_TYPES } from '../../constants/prompt.js'
 import { buildSSHConfig, type KeyboardInteractiveOptions } from './ssh-config.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import { evaluateAuthMethodPolicy, isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
+import { analyzeAlgorithms } from '../../services/ssh/algorithm-analyzer.js'
+import { normalizeSSHErrorMessage } from '../../services/ssh/error-normalizer.js'
+import type { SSHConnectionError } from '../../services/ssh/connection-handlers.js'
 
 export class ServiceSocketAuthentication {
   constructor(
@@ -416,7 +424,12 @@ export class ServiceSocketAuthentication {
       return sshResult.value
     }
 
-    this.emitAuthFailure(sshResult.error.message)
+    // Emit connection-error event with structured error info (including algorithm debug data)
+    this.emitConnectionError(
+      sshResult.error,
+      authCredentials.host,
+      authCredentials.port
+    )
     return null
   }
 
@@ -428,6 +441,12 @@ export class ServiceSocketAuthentication {
     this.context.state.connectionId = connectionId
     this.context.state.sessionId = sessionId
     this.context.state.username = authCredentials.username
+
+    // Clear authFailed flag on successful authentication
+    const req = this.context.socket.request as { session?: Record<string, unknown> }
+    if (req.session !== undefined && 'authFailed' in req.session) {
+      delete req.session['authFailed']
+    }
 
     this.logAuthSuccess(authCredentials, connectionId)
     this.emitAuthSuccess(authCredentials)
@@ -445,6 +464,168 @@ export class ServiceSocketAuthentication {
     })
 
     this.logAuthFailure(message, data)
+  }
+
+  /**
+   * Determine the error type from an SSH connection error message
+   */
+  private determineErrorType(message: string): ConnectionErrorPayload['errorType'] {
+    const lowerMessage = message.toLowerCase()
+
+    if (
+      lowerMessage.includes('authentication') ||
+      lowerMessage.includes('auth') ||
+      lowerMessage.includes('password') ||
+      lowerMessage.includes('permission denied')
+    ) {
+      return 'auth'
+    }
+
+    if (
+      lowerMessage.includes('algorithm') ||
+      lowerMessage.includes('handshake') ||
+      lowerMessage.includes('no matching')
+    ) {
+      return 'algorithm'
+    }
+
+    if (
+      lowerMessage.includes('timeout') ||
+      lowerMessage.includes('timed out')
+    ) {
+      return 'timeout'
+    }
+
+    if (
+      lowerMessage.includes('econnrefused') ||
+      lowerMessage.includes('enotfound') ||
+      lowerMessage.includes('connect') ||
+      lowerMessage.includes('network') ||
+      lowerMessage.includes('unreachable')
+    ) {
+      return 'network'
+    }
+
+    return 'unknown'
+  }
+
+  /**
+   * Get a user-friendly title for the error type
+   */
+  private getErrorTitle(errorType: ConnectionErrorPayload['errorType']): string {
+    switch (errorType) {
+      case 'auth':
+        return 'Authentication Failed'
+      case 'algorithm':
+        return 'Algorithm Mismatch'
+      case 'timeout':
+        return 'Connection Timeout'
+      case 'network':
+        return 'Connection Failed'
+      case 'unknown':
+      default:
+        return 'SSH Connection Error'
+    }
+  }
+
+  /**
+   * Clear session credentials after authentication failure.
+   * This ensures subsequent connection attempts prompt for fresh credentials
+   * instead of auto-connecting with stale failing credentials.
+   * Also sets authFailed flag to prevent middleware from repopulating
+   * credentials from cached Basic Auth header.
+   */
+  private clearSessionCredentials(): void {
+    const req = this.context.socket.request as {
+      session?: { sshCredentials?: unknown; usedBasicAuth?: boolean; authFailed?: boolean }
+    }
+    if (req.session !== undefined) {
+      req.session.sshCredentials = undefined
+      req.session.usedBasicAuth = false
+      req.session.authFailed = true
+      this.context.debug('Cleared session credentials and set authFailed flag')
+    }
+  }
+
+  /**
+   * Emit a connection-error event with structured error information.
+   * This is used for rich error display in the client modal.
+   */
+  private emitConnectionError(
+    error: Error | SSHConnectionError,
+    host: string,
+    port: number
+  ): void {
+    const errorMessage = normalizeSSHErrorMessage(error)
+    const errorType = this.determineErrorType(errorMessage)
+    const title = this.getErrorTitle(errorType)
+
+    // Clear session credentials for auth failures so re-auth prompts for new credentials
+    if (errorType === 'auth') {
+      this.clearSessionCredentials()
+    }
+
+    // Build debug info only for algorithm errors when algorithm data is available
+    let debugInfo: ConnectionErrorDebugInfo | undefined
+    const sshError = error as SSHConnectionError
+    if (errorType === 'algorithm' && sshError.capturedAlgorithms !== undefined) {
+      const { client, server } = sshError.capturedAlgorithms
+      const analysis = analyzeAlgorithms(client, server)
+
+      debugInfo = {
+        clientAlgorithms: client,
+        serverAlgorithms: server,
+        analysis,
+        errorDetails: errorMessage
+      }
+
+      this.context.debug('Emitting connection-error with algorithm debug info')
+    }
+
+    // Build payload without debugInfo first
+    const basePayload = {
+      errorType,
+      title,
+      message: errorMessage,
+      host,
+      port,
+      canRetry: errorType === 'auth' || errorType === 'timeout'
+    }
+
+    // Only add debugInfo if it's defined (exactOptionalPropertyTypes compliance)
+    const payload: ConnectionErrorPayload = debugInfo === undefined
+      ? basePayload
+      : { ...basePayload, debugInfo }
+
+    this.context.socket.emit(SOCKET_EVENTS.CONNECTION_ERROR, payload)
+
+    // Log with the appropriate event type based on error classification
+    if (errorType === 'auth') {
+      this.logAuthFailure(errorMessage, { host, port })
+    } else {
+      this.logConnectionFailure(errorMessage, errorType, { host, port })
+    }
+  }
+
+  /**
+   * Log a connection failure event for non-authentication errors.
+   * Used for algorithm mismatches, network errors, timeouts, etc.
+   */
+  private logConnectionFailure(
+    reason: string,
+    errorType: ConnectionErrorPayload['errorType'],
+    data?: Record<string, unknown>
+  ): void {
+    const baseData = { reason, errorType }
+    const combinedData = data === undefined
+      ? baseData
+      : { ...baseData, ...data }
+
+    emitSocketLog(this.context, 'warn', 'connection_failure', 'Connection failed', {
+      status: 'failure',
+      reason,
+      data: combinedData
+    })
   }
 
   private enforceAuthMethodPolicy(credentials: Credentials): boolean {

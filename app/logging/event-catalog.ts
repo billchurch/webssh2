@@ -5,6 +5,7 @@ export const LOG_EVENT_NAMES = [
   'auth_attempt',
   'auth_success',
   'auth_failure',
+  'connection_failure',
   'session_init',
   'session_start',
   'session_end',

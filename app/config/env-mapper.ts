@@ -4,6 +4,7 @@
 import { parseEnvValue, type EnvValueType } from './env-parser.js'
 import { getAlgorithmPreset } from './algorithm-presets.js'
 import { createSafeKey, safeGet, safePathToKeys, safeSetNested } from '../utils/index.js'
+import { ALGORITHM_ENV_VARS } from '../constants/algorithm-env-vars.js'
 
 export interface EnvVarMap { 
   path: string
@@ -39,12 +40,12 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
     type: 'boolean',
   },
   WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH: { path: 'ssh.disableInteractiveAuth', type: 'boolean' },
-  WEBSSH2_SSH_ALGORITHMS_CIPHER: { path: 'ssh.algorithms.cipher', type: 'array' },
-  WEBSSH2_SSH_ALGORITHMS_KEX: { path: 'ssh.algorithms.kex', type: 'array' },
-  WEBSSH2_SSH_ALGORITHMS_HMAC: { path: 'ssh.algorithms.hmac', type: 'array' },
-  WEBSSH2_SSH_ALGORITHMS_COMPRESS: { path: 'ssh.algorithms.compress', type: 'array' },
-  WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY: { path: 'ssh.algorithms.serverHostKey', type: 'array' },
-  WEBSSH2_SSH_ALGORITHMS_PRESET: { path: 'ssh.algorithms', type: 'preset' },
+  [ALGORITHM_ENV_VARS.CIPHER]: { path: 'ssh.algorithms.cipher', type: 'array' },
+  [ALGORITHM_ENV_VARS.KEX]: { path: 'ssh.algorithms.kex', type: 'array' },
+  [ALGORITHM_ENV_VARS.HMAC]: { path: 'ssh.algorithms.hmac', type: 'array' },
+  [ALGORITHM_ENV_VARS.COMPRESS]: { path: 'ssh.algorithms.compress', type: 'array' },
+  [ALGORITHM_ENV_VARS.SERVER_HOST_KEY]: { path: 'ssh.algorithms.serverHostKey', type: 'array' },
+  [ALGORITHM_ENV_VARS.PRESET]: { path: 'ssh.algorithms', type: 'preset' },
   WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES: { path: 'ssh.maxExecOutputBytes', type: 'number' },
   WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC: { path: 'ssh.outputRateLimitBytesPerSec', type: 'number' },
   WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK: { path: 'ssh.socketHighWaterMark', type: 'number' },
@@ -150,7 +151,7 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
   const config: Record<string, unknown> = {}
 
   // First pass: process preset if it exists (provides base algorithm values)
-  const presetVar = 'WEBSSH2_SSH_ALGORITHMS_PRESET'
+  const presetVar = ALGORITHM_ENV_VARS.PRESET
   const presetValue = safeGet(env, createSafeKey(presetVar))
   if (presetValue !== undefined && typeof presetValue === 'string') {
     const preset = getAlgorithmPreset(presetValue)

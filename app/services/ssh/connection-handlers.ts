@@ -4,14 +4,24 @@ import type { ConnectionPool } from './connection-pool.js'
 import type { SessionStore } from '../../state/store.js'
 import type { LogStatus } from '../../logging/log-context.js'
 import type { ConnectionLogger } from './connection-logger.js'
+import type { AlgorithmCapture, CapturedAlgorithms } from './algorithm-capture.js'
+import { normalizeSSHErrorMessage } from './error-normalizer.js'
 
 type DebugLogger = (message?: unknown, ...params: unknown[]) => void
+
+/**
+ * Extended error type that includes captured algorithm information
+ */
+export interface SSHConnectionError extends Error {
+  capturedAlgorithms?: CapturedAlgorithms
+}
 
 export interface ConnectionHandlerDependencies {
   readonly pool: ConnectionPool
   readonly store: SessionStore
   readonly connectionLogger: ConnectionLogger
   readonly debug: DebugLogger
+  readonly algorithmCapture?: AlgorithmCapture | null
 }
 
 export interface RegisterConnectionHandlersInput {
@@ -71,9 +81,10 @@ function createErrorHandler(
 ): (error: Error & { level?: string }) => void {
   return (error) => {
     clearTimeout(input.timeout)
-    deps.debug('SSH connection error:', error.message)
+    const errorMessage = normalizeSSHErrorMessage(error)
+    deps.debug('SSH connection error:', errorMessage)
     deps.debug('SSH error details:', {
-      message: error.message,
+      message: errorMessage,
       level: error.level,
       stack: error.stack
     })
@@ -82,7 +93,7 @@ function createErrorHandler(
 
     deps.store.dispatch(input.config.sessionId, {
       type: 'CONNECTION_ERROR',
-      payload: { error: error.message }
+      payload: { error: errorMessage }
     })
 
     deps.connectionLogger.log(
@@ -93,12 +104,19 @@ function createErrorHandler(
       {
         connectionId: input.connection.id,
         status: 'failure',
-        reason: error.message,
+        reason: errorMessage,
         errorCode: error.level
       }
     )
 
-    input.onError(error)
+    // Attach captured algorithms to the error for debug error pages
+    const extendedError: SSHConnectionError = error
+    if (deps.algorithmCapture?.hasData() === true) {
+      extendedError.capturedAlgorithms = deps.algorithmCapture.getAlgorithms()
+      deps.debug('Attached captured algorithms to error:', extendedError.capturedAlgorithms)
+    }
+
+    input.onError(extendedError)
   }
 }
 

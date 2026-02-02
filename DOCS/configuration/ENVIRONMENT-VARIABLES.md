@@ -387,7 +387,6 @@ See [CONFIG-JSON.md](./CONFIG-JSON.md) for `config.json` examples and additional
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `WEBSSH2_LOGGING_FORMAT` | string | `json` | Structured log output format (`json` only at present) |
 | `WEBSSH2_LOGGING_LEVEL` | string | `info` | Global minimum log level (`debug`, `info`, `warn`, `error`) |
 | `WEBSSH2_LOGGING_STDOUT_ENABLED` | boolean | `true` | Enables stdout transport when `true` |
 | `WEBSSH2_LOGGING_STDOUT_MIN_LEVEL` | string | `info` | Per-transport minimum level for stdout delivery |
@@ -468,6 +467,34 @@ docker run --name webssh2 --rm -it \
 |----------|------|---------|-------------|
 | `WEBSSH2_SESSION_SECRET` | string | auto-generated | Session encryption secret |
 | `WEBSSH2_SESSION_NAME` | string | `webssh2.sid` | Session cookie name |
+
+### SSO Configuration (Single Sign-On)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_SSO_ENABLED` | boolean | `false` | Enable SSO authentication via trusted headers |
+| `WEBSSH2_SSO_CSRF_PROTECTION` | boolean | `true` | Enable CSRF protection for SSO endpoints |
+| `WEBSSH2_SSO_TRUSTED_PROXIES` | array | `[]` | IP addresses/subnets of trusted reverse proxies (comma-separated or JSON) |
+| `WEBSSH2_SSO_HEADER_USERNAME` | string | `null` | HTTP header containing the username |
+| `WEBSSH2_SSO_HEADER_PASSWORD` | string | `null` | HTTP header containing the password |
+| `WEBSSH2_SSO_HEADER_SESSION` | string | `null` | HTTP header containing the session identifier |
+
+#### SSO Example
+
+```bash
+# Enable SSO with header-based authentication behind a reverse proxy
+WEBSSH2_SSO_ENABLED=true
+WEBSSH2_SSO_CSRF_PROTECTION=true
+WEBSSH2_SSO_TRUSTED_PROXIES="10.0.0.0/8,172.16.0.0/12"
+WEBSSH2_SSO_HEADER_USERNAME="X-Auth-Username"
+WEBSSH2_SSO_HEADER_PASSWORD="X-Auth-Password"
+```
+
+#### SSO Security Notes
+
+- **Trusted Proxies**: Only configure trusted proxy IPs/subnets. Requests from untrusted sources will have SSO headers ignored.
+- **CSRF Protection**: Keep enabled unless your reverse proxy handles CSRF protection.
+- **Header Security**: Ensure your reverse proxy strips incoming SSO headers from client requests to prevent header injection attacks.
 
 ## Data Type Formats
 

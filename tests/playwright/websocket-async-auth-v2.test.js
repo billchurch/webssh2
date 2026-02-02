@@ -22,7 +22,9 @@ import {
   executeCommandsWithExpectedOutput,
   executeCommandList,
   getTerminalContent,
-  testBasicAuthErrorResponse
+  validCredentials,
+  invalidCredentials,
+  credentialsWithHost
 } from './v2-helpers.js'
 
 test.describe('V2 Async Error Recovery and Edge Cases', () => {
@@ -32,11 +34,14 @@ test.describe('V2 Async Error Recovery and Edge Cases', () => {
     // Fill form with very slow/unresponsive host to test timeout
     await fillFormDirectly(page, '192.0.2.1', '22', TEST_CONFIG.validUsername, TEST_CONFIG.validPassword)
 
-    // V2 should handle timeout errors gracefully
+    // V2 should handle timeout errors gracefully via error modal
     // SSH timeout is 10s (WEBSSH2_SSH_READY_TIMEOUT), so 15s is plenty
     await expect(
-      page.locator('text=/Authentication failed|Connection failed|timeout|ETIMEDOUT/').first()
+      page.locator('text=/Authentication Failed|Connection Failed|timeout|ETIMEDOUT/i').first()
     ).toBeVisible({ timeout: 15000 })
+
+    // Click "Try Again" to dismiss error modal and show login form
+    await page.click('button:has-text("Try Again")')
 
     // Form should still be usable
     await expect(page.locator('[name="username"]')).toBeVisible()
@@ -50,12 +55,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async connect with valid credentials (V2)', async ({ page }) => {
     // Use shared helper to connect
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, validCredentials())
 
     // Verify successful async connection with V2
     await waitForV2Connection(page)
@@ -66,16 +66,14 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async authentication error properly (V2)', async ({ page }) => {
     // Use shared helper to connect with invalid credentials
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.invalidUsername,
-      password: TEST_CONFIG.invalidPassword
-    })
+    await connectV2(page, invalidCredentials())
 
     // Use shared helper to check for errors
     const errorFound = await checkForV2AuthError(page)
     expect(errorFound).toBeTruthy()
+
+    // Click "Try Again" to dismiss error modal and show login form
+    await page.click('button:has-text("Try Again")')
 
     // Form should remain available for retry
     await expect(page.locator('[name="username"]')).toBeVisible()
@@ -83,12 +81,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async connection error for non-existent host (V2)', async ({ page }) => {
     // Use shared helper with non-existent host
-    await connectV2(page, {
-      host: TEST_CONFIG.nonExistentHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, credentialsWithHost(TEST_CONFIG.nonExistentHost))
 
     // V2 should handle network errors asynchronously
     await expect(
@@ -98,12 +91,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async shell creation and terminal operations (V2)', async ({ page }) => {
     // Connect and wait for terminal
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Test multiple async terminal operations
     const commands = [
@@ -124,12 +112,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle terminal resize with async operations (V2)', async ({ page }) => {
     // Connect using helper
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Get initial terminal size
     await executeV2Command(page, 'stty size')
@@ -177,38 +160,34 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
     await verifyV2TerminalFunctionality(page, TEST_CONFIG.validUsername)
   })
 
-  test('should handle async auth failure with invalid Basic Auth (V2)', async ({ page }) => {
-    // Use helper to test Basic Auth with invalid credentials - expect 401
-    const response = await testBasicAuthErrorResponse(
-      page,
+  test('should show async auth error modal with invalid Basic Auth (V2)', async ({ page }) => {
+    // With client-side error handling, server returns 200 and shows error modal
+    const url = buildBasicAuthUrl(
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.invalidUsername,
       TEST_CONFIG.invalidPassword,
       TEST_CONFIG.sshHost,
-      TEST_CONFIG.sshPort,
-      401
+      TEST_CONFIG.sshPort
     )
+    await page.goto(url)
 
-    // Verify WWW-Authenticate header for proper Basic Auth behavior
-    const wwwAuthHeader = response?.headers()['www-authenticate']
-    expect(wwwAuthHeader).toContain('Basic')
+    // Wait for the error modal to appear with authentication failure
+    await expect(page.locator('text=/Authentication Failed/i').first()).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   })
 
-  test('should return 502 for async connection with Basic Auth to non-existent host (V2)', async ({ page }) => {
-    // Use helper to test Basic Auth with non-existent host - expect 502
-    const response = await testBasicAuthErrorResponse(
-      page,
+  test('should show async connection error modal for Basic Auth to non-existent host (V2)', async ({ page }) => {
+    // With client-side error handling, server returns 200 and shows error modal
+    const url = buildBasicAuthUrl(
       TEST_CONFIG.baseUrl,
       TEST_CONFIG.validUsername,
       TEST_CONFIG.validPassword,
       TEST_CONFIG.nonExistentHost,
-      TEST_CONFIG.sshPort,
-      502
+      TEST_CONFIG.sshPort
     )
+    await page.goto(url)
 
-    // Verify response body indicates connectivity issue
-    const responseText = await response?.text()
-    expect(responseText).toContain('Bad Gateway')
+    // Wait for the error modal to appear with connection failure
+    await expect(page.locator('text=/Connection Failed|ENOTFOUND|getaddrinfo/i').first()).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
   })
 
   test('should handle multiple async commands with Basic Auth session (V2)', async ({ page }) => {

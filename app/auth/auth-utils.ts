@@ -7,12 +7,8 @@ import { DEFAULTS } from '../constants/index.js'
 import { createNamespacedDebug } from '../logger.js'
 import type { Config } from '../types/config.js'
 
-import {
-  processHeaderParams,
-  type HeaderOverride,
-  type HeaderValues,
-  type SourceType
-} from './header-processor.js'
+import { processHeaderParams, type HeaderOverride } from './header-processor.js'
+export type { HeaderOverride, HeaderValues, SourceType } from './header-processor.js'
 
 import {
   extractPostCredentials as extractPostCredentialsPure,
@@ -20,20 +16,12 @@ import {
   createSshCredentials,
   maskCredentials,
   extractReadyTimeout,
-  type SshCredentials,
-  type ConnectionParams,
-  type ValidatedConnection
+  type SshCredentials
 } from './credential-processor.js'
+export type { SshCredentials, ConnectionParams, ValidatedConnection } from './credential-processor.js'
 
-import {
-  extractEnvironmentVars,
-  extractRecordingParams,
-  type RecordingParams
-} from './session-processor.js'
-
-export type { HeaderOverride, HeaderValues, SourceType }
-export type { SshCredentials, ConnectionParams, ValidatedConnection }
-export type { RecordingParams }
+import { extractEnvironmentVars, extractRecordingParams } from './session-processor.js'
+export type { RecordingParams } from './session-processor.js'
 
 const debug = createNamespacedDebug('auth-utils')
 
@@ -54,6 +42,8 @@ export interface AuthSession {
   sessionId?: string
   sessionUsername?: string
   userHash?: string
+  /** Prevents auto-reconnect with cached failed credentials after auth failure */
+  authFailed?: boolean
   [k: string]: unknown
 }
 

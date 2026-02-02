@@ -22,6 +22,7 @@ import {
 import { maskSensitiveConfig } from './config/safe-logging.js'
 import type { Result } from './types/result.js'
 import { resolveAllowedAuthMethods } from './config/auth-method-parser.js'
+import { ALGORITHM_ENV_VARS } from './constants/algorithm-env-vars.js'
 
 const debug = createNamespacedDebug('config')
 
@@ -87,11 +88,11 @@ async function loadEnhancedConfig(
   debug('Environment variables mapped', {
     envAlgorithms: (envConfig as { ssh?: { algorithms?: Record<string, unknown> } }).ssh?.algorithms,
     rawEnvVars: {
-      preset: process.env['WEBSSH2_SSH_ALGORITHMS_PRESET'],
-      kex: process.env['WEBSSH2_SSH_ALGORITHMS_KEX'],
-      hmac: process.env['WEBSSH2_SSH_ALGORITHMS_HMAC'],
-      cipher: process.env['WEBSSH2_SSH_ALGORITHMS_CIPHER'],
-      serverHostKey: process.env['WEBSSH2_SSH_ALGORITHMS_SERVER_HOST_KEY']
+      preset: process.env[ALGORITHM_ENV_VARS.PRESET],
+      kex: process.env[ALGORITHM_ENV_VARS.KEX],
+      hmac: process.env[ALGORITHM_ENV_VARS.HMAC],
+      cipher: process.env[ALGORITHM_ENV_VARS.CIPHER],
+      serverHostKey: process.env[ALGORITHM_ENV_VARS.SERVER_HOST_KEY]
     }
   })
 
