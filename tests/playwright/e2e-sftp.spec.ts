@@ -1,4 +1,3 @@
-/* eslint-env browser */
 /* global document */
 /**
  * SFTP E2E Tests

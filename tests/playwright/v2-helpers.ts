@@ -1,4 +1,3 @@
-/* eslint-env browser */
 /* global document, getComputedStyle */
 /**
  * Shared V2 helper functions for Playwright tests
@@ -6,7 +5,66 @@
  */
 
 import { expect, type Page, type Response } from '@playwright/test'
-import { TIMEOUTS } from './constants.js'
+import { TIMEOUTS, TEST_CONFIG } from './constants.js'
+
+// ============================================================================
+// CREDENTIAL BUILDERS - Reduce duplication in test files
+// ============================================================================
+
+interface Credentials {
+  host: string
+  port: string
+  username: string
+  password: string
+}
+
+/**
+ * Returns valid test credentials for successful authentication
+ */
+export function validCredentials(): Credentials {
+  return {
+    host: TEST_CONFIG.sshHost,
+    port: TEST_CONFIG.sshPort,
+    username: TEST_CONFIG.validUsername,
+    password: TEST_CONFIG.validPassword
+  }
+}
+
+/**
+ * Returns invalid test credentials for authentication failure testing
+ */
+export function invalidCredentials(): Credentials {
+  return {
+    host: TEST_CONFIG.sshHost,
+    port: TEST_CONFIG.sshPort,
+    username: TEST_CONFIG.invalidUsername,
+    password: TEST_CONFIG.invalidPassword
+  }
+}
+
+/**
+ * Returns valid credentials with a custom host (for testing non-existent hosts)
+ */
+export function credentialsWithHost(host: string): Credentials {
+  return {
+    host,
+    port: TEST_CONFIG.sshPort,
+    username: TEST_CONFIG.validUsername,
+    password: TEST_CONFIG.validPassword
+  }
+}
+
+/**
+ * Returns valid credentials with a custom port (for testing invalid ports)
+ */
+export function credentialsWithPort(port: string): Credentials {
+  return {
+    host: TEST_CONFIG.sshHost,
+    port,
+    username: TEST_CONFIG.validUsername,
+    password: TEST_CONFIG.validPassword
+  }
+}
 
 /**
  * Waits for V2 terminal to be ready and interactive
