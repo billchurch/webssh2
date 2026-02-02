@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.1.1...webssh2-server-v4.0.0) (2026-02-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ux:** Error responses are now JSON-only. Clients must handle the 'connection-error' event to display connection failures.
+
+### Features
+
+* **ux:** client-side connection error modal with algorithm debugging ([#476](https://github.com/billchurch/webssh2/issues/476)) ([2236a4e](https://github.com/billchurch/webssh2/commit/2236a4eff14d2540f2c823fa0eb17b2154b41907))
+
+
+### Bug Fixes
+
+* **ci:** use PAT_WORKFLOW token for Docker build dispatch [skip ci] ([0e1c280](https://github.com/billchurch/webssh2/commit/0e1c2802a21267d3bd4c677ff14e19658fca691e))
+
 ## [3.1.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.1.0...webssh2-server-v3.1.1) (2026-01-28)
 
 
