@@ -21,7 +21,10 @@ import {
   fillFormDirectly,
   executeCommandsWithExpectedOutput,
   executeCommandList,
-  getTerminalContent
+  getTerminalContent,
+  validCredentials,
+  invalidCredentials,
+  credentialsWithHost
 } from './v2-helpers.js'
 
 test.describe('V2 Async Error Recovery and Edge Cases', () => {
@@ -52,12 +55,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async connect with valid credentials (V2)', async ({ page }) => {
     // Use shared helper to connect
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, validCredentials())
 
     // Verify successful async connection with V2
     await waitForV2Connection(page)
@@ -68,12 +66,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async authentication error properly (V2)', async ({ page }) => {
     // Use shared helper to connect with invalid credentials
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.invalidUsername,
-      password: TEST_CONFIG.invalidPassword
-    })
+    await connectV2(page, invalidCredentials())
 
     // Use shared helper to check for errors
     const errorFound = await checkForV2AuthError(page)
@@ -88,12 +81,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async connection error for non-existent host (V2)', async ({ page }) => {
     // Use shared helper with non-existent host
-    await connectV2(page, {
-      host: TEST_CONFIG.nonExistentHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, credentialsWithHost(TEST_CONFIG.nonExistentHost))
 
     // V2 should handle network errors asynchronously
     await expect(
@@ -103,12 +91,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle async shell creation and terminal operations (V2)', async ({ page }) => {
     // Connect and wait for terminal
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Test multiple async terminal operations
     const commands = [
@@ -129,12 +112,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
   test('should handle terminal resize with async operations (V2)', async ({ page }) => {
     // Connect using helper
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Get initial terminal size
     await executeV2Command(page, 'stty size')

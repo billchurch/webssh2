@@ -17,7 +17,10 @@ import {
   connectWithBasicAuth,
   executeAndVerifyCommand,
   connectAndWaitForTerminal,
-  fillFormDirectly
+  fillFormDirectly,
+  validCredentials,
+  invalidCredentials,
+  credentialsWithPort
 } from './v2-helpers.js'
 
 test.describe('V2 WebSocket Interactive Authentication', () => {
@@ -27,12 +30,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should connect successfully with valid credentials', async ({ page }) => {
     // Use shared helper to connect and wait
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Verify terminal is functional
     await executeAndVerifyCommand(page, 'whoami', TEST_CONFIG.validUsername)
@@ -40,12 +38,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should show error with invalid credentials', async ({ page }) => {
     // Use shared helper to connect
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.invalidUsername,
-      password: TEST_CONFIG.invalidPassword
-    })
+    await connectV2(page, invalidCredentials())
 
     // Use shared helper to check for errors
     const errorFound = await checkForV2AuthError(page)
@@ -60,12 +53,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should show connection error for wrong port', async ({ page }) => {
     // Use shared helper to connect with wrong port
-    await connectV2(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.invalidPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectV2(page, credentialsWithPort(TEST_CONFIG.invalidPort))
 
     // V2 should show connection error
     await expect(page.locator('text=/Authentication failed|Connection refused|ECONNREFUSED/').first()).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
@@ -73,12 +61,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
   test('should handle page refresh gracefully', async ({ page }) => {
     // First, establish a connection
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
 
     // Disable beforeunload handler and refresh
     await page.evaluate(() => {
@@ -91,12 +74,7 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
     await expect(page.locator('[name="username"]')).toBeVisible()
 
     // Re-authenticate
-    await connectAndWaitForTerminal(page, {
-      host: TEST_CONFIG.sshHost,
-      port: TEST_CONFIG.sshPort,
-      username: TEST_CONFIG.validUsername,
-      password: TEST_CONFIG.validPassword
-    })
+    await connectAndWaitForTerminal(page, validCredentials())
   })
 })
 

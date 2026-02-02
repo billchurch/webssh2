@@ -13,114 +13,34 @@ import {
   createSetWithCategory
 } from './algorithm-test-fixtures.js'
 
+// Test cases for parsing algorithm debug messages
+const PARSING_TEST_CASES = [
+  // KEX method
+  { name: 'local KEX', msg: 'Handshake: (local) KEX method: curve25519-sha256,ecdh-sha2-nistp256', source: 'local', category: 'kex', algorithms: ['curve25519-sha256', 'ecdh-sha2-nistp256'] },
+  { name: 'remote KEX', msg: 'Handshake: (remote) KEX method: diffie-hellman-group14-sha1,diffie-hellman-group1-sha1', source: 'remote', category: 'kex', algorithms: ['diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1'] },
+  // Host key format
+  { name: 'local host key', msg: 'Handshake: (local) Host key format: ssh-ed25519,rsa-sha2-512,rsa-sha2-256', source: 'local', category: 'serverHostKey', algorithms: ['ssh-ed25519', 'rsa-sha2-512', 'rsa-sha2-256'] },
+  { name: 'remote host key', msg: 'Handshake: (remote) Host key format: ssh-rsa', source: 'remote', category: 'serverHostKey', algorithms: ['ssh-rsa'] },
+  // Cipher
+  { name: 'local cipher', msg: 'Handshake: (local) C->S cipher: aes256-gcm@openssh.com,aes128-gcm@openssh.com', source: 'local', category: 'cipher', algorithms: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'] },
+  { name: 'remote cipher', msg: 'Handshake: (remote) C->S cipher: aes128-cbc,3des-cbc', source: 'remote', category: 'cipher', algorithms: ['aes128-cbc', '3des-cbc'] },
+  // MAC
+  { name: 'local MAC', msg: 'Handshake: (local) C->S MAC: hmac-sha2-256-etm@openssh.com,hmac-sha2-512', source: 'local', category: 'mac', algorithms: ['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-512'] },
+  { name: 'remote MAC', msg: 'Handshake: (remote) C->S MAC: hmac-sha1', source: 'remote', category: 'mac', algorithms: ['hmac-sha1'] },
+  // Compression
+  { name: 'local compression', msg: 'Handshake: (local) C->S compression: none,zlib@openssh.com,zlib', source: 'local', category: 'compress', algorithms: ['none', 'zlib@openssh.com', 'zlib'] },
+  { name: 'remote compression', msg: 'Handshake: (remote) C->S compression: none', source: 'remote', category: 'compress', algorithms: ['none'] }
+] as const
+
 describe('parseAlgorithmDebugMessage', () => {
-  describe('KEX method parsing', () => {
-    it('parses local KEX method', () => {
-      const msg = 'Handshake: (local) KEX method: curve25519-sha256,ecdh-sha2-nistp256'
+  describe('algorithm message parsing', () => {
+    it.each(PARSING_TEST_CASES)('parses $name', ({ msg, source, category, algorithms }) => {
       const result = parseAlgorithmDebugMessage(msg)
 
       expect(result).not.toBeNull()
-      expect(result?.source).toBe('local')
-      expect(result?.category).toBe('kex')
-      expect(result?.algorithms).toEqual(['curve25519-sha256', 'ecdh-sha2-nistp256'])
-    })
-
-    it('parses remote KEX method', () => {
-      const msg = 'Handshake: (remote) KEX method: diffie-hellman-group14-sha1,diffie-hellman-group1-sha1'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('remote')
-      expect(result?.category).toBe('kex')
-      expect(result?.algorithms).toEqual(['diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1'])
-    })
-  })
-
-  describe('Host key format parsing', () => {
-    it('parses local host key format', () => {
-      const msg = 'Handshake: (local) Host key format: ssh-ed25519,rsa-sha2-512,rsa-sha2-256'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('local')
-      expect(result?.category).toBe('serverHostKey')
-      expect(result?.algorithms).toEqual(['ssh-ed25519', 'rsa-sha2-512', 'rsa-sha2-256'])
-    })
-
-    it('parses remote host key format', () => {
-      const msg = 'Handshake: (remote) Host key format: ssh-rsa'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('remote')
-      expect(result?.category).toBe('serverHostKey')
-      expect(result?.algorithms).toEqual(['ssh-rsa'])
-    })
-  })
-
-  describe('Cipher parsing', () => {
-    it('parses local C->S cipher', () => {
-      const msg = 'Handshake: (local) C->S cipher: aes256-gcm@openssh.com,aes128-gcm@openssh.com'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('local')
-      expect(result?.category).toBe('cipher')
-      expect(result?.algorithms).toEqual(['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'])
-    })
-
-    it('parses remote C->S cipher', () => {
-      const msg = 'Handshake: (remote) C->S cipher: aes128-cbc,3des-cbc'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('remote')
-      expect(result?.category).toBe('cipher')
-      expect(result?.algorithms).toEqual(['aes128-cbc', '3des-cbc'])
-    })
-  })
-
-  describe('MAC parsing', () => {
-    it('parses local C->S MAC', () => {
-      const msg = 'Handshake: (local) C->S MAC: hmac-sha2-256-etm@openssh.com,hmac-sha2-512'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('local')
-      expect(result?.category).toBe('mac')
-      expect(result?.algorithms).toEqual(['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-512'])
-    })
-
-    it('parses remote C->S MAC', () => {
-      const msg = 'Handshake: (remote) C->S MAC: hmac-sha1'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('remote')
-      expect(result?.category).toBe('mac')
-      expect(result?.algorithms).toEqual(['hmac-sha1'])
-    })
-  })
-
-  describe('Compression parsing', () => {
-    it('parses local C->S compression', () => {
-      const msg = 'Handshake: (local) C->S compression: none,zlib@openssh.com,zlib'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('local')
-      expect(result?.category).toBe('compress')
-      expect(result?.algorithms).toEqual(['none', 'zlib@openssh.com', 'zlib'])
-    })
-
-    it('parses remote C->S compression', () => {
-      const msg = 'Handshake: (remote) C->S compression: none'
-      const result = parseAlgorithmDebugMessage(msg)
-
-      expect(result).not.toBeNull()
-      expect(result?.source).toBe('remote')
-      expect(result?.category).toBe('compress')
-      expect(result?.algorithms).toEqual(['none'])
+      expect(result?.source).toBe(source)
+      expect(result?.category).toBe(category)
+      expect(result?.algorithms).toEqual(algorithms)
     })
   })
 

@@ -15,6 +15,13 @@ import {
   createLegacyServerSet,
   createModernServerSet,
   createSetWithCategory,
+  createModernOnlyClientSet,
+  createMinimalLegacyServerSet,
+  createStrictServerSet,
+  createUnknownServerSet,
+  createModernCompatibleServerSet,
+  createCompatibleClientSet,
+  createModernClientSet,
   type AlgorithmSet
 } from './algorithm-test-fixtures.js'
 
@@ -148,21 +155,8 @@ describe('analyzeAlgorithms', () => {
 
   describe('preset suggestion', () => {
     it('suggests legacy preset for servers with only legacy algorithms', () => {
-      // Modern client with no overlap with legacy server
-      const client: AlgorithmSet = {
-        kex: ['curve25519-sha256'],
-        serverHostKey: ['ssh-ed25519'],
-        cipher: ['aes256-gcm@openssh.com'],
-        mac: ['hmac-sha2-256'],
-        compress: ['none']
-      }
-      const server: AlgorithmSet = {
-        kex: ['diffie-hellman-group14-sha1'],
-        serverHostKey: ['ssh-rsa'],
-        cipher: ['aes128-cbc'],
-        mac: ['hmac-sha1'],
-        compress: ['none']
-      }
+      const client = createModernOnlyClientSet()
+      const server = createMinimalLegacyServerSet()
 
       const analysis = analyzeAlgorithms(client, server)
       expect(analysis.suggestedPreset).toBe('legacy')
@@ -179,20 +173,8 @@ describe('analyzeAlgorithms', () => {
 
   describe('env var suggestions', () => {
     it('generates suggestions for mismatched categories', () => {
-      const client: AlgorithmSet = {
-        kex: ['curve25519-sha256'],
-        serverHostKey: ['ssh-ed25519'],
-        cipher: ['aes256-gcm@openssh.com'],
-        mac: ['hmac-sha2-256'],
-        compress: ['none']
-      }
-      const server: AlgorithmSet = {
-        kex: ['diffie-hellman-group14-sha1'],
-        serverHostKey: ['ssh-rsa'],
-        cipher: ['aes128-cbc'],
-        mac: ['hmac-sha1'],
-        compress: ['none']
-      }
+      const client = createModernOnlyClientSet()
+      const server = createMinimalLegacyServerSet()
 
       const analysis = analyzeAlgorithms(client, server)
 
@@ -203,20 +185,12 @@ describe('analyzeAlgorithms', () => {
     })
 
     it('does not generate suggestions for categories with matches', () => {
+      // Client with KEX fallback that matches server
       const client: AlgorithmSet = {
-        kex: ['curve25519-sha256', 'diffie-hellman-group14-sha1'],
-        serverHostKey: ['ssh-ed25519'],
-        cipher: ['aes256-gcm@openssh.com'],
-        mac: ['hmac-sha2-256'],
-        compress: ['none']
+        ...createModernOnlyClientSet(),
+        kex: ['curve25519-sha256', 'diffie-hellman-group14-sha1']
       }
-      const server: AlgorithmSet = {
-        kex: ['diffie-hellman-group14-sha1'],
-        serverHostKey: ['ssh-rsa'],
-        cipher: ['aes128-cbc'],
-        mac: ['hmac-sha1'],
-        compress: ['none']
-      }
+      const server = createMinimalLegacyServerSet()
 
       const analysis = analyzeAlgorithms(client, server)
 
@@ -235,61 +209,18 @@ describe('analyzeAlgorithms', () => {
   })
 })
 
+// Test cases for suggestPreset function
+const PRESET_TEST_CASES = [
+  { name: 'strict-compatible server', createServer: createStrictServerSet, expected: 'strict' },
+  { name: 'modern-compatible server', createServer: createModernCompatibleServerSet, expected: 'modern' },
+  { name: 'legacy server', createServer: createLegacyServerSet, expected: 'legacy' },
+  { name: 'unknown server', createServer: createUnknownServerSet, expected: null },
+  { name: 'empty server', createServer: createEmptyAlgorithmSet, expected: 'strict' }
+] as const
+
 describe('suggestPreset', () => {
-  it('suggests strict preset for strict-compatible servers', () => {
-    const server: AlgorithmSet = {
-      kex: ['ecdh-sha2-nistp256', 'curve25519-sha256'],
-      serverHostKey: ['ecdsa-sha2-nistp256', 'ssh-ed25519'],
-      cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'],
-      mac: ['hmac-sha2-256', 'hmac-sha2-512'],
-      compress: ['none']
-    }
-
-    expect(suggestPreset(server)).toBe('strict')
-  })
-
-  it('suggests modern preset for servers that need modern but not strict', () => {
-    // Server only supports algorithms in modern preset but NOT in strict preset
-    const server: AlgorithmSet = {
-      kex: ['ecdh-sha2-nistp384'],  // In modern, NOT in strict
-      serverHostKey: ['ecdsa-sha2-nistp384'],  // In modern, NOT in strict
-      cipher: ['aes128-ctr'],  // In modern, NOT in strict
-      mac: ['hmac-sha2-512'],  // In modern, NOT in strict
-      compress: ['none']
-    }
-
-    expect(suggestPreset(server)).toBe('modern')
-  })
-
-  it('suggests legacy preset for legacy servers', () => {
-    const server: AlgorithmSet = {
-      kex: ['diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1'],
-      serverHostKey: ['ssh-rsa', 'ssh-dss'],
-      cipher: ['aes128-cbc', '3des-cbc'],
-      mac: ['hmac-sha1', 'hmac-md5'],
-      compress: ['none']
-    }
-
-    expect(suggestPreset(server)).toBe('legacy')
-  })
-
-  it('returns null for servers with completely incompatible algorithms', () => {
-    const server: AlgorithmSet = {
-      kex: ['unknown-kex-algorithm'],
-      serverHostKey: ['unknown-hostkey'],
-      cipher: ['unknown-cipher'],
-      mac: ['unknown-mac'],
-      compress: ['none']
-    }
-
-    expect(suggestPreset(server)).toBeNull()
-  })
-
-  it('handles empty server algorithm set', () => {
-    const server = createEmptyAlgorithmSet()
-
-    // Empty set should match any preset since there are no requirements
-    expect(suggestPreset(server)).toBe('strict')
+  it.each(PRESET_TEST_CASES)('returns $expected for $name', ({ createServer, expected }) => {
+    expect(suggestPreset(createServer())).toBe(expected)
   })
 })
 
@@ -347,20 +278,8 @@ describe('generateEnvVarSuggestions', () => {
 
 describe('Integration: realistic algorithm mismatch scenarios', () => {
   it('analyzes modern client vs legacy server', () => {
-    const client: AlgorithmSet = {
-      kex: ['curve25519-sha256', 'ecdh-sha2-nistp256'],
-      serverHostKey: ['ssh-ed25519', 'ecdsa-sha2-nistp256'],
-      cipher: ['aes256-gcm@openssh.com', 'aes128-gcm@openssh.com'],
-      mac: ['hmac-sha2-256-etm@openssh.com', 'hmac-sha2-256'],
-      compress: ['none', 'zlib@openssh.com']
-    }
-    const server: AlgorithmSet = {
-      kex: ['diffie-hellman-group14-sha1'],
-      serverHostKey: ['ssh-rsa'],
-      cipher: ['aes128-cbc', '3des-cbc'],
-      mac: ['hmac-sha1'],
-      compress: ['none']
-    }
+    const client = createModernClientSet()
+    const server = createMinimalLegacyServerSet()
 
     const analysis = analyzeAlgorithms(client, server)
 
@@ -381,20 +300,8 @@ describe('Integration: realistic algorithm mismatch scenarios', () => {
   })
 
   it('analyzes compatible client and server', () => {
-    const client: AlgorithmSet = {
-      kex: ['curve25519-sha256', 'ecdh-sha2-nistp256', 'diffie-hellman-group14-sha1'],
-      serverHostKey: ['ssh-ed25519', 'ssh-rsa'],
-      cipher: ['aes256-gcm@openssh.com', 'aes128-cbc'],
-      mac: ['hmac-sha2-256', 'hmac-sha1'],
-      compress: ['none']
-    }
-    const server: AlgorithmSet = {
-      kex: ['diffie-hellman-group14-sha1'],
-      serverHostKey: ['ssh-rsa'],
-      cipher: ['aes128-cbc'],
-      mac: ['hmac-sha1'],
-      compress: ['none']
-    }
+    const client = createCompatibleClientSet()
+    const server = createMinimalLegacyServerSet()
 
     const analysis = analyzeAlgorithms(client, server)
 
