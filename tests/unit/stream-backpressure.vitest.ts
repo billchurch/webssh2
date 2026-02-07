@@ -131,6 +131,43 @@ function createMockContext(
   } as unknown as AdapterContext
 }
 
+/** Sets up a ServiceSocketTerminal and wires the shell data flow to the given stream */
+function setupShellFlow(context: AdapterContext, stream: SSH2Stream & EventEmitter): void {
+  const terminal = new ServiceSocketTerminal(context)
+  const internal = terminal as unknown as { setupShellDataFlow(s: SSH2Stream): void }
+  internal.setupShellDataFlow(stream)
+}
+
+/**
+ * Creates a mock context with a mutable bufferedAmount getter.
+ * Returns the context, conn emitter, and a setter to change the buffered value.
+ */
+function createMutableBufferContext(initialBuffered: number = 20000): {
+  context: AdapterContext
+  conn: EventEmitter
+  setBuffered: (value: number) => void
+} {
+  let currentBuffered = initialBuffered
+  const conn = new EventEmitter()
+  Object.assign(conn, {
+    transport: {
+      name: 'websocket',
+      socket: {
+        get bufferedAmount() {
+          return currentBuffered
+        }
+      }
+    }
+  })
+  const context = createMockContext()
+  ;(context.socket as unknown as { conn: EventEmitter }).conn = conn
+  return {
+    context,
+    conn,
+    setBuffered: (value: number) => { currentBuffered = value }
+  }
+}
+
 describe('computeBackpressureAction', () => {
   const HWM = 16384
   const LWM = Math.floor(HWM / 4) // 4096
@@ -208,9 +245,7 @@ describe('Shell Data Flow', () => {
   })
 
   it('emits SSH data to socket without pausing the stream', () => {
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     mockStream.emit('data', Buffer.from('hello'))
 
@@ -219,9 +254,7 @@ describe('Shell Data Flow', () => {
   })
 
   it('handles multiple rapid data chunks without pausing', () => {
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     mockStream.emit('data', Buffer.from('chunk1'))
     mockStream.emit('data', Buffer.from('chunk2'))
@@ -235,9 +268,7 @@ describe('Shell Data Flow', () => {
   })
 
   it('emits raw buffer data without string conversion', () => {
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     const testBuffer = Buffer.from('test output\r\n')
     mockStream.emit('data', testBuffer)
@@ -246,9 +277,7 @@ describe('Shell Data Flow', () => {
   })
 
   it('disconnects socket when stream closes', () => {
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     mockStream.emit('close')
 
@@ -265,9 +294,7 @@ describe('Shell Data Flow with Backpressure', () => {
 
   it('pauses stream when bufferedAmount exceeds high water mark', () => {
     const mockContext = createMockContext({ bufferedAmount: 20000 })
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     mockStream.emit('data', Buffer.from('flood'))
 
@@ -279,9 +306,7 @@ describe('Shell Data Flow with Backpressure', () => {
 
   it('does not pause when bufferedAmount is below high water mark', () => {
     const mockContext = createMockContext({ bufferedAmount: 100 })
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     mockStream.emit('data', Buffer.from('normal'))
 
@@ -292,33 +317,15 @@ describe('Shell Data Flow with Backpressure', () => {
   it('resumes stream when drain fires and buffer is below low water mark', () => {
     vi.useFakeTimers()
 
-    // Start with high buffer to trigger pause
-    let currentBuffered = 20000
-    const conn = new EventEmitter()
-    Object.assign(conn, {
-      transport: {
-        name: 'websocket',
-        socket: {
-          get bufferedAmount() {
-            return currentBuffered
-          }
-        }
-      }
-    })
-
-    const mockContext = createMockContext()
-    ;(mockContext.socket as unknown as { conn: EventEmitter }).conn = conn
-
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    const { context, conn, setBuffered } = createMutableBufferContext(20000)
+    setupShellFlow(context, mockStream)
 
     // Trigger backpressure
     mockStream.emit('data', Buffer.from('flood'))
     expect(mockStream.pause).toHaveBeenCalled()
 
     // Simulate buffer draining below low water mark (HWM/4 = 4096)
-    currentBuffered = 1000
+    setBuffered(1000)
     conn.emit('drain')
 
     expect(mockStream.resume).toHaveBeenCalled()
@@ -329,32 +336,15 @@ describe('Shell Data Flow with Backpressure', () => {
   it('resumes stream via timer poll when drain does not fire', () => {
     vi.useFakeTimers()
 
-    let currentBuffered = 20000
-    const conn = new EventEmitter()
-    Object.assign(conn, {
-      transport: {
-        name: 'websocket',
-        socket: {
-          get bufferedAmount() {
-            return currentBuffered
-          }
-        }
-      }
-    })
-
-    const mockContext = createMockContext()
-    ;(mockContext.socket as unknown as { conn: EventEmitter }).conn = conn
-
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    const { context, setBuffered } = createMutableBufferContext(20000)
+    setupShellFlow(context, mockStream)
 
     // Trigger backpressure
     mockStream.emit('data', Buffer.from('flood'))
     expect(mockStream.pause).toHaveBeenCalled()
 
     // Simulate buffer draining below LWM, then advance timer
-    currentBuffered = 500
+    setBuffered(500)
     vi.advanceTimersByTime(50)
 
     expect(mockStream.resume).toHaveBeenCalled()
@@ -365,32 +355,15 @@ describe('Shell Data Flow with Backpressure', () => {
   it('does not resume when buffer is between LWM and HWM (hysteresis)', () => {
     vi.useFakeTimers()
 
-    let currentBuffered = 20000
-    const conn = new EventEmitter()
-    Object.assign(conn, {
-      transport: {
-        name: 'websocket',
-        socket: {
-          get bufferedAmount() {
-            return currentBuffered
-          }
-        }
-      }
-    })
-
-    const mockContext = createMockContext()
-    ;(mockContext.socket as unknown as { conn: EventEmitter }).conn = conn
-
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    const { context, conn, setBuffered } = createMutableBufferContext(20000)
+    setupShellFlow(context, mockStream)
 
     // Trigger backpressure
     mockStream.emit('data', Buffer.from('flood'))
     expect(mockStream.pause).toHaveBeenCalled()
 
     // Buffer drops to between LWM (4096) and HWM (16384) — should NOT resume
-    currentBuffered = 8000
+    setBuffered(8000)
     conn.emit('drain')
 
     expect(mockStream.resume).not.toHaveBeenCalled()
@@ -399,46 +372,26 @@ describe('Shell Data Flow with Backpressure', () => {
   })
 
   it('always emits data regardless of backpressure state', () => {
-    // Use a mutable bufferedAmount that starts high
-    let currentBuffered = 20000
-    const conn = new EventEmitter()
-    Object.assign(conn, {
-      transport: {
-        name: 'websocket',
-        socket: {
-          get bufferedAmount() {
-            return currentBuffered
-          }
-        }
-      }
-    })
-
-    const mockContext = createMockContext()
-    ;(mockContext.socket as unknown as { conn: EventEmitter }).conn = conn
-
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    const { context, setBuffered } = createMutableBufferContext(20000)
+    setupShellFlow(context, mockStream)
 
     // First chunk triggers backpressure
     mockStream.emit('data', Buffer.from('first'))
-    expect(mockContext.socket.emit).toHaveBeenCalledWith(SOCKET_EVENTS.SSH_DATA, Buffer.from('first'))
+    expect(context.socket.emit).toHaveBeenCalledWith(SOCKET_EVENTS.SSH_DATA, Buffer.from('first'))
     expect(mockStream.pause).toHaveBeenCalled()
 
     // Even if more data arrives (buffered in Node.js), it is still emitted
     // (backpressure only pauses the source stream, doesn't drop data)
-    currentBuffered = 30000
+    setBuffered(30000)
     mockStream.emit('data', Buffer.from('second'))
-    expect(mockContext.socket.emit).toHaveBeenCalledWith(SOCKET_EVENTS.SSH_DATA, Buffer.from('second'))
+    expect(context.socket.emit).toHaveBeenCalledWith(SOCKET_EVENTS.SSH_DATA, Buffer.from('second'))
   })
 
   it('clears timers on stream close', () => {
     vi.useFakeTimers()
 
     const mockContext = createMockContext({ bufferedAmount: 20000 })
-    const terminal = new ServiceSocketTerminal(mockContext)
-    const setupFlow = terminal as unknown as { setupShellDataFlow(stream: SSH2Stream): void }
-    setupFlow.setupShellDataFlow(mockStream)
+    setupShellFlow(mockContext, mockStream)
 
     // Trigger backpressure (sets up timer)
     mockStream.emit('data', Buffer.from('flood'))
