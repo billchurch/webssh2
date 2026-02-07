@@ -15,6 +15,75 @@ interface TerminalConfig {
   env: Record<string, string>
 }
 
+/** Mutable state for SSH-to-WebSocket backpressure control */
+interface BackpressureState {
+  paused: boolean
+  checkTimerId: ReturnType<typeof setTimeout> | null
+}
+
+const LOW_WATER_MARK_DIVISOR = 4
+
+/**
+ * Safely reads bufferedAmount from the ws WebSocket via the Engine.IO
+ * transport chain. Returns null when unavailable (polling transport,
+ * access failure, or during transport upgrade).
+ */
+export function getWebSocketBufferedBytes(
+  socket: AdapterContext['socket']
+): number | null {
+  try {
+    // Access Engine.IO internals via unknown to avoid coupling to private types
+    // while remaining defensive at runtime
+    const conn: unknown = socket.conn
+    if (typeof conn !== 'object' || conn === null) {
+      return null
+    }
+    const transport: unknown = (conn as Record<string, unknown>)['transport']
+    if (typeof transport !== 'object' || transport === null) {
+      return null
+    }
+    const transportRecord = transport as Record<string, unknown>
+    if (transportRecord['name'] !== 'websocket') {
+      return null
+    }
+    const wsSocket: unknown = transportRecord['socket']
+    if (typeof wsSocket !== 'object' || wsSocket === null) {
+      return null
+    }
+    const amount: unknown = (wsSocket as Record<string, unknown>)['bufferedAmount']
+    if (typeof amount !== 'number') {
+      return null
+    }
+    return amount
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Pure decision function for backpressure control.
+ * Returns 'pause' when buffer exceeds high water mark,
+ * 'resume' when buffer drops below low water mark (HWM / 4),
+ * or 'none' when no action is needed.
+ */
+export function computeBackpressureAction(
+  bufferedBytes: number | null,
+  highWaterMark: number,
+  currentlyPaused: boolean
+): 'pause' | 'resume' | 'none' {
+  if (bufferedBytes === null) {
+    return 'none'
+  }
+  const lowWaterMark = Math.floor(highWaterMark / LOW_WATER_MARK_DIVISOR)
+  if (!currentlyPaused && bufferedBytes >= highWaterMark) {
+    return 'pause'
+  }
+  if (currentlyPaused && bufferedBytes < lowWaterMark) {
+    return 'resume'
+  }
+  return 'none'
+}
+
 export class ServiceSocketTerminal {
   constructor(private readonly context: AdapterContext) {}
 
@@ -180,11 +249,60 @@ export class ServiceSocketTerminal {
 
     // Get rate limit configuration (0 = unlimited)
     const rateLimitBytesPerSec = this.context.config.ssh.outputRateLimitBytesPerSec ?? 0
-    const highWaterMark = this.context.config.ssh.socketHighWaterMark ?? 16384
 
     let rateLimitState:
       | { bytesInWindow: number; windowStart: number; paused: boolean }
       | null = rateLimitBytesPerSec > 0 ? { bytesInWindow: 0, windowStart: Date.now(), paused: false } : null
+
+    // Backpressure state for WebSocket outbound buffer
+    const highWaterMark = this.context.config.ssh.socketHighWaterMark ?? 16384
+    const backpressure: BackpressureState = { paused: false, checkTimerId: null }
+
+    const clearResumeSchedule = (): void => {
+      if (backpressure.checkTimerId !== null) {
+        clearTimeout(backpressure.checkTimerId)
+        backpressure.checkTimerId = null
+      }
+      this.context.socket.conn.removeListener('drain', onDrainCheck)
+    }
+
+    const onDrainCheck = (): void => {
+      checkResume()
+    }
+
+    const checkResume = (): void => {
+      const buffered = getWebSocketBufferedBytes(this.context.socket)
+      const action = computeBackpressureAction(buffered, highWaterMark, backpressure.paused)
+      if (action === 'resume') {
+        backpressure.paused = false
+        clearResumeSchedule()
+        stream.resume()
+        this.context.debug('Backpressure relieved, resuming SSH stream (buffered=%d)', buffered)
+      } else if (backpressure.paused) {
+        // Still above low water mark — re-register for next drain + safety timer
+        scheduleResumeCheck()
+      }
+    }
+
+    const scheduleResumeCheck = (): void => {
+      clearResumeSchedule()
+      this.context.socket.conn.once('drain', onDrainCheck)
+      backpressure.checkTimerId = setTimeout(() => {
+        backpressure.checkTimerId = null
+        checkResume()
+      }, 50)
+    }
+
+    const checkBackpressure = (): void => {
+      const buffered = getWebSocketBufferedBytes(this.context.socket)
+      const action = computeBackpressureAction(buffered, highWaterMark, backpressure.paused)
+      if (action === 'pause') {
+        backpressure.paused = true
+        stream.pause()
+        this.context.debug('Backpressure detected, pausing SSH stream (buffered=%d)', buffered)
+        scheduleResumeCheck()
+      }
+    }
 
     stream.on('data', (chunk: Buffer) => {
       const chunkSize = chunk.length
@@ -215,7 +333,9 @@ export class ServiceSocketTerminal {
               rateLimitState.bytesInWindow = 0
               rateLimitState.windowStart = Date.now()
               rateLimitState.paused = false
-              stream.resume()
+              if (!backpressure.paused) {
+                stream.resume()
+              }
               this.context.debug('Rate limit window reset, resuming SSH stream')
             }
           }, delayMs)
@@ -226,23 +346,16 @@ export class ServiceSocketTerminal {
         rateLimitState.bytesInWindow += chunkSize
       }
 
-      // Check Socket.IO buffer backpressure
-      const bufferSize = this.context.socket.eventNames().length * highWaterMark
-      if (bufferSize > highWaterMark * 2) {
-        stream.pause()
-        this.context.debug('Socket.IO buffer high, pausing SSH stream')
+      this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, chunk)
 
-        // Resume when socket drains (use setImmediate to check on next tick)
-        setImmediate(() => {
-          stream.resume()
-          this.context.debug('Socket.IO buffer drained, resuming SSH stream')
-        })
+      // Check backpressure after emit (standard Node.js streams pattern)
+      if (!backpressure.paused) {
+        checkBackpressure()
       }
-
-      this.context.socket.emit(SOCKET_EVENTS.SSH_DATA, chunk.toString('utf8'))
     })
 
     stream.on('close', () => {
+      clearResumeSchedule()
       rateLimitState = null
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.CONNECTION_CLOSED)
       this.context.socket.disconnect()
