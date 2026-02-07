@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.0.0...webssh2-server-v4.0.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* **perf:** binary WebSocket transport and backpressure fix ([#479](https://github.com/billchurch/webssh2/issues/479)) ([2cc6ba0](https://github.com/billchurch/webssh2/commit/2cc6ba0b8b9f08db136c53080efef219eae767a9))
+
 ## [4.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v3.1.1...webssh2-server-v4.0.0) (2026-02-02)
 
 
