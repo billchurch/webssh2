@@ -75,7 +75,7 @@ The client and server communicate using Socket.IO events:
 
 | Event | Description | Payload |
 |-------|-------------|---------|
-| `data` | Terminal output | `string` |
+| `data` | Terminal output | `string \| ArrayBuffer` (binary for shell, string for exec) |
 | `connect` | Connection established | - |
 | `disconnect` | Connection lost | `{ reason }` |
 | `error` | Error message | `{ message, type }` |
@@ -113,9 +113,14 @@ const socket = io({
   transports: ['websocket', 'polling']
 });
 
-// Event handling
+// Event handling — shell data arrives as binary (ArrayBuffer),
+// exec data arrives as string. xterm.js accepts both Uint8Array and string.
 socket.on('data', (data) => {
-  term.write(data);
+  if (data instanceof ArrayBuffer) {
+    term.write(new Uint8Array(data));
+  } else {
+    term.write(data);
+  }
 });
 
 term.onData((data) => {
@@ -245,7 +250,7 @@ term.loadAddon(searchAddon);
 
 ### WebSocket Optimization
 
-- **Binary frames** for reduced overhead
+- **Binary frames** for shell data — the server emits raw `Buffer` objects for shell output, which Socket.IO sends as binary WebSocket frames. This bypasses UTF-8 string conversion and JSON serialization on the server, and the client passes the resulting `Uint8Array` directly to xterm.js without decoding. String decoding is deferred to the session logger only when logging is active.
 - **Compression** enabled when supported
 - **Reconnection logic** with exponential backoff
 - **Connection pooling** for multiple sessions

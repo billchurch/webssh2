@@ -43,7 +43,10 @@ The server uses Socket.IO for real-time communication. Connect to the WebSocket 
 
 4. `data`
    - Emitted when there's output from the SSH session.
-   - Payload: `string` (UTF-8 encoded terminal output)
+   - Payload: `string | Buffer`
+     - **Shell data** is emitted as a raw `Buffer`. Socket.IO 4.x automatically sends Buffers as WebSocket binary frames, avoiding the overhead of UTF-8 string conversion and JSON serialization. The client receives this as an `ArrayBuffer`.
+     - **Exec data** (from the `exec` channel) is emitted as a `string` (UTF-8 encoded), since exec output is already a string from SSH2 and is not a high-throughput path.
+   - Client handling: Convert `ArrayBuffer` to `Uint8Array` and pass directly to `xterm.js` `Terminal.write()`, which natively accepts `Uint8Array`. Only decode to string when text is needed (e.g., session logging).
 
 5. `ssherror`
    - Emitted when an SSH-related error occurs.

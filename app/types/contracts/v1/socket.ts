@@ -238,7 +238,7 @@ export type AuthenticationEvent =
 // Server → Client events
 export interface ServerToClientEvents {
   // Stream data
-  data: (chunk: string) => void
+  data: (chunk: string | Buffer) => void
   // Auth flow
   authentication: (payload: AuthenticationEvent) => void
   authFailure: (payload: { error: string; method: string }) => void
