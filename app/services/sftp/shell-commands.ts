@@ -126,8 +126,9 @@ export function parseStatEntry(stdout: string, path: string): SftpFileEntry | nu
     const parentPath = pathPosix.dirname(path)
     const entry = parseLsLine(trimmed, parentPath)
     if (entry !== null) {
-      // Override the path with the original requested path
-      return { ...entry, path }
+      // Override path and name: ls -lad shows the full path in output,
+      // so the parsed name would be the full path instead of basename
+      return { ...entry, path, name: pathPosix.basename(path) }
     }
   }
 

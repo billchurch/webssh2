@@ -378,5 +378,15 @@ drwxr-xr-x 4 root root 4096 Jan  1 00:00 etc
       expect(entry).not.toBeNull()
       expect(entry?.path).toBe('/home/file.txt')
     })
+
+    it('uses basename from path when ls -lad shows full path', () => {
+      // ls -lad outputs the full path, not just the basename
+      const stdout = '-rw-r--r--    1 user     user         54321 Feb  6 15:32 /home/testuser/Screenshot 2026-02-06 at 3.32.54 PM.png\n'
+      const entry = parseStatEntry(stdout, '/home/testuser/Screenshot 2026-02-06 at 3.32.54 PM.png')
+
+      expect(entry).not.toBeNull()
+      expect(entry?.name).toBe('Screenshot 2026-02-06 at 3.32.54 PM.png')
+      expect(entry?.path).toBe('/home/testuser/Screenshot 2026-02-06 at 3.32.54 PM.png')
+    })
   })
 })
