@@ -18,9 +18,19 @@ export interface AlgorithmsConfig {
 }
 
 /**
+ * SFTP backend type
+ *
+ * - 'sftp': Uses the SSH SFTP subsystem (default, requires server support)
+ * - 'shell': Uses shell commands (ls, cat) via exec, for BusyBox/dropbear
+ */
+export type SftpBackend = 'sftp' | 'shell'
+
+/**
  * SFTP configuration
  */
 export interface SftpConfig {
+  /** Backend for file operations: 'sftp' (default) or 'shell' (BusyBox) */
+  backend: SftpBackend
   /** Whether SFTP file transfer is enabled */
   enabled: boolean
   /** Maximum file size in bytes for upload/download */

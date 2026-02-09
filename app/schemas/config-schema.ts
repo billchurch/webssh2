@@ -41,6 +41,7 @@ const AlgorithmsSchema = z.object({
  * SFTP configuration schema
  */
 const SftpSchema = z.object({
+  backend: z.enum(['sftp', 'shell']),
   enabled: z.boolean(),
   maxFileSize: z.number().int().positive(),
   transferRateLimitBytesPerSec: z.number().int().nonnegative(),

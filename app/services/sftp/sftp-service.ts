@@ -24,6 +24,7 @@ import type {
   SftpProgressResponse,
   SftpCompleteResponse
 } from '../../types/contracts/v1/sftp.js'
+import type { FileService } from './file-service.js'
 import { ok, err } from '../../utils/result.js'
 import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES, getMimeType } from '../../constants/sftp.js'
 import {
@@ -153,7 +154,7 @@ interface OperationSetupOptions {
  * - Progress tracking
  * - Error handling with typed errors
  */
-export class SftpService {
+export class SftpService implements FileService {
   private readonly sessionManager: SftpSessionManager
   private readonly transferManager: TransferManager
   private readonly config: SftpConfig

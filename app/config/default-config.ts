@@ -21,6 +21,7 @@ import { createAuthMethod } from '../types/branded.js'
  * Default SFTP configuration
  */
 export const DEFAULT_SFTP_CONFIG: SftpConfig = {
+  backend: SFTP_DEFAULTS.BACKEND,
   enabled: SFTP_DEFAULTS.ENABLED,
   maxFileSize: SFTP_DEFAULTS.MAX_FILE_SIZE,
   transferRateLimitBytesPerSec: SFTP_DEFAULTS.TRANSFER_RATE_LIMIT_BYTES_PER_SEC,
@@ -330,6 +331,7 @@ function cloneLoggingSyslogTls(
  */
 function cloneSftpConfig(sftp: SftpConfig): SftpConfig {
   return {
+    backend: sftp.backend,
     enabled: sftp.enabled,
     maxFileSize: sftp.maxFileSize,
     transferRateLimitBytesPerSec: sftp.transferRateLimitBytesPerSec,

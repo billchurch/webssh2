@@ -14,6 +14,9 @@
  * SFTP default configuration
  */
 export const SFTP_DEFAULTS = {
+  /** Default backend for file operations */
+  BACKEND: 'sftp' as const,
+
   /** Whether SFTP is enabled by default */
   ENABLED: false,
 

@@ -16,7 +16,8 @@ import { AuthServiceImpl } from './auth/auth-service.js'
 import { SSHServiceImpl } from './ssh/ssh-service.js'
 import { TerminalServiceImpl } from './terminal/terminal-service.js'
 import { SessionServiceImpl } from './session/session-service.js'
-import { createSftpService } from './sftp/sftp-service.js'
+import { createSftpService, type SftpServiceDependencies } from './sftp/sftp-service.js'
+import { createShellFileService } from './sftp/shell-file-service.js'
 import { SessionStore } from '../state/store.js'
 import { createSessionId, createUserId, createConnectionId } from '../types/branded.js'
 import { createInitialState } from '../state/types.js'
@@ -97,9 +98,9 @@ export function createServices(
   const terminal = new TerminalServiceImpl(deps, deps.store)
   const session = new SessionServiceImpl(deps, deps.store)
 
-  // Create SFTP service if configured
+  // Create file service (SFTP or shell backend) if configured
   const sftpConfig = deps.config.ssh.sftp ?? DEFAULT_SFTP_CONFIG
-  const sftp = createSftpService(sftpConfig, {
+  const sftpDeps: SftpServiceDependencies = {
     getSSHClient: (connectionId) => {
       const result = ssh.getConnectionStatus(connectionId)
       if (result.ok && result.value !== null) {
@@ -107,7 +108,10 @@ export function createServices(
       }
       return undefined
     }
-  })
+  }
+  const sftp = sftpConfig.backend === 'shell'
+    ? createShellFileService(sftpConfig, sftpDeps)
+    : createSftpService(sftpConfig, sftpDeps)
 
   const services: Services = {
     auth,

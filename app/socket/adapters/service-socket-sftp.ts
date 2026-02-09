@@ -30,8 +30,8 @@ import {
 } from '../../validation/socket/sftp.js'
 import type { SftpOperation } from '../../types/contracts/v1/sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
+import type { FileService } from '../../services/sftp/file-service.js'
 import type {
-  SftpService,
   SftpServiceError,
   DownloadStreamCallbacks
 } from '../../services/sftp/sftp-service.js'
@@ -558,7 +558,7 @@ export class ServiceSocketSftp {
   // Private Helpers
   // ============================================================================
 
-  private getSftpService(): SftpService | undefined {
+  private getSftpService(): FileService | undefined {
     return this.context.services.sftp
   }
 
