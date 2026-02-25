@@ -59,6 +59,30 @@ function expectShellSafe(input: string): void {
   expect(output).toBe(input)
 }
 
+/**
+ * Assert that validateFileName rejects the input
+ */
+function expectFileNameRejected(input: string): void {
+  const result = validateFileName(input)
+  expect(result.ok).toBe(false)
+}
+
+/**
+ * Assert that validateFileName accepts the input
+ */
+function expectFileNameAccepted(input: string): void {
+  const result = validateFileName(input)
+  expect(result.ok).toBe(true)
+}
+
+/**
+ * Assert that validatePath rejects the input (using PERMISSIVE_OPTIONS)
+ */
+function expectPathRejected(input: string): void {
+  const result = validatePath(input, PERMISSIVE_OPTIONS)
+  expect(result.ok).toBe(false)
+}
+
 // =============================================================================
 // validateFileName fuzzing
 // =============================================================================
@@ -68,75 +92,54 @@ describe('validateFileName fuzzing', () => {
   // Null byte injection
   // ---------------------------------------------------------------------------
   describe('null byte injection', () => {
-    it('rejects null byte at start', () => {
-      const result = validateFileName('\0file.txt')
-      expect(result.ok).toBe(false)
-    })
+    const cases = [
+      { input: '\0file.txt', desc: 'at start' },
+      { input: 'file\0.txt', desc: 'in middle' },
+      { input: 'file.txt\0', desc: 'at end' },
+      { input: '\0\0\0', desc: 'multiple null bytes' },
+      { input: 'safe.txt\0.exe', desc: 'disguised with extension truncation' },
+    ]
 
-    it('rejects null byte in middle', () => {
-      const result = validateFileName('file\0.txt')
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects null byte at end', () => {
-      const result = validateFileName('file.txt\0')
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects multiple null bytes', () => {
-      const result = validateFileName('\0\0\0')
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects null byte disguised with extension truncation', () => {
-      const result = validateFileName('safe.txt\0.exe')
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of cases) {
+      it(`rejects null byte ${desc}`, () => {
+        expectFileNameRejected(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Path separator injection
   // ---------------------------------------------------------------------------
   describe('path separator injection', () => {
-    it('rejects forward slash', () => {
-      const result = validateFileName('etc/passwd')
-      expect(result.ok).toBe(false)
-    })
+    const cases = [
+      { input: 'etc/passwd', desc: 'forward slash' },
+      { input: String.raw`etc\passwd`, desc: 'backslash' },
+      { input: '/etc', desc: 'forward slash at start' },
+      { input: String.raw`foo/bar\baz`, desc: 'mixed separators' },
+      { input: '../../../etc/passwd', desc: 'traversal attempt in filename' },
+    ]
 
-    it('rejects backslash', () => {
-      const result = validateFileName(String.raw`etc\passwd`)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects forward slash at start', () => {
-      const result = validateFileName('/etc')
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects mixed separators', () => {
-      const result = validateFileName(String.raw`foo/bar\baz`)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects traversal attempt in filename', () => {
-      const result = validateFileName('../../../etc/passwd')
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of cases) {
+      it(`rejects ${desc}`, () => {
+        expectFileNameRejected(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Reserved names
   // ---------------------------------------------------------------------------
   describe('reserved names', () => {
-    it('rejects single dot', () => {
-      const result = validateFileName('.')
-      expect(result.ok).toBe(false)
-    })
+    const cases = [
+      { input: '.', desc: 'single dot' },
+      { input: '..', desc: 'double dot' },
+    ]
 
-    it('rejects double dot', () => {
-      const result = validateFileName('..')
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of cases) {
+      it(`rejects ${desc}`, () => {
+        expectFileNameRejected(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
@@ -145,21 +148,19 @@ describe('validateFileName fuzzing', () => {
   describe('length boundaries', () => {
     it('accepts filename at exactly max length (255)', () => {
       const name = 'a'.repeat(SFTP_LIMITS.MAX_FILENAME_LENGTH)
-      const result = validateFileName(name)
-      expect(result.ok).toBe(true)
+      expectFileNameAccepted(name)
     })
 
-    it('rejects filename one char over max length (256)', () => {
-      const name = 'a'.repeat(SFTP_LIMITS.MAX_FILENAME_LENGTH + 1)
-      const result = validateFileName(name)
-      expect(result.ok).toBe(false)
-    })
+    const rejectedLengths = [
+      { length: SFTP_LIMITS.MAX_FILENAME_LENGTH + 1, desc: 'one char over max length (256)' },
+      { length: 10_000, desc: 'very long filename (10000 chars)' },
+    ]
 
-    it('rejects very long filename (10000 chars)', () => {
-      const name = 'x'.repeat(10_000)
-      const result = validateFileName(name)
-      expect(result.ok).toBe(false)
-    })
+    for (const { length, desc } of rejectedLengths) {
+      it(`rejects filename ${desc}`, () => {
+        expectFileNameRejected('a'.repeat(length))
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
@@ -168,46 +169,22 @@ describe('validateFileName fuzzing', () => {
   describe('control characters and unicode', () => {
     // NOTE: validateFileName currently allows these. These tests document
     // that behavior so we can decide if stricter validation is warranted.
+    const acceptedCases = [
+      { input: 'file\tname.txt', desc: 'tab' },
+      { input: 'file\nname.txt', desc: 'newline' },
+      { input: 'file\rname.txt', desc: 'carriage return' },
+      { input: 'file\x07name.txt', desc: 'bell character' },
+      { input: 'file\x1B[31mname.txt', desc: 'ANSI escape' },
+      { input: 'file\u202Ename.txt', desc: 'RTL override' },
+      { input: 'file\u200Bname.txt', desc: 'zero-width space' },
+      { input: '\uFEFFfile.txt', desc: 'BOM' },
+    ]
 
-    it('accepts filename with tab (documents current behavior)', () => {
-      const result = validateFileName('file\tname.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with newline (documents current behavior)', () => {
-      const result = validateFileName('file\nname.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with carriage return (documents current behavior)', () => {
-      const result = validateFileName('file\rname.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with bell character (documents current behavior)', () => {
-      const result = validateFileName('file\x07name.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with ANSI escape (documents current behavior)', () => {
-      const result = validateFileName('file\x1B[31mname.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with RTL override (documents current behavior)', () => {
-      const result = validateFileName('file\u202Ename.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with zero-width space (documents current behavior)', () => {
-      const result = validateFileName('file\u200Bname.txt')
-      expect(result.ok).toBe(true)
-    })
-
-    it('accepts filename with BOM (documents current behavior)', () => {
-      const result = validateFileName('\uFEFFfile.txt')
-      expect(result.ok).toBe(true)
-    })
+    for (const { input, desc } of acceptedCases) {
+      it(`accepts filename with ${desc} (documents current behavior)`, () => {
+        expectFileNameAccepted(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
@@ -231,8 +208,7 @@ describe('validateFileName fuzzing', () => {
 
     for (const name of acceptedMetaNames) {
       it(`accepts shell metacharacter filename: ${JSON.stringify(name)}`, () => {
-        const result = validateFileName(name)
-        expect(result.ok).toBe(true)
+        expectFileNameAccepted(name)
       })
     }
 
@@ -248,8 +224,7 @@ describe('validateFileName fuzzing', () => {
 
     for (const name of rejectedMetaNames) {
       it(`rejects filename with slash in shell metachar: ${JSON.stringify(name)}`, () => {
-        const result = validateFileName(name)
-        expect(result.ok).toBe(false)
+        expectFileNameRejected(name)
       })
     }
   })
@@ -264,45 +239,36 @@ describe('validatePath fuzzing', () => {
   // Null byte injection
   // ---------------------------------------------------------------------------
   describe('null byte injection', () => {
-    it('rejects null byte at start of path', () => {
-      const result = validatePath('\0/home/user', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    const cases = [
+      { input: '\0/home/user', desc: 'at start of path' },
+      { input: '/home/\0user', desc: 'in middle of path' },
+      { input: '/home/user\0', desc: 'at end of path' },
+      { input: '/home/user/safe.txt\0.exe', desc: 'as extension truncation' },
+    ]
 
-    it('rejects null byte in middle of path', () => {
-      const result = validatePath('/home/\0user', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects null byte at end of path', () => {
-      const result = validatePath('/home/user\0', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects null byte as extension truncation', () => {
-      const result = validatePath('/home/user/safe.txt\0.exe', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of cases) {
+      it(`rejects null byte ${desc}`, () => {
+        expectPathRejected(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Path traversal variants
   // ---------------------------------------------------------------------------
   describe('path traversal', () => {
-    it('rejects simple ../ traversal', () => {
-      const result = validatePath('../../../etc/passwd', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    const rejectedTraversals = [
+      { input: '../../../etc/passwd', desc: 'simple ../ traversal' },
+      { input: '../../secret', desc: '../../ chained traversal' },
+      { input: '../file', desc: '../ at start' },
+      { input: '....//etc/passwd', desc: 'double-encoded traversal (....//): normalizes to ../.. which starts with ..' },
+    ]
 
-    it('rejects ../../ chained traversal', () => {
-      const result = validatePath('../../secret', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects ../ at start', () => {
-      const result = validatePath('../file', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of rejectedTraversals) {
+      it(`rejects ${desc}`, () => {
+        expectPathRejected(input)
+      })
+    }
 
     it('normalizes mid-path traversal without rejecting absolute paths', () => {
       // /home/user/../../../etc/passwd normalizes to /etc/passwd
@@ -322,12 +288,6 @@ describe('validatePath fuzzing', () => {
       })
       expect(result.ok).toBe(false)
     })
-
-    it('rejects double-encoded traversal (....//)', () => {
-      // ....// normalizes to ../.. which starts with ..
-      const result = validatePath('....//etc/passwd', PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
   })
 
   // ---------------------------------------------------------------------------
@@ -340,17 +300,16 @@ describe('validatePath fuzzing', () => {
       expect(result.ok).toBe(true)
     })
 
-    it('rejects path one char over max length (4097)', () => {
-      const path = `/${'a'.repeat(SFTP_LIMITS.MAX_PATH_LENGTH)}`
-      const result = validatePath(path, PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    const rejectedLengths = [
+      { fill: SFTP_LIMITS.MAX_PATH_LENGTH, desc: 'one char over max length (4097)' },
+      { fill: 100_000, desc: 'very long path (100000 chars)' },
+    ]
 
-    it('rejects very long path (100000 chars)', () => {
-      const path = `/${'x'.repeat(100_000)}`
-      const result = validatePath(path, PERMISSIVE_OPTIONS)
-      expect(result.ok).toBe(false)
-    })
+    for (const { fill, desc } of rejectedLengths) {
+      it(`rejects path ${desc}`, () => {
+        expectPathRejected(`/${'x'.repeat(fill)}`)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
@@ -387,35 +346,31 @@ describe('validatePath fuzzing', () => {
       checkExtension: false,
     } as const
 
-    it('allows exact match', () => {
-      const result = validatePath('/home/user', restrictedOptions)
-      expect(result.ok).toBe(true)
-    })
+    const acceptedPaths = [
+      { input: '/home/user', desc: 'exact match' },
+      { input: '/home/user/docs/file.txt', desc: 'subdirectory' },
+      { input: '~/documents', desc: 'home directory expansion' },
+    ]
 
-    it('allows subdirectory', () => {
-      const result = validatePath('/home/user/docs/file.txt', restrictedOptions)
-      expect(result.ok).toBe(true)
-    })
+    for (const { input, desc } of acceptedPaths) {
+      it(`allows ${desc}`, () => {
+        const result = validatePath(input, restrictedOptions)
+        expect(result.ok).toBe(true)
+      })
+    }
 
-    it('rejects sibling directory', () => {
-      const result = validatePath('/home/other', restrictedOptions)
-      expect(result.ok).toBe(false)
-    })
+    const rejectedPaths = [
+      { input: '/home/other', desc: 'sibling directory' },
+      { input: '/home', desc: 'parent directory' },
+      { input: '/', desc: 'root' },
+    ]
 
-    it('rejects parent directory', () => {
-      const result = validatePath('/home', restrictedOptions)
-      expect(result.ok).toBe(false)
-    })
-
-    it('rejects root', () => {
-      const result = validatePath('/', restrictedOptions)
-      expect(result.ok).toBe(false)
-    })
-
-    it('allows home directory expansion', () => {
-      const result = validatePath('~/documents', restrictedOptions)
-      expect(result.ok).toBe(true)
-    })
+    for (const { input, desc } of rejectedPaths) {
+      it(`rejects ${desc}`, () => {
+        const result = validatePath(input, restrictedOptions)
+        expect(result.ok).toBe(false)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
@@ -428,30 +383,30 @@ describe('validatePath fuzzing', () => {
       checkExtension: true,
     } as const
 
-    it('blocks .exe extension', () => {
-      const result = validatePath('/home/user/malware.exe', blockExeOptions)
-      expect(result.ok).toBe(false)
-    })
+    const blockedCases = [
+      { input: '/home/user/malware.exe', desc: '.exe extension' },
+      { input: '/home/user/library.dll', desc: '.dll extension' },
+      { input: '/home/user/malware.EXE', desc: 'case-insensitive .EXE' },
+    ]
 
-    it('blocks .dll extension', () => {
-      const result = validatePath('/home/user/library.dll', blockExeOptions)
-      expect(result.ok).toBe(false)
-    })
+    for (const { input, desc } of blockedCases) {
+      it(`blocks ${desc}`, () => {
+        const result = validatePath(input, blockExeOptions)
+        expect(result.ok).toBe(false)
+      })
+    }
 
-    it('blocks case-insensitive .EXE', () => {
-      const result = validatePath('/home/user/malware.EXE', blockExeOptions)
-      expect(result.ok).toBe(false)
-    })
+    const allowedCases = [
+      { input: '/home/user/doc.txt', desc: 'non-blocked extension' },
+      { input: '/home/user/Makefile', desc: 'no extension' },
+    ]
 
-    it('allows non-blocked extension', () => {
-      const result = validatePath('/home/user/doc.txt', blockExeOptions)
-      expect(result.ok).toBe(true)
-    })
-
-    it('allows no extension', () => {
-      const result = validatePath('/home/user/Makefile', blockExeOptions)
-      expect(result.ok).toBe(true)
-    })
+    for (const { input, desc } of allowedCases) {
+      it(`allows ${desc}`, () => {
+        const result = validatePath(input, blockExeOptions)
+        expect(result.ok).toBe(true)
+      })
+    }
   })
 })
 
@@ -496,248 +451,151 @@ describe('escapeShellPath round-trip fuzzing', () => {
   // Single quote edge cases
   // ---------------------------------------------------------------------------
   describe('single quote edge cases', () => {
-    it('handles single quote alone', () => {
-      expectShellSafe("'")
-    })
+    const cases = [
+      { input: "'", desc: 'single quote alone' },
+      { input: "''", desc: 'double single quote' },
+      { input: "'''", desc: 'triple single quote' },
+      { input: "'hello", desc: 'single quote at start' },
+      { input: "hello'", desc: 'single quote at end' },
+      { input: "'hello'", desc: 'single quotes surrounding text' },
+      { input: String.raw`'\''`, desc: 'nested quote escape pattern' },
+      { input: String.raw`'\''$(id)'\''`, desc: 'injection via quote escape confusion' },
+      { input: "a'b'c'd'e", desc: 'alternating quotes and text' },
+    ]
 
-    it('handles double single quote', () => {
-      expectShellSafe("''")
-    })
-
-    it('handles triple single quote', () => {
-      expectShellSafe("'''")
-    })
-
-    it('handles single quote at start', () => {
-      expectShellSafe("'hello")
-    })
-
-    it('handles single quote at end', () => {
-      expectShellSafe("hello'")
-    })
-
-    it('handles single quotes surrounding text', () => {
-      expectShellSafe("'hello'")
-    })
-
-    it('handles nested quote escape pattern', () => {
-      expectShellSafe(String.raw`'\''`)
-    })
-
-    it('handles injection via quote escape confusion', () => {
-      expectShellSafe(String.raw`'\''$(id)'\''`)
-    })
-
-    it('handles alternating quotes and text', () => {
-      expectShellSafe("a'b'c'd'e")
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Double quote and mixed quoting
   // ---------------------------------------------------------------------------
   describe('double quotes and mixed quoting', () => {
-    it('handles double quotes', () => {
-      expectShellSafe('"hello world"')
-    })
+    const cases = [
+      { input: '"hello world"', desc: 'double quotes' },
+      { input: 'he said "it\'s fine"', desc: 'mixed single and double quotes' },
+      { input: String.raw`\"`, desc: 'backslash-double-quote combo' },
+      { input: '"$HOME"', desc: 'dollar-in-double-quotes' },
+    ]
 
-    it('handles mixed single and double quotes', () => {
-      expectShellSafe('he said "it\'s fine"')
-    })
-
-    it('handles backslash-double-quote combo', () => {
-      expectShellSafe(String.raw`\"`)
-    })
-
-    it('handles dollar-in-double-quotes', () => {
-      expectShellSafe('"$HOME"')
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Special characters
   // ---------------------------------------------------------------------------
   describe('special characters', () => {
-    it('handles spaces', () => {
-      expectShellSafe('hello world')
-    })
+    const cases = [
+      { input: 'hello world', desc: 'spaces' },
+      { input: 'hello\tworld', desc: 'tabs' },
+      { input: 'hello\nworld', desc: 'newlines' },
+      { input: 'hello\rworld', desc: 'carriage returns' },
+      { input: String.raw`hello\world`, desc: 'backslashes' },
+      { input: '\\\\\\', desc: 'multiple backslashes' },
+      { input: '*.txt', desc: 'asterisks (glob)' },
+      { input: 'file?.txt', desc: 'question marks (glob)' },
+      { input: 'file[0-9].txt', desc: 'square brackets (glob)' },
+      { input: '{a,b,c}', desc: 'curly braces (brace expansion)' },
+      { input: '~', desc: 'tilde (home expansion)' },
+      { input: '# this is a comment', desc: 'hash (comment)' },
+      { input: '!!', desc: 'exclamation mark (history expansion)' },
+      { input: '&', desc: 'ampersand' },
+      { input: '(subshell)', desc: 'parentheses (subshell)' },
+    ]
 
-    it('handles tabs', () => {
-      expectShellSafe('hello\tworld')
-    })
-
-    it('handles newlines', () => {
-      expectShellSafe('hello\nworld')
-    })
-
-    it('handles carriage returns', () => {
-      expectShellSafe('hello\rworld')
-    })
-
-    it('handles backslashes', () => {
-      expectShellSafe(String.raw`hello\world`)
-    })
-
-    it('handles multiple backslashes', () => {
-      // String.raw cannot end with an odd number of backslashes (backtick limitation)
-      expectShellSafe('\\\\\\')
-    })
-
-    it('handles asterisks (glob)', () => {
-      expectShellSafe('*.txt')
-    })
-
-    it('handles question marks (glob)', () => {
-      expectShellSafe('file?.txt')
-    })
-
-    it('handles square brackets (glob)', () => {
-      expectShellSafe('file[0-9].txt')
-    })
-
-    it('handles curly braces (brace expansion)', () => {
-      expectShellSafe('{a,b,c}')
-    })
-
-    it('handles tilde (home expansion)', () => {
-      expectShellSafe('~')
-    })
-
-    it('handles hash (comment)', () => {
-      expectShellSafe('# this is a comment')
-    })
-
-    it('handles exclamation mark (history expansion)', () => {
-      expectShellSafe('!!')
-    })
-
-    it('handles ampersand', () => {
-      expectShellSafe('&')
-    })
-
-    it('handles parentheses (subshell)', () => {
-      expectShellSafe('(subshell)')
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Control characters
   // ---------------------------------------------------------------------------
   describe('control characters', () => {
-    it('handles bell character', () => {
-      expectShellSafe('\x07')
-    })
+    const cases = [
+      { input: '\x07', desc: 'bell character' },
+      { input: '\x08', desc: 'backspace' },
+      { input: '\x0B', desc: 'vertical tab' },
+      { input: '\x0C', desc: 'form feed' },
+      { input: '\x1B', desc: 'escape character' },
+      { input: '\x1B[31mred\x1B[0m', desc: 'ANSI escape sequence' },
+      { input: '\x7F', desc: 'DEL character' },
+    ]
 
-    it('handles backspace', () => {
-      expectShellSafe('\x08')
-    })
-
-    it('handles vertical tab', () => {
-      expectShellSafe('\x0B')
-    })
-
-    it('handles form feed', () => {
-      expectShellSafe('\x0C')
-    })
-
-    it('handles escape character', () => {
-      expectShellSafe('\x1B')
-    })
-
-    it('handles ANSI escape sequence', () => {
-      expectShellSafe('\x1B[31mred\x1B[0m')
-    })
-
-    it('handles DEL character', () => {
-      expectShellSafe('\x7F')
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Unicode
   // ---------------------------------------------------------------------------
   describe('unicode', () => {
-    it('handles RTL override character', () => {
-      expectShellSafe('\u202E')
-    })
+    const cases = [
+      { input: '\u202E', desc: 'RTL override character' },
+      { input: '\uFEFF', desc: 'BOM' },
+      { input: '\u200B', desc: 'zero-width space' },
+      { input: '\u200D', desc: 'zero-width joiner' },
+      { input: '\u0430', desc: 'homoglyph: Cyrillic а (looks like Latin a)' },
+      { input: 'file_\uD83D\uDE00.txt', desc: 'emoji' },
+      { input: '文件.txt', desc: 'CJK characters' },
+      { input: 'file\u0301.txt', desc: 'combining diacritical marks' },
+    ]
 
-    it('handles BOM', () => {
-      expectShellSafe('\uFEFF')
-    })
-
-    it('handles zero-width space', () => {
-      expectShellSafe('\u200B')
-    })
-
-    it('handles zero-width joiner', () => {
-      expectShellSafe('\u200D')
-    })
-
-    it('handles homoglyph: Cyrillic а (looks like Latin a)', () => {
-      expectShellSafe('\u0430')
-    })
-
-    it('handles emoji', () => {
-      expectShellSafe('file_\uD83D\uDE00.txt')
-    })
-
-    it('handles CJK characters', () => {
-      expectShellSafe('文件.txt')
-    })
-
-    it('handles combining diacritical marks', () => {
-      expectShellSafe('file\u0301.txt')
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Boundary conditions
   // ---------------------------------------------------------------------------
   describe('boundary conditions', () => {
-    it('handles empty string', () => {
-      expectShellSafe('')
-    })
+    const cases = [
+      { input: '', desc: 'empty string' },
+      { input: 'a', desc: 'single character' },
+      { input: '   ', desc: 'whitespace-only string' },
+      { input: 'a'.repeat(1000), desc: 'long string (1000 chars)' },
+      { input: "'''''", desc: 'string of all single quotes' },
+      { input: "important_doc'; DROP TABLE users;--.pdf", desc: 'realistic malicious filename' },
+    ]
 
-    it('handles single character', () => {
-      expectShellSafe('a')
-    })
-
-    it('handles whitespace-only string', () => {
-      expectShellSafe('   ')
-    })
-
-    it('handles long string (1000 chars)', () => {
-      expectShellSafe('a'.repeat(1000))
-    })
-
-    it('handles string of all single quotes', () => {
-      expectShellSafe("'''''")
-    })
-
-    it('handles realistic malicious filename', () => {
-      expectShellSafe("important_doc'; DROP TABLE users;--.pdf")
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 
   // ---------------------------------------------------------------------------
   // Flag injection (cat/ls argument abuse)
   // ---------------------------------------------------------------------------
   describe('flag injection', () => {
-    it('handles --help as path', () => {
-      expectShellSafe('--help')
-    })
+    const cases = [
+      { input: '--help', desc: '--help as path' },
+      { input: '-rf', desc: '-rf as path' },
+      { input: '--version', desc: '--version as path' },
+      { input: '-e exec', desc: '-e with command as path' },
+    ]
 
-    it('handles -rf as path', () => {
-      expectShellSafe('-rf')
-    })
-
-    it('handles --version as path', () => {
-      expectShellSafe('--version')
-    })
-
-    it('handles -e with command as path', () => {
-      expectShellSafe('-e exec')
-    })
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
   })
 })
 
@@ -761,8 +619,7 @@ describe('defense-in-depth: validator + escaping chain', () => {
 
     for (const { input, reason } of rejectedByFileName) {
       it(`validateFileName rejects: ${reason}`, () => {
-        const result = validateFileName(input)
-        expect(result.ok).toBe(false)
+        expectFileNameRejected(input)
       })
     }
 
@@ -774,8 +631,7 @@ describe('defense-in-depth: validator + escaping chain', () => {
 
     for (const { input, reason } of rejectedByPath) {
       it(`validatePath rejects: ${reason}`, () => {
-        const result = validatePath(input, PERMISSIVE_OPTIONS)
-        expect(result.ok).toBe(false)
+        expectPathRejected(input)
       })
     }
   })
@@ -806,10 +662,8 @@ describe('defense-in-depth: validator + escaping chain', () => {
 
     for (const name of sneakyFileNames) {
       it(`fileName+escape chain is safe for: ${JSON.stringify(name)}`, () => {
-        const fileResult = validateFileName(name)
         // These pass filename validation (no null bytes, separators, or reserved names)
-        expect(fileResult.ok).toBe(true)
-
+        expectFileNameAccepted(name)
         // But escapeShellPath makes them shell-safe
         expectShellSafe(name)
       })
@@ -825,8 +679,7 @@ describe('defense-in-depth: validator + escaping chain', () => {
 
     for (const name of rejectedBySlash) {
       it(`fileName rejects slash-containing attack: ${JSON.stringify(name)}`, () => {
-        const result = validateFileName(name)
-        expect(result.ok).toBe(false)
+        expectFileNameRejected(name)
       })
     }
   })

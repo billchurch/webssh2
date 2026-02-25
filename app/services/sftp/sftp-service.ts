@@ -36,7 +36,6 @@ import {
 import {
   validatePath,
   validateFileName,
-  type PathValidationOptions
 } from './path-validator.js'
 import {
   createTransferManager,
@@ -44,6 +43,11 @@ import {
   type ManagedTransfer,
   type TransferError
 } from './transfer-manager.js'
+import {
+  mapPathErrorCode,
+  getPathValidationOptions,
+  mapTransferStartError
+} from './file-service-shared.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:sftp')
@@ -188,17 +192,6 @@ export class SftpService implements FileService {
   }
 
   /**
-   * Get path validation options from config
-   */
-  private getPathValidationOptions(checkExtension: boolean): PathValidationOptions {
-    return {
-      allowedPaths: this.config.allowedPaths,
-      blockedExtensions: this.config.blockedExtensions,
-      checkExtension
-    }
-  }
-
-  /**
    * Resolve path if it contains ~ (SFTP subsystem doesn't expand shell shortcuts)
    */
   private async resolveTildePath(
@@ -234,11 +227,10 @@ export class SftpService implements FileService {
     }
 
     // Validate path
-    const pathResult = validatePath(options.path, this.getPathValidationOptions(options.checkExtension))
+    const pathResult = validatePath(options.path, getPathValidationOptions(this.config, options.checkExtension))
     if (!pathResult.ok) {
-      const code = mapPathErrorCode(pathResult.error.code)
       return err({
-        code,
+        code: mapPathErrorCode(pathResult.error.code),
         message: pathResult.error.message,
         path: options.path,
         transferId: options.transferId
@@ -512,11 +504,7 @@ export class SftpService implements FileService {
     })
 
     if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapTransferStartError(transferResult.error, request.transferId))
     }
 
     // Open file for writing
@@ -774,11 +762,7 @@ export class SftpService implements FileService {
     })
 
     if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapTransferStartError(transferResult.error, request.transferId))
     }
 
     this.transferManager.activateTransfer(request.transferId)
@@ -1075,20 +1059,6 @@ export class SftpService implements FileService {
     this.closeUpload(transferId)
   }
 
-}
-
-/**
- * Map path validation error code to service error code
- */
-function mapPathErrorCode(code: string): SftpErrorCode {
-  switch (code) {
-    case 'EXTENSION_BLOCKED':
-      return 'SFTP_EXTENSION_BLOCKED'
-    case 'PATH_FORBIDDEN':
-      return 'SFTP_PATH_FORBIDDEN'
-    default:
-      return 'SFTP_INVALID_REQUEST'
-  }
 }
 
 /**

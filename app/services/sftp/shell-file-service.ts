@@ -41,8 +41,12 @@ import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES, getMimeType } fro
 import {
   validatePath,
   validateFileName,
-  type PathValidationOptions
 } from './path-validator.js'
+import {
+  mapPathErrorCode,
+  getPathValidationOptions,
+  mapTransferStartError
+} from './file-service-shared.js'
 import {
   escapeShellPath,
   buildListCommand,
@@ -249,11 +253,7 @@ export class ShellFileService implements FileService {
     })
 
     if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapTransferStartError(transferResult.error, request.transferId))
     }
 
     // Open a cat > file stream via exec
@@ -472,11 +472,7 @@ export class ShellFileService implements FileService {
     })
 
     if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapTransferStartError(transferResult.error, request.transferId))
     }
 
     this.transferManager.activateTransfer(request.transferId)
@@ -666,14 +662,6 @@ export class ShellFileService implements FileService {
   // Private Helpers
   // ============================================================================
 
-  private getPathValidationOptions(checkExtension: boolean): PathValidationOptions {
-    return {
-      allowedPaths: this.config.allowedPaths,
-      blockedExtensions: this.config.blockedExtensions,
-      checkExtension
-    }
-  }
-
   /**
    * Common setup for all operations: validates config, path, session, and resolves tilde
    */
@@ -693,11 +681,10 @@ export class ShellFileService implements FileService {
     }
 
     // Validate path
-    const pathResult = validatePath(options.path, this.getPathValidationOptions(options.checkExtension))
+    const pathResult = validatePath(options.path, getPathValidationOptions(this.config, options.checkExtension))
     if (!pathResult.ok) {
-      const code = mapPathErrorCode(pathResult.error.code)
       return err({
-        code,
+        code: mapPathErrorCode(pathResult.error.code),
         message: pathResult.error.message,
         path: options.path,
         transferId: options.transferId
@@ -852,20 +839,6 @@ export class ShellFileService implements FileService {
       }
       this.uploadStreams.delete(transferId)
     }
-  }
-}
-
-/**
- * Map path validation error code to service error code
- */
-function mapPathErrorCode(code: string): SftpServiceError['code'] {
-  switch (code) {
-    case 'EXTENSION_BLOCKED':
-      return 'SFTP_EXTENSION_BLOCKED'
-    case 'PATH_FORBIDDEN':
-      return 'SFTP_PATH_FORBIDDEN'
-    default:
-      return 'SFTP_INVALID_REQUEST'
   }
 }
 
