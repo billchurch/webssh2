@@ -96,6 +96,12 @@ export interface SSHConfig {
    * bypassing auto-answer logic for password prompts.
    */
   forwardAllPrompts?: boolean
+  /**
+   * Socket.IO socket for host key verification communication with client.
+   * When provided alongside an enabled HostKeyService, the SSH service
+   * will set up the hostVerifier callback for the connection.
+   */
+  socket?: import('socket.io').Socket
 }
 
 /**

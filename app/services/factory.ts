@@ -94,9 +94,13 @@ export function createServices(
 ): Services {
   factoryLogger('Creating services')
 
+  // Create host key service if configured (needed by SSH service)
+  const hostKeyConfig = resolveHostKeyMode(deps.config.ssh.hostKeyVerification)
+  const hostKey = hostKeyConfig.enabled ? new HostKeyService(hostKeyConfig) : undefined
+
   // Create service implementations
   const auth = new AuthServiceImpl(deps, deps.store)
-  const ssh = new SSHServiceImpl(deps, deps.store)
+  const ssh = new SSHServiceImpl(deps, deps.store, hostKey)
   const terminal = new TerminalServiceImpl(deps, deps.store)
   const session = new SessionServiceImpl(deps, deps.store)
 
@@ -114,10 +118,6 @@ export function createServices(
   const sftp = sftpConfig.backend === 'shell'
     ? createShellFileService(sftpConfig, sftpDeps)
     : createSftpService(sftpConfig, sftpDeps)
-
-  // Create host key service if configured
-  const hostKeyConfig = resolveHostKeyMode(deps.config.ssh.hostKeyVerification)
-  const hostKey = hostKeyConfig.enabled ? new HostKeyService(hostKeyConfig) : undefined
 
   const services: Services = {
     auth,

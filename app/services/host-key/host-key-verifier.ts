@@ -2,6 +2,7 @@
 // Factory for SSH2 hostVerifier callback
 
 import type { Socket } from 'socket.io'
+import type { HostVerifier } from 'ssh2'
 import { HostKeyService } from './host-key-service.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 
@@ -81,26 +82,43 @@ interface HostKeyVerifyResponse {
 const DEFAULT_TIMEOUT = 30000
 
 /**
- * Create a hostVerifier callback for SSH2's Client.connect().
+ * Extract the algorithm name from an SSH public key buffer.
+ *
+ * SSH public key wire format: 4-byte big-endian length + algorithm string + key data.
+ * Returns 'unknown' if the buffer is too short to parse.
+ */
+export function extractAlgorithm(keyBuffer: Buffer): string {
+  if (keyBuffer.length < 4) {
+    return 'unknown'
+  }
+  const algLength = keyBuffer.readUInt32BE(0)
+  if (keyBuffer.length < 4 + algLength) {
+    return 'unknown'
+  }
+  return keyBuffer.subarray(4, 4 + algLength).toString('ascii')
+}
+
+/**
+ * Create a hostVerifier callback for SSH2 Client.connect().
  *
  * Decision tree:
- * 1. Feature disabled -> return true
+ * 1. Feature disabled -> verify(true)
  * 2. Server store lookup:
- *    - trusted -> emit verified, return true
- *    - mismatch -> emit mismatch, return false
+ *    - trusted -> emit verified, verify(true)
+ *    - mismatch -> emit mismatch, verify(false)
  *    - unknown -> fall through
  * 3. Client store enabled -> emit verify, await client response
- *    - trusted/accept -> emit verified, return true
- *    - reject -> return false
- *    - timeout -> return false
+ *    - trusted/accept -> emit verified, verify(true)
+ *    - reject -> verify(false)
+ *    - timeout -> verify(false)
  * 4. Neither store has key -> apply unknownKeyAction:
- *    - alert -> emit alert, return true
- *    - reject -> emit rejected, return false
+ *    - alert -> emit alert, verify(true)
+ *    - reject -> emit rejected, verify(false)
  *    - prompt -> emit verify, await client response
  */
 export function createHostKeyVerifier(
   options: CreateHostKeyVerifierOptions
-): (key: Buffer, info: { hostType: string }) => Promise<boolean> {
+): HostVerifier {
   const {
     hostKeyService,
     socket,
@@ -110,13 +128,14 @@ export function createHostKeyVerifier(
     timeout = DEFAULT_TIMEOUT,
   } = options
 
-  return async (key: Buffer, info: { hostType: string }): Promise<boolean> => {
+  return (key: Buffer, verify: (valid: boolean) => void): void => {
     // Step 1: Feature disabled
     if (!hostKeyService.isEnabled) {
-      return true
+      verify(true)
+      return
     }
 
-    const algorithm = info.hostType
+    const algorithm = extractAlgorithm(key)
     const base64Key = key.toString('base64')
     const fingerprint = HostKeyService.computeFingerprint(base64Key)
 
@@ -136,7 +155,8 @@ export function createHostKeyVerifier(
           source: 'server',
         }
         socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFIED, payload)
-        return true
+        verify(true)
+        return
       }
 
       if (lookupResult.status === 'mismatch') {
@@ -153,7 +173,8 @@ export function createHostKeyVerifier(
           source: 'server',
         }
         socket.emit(SOCKET_EVENTS.HOSTKEY_MISMATCH, payload)
-        return false
+        verify(false)
+        return
       }
 
       // status === 'unknown', fall through
@@ -162,9 +183,10 @@ export function createHostKeyVerifier(
 
     // Step 3: Client store lookup
     if (hostKeyService.clientStoreEnabled) {
-      return awaitClientVerification(
-        socket, host, port, algorithm, base64Key, fingerprint, 'client', log, timeout
+      awaitClientVerification(
+        socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify
       )
+      return
     }
 
     // Step 4: Neither store has key -> apply unknownKeyAction
@@ -179,7 +201,8 @@ export function createHostKeyVerifier(
         fingerprint,
       }
       socket.emit(SOCKET_EVENTS.HOSTKEY_ALERT, payload)
-      return true
+      verify(true)
+      return
     }
 
     if (action === 'reject') {
@@ -191,13 +214,14 @@ export function createHostKeyVerifier(
         fingerprint,
       }
       socket.emit(SOCKET_EVENTS.HOSTKEY_REJECTED, payload)
-      return false
+      verify(false)
+      return
     }
 
     // action === 'prompt'
     log('Unknown key action: prompt')
-    return awaitClientVerification(
-      socket, host, port, algorithm, base64Key, fingerprint, 'prompt', log, timeout
+    awaitClientVerification(
+      socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify
     )
   }
 }
@@ -213,48 +237,46 @@ function awaitClientVerification(
   algorithm: string,
   base64Key: string,
   fingerprint: string,
-  source: 'client' | 'prompt',
   log: (...args: unknown[]) => void,
-  timeout: number
-): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    const verifyPayload: HostKeyVerifyPayload = {
-      host,
-      port,
-      algorithm,
-      fingerprint,
-      key: base64Key,
-    }
+  timeout: number,
+  verify: (valid: boolean) => void
+): void {
+  const verifyPayload: HostKeyVerifyPayload = {
+    host,
+    port,
+    algorithm,
+    fingerprint,
+    key: base64Key,
+  }
 
-    const handler = (response: HostKeyVerifyResponse): void => {
-      clearTimeout(timer)
+  const handler = (response: HostKeyVerifyResponse): void => {
+    clearTimeout(timer)
 
-      if (response.action === 'accept' || response.action === 'trusted') {
-        log('Client accepted host key')
-        const verifiedPayload: HostKeyVerifiedPayload = {
-          host,
-          port,
-          algorithm,
-          fingerprint,
-          source: 'client',
-        }
-        socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFIED, verifiedPayload)
-        resolve(true)
-        return
+    if (response.action === 'accept' || response.action === 'trusted') {
+      log('Client accepted host key')
+      const verifiedPayload: HostKeyVerifiedPayload = {
+        host,
+        port,
+        algorithm,
+        fingerprint,
+        source: 'client',
       }
-
-      // action === 'reject'
-      log('Client rejected host key')
-      resolve(false)
+      socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFIED, verifiedPayload)
+      verify(true)
+      return
     }
 
-    const timer = setTimeout(() => {
-      log('Host key verification timed out')
-      socket.removeListener(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
-      resolve(false)
-    }, timeout)
+    // action === 'reject'
+    log('Client rejected host key')
+    verify(false)
+  }
 
-    socket.once(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
-    socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFY, verifyPayload)
-  })
+  const timer = setTimeout(() => {
+    log('Host key verification timed out')
+    socket.removeListener(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
+    verify(false)
+  }, timeout)
+
+  socket.once(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
+  socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFY, verifyPayload)
 }
