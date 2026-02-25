@@ -34,22 +34,18 @@ import {
   type SftpSessionManager
 } from './sftp-session.js'
 import {
-  validatePath,
-} from './path-validator.js'
-import {
   createTransferManager,
   type TransferManager,
   type ManagedTransfer,
   type TransferError
 } from './transfer-manager.js'
 import {
-  mapPathErrorCode,
-  getPathValidationOptions,
-  mapTransferStartError,
+  validateOperationPreconditions,
+  startUploadTransfer,
+  validateAndStartDownload,
   validateUploadPreFlight,
   mapChunkUpdateError,
-  buildCompleteResponse,
-  buildDownloadReadyResponse
+  buildCompleteResponse
 } from './file-service-shared.js'
 import debug from 'debug'
 
@@ -220,24 +216,12 @@ export class SftpService implements FileService {
   private async setupOperation(
     options: OperationSetupOptions
   ): Promise<Result<OperationContext, SftpServiceError>> {
-    // Check if SFTP is enabled
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED],
-        transferId: options.transferId
-      })
-    }
-
-    // Validate path
-    const pathResult = validatePath(options.path, getPathValidationOptions(this.config, options.checkExtension))
-    if (!pathResult.ok) {
-      return err({
-        code: mapPathErrorCode(pathResult.error.code),
-        message: pathResult.error.message,
-        path: options.path,
-        transferId: options.transferId
-      })
+    // Validate enabled + path
+    const preflight = validateOperationPreconditions(
+      this.config, options.path, options.checkExtension, options.transferId
+    )
+    if (!preflight.ok) {
+      return preflight
     }
 
     // Get or create session
@@ -247,7 +231,7 @@ export class SftpService implements FileService {
     }
 
     // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
+    const resolveResult = await this.resolveTildePath(sessionResult.value, preflight.value)
     if (!resolveResult.ok) {
       return err({ ...resolveResult.error, transferId: options.transferId })
     }
@@ -483,18 +467,11 @@ export class SftpService implements FileService {
     }
 
     // Start tracking transfer
-    const transferResult = this.transferManager.startTransfer({
-      transferId: request.transferId,
-      sessionId: request.sessionId,
-      direction: 'upload',
-      remotePath: resolvedPath,
-      fileName: request.fileName,
-      totalBytes: request.fileSize,
-      rateLimitBytesPerSec: this.config.transferRateLimitBytesPerSec
-    })
-
+    const transferResult = startUploadTransfer(
+      this.transferManager, request, resolvedPath, this.config.transferRateLimitBytesPerSec
+    )
     if (!transferResult.ok) {
-      return err(mapTransferStartError(transferResult.error, request.transferId))
+      return transferResult
     }
 
     // Open file for writing
@@ -710,45 +687,16 @@ export class SftpService implements FileService {
       })
     }
 
+    // Validate file info, start tracking transfer, and build response
     const fileInfo = statResult.value
-    if (fileInfo.type !== 'file') {
-      return err({
-        code: 'SFTP_INVALID_REQUEST',
-        message: 'Can only download files',
-        path: resolvedPath,
-        transferId: request.transferId
-      })
+    const downloadResult = validateAndStartDownload(
+      this.transferManager, this.config, request, resolvedPath, fileInfo
+    )
+    if (downloadResult.ok) {
+      logger('Download started:', request.transferId, resolvedPath)
     }
 
-    // Check file size (download-specific validation after stat)
-    if (fileInfo.size > this.config.maxFileSize) {
-      return err({
-        code: 'SFTP_FILE_TOO_LARGE',
-        message: `File size ${fileInfo.size} exceeds maximum ${this.config.maxFileSize}`,
-        path: resolvedPath,
-        transferId: request.transferId
-      })
-    }
-
-    // Start tracking transfer
-    const transferResult = this.transferManager.startTransfer({
-      transferId: request.transferId,
-      sessionId: request.sessionId,
-      direction: 'download',
-      remotePath: resolvedPath,
-      fileName: fileInfo.name,
-      totalBytes: fileInfo.size,
-      rateLimitBytesPerSec: this.config.transferRateLimitBytesPerSec
-    })
-
-    if (!transferResult.ok) {
-      return err(mapTransferStartError(transferResult.error, request.transferId))
-    }
-
-    this.transferManager.activateTransfer(request.transferId)
-    logger('Download started:', request.transferId, resolvedPath)
-
-    return ok(buildDownloadReadyResponse(request.transferId, fileInfo))
+    return downloadResult
   }
 
   /**

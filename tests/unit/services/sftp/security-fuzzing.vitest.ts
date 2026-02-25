@@ -86,6 +86,23 @@ function expectPathRejected(input: string): void {
   expect(result.ok).toBe(false)
 }
 
+/**
+ * Generate shell-safety round-trip tests for an array of { input, desc } cases.
+ * Each case verifies that escapeShellPath round-trips correctly through /bin/sh.
+ */
+function shellSafeSuite(
+  name: string,
+  cases: ReadonlyArray<{ readonly input: string; readonly desc: string }>,
+): void {
+  describe(name, () => {
+    for (const { input, desc } of cases) {
+      it(`handles ${desc}`, () => {
+        expectShellSafe(input)
+      })
+    }
+  })
+}
+
 // =============================================================================
 // escapeShellPath round-trip fuzzing
 // =============================================================================
@@ -126,153 +143,97 @@ describe('escapeShellPath round-trip fuzzing', () => {
   // ---------------------------------------------------------------------------
   // Single quote edge cases
   // ---------------------------------------------------------------------------
-  describe('single quote edge cases', () => {
-    const cases = [
-      { input: "'", desc: 'single quote alone' },
-      { input: "''", desc: 'double single quote' },
-      { input: "'''", desc: 'triple single quote' },
-      { input: "'hello", desc: 'single quote at start' },
-      { input: "hello'", desc: 'single quote at end' },
-      { input: "'hello'", desc: 'single quotes surrounding text' },
-      { input: String.raw`'\''`, desc: 'nested quote escape pattern' },
-      { input: String.raw`'\''$(id)'\''`, desc: 'injection via quote escape confusion' },
-      { input: "a'b'c'd'e", desc: 'alternating quotes and text' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('single quote edge cases', [
+    { input: "'", desc: 'single quote alone' },
+    { input: "''", desc: 'double single quote' },
+    { input: "'''", desc: 'triple single quote' },
+    { input: "'hello", desc: 'single quote at start' },
+    { input: "hello'", desc: 'single quote at end' },
+    { input: "'hello'", desc: 'single quotes surrounding text' },
+    { input: String.raw`'\''`, desc: 'nested quote escape pattern' },
+    { input: String.raw`'\''$(id)'\''`, desc: 'injection via quote escape confusion' },
+    { input: "a'b'c'd'e", desc: 'alternating quotes and text' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Double quote and mixed quoting
   // ---------------------------------------------------------------------------
-  describe('double quotes and mixed quoting', () => {
-    const cases = [
-      { input: '"hello world"', desc: 'double quotes' },
-      { input: 'he said "it\'s fine"', desc: 'mixed single and double quotes' },
-      { input: String.raw`\"`, desc: 'backslash-double-quote combo' },
-      { input: '"$HOME"', desc: 'dollar-in-double-quotes' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('double quotes and mixed quoting', [
+    { input: '"hello world"', desc: 'double quotes' },
+    { input: 'he said "it\'s fine"', desc: 'mixed single and double quotes' },
+    { input: String.raw`\"`, desc: 'backslash-double-quote combo' },
+    { input: '"$HOME"', desc: 'dollar-in-double-quotes' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Special characters
   // ---------------------------------------------------------------------------
-  describe('special characters', () => {
-    const cases = [
-      { input: 'hello world', desc: 'spaces' },
-      { input: 'hello\tworld', desc: 'tabs' },
-      { input: 'hello\nworld', desc: 'newlines' },
-      { input: 'hello\rworld', desc: 'carriage returns' },
-      { input: String.raw`hello\world`, desc: 'backslashes' },
-      { input: '\\\\\\', desc: 'multiple backslashes' },
-      { input: '*.txt', desc: 'asterisks (glob)' },
-      { input: 'file?.txt', desc: 'question marks (glob)' },
-      { input: 'file[0-9].txt', desc: 'square brackets (glob)' },
-      { input: '{a,b,c}', desc: 'curly braces (brace expansion)' },
-      { input: '~', desc: 'tilde (home expansion)' },
-      { input: '# this is a comment', desc: 'hash (comment)' },
-      { input: '!!', desc: 'exclamation mark (history expansion)' },
-      { input: '&', desc: 'ampersand' },
-      { input: '(subshell)', desc: 'parentheses (subshell)' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('special characters', [
+    { input: 'hello world', desc: 'spaces' },
+    { input: 'hello\tworld', desc: 'tabs' },
+    { input: 'hello\nworld', desc: 'newlines' },
+    { input: 'hello\rworld', desc: 'carriage returns' },
+    { input: String.raw`hello\world`, desc: 'backslashes' },
+    { input: '\\\\\\', desc: 'multiple backslashes' },
+    { input: '*.txt', desc: 'asterisks (glob)' },
+    { input: 'file?.txt', desc: 'question marks (glob)' },
+    { input: 'file[0-9].txt', desc: 'square brackets (glob)' },
+    { input: '{a,b,c}', desc: 'curly braces (brace expansion)' },
+    { input: '~', desc: 'tilde (home expansion)' },
+    { input: '# this is a comment', desc: 'hash (comment)' },
+    { input: '!!', desc: 'exclamation mark (history expansion)' },
+    { input: '&', desc: 'ampersand' },
+    { input: '(subshell)', desc: 'parentheses (subshell)' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Control characters
   // ---------------------------------------------------------------------------
-  describe('control characters', () => {
-    const cases = [
-      { input: '\x07', desc: 'bell character' },
-      { input: '\x08', desc: 'backspace' },
-      { input: '\x0B', desc: 'vertical tab' },
-      { input: '\x0C', desc: 'form feed' },
-      { input: '\x1B', desc: 'escape character' },
-      { input: '\x1B[31mred\x1B[0m', desc: 'ANSI escape sequence' },
-      { input: '\x7F', desc: 'DEL character' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('control characters', [
+    { input: '\x07', desc: 'bell character' },
+    { input: '\x08', desc: 'backspace' },
+    { input: '\x0B', desc: 'vertical tab' },
+    { input: '\x0C', desc: 'form feed' },
+    { input: '\x1B', desc: 'escape character' },
+    { input: '\x1B[31mred\x1B[0m', desc: 'ANSI escape sequence' },
+    { input: '\x7F', desc: 'DEL character' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Unicode
   // ---------------------------------------------------------------------------
-  describe('unicode', () => {
-    const cases = [
-      { input: '\u202E', desc: 'RTL override character' },
-      { input: '\uFEFF', desc: 'BOM' },
-      { input: '\u200B', desc: 'zero-width space' },
-      { input: '\u200D', desc: 'zero-width joiner' },
-      { input: '\u0430', desc: 'homoglyph: Cyrillic а (looks like Latin a)' },
-      { input: 'file_\uD83D\uDE00.txt', desc: 'emoji' },
-      { input: '文件.txt', desc: 'CJK characters' },
-      { input: 'file\u0301.txt', desc: 'combining diacritical marks' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('unicode', [
+    { input: '\u202E', desc: 'RTL override character' },
+    { input: '\uFEFF', desc: 'BOM' },
+    { input: '\u200B', desc: 'zero-width space' },
+    { input: '\u200D', desc: 'zero-width joiner' },
+    { input: '\u0430', desc: 'homoglyph: Cyrillic а (looks like Latin a)' },
+    { input: 'file_\uD83D\uDE00.txt', desc: 'emoji' },
+    { input: '文件.txt', desc: 'CJK characters' },
+    { input: 'file\u0301.txt', desc: 'combining diacritical marks' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Boundary conditions
   // ---------------------------------------------------------------------------
-  describe('boundary conditions', () => {
-    const cases = [
-      { input: '', desc: 'empty string' },
-      { input: 'a', desc: 'single character' },
-      { input: '   ', desc: 'whitespace-only string' },
-      { input: 'a'.repeat(1000), desc: 'long string (1000 chars)' },
-      { input: "'''''", desc: 'string of all single quotes' },
-      { input: "important_doc'; DROP TABLE users;--.pdf", desc: 'realistic malicious filename' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('boundary conditions', [
+    { input: '', desc: 'empty string' },
+    { input: 'a', desc: 'single character' },
+    { input: '   ', desc: 'whitespace-only string' },
+    { input: 'a'.repeat(1000), desc: 'long string (1000 chars)' },
+    { input: "'''''", desc: 'string of all single quotes' },
+    { input: "important_doc'; DROP TABLE users;--.pdf", desc: 'realistic malicious filename' },
+  ])
 
   // ---------------------------------------------------------------------------
   // Flag injection (cat/ls argument abuse)
   // ---------------------------------------------------------------------------
-  describe('flag injection', () => {
-    const cases = [
-      { input: '--help', desc: '--help as path' },
-      { input: '-rf', desc: '-rf as path' },
-      { input: '--version', desc: '--version as path' },
-      { input: '-e exec', desc: '-e with command as path' },
-    ]
-
-    for (const { input, desc } of cases) {
-      it(`handles ${desc}`, () => {
-        expectShellSafe(input)
-      })
-    }
-  })
+  shellSafeSuite('flag injection', [
+    { input: '--help', desc: '--help as path' },
+    { input: '-rf', desc: '-rf as path' },
+    { input: '--version', desc: '--version as path' },
+    { input: '-e exec', desc: '-e with command as path' },
+  ])
 })
 
 // =============================================================================
