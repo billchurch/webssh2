@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "basic-auth": "^2.0.1",
+    "better-sqlite3": "^12.6.2",
     "body-parser": "^2.2.1",
     "debug": "^4.4.3",
     "express": "^5.2.1",
@@ -78,6 +79,7 @@
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.2",
     "@types/basic-auth": "^1.1.8",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
