@@ -8,6 +8,7 @@ import type { StructuredLogger, StructuredLoggerOptions } from '../logging/struc
 // import type { AuthCredentials } from '../types/contracts/v1/socket.js' // Not currently used
 import type { Config } from '../types/config.js'
 import type { Client as SSH2Client } from 'ssh2'
+import type { Socket as SocketIoSocket } from 'socket.io'
 import type { Duplex } from 'node:stream'
 import type { FileService } from './sftp/file-service.js'
 import type { HostKeyService } from './host-key/host-key-service.js'
@@ -101,7 +102,7 @@ export interface SSHConfig {
    * When provided alongside an enabled HostKeyService, the SSH service
    * will set up the hostVerifier callback for the connection.
    */
-  socket?: import('socket.io').Socket
+  socket?: SocketIoSocket
 }
 
 /**

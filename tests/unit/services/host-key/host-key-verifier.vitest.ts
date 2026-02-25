@@ -2,6 +2,7 @@
 // Tests for createHostKeyVerifier factory
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { Socket } from 'socket.io'
 import {
   createHostKeyVerifier,
   extractAlgorithm,
@@ -103,7 +104,7 @@ describe('createHostKeyVerifier', () => {
     const service = createMockHostKeyService({ isEnabled: false })
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -123,7 +124,7 @@ describe('createHostKeyVerifier', () => {
     })
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -146,7 +147,7 @@ describe('createHostKeyVerifier', () => {
     })
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -182,7 +183,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -227,7 +228,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -254,7 +255,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -285,7 +286,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -313,7 +314,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -348,7 +349,7 @@ describe('createHostKeyVerifier', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,

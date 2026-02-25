@@ -1,8 +1,7 @@
 // app/services/host-key/host-key-store.ts
 // SQLite-backed read-only host key store
 
-import Database from 'better-sqlite3'
-import type BetterSqlite3 from 'better-sqlite3'
+import Database, { type Database as BetterSqlite3Database } from 'better-sqlite3'
 import fs from 'node:fs'
 
 /**
@@ -32,7 +31,7 @@ export interface StoredHostKey {
  * the store operates in a degraded mode where all lookups return "unknown".
  */
 export class HostKeyStore {
-  private db: BetterSqlite3.Database | null = null
+  private db: BetterSqlite3Database | null = null
 
   constructor(dbPath: string) {
     if (fs.existsSync(dbPath)) {

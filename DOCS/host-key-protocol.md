@@ -140,141 +140,111 @@ Server store is enabled; client store is disabled.
 
 #### Key Found (Trusted)
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | lookup(host,port,algo)  |
-    |                     | => trusted              |
-    |                     |                         |
-    |                     |-- hostkey:verified ----->|
-    |                     |   { source: 'server' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |=== SSH session continues ====================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: lookup(host, port, algo) → trusted
+    WS->>C: hostkey:verified { source: 'server' }
+    WS->>SSH: verify(true)
+    Note over SSH,C: SSH session continues
 ```
 
 #### Key Mismatch
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | lookup(host,port,algo)  |
-    |                     | => mismatch             |
-    |                     |                         |
-    |                     |-- hostkey:mismatch ---->|
-    |                     |   { presentedFP,        |
-    |                     |     storedFP,           |
-    |                     |     source: 'server' }  |
-    |<-- verify(false) --|                         |
-    |                     |                         |
-    |=== connection refused =======================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: lookup(host, port, algo) → mismatch
+    WS->>C: hostkey:mismatch { presentedFP, storedFP, source: 'server' }
+    WS->>SSH: verify(false)
+    Note over SSH,C: Connection refused
 ```
 
 #### Key Unknown (unknownKeyAction: 'alert')
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | lookup(host,port,algo)  |
-    |                     | => unknown              |
-    |                     |                         |
-    |                     |-- hostkey:alert ------->|
-    |                     |   { fingerprint }       |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |=== SSH session continues ====================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: lookup(host, port, algo) → unknown
+    WS->>C: hostkey:alert { fingerprint }
+    WS->>SSH: verify(true)
+    Note over SSH,C: SSH session continues (with warning)
 ```
 
 #### Key Unknown (unknownKeyAction: 'reject')
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | lookup(host,port,algo)  |
-    |                     | => unknown              |
-    |                     |                         |
-    |                     |-- hostkey:rejected ---->|
-    |                     |   { fingerprint }       |
-    |<-- verify(false) --|                         |
-    |                     |                         |
-    |=== connection refused =======================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: lookup(host, port, algo) → unknown
+    WS->>C: hostkey:rejected { fingerprint }
+    WS->>SSH: verify(false)
+    Note over SSH,C: Connection refused
 ```
 
 #### Key Unknown (unknownKeyAction: 'prompt')
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | lookup(host,port,algo)  |
-    |                     | => unknown              |
-    |                     |                         |
-    |                     |-- hostkey:verify ------>|
-    |                     |   { host, port, algo,   |
-    |                     |     fingerprint, key }  |
-    |                     |                         |
-    |                     |<- hostkey:verify-resp --|
-    |                     |   { action }            |
-    |                     |                         |
-    |            [if accept/trusted]                |
-    |                     |-- hostkey:verified ---->|
-    |                     |   { source: 'client' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |            [if reject or timeout]             |
-    |<-- verify(false) --|                         |
-    |                     |                         |
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: lookup(host, port, algo) → unknown
+    WS->>C: hostkey:verify { host, port, algo, fingerprint, key }
+    C->>WS: hostkey:verify-response { action }
+
+    alt action = accept or trusted
+        WS->>C: hostkey:verified { source: 'client' }
+        WS->>SSH: verify(true)
+    else action = reject or timeout
+        WS->>SSH: verify(false)
+    end
 ```
 
 ### Client-Only Mode
 
 Server store is disabled; client store is enabled.
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | (no server store)       |
-    |                     |                         |
-    |                     |-- hostkey:verify ------>|
-    |                     |   { host, port, algo,   |
-    |                     |     fingerprint, key }  |
-    |                     |                         |
-    |                     |  (client checks its     |
-    |                     |   local key store)      |
-    |                     |                         |
-    |                     |<- hostkey:verify-resp --|
-    |                     |   { action: 'trusted' } |
-    |                     |                         |
-    |                     |-- hostkey:verified ---->|
-    |                     |   { source: 'client' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |=== SSH session continues ====================|
-```
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
 
-If the client does not recognize the key, it prompts the user:
+    SSH->>WS: host key
+    Note over WS: No server store
+    WS->>C: hostkey:verify { host, port, algo, fingerprint, key }
+    C->>C: Check local key store
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     |                         |
-    |                     |-- hostkey:verify ------>|
-    |                     |                         |
-    |                     |  (user prompt shown)    |
-    |                     |                         |
-    |                     |<- hostkey:verify-resp --|
-    |                     |   { action: 'accept' }  |
-    |                     |                         |
-    |                     |-- hostkey:verified ---->|
-    |                     |   { source: 'client' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
+    alt Key found in client store
+        C->>WS: hostkey:verify-response { action: 'trusted' }
+        WS->>C: hostkey:verified { source: 'client' }
+        WS->>SSH: verify(true)
+        Note over SSH,C: SSH session continues
+    else Key unknown — user prompted
+        C->>WS: hostkey:verify-response { action: 'accept' }
+        WS->>C: hostkey:verified { source: 'client' }
+        WS->>SSH: verify(true)
+        Note over SSH,C: SSH session continues
+    end
 ```
 
 ### Hybrid Mode
@@ -283,102 +253,88 @@ Server store is checked first. If the key is unknown on the server, the client i
 
 #### Server Found (Trusted)
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | server lookup => trusted|
-    |                     |                         |
-    |                     |-- hostkey:verified ---->|
-    |                     |   { source: 'server' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |=== SSH session continues ====================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: server lookup → trusted
+    WS->>C: hostkey:verified { source: 'server' }
+    WS->>SSH: verify(true)
+    Note over SSH,C: SSH session continues
 ```
 
 No client interaction is needed when the server store recognizes the key.
 
 #### Server Mismatch
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | server lookup           |
-    |                     | => mismatch             |
-    |                     |                         |
-    |                     |-- hostkey:mismatch ---->|
-    |<-- verify(false) --|                         |
-    |                     |                         |
-    |=== connection refused =======================|
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: server lookup → mismatch
+    WS->>C: hostkey:mismatch { presentedFP, storedFP }
+    WS->>SSH: verify(false)
+    Note over SSH,C: Connection refused
 ```
 
 A server-side mismatch is always fatal. The client is not consulted.
 
 #### Server Unknown, Falls Through to Client
 
-```
-SSH Server          WebSSH2 Server               Client
-    |                     |                         |
-    |--- host key ------->|                         |
-    |                     | server lookup => unknown|
-    |                     |                         |
-    |                     |-- hostkey:verify ------>|
-    |                     |   { host, port, algo,   |
-    |                     |     fingerprint, key }  |
-    |                     |                         |
-    |                     |<- hostkey:verify-resp --|
-    |                     |   { action }            |
-    |                     |                         |
-    |            [if accept/trusted]                |
-    |                     |-- hostkey:verified ---->|
-    |                     |   { source: 'client' }  |
-    |<-- verify(true) ---|                         |
-    |                     |                         |
-    |            [if reject or timeout]             |
-    |<-- verify(false) --|                         |
-    |                     |                         |
+```mermaid
+sequenceDiagram
+    participant SSH as SSH Server
+    participant WS as WebSSH2 Server
+    participant C as Client
+
+    SSH->>WS: host key
+    WS->>WS: server lookup → unknown
+    WS->>C: hostkey:verify { host, port, algo, fingerprint, key }
+    C->>WS: hostkey:verify-response { action }
+
+    alt action = accept or trusted
+        WS->>C: hostkey:verified { source: 'client' }
+        WS->>SSH: verify(true)
+    else action = reject or timeout
+        WS->>SSH: verify(false)
+    end
 ```
 
 ## Verification Flow
 
 The server executes the following decision tree when an SSH host key is received. This matches the logic in `createHostKeyVerifier()`.
 
-```
-                      Host key received
-                            |
-                  Is feature enabled?
-                   /              \
-                 NO               YES
-                  |                |
-            verify(true)    Server store enabled?
-            (no events)      /              \
-                           NO               YES
-                            |                |
-                            |         Server lookup
-                            |        /      |       \
-                            |   trusted  mismatch  unknown
-                            |      |        |        |
-                            |   emit     emit     fall
-                            | verified  mismatch  through
-                            | verify    verify       |
-                            | (true)    (false)      |
-                            |                        |
-                            +--------+---------------+
-                                     |
-                            Client store enabled?
-                             /              \
-                           YES               NO
-                            |                |
-                      emit verify     unknownKeyAction?
-                      await response   /      |      \
-                       /    |    \  alert  reject  prompt
-                  trusted accept reject   |      |      |
-                      |    |      |    emit   emit    emit verify
-                   emit  emit  verify  alert rejected await response
-                 verified verified (false) verify verify  (same as
-                 verify  verify        (true) (false) client store)
-                 (true)  (true)
+```mermaid
+flowchart TD
+    A[Host key received] --> B{Feature enabled?}
+    B -- No --> C["verify(true)<br/>No events emitted"]
+    B -- Yes --> D{Server store enabled?}
+
+    D -- Yes --> E[Server lookup]
+    E --> F{Result}
+    F -- trusted --> G["Emit hostkey:verified<br/>verify(true)"]
+    F -- mismatch --> H["Emit hostkey:mismatch<br/>verify(false)"]
+    F -- unknown --> I{Client store enabled?}
+
+    D -- No --> I
+
+    I -- Yes --> J["Emit hostkey:verify<br/>Await client response"]
+    J --> K{Client response}
+    K -- trusted --> L["Emit hostkey:verified<br/>verify(true)"]
+    K -- accept --> L
+    K -- reject --> M["verify(false)"]
+    K -- timeout --> M
+
+    I -- No --> N{unknownKeyAction}
+    N -- alert --> O["Emit hostkey:alert<br/>verify(true)"]
+    N -- reject --> P["Emit hostkey:rejected<br/>verify(false)"]
+    N -- prompt --> J
 ```
 
 **Key rules:**

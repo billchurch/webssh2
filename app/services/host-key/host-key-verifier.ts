@@ -161,9 +161,9 @@ export function createHostKeyVerifier(
 
       if (lookupResult.status === 'mismatch') {
         log('Host key MISMATCH detected by server store')
-        const storedFingerprint = lookupResult.storedKey !== undefined
-          ? HostKeyService.computeFingerprint(lookupResult.storedKey)
-          : 'unknown'
+        const storedFingerprint = lookupResult.storedKey === undefined
+          ? 'unknown'
+          : HostKeyService.computeFingerprint(lookupResult.storedKey)
         const payload: HostKeyMismatchPayload = {
           host,
           port,
@@ -249,10 +249,30 @@ function awaitClientVerification(
     key: base64Key,
   }
 
-  const handler = (response: HostKeyVerifyResponse): void => {
+  const cleanup = (): void => {
     clearTimeout(timer)
+    socket.removeListener(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
+    socket.removeListener('disconnect', onDisconnect)
+  }
 
-    if (response.action === 'accept' || response.action === 'trusted') {
+  const handler = (response: unknown): void => {
+    cleanup()
+
+    // Validate untrusted client payload
+    if (
+      typeof response !== 'object' ||
+      response === null ||
+      !('action' in response) ||
+      typeof (response as HostKeyVerifyResponse).action !== 'string'
+    ) {
+      log('Invalid host key verify response, treating as reject')
+      verify(false)
+      return
+    }
+
+    const action = (response as HostKeyVerifyResponse).action
+
+    if (action === 'accept' || action === 'trusted') {
       log('Client accepted host key')
       const verifiedPayload: HostKeyVerifiedPayload = {
         host,
@@ -266,17 +286,25 @@ function awaitClientVerification(
       return
     }
 
-    // action === 'reject'
+    // action === 'reject' or unrecognized
     log('Client rejected host key')
+    verify(false)
+  }
+
+  const onDisconnect = (): void => {
+    log('Client disconnected during host key verification')
+    cleanup()
     verify(false)
   }
 
   const timer = setTimeout(() => {
     log('Host key verification timed out')
     socket.removeListener(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
+    socket.removeListener('disconnect', onDisconnect)
     verify(false)
   }, timeout)
 
   socket.once(SOCKET_EVENTS.HOSTKEY_VERIFY_RESPONSE, handler)
+  socket.once('disconnect', onDisconnect)
   socket.emit(SOCKET_EVENTS.HOSTKEY_VERIFY, verifyPayload)
 }

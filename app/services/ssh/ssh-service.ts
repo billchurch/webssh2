@@ -17,7 +17,7 @@ import {
   type SessionId
 } from '../../types/branded.js'
 import { ok, err, type Result } from '../../state/types.js'
-import { Client as SSH2Client, type ClientChannel, type PseudoTtyOptions } from 'ssh2'
+import { Client as SSH2Client, type ClientChannel, type PseudoTtyOptions, type HostVerifier } from 'ssh2'
 import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 import type { Duplex } from 'node:stream'
@@ -78,7 +78,7 @@ export class SSHServiceImpl implements SSHService {
    */
   private buildConnectConfig(
     config: SSHConfig,
-    hostVerifier?: import('ssh2').HostVerifier
+    hostVerifier?: HostVerifier
   ): {
     connectConfig: Parameters<SSH2Client['connect']>[0]
     algorithmCapture: AlgorithmCapture | null
@@ -275,7 +275,7 @@ export class SSHServiceImpl implements SSHService {
         }, this.connectionTimeout)
 
         // Create host key verifier if service is available and socket is provided
-        let hostVerifier: import('ssh2').HostVerifier | undefined
+        let hostVerifier: HostVerifier | undefined
         if (
           this.hostKeyService !== undefined &&
           this.hostKeyService.isEnabled &&

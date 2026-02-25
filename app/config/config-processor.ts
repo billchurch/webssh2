@@ -164,8 +164,8 @@ export function resolveHostKeyMode(
       break
     default: {
       // Exhaustive check
-      const _exhaustive: never = config.mode
-      throw new Error(`Unknown host key verification mode: ${String(_exhaustive)}`)
+      const exhaustiveCheck: never = config.mode
+      throw new Error(`Unknown host key verification mode: ${String(exhaustiveCheck)}`)
     }
   }
 

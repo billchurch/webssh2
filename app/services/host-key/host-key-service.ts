@@ -3,8 +3,7 @@
 
 import crypto from 'node:crypto'
 import type { HostKeyVerificationConfig } from '../../types/config.js'
-import { HostKeyStore } from './host-key-store.js'
-import type { HostKeyLookupResult } from './host-key-store.js'
+import { HostKeyStore, type HostKeyLookupResult } from './host-key-store.js'
 
 /**
  * Service coordinating host key verification using server-side
