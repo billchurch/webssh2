@@ -22,7 +22,7 @@ import type { SftpFileEntry, SftpFileType } from '../../types/contracts/v1/sftp.
  * interpolated into shell commands.
  */
 export function escapeShellPath(path: string): string {
-  const escaped = path.replace(/'/g, "'\\''")
+  const escaped = path.replaceAll(`'`, String.raw`'\''`)
   return `'${escaped}'`
 }
 
@@ -209,7 +209,7 @@ export function parseLsLine(line: string, basePath: string): SftpFileEntry | nul
   const permissions = permString.slice(1, 10)
 
   // Parse size
-  const size = parseInt(sizeStr, 10)
+  const size = Number.parseInt(sizeStr, 10)
 
   // Parse modification time
   const modifiedAt = parseLsDate(monthStr, dayStr, timeOrYear)
@@ -316,7 +316,7 @@ export function parseLsDate(month: string, day: string, timeOrYear: string): str
     return new Date(0).toISOString()
   }
 
-  const dayNum = parseInt(day, 10)
+  const dayNum = Number.parseInt(day, 10)
   if (Number.isNaN(dayNum)) {
     return new Date(0).toISOString()
   }
@@ -327,7 +327,7 @@ export function parseLsDate(month: string, day: string, timeOrYear: string): str
     const [hours, minutes] = timeOrYear.split(':')
     const now = new Date()
     const date = new Date(now.getFullYear(), monthIndex, dayNum,
-      parseInt(hours ?? '0', 10), parseInt(minutes ?? '0', 10))
+      Number.parseInt(hours ?? '0', 10), Number.parseInt(minutes ?? '0', 10))
 
     // If the date is in the future, it's from last year
     if (date.getTime() > now.getTime()) {
@@ -338,7 +338,7 @@ export function parseLsDate(month: string, day: string, timeOrYear: string): str
   }
 
   // Older file: timeOrYear is the year
-  const year = parseInt(timeOrYear, 10)
+  const year = Number.parseInt(timeOrYear, 10)
   if (Number.isNaN(year)) {
     return new Date(0).toISOString()
   }
