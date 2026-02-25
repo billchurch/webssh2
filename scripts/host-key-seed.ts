@@ -51,8 +51,11 @@ Commands:
 
 Options:
   --db <path>                         Database file path
-                                      (default: config.json ssh.hostKeyVerification.serverStore.dbPath
-                                       or /data/hostkeys.db)
+                                      Resolution order:
+                                        1. --db <path> argument
+                                        2. WEBSSH2_SSH_HOSTKEY_DB_PATH env var
+                                        3. config.json ssh.hostKeyVerification.serverStore.dbPath
+                                        4. /data/hostkeys.db (default)
 
 Examples:
   npm run hostkeys -- --host example.com
@@ -283,6 +286,12 @@ function extractDbPathFromConfig(config: unknown): string | undefined {
 function resolveDbPath(explicitPath: string | undefined): string {
   if (explicitPath !== undefined) {
     return explicitPath
+  }
+
+  // Try environment variable (same as main app uses)
+  const envDbPath = process.env['WEBSSH2_SSH_HOSTKEY_DB_PATH']
+  if (typeof envDbPath === 'string' && envDbPath !== '') {
+    return envDbPath
   }
 
   // Try reading from config.json
