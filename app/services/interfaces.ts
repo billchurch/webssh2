@@ -10,6 +10,7 @@ import type { Config } from '../types/config.js'
 import type { Client as SSH2Client } from 'ssh2'
 import type { Duplex } from 'node:stream'
 import type { FileService } from './sftp/file-service.js'
+import type { HostKeyService } from './host-key/host-key-service.js'
 
 /**
  * Credentials for authentication
@@ -325,6 +326,7 @@ export interface Services {
   terminal: TerminalService
   session: SessionService
   sftp?: FileService
+  hostKey?: HostKeyService
 }
 
 /**
