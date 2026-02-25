@@ -5,21 +5,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { HostKeyService } from '../../../../app/services/host-key/host-key-service.js'
 import type { HostKeyVerificationConfig } from '../../../../app/types/config.js'
-import fs from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
-
-const HOST_KEY_SCHEMA = `
-CREATE TABLE host_keys (
-    host TEXT NOT NULL,
-    port INTEGER NOT NULL DEFAULT 22,
-    algorithm TEXT NOT NULL,
-    key TEXT NOT NULL,
-    added_at TEXT NOT NULL DEFAULT (datetime('now')),
-    comment TEXT,
-    PRIMARY KEY (host, port, algorithm)
-);
-`
+import {
+  HOST_KEY_SCHEMA,
+  createTempDbContext,
+  cleanupTempDbContext,
+  type TestContext,
+} from './host-key-test-fixtures.js'
 
 const TEST_KEY_ED25519 = 'AAAAC3NzaC1lZDI1NTE5AAAAIHVKcNtf2JfGHbMHOiT6VNBBpJIxMZpL'
 const TEST_KEY_RSA = 'AAAAB3NzaC1yc2EAAAADAQABAAABgQC7lPe5xp0h'
@@ -40,11 +31,6 @@ function buildConfig(overrides?: Partial<HostKeyVerificationConfig>): HostKeyVer
   }
 }
 
-interface TestContext {
-  tmpDir: string
-  dbPath: string
-}
-
 function seedTestDb(dbPath: string): void {
   const db = new Database(dbPath)
   db.exec(HOST_KEY_SCHEMA)
@@ -59,13 +45,11 @@ void describe('HostKeyService', () => {
   let ctx: TestContext
 
   beforeEach(() => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostkey-svc-'))
-    const dbPath = path.join(tmpDir, 'hostkeys.db')
-    ctx = { tmpDir, dbPath }
+    ctx = createTempDbContext('hostkey-svc-')
   })
 
   afterEach(() => {
-    fs.rmSync(ctx.tmpDir, { recursive: true, force: true })
+    cleanupTempDbContext(ctx)
   })
 
   void describe('getters', () => {

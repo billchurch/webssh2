@@ -100,6 +100,26 @@ describe('createHostKeyVerifier', () => {
     vi.useRealTimers()
   })
 
+  async function runWithClientResponse(service: HostKeyService, action: string): Promise<boolean> {
+    socket.once.mockImplementation((_event: string, handler: (response: { action: string }) => void) => {
+      setTimeout(() => {
+        handler({ action })
+      }, 10)
+    })
+
+    const verifier = createHostKeyVerifier({
+      hostKeyService: service,
+      socket: socket as unknown as Socket,
+      host: TEST_HOST,
+      port: TEST_PORT,
+      log: mockLog,
+    })
+
+    const promise = callVerifier(verifier, TEST_KEY_BUFFER)
+    await vi.advanceTimersByTimeAsync(10)
+    return promise
+  }
+
   it('returns true without events when feature is disabled', async () => {
     const service = createMockHostKeyService({ isEnabled: false })
     const verifier = createHostKeyVerifier({
@@ -174,27 +194,7 @@ describe('createHostKeyVerifier', () => {
       serverLookupResult: { status: 'unknown' },
     })
 
-    // Simulate client responding 'accept'
-    socket.once.mockImplementation((_event: string, handler: (response: { action: string }) => void) => {
-      setTimeout(() => {
-        handler({ action: 'accept' })
-      }, 10)
-    })
-
-    const verifier = createHostKeyVerifier({
-      hostKeyService: service,
-      socket: socket as unknown as Socket,
-      host: TEST_HOST,
-      port: TEST_PORT,
-      log: mockLog,
-    })
-
-    const promise = callVerifier(verifier, TEST_KEY_BUFFER)
-
-    // Advance timer to trigger the client response
-    await vi.advanceTimersByTimeAsync(10)
-
-    const result = await promise
+    const result = await runWithClientResponse(service, 'accept')
 
     expect(result).toBe(true)
     expect(socket.emit).toHaveBeenCalledWith(
@@ -220,23 +220,7 @@ describe('createHostKeyVerifier', () => {
       serverLookupResult: { status: 'unknown' },
     })
 
-    socket.once.mockImplementation((_event: string, handler: (response: { action: string }) => void) => {
-      setTimeout(() => {
-        handler({ action: 'reject' })
-      }, 10)
-    })
-
-    const verifier = createHostKeyVerifier({
-      hostKeyService: service,
-      socket: socket as unknown as Socket,
-      host: TEST_HOST,
-      port: TEST_PORT,
-      log: mockLog,
-    })
-
-    const promise = callVerifier(verifier, TEST_KEY_BUFFER)
-    await vi.advanceTimersByTimeAsync(10)
-    const result = await promise
+    const result = await runWithClientResponse(service, 'reject')
 
     expect(result).toBe(false)
   })
@@ -341,23 +325,7 @@ describe('createHostKeyVerifier', () => {
       unknownKeyAction: 'prompt',
     })
 
-    socket.once.mockImplementation((_event: string, handler: (response: { action: string }) => void) => {
-      setTimeout(() => {
-        handler({ action: 'accept' })
-      }, 10)
-    })
-
-    const verifier = createHostKeyVerifier({
-      hostKeyService: service,
-      socket: socket as unknown as Socket,
-      host: TEST_HOST,
-      port: TEST_PORT,
-      log: mockLog,
-    })
-
-    const promise = callVerifier(verifier, TEST_KEY_BUFFER)
-    await vi.advanceTimersByTimeAsync(10)
-    const result = await promise
+    const result = await runWithClientResponse(service, 'accept')
 
     expect(result).toBe(true)
     expect(socket.emit).toHaveBeenCalledWith(

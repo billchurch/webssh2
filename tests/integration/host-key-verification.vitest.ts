@@ -128,6 +128,36 @@ describe('Host key verification integration', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
+  async function runUnknownKeyScenario(unknownKeyAction: 'reject' | 'alert' | 'prompt'): Promise<{
+    result: boolean
+    algorithm: string
+    service: HostKeyService
+  }> {
+    const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
+    const algorithm = extractAlgorithm(keyBuffer)
+
+    seedDb(dbPath, [])
+
+    const config = buildConfig({
+      dbPath,
+      serverStoreEnabled: true,
+      clientStoreEnabled: false,
+      unknownKeyAction,
+    })
+    const service = new HostKeyService(config)
+
+    const verifier = createHostKeyVerifier({
+      hostKeyService: service,
+      socket: socket as unknown as Socket,
+      host: TEST_HOST,
+      port: TEST_PORT,
+      log: mockLog,
+    })
+
+    const result = await callVerifier(verifier, keyBuffer)
+    return { result, algorithm, service }
+  }
+
   it('trusts a key that matches the server store and emits hostkey:verified with source "server"', async () => {
     const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
     const algorithm = extractAlgorithm(keyBuffer)
@@ -203,28 +233,7 @@ describe('Host key verification integration', () => {
   })
 
   it('rejects an unknown key when unknownKeyAction is "reject" and emits hostkey:rejected', async () => {
-    const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
-    const algorithm = extractAlgorithm(keyBuffer)
-
-    seedDb(dbPath, [])
-
-    const config = buildConfig({
-      dbPath,
-      serverStoreEnabled: true,
-      clientStoreEnabled: false,
-      unknownKeyAction: 'reject',
-    })
-    const service = new HostKeyService(config)
-
-    const verifier = createHostKeyVerifier({
-      hostKeyService: service,
-      socket: socket as unknown as Socket,
-      host: TEST_HOST,
-      port: TEST_PORT,
-      log: mockLog,
-    })
-
-    const result = await callVerifier(verifier, keyBuffer)
+    const { result, algorithm, service } = await runUnknownKeyScenario('reject')
 
     expect(result).toBe(false)
     expect(socket.emit).toHaveBeenCalledTimes(1)
@@ -242,28 +251,7 @@ describe('Host key verification integration', () => {
   })
 
   it('allows an unknown key when unknownKeyAction is "alert" and emits hostkey:alert', async () => {
-    const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
-    const algorithm = extractAlgorithm(keyBuffer)
-
-    seedDb(dbPath, [])
-
-    const config = buildConfig({
-      dbPath,
-      serverStoreEnabled: true,
-      clientStoreEnabled: false,
-      unknownKeyAction: 'alert',
-    })
-    const service = new HostKeyService(config)
-
-    const verifier = createHostKeyVerifier({
-      hostKeyService: service,
-      socket: socket as unknown as Socket,
-      host: TEST_HOST,
-      port: TEST_PORT,
-      log: mockLog,
-    })
-
-    const result = await callVerifier(verifier, keyBuffer)
+    const { result, algorithm, service } = await runUnknownKeyScenario('alert')
 
     expect(result).toBe(true)
     expect(socket.emit).toHaveBeenCalledTimes(1)

@@ -157,7 +157,7 @@ export const createMockConfig = (): MockConfig => ({
       enabled: false,
       mode: 'hybrid',
       unknownKeyAction: 'prompt',
-      serverStore: { enabled: false, dbPath: '/tmp/hostkeys.db' },
+      serverStore: { enabled: false, dbPath: ':memory:' },
       clientStore: { enabled: false },
     }
   },

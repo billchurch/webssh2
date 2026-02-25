@@ -4,31 +4,17 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { HostKeyStore } from '../../../../app/services/host-key/host-key-store.js'
-import fs from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
-
-const HOST_KEY_SCHEMA = `
-CREATE TABLE host_keys (
-    host TEXT NOT NULL,
-    port INTEGER NOT NULL DEFAULT 22,
-    algorithm TEXT NOT NULL,
-    key TEXT NOT NULL,
-    added_at TEXT NOT NULL DEFAULT (datetime('now')),
-    comment TEXT,
-    PRIMARY KEY (host, port, algorithm)
-);
-`
+import {
+  HOST_KEY_SCHEMA,
+  createTempDbContext,
+  cleanupTempDbContext,
+  type TestContext,
+} from './host-key-test-fixtures.js'
 
 // Example base64 keys for testing (not real SSH keys, just deterministic test data)
 const TEST_KEY_ED25519 = 'AAAAC3NzaC1lZDI1NTE5AAAAIHVKcNtf2JfGHbMHOiT6VNBBpJIxMZpL'
 const TEST_KEY_RSA = 'AAAAB3NzaC1yc2EAAAADAQABAAABgQC7lPe5xp0h'
 const TEST_KEY_ECDSA = 'AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAI'
-
-interface TestContext {
-  tmpDir: string
-  dbPath: string
-}
 
 function createTestDb(dbPath: string): void {
   const db = new Database(dbPath)
@@ -55,13 +41,11 @@ void describe('HostKeyStore', () => {
   let ctx: TestContext
 
   beforeEach(() => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostkey-test-'))
-    const dbPath = path.join(tmpDir, 'hostkeys.db')
-    ctx = { tmpDir, dbPath }
+    ctx = createTempDbContext('hostkey-test-')
   })
 
   afterEach(() => {
-    fs.rmSync(ctx.tmpDir, { recursive: true, force: true })
+    cleanupTempDbContext(ctx)
   })
 
   void describe('constructor', () => {
@@ -179,7 +163,7 @@ void describe('HostKeyStore', () => {
       const keys = store.getAll('server1.example.com', 22)
 
       expect(keys).toHaveLength(2)
-      const algorithms = keys.map(k => k.algorithm).sort()
+      const algorithms = keys.map(k => k.algorithm).sort((a, b) => a.localeCompare(b))
       expect(algorithms).toEqual(['ssh-ed25519', 'ssh-rsa'])
       store.close()
     })
