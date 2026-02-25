@@ -18,6 +18,32 @@ export interface AlgorithmsConfig {
 }
 
 /**
+ * Host key verification server store configuration
+ */
+export interface HostKeyServerStoreConfig {
+  enabled: boolean
+  dbPath: string
+}
+
+/**
+ * Host key verification client store configuration
+ */
+export interface HostKeyClientStoreConfig {
+  enabled: boolean
+}
+
+/**
+ * Host key verification configuration
+ */
+export interface HostKeyVerificationConfig {
+  enabled: boolean
+  mode: 'server' | 'client' | 'hybrid'
+  unknownKeyAction: 'prompt' | 'alert' | 'reject'
+  serverStore: HostKeyServerStoreConfig
+  clientStore: HostKeyClientStoreConfig
+}
+
+/**
  * SFTP backend type
  *
  * - 'sftp': Uses the SSH SFTP subsystem (default, requires server support)
@@ -72,6 +98,8 @@ export interface SSHConfig {
   socketHighWaterMark?: number
   /** SFTP file transfer configuration */
   sftp?: SftpConfig
+  /** Host key verification configuration */
+  hostKeyVerification: HostKeyVerificationConfig
 }
 
 /**
