@@ -30,8 +30,8 @@ import {
 } from '../../validation/socket/sftp.js'
 import type { SftpOperation } from '../../types/contracts/v1/sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
+import type { FileService } from '../../services/sftp/file-service.js'
 import type {
-  SftpService,
   SftpServiceError,
   DownloadStreamCallbacks
 } from '../../services/sftp/sftp-service.js'
@@ -558,7 +558,7 @@ export class ServiceSocketSftp {
   // Private Helpers
   // ============================================================================
 
-  private getSftpService(): SftpService | undefined {
+  private getSftpService(): FileService | undefined {
     return this.context.services.sftp
   }
 
@@ -643,6 +643,7 @@ export class ServiceSocketSftp {
       message: string
       path?: string
       transferId?: TransferId
+      fileName?: string
     } = {
       operation: operation as SftpOperation,
       code: error.code,
@@ -655,6 +656,10 @@ export class ServiceSocketSftp {
 
     if (error.transferId !== undefined) {
       response.transferId = error.transferId
+    }
+
+    if (error.fileName !== undefined) {
+      response.fileName = error.fileName
     }
 
     this.context.socket.emit(SOCKET_EVENTS.SFTP_ERROR, response)

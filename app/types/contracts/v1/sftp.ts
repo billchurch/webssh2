@@ -320,6 +320,8 @@ export interface SftpErrorResponse {
   readonly message: string
   /** Related path if applicable */
   readonly path?: string
+  /** Original file name (for matching pre-upload validation errors) */
+  readonly fileName?: string
 }
 
 /**

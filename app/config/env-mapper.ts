@@ -124,6 +124,7 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
     type: 'boolean'
   },
   // SFTP configuration
+  WEBSSH2_SSH_SFTP_BACKEND: { path: 'ssh.sftp.backend', type: 'string' },
   WEBSSH2_SSH_SFTP_ENABLED: { path: 'ssh.sftp.enabled', type: 'boolean' },
   WEBSSH2_SSH_SFTP_MAX_FILE_SIZE: { path: 'ssh.sftp.maxFileSize', type: 'number' },
   WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC: {

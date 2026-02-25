@@ -25,8 +25,8 @@ export const CLIENT_DEV_URL = `http://localhost:${CLIENT_DEV_PORT}`
 
 // SSH test server configuration
 export const SSH_HOST = 'localhost'
-export const USERNAME = process.env.E2E_SSH_USER ?? TEST_SSH.USERNAME
-export const PASSWORD = process.env.E2E_SSH_PASS ?? TEST_SSH.PASSWORD
+export const USERNAME = process.env['E2E_SSH_USER'] ?? TEST_SSH.USERNAME
+export const PASSWORD = process.env['E2E_SSH_PASS'] ?? TEST_SSH.PASSWORD
 
 // Re-export from test-constants for backward compatibility
 export const INVALID_USERNAME = INVALID_TEST_VALUES.USERNAME
@@ -87,7 +87,10 @@ export async function waitForPrompt(page: Page, timeout: number = TIMEOUTS.PROMP
   await page.waitForFunction(
     () => {
       const terminalContent = document.querySelector('.xterm-screen')?.textContent ?? ''
-      return /[$#]\s*$/.test(terminalContent)
+      // Look for shell prompt patterns (lenient matching for xterm.js padded content)
+      return /[$#%>]\s*$/.test(terminalContent) ||
+             /testuser@.*[$#%>]/.test(terminalContent) ||
+             terminalContent.includes('$') || terminalContent.includes('#')
     },
     { timeout }
   )

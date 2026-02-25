@@ -24,8 +24,9 @@ import type {
   SftpProgressResponse,
   SftpCompleteResponse
 } from '../../types/contracts/v1/sftp.js'
+import type { FileService } from './file-service.js'
 import { ok, err } from '../../utils/result.js'
-import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES, getMimeType } from '../../constants/sftp.js'
+import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES } from '../../constants/sftp.js'
 import {
   createSftpSessionManager,
   type SftpSession,
@@ -33,16 +34,19 @@ import {
   type SftpSessionManager
 } from './sftp-session.js'
 import {
-  validatePath,
-  validateFileName,
-  type PathValidationOptions
-} from './path-validator.js'
-import {
   createTransferManager,
   type TransferManager,
   type ManagedTransfer,
   type TransferError
 } from './transfer-manager.js'
+import {
+  validateOperationPreconditions,
+  startUploadTransfer,
+  validateAndStartDownload,
+  validateUploadPreFlight,
+  mapChunkUpdateError,
+  buildCompleteResponse
+} from './file-service-shared.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:sftp')
@@ -55,6 +59,7 @@ export interface SftpServiceError {
   readonly message: string
   readonly path?: string | undefined
   readonly transferId?: TransferId | undefined
+  readonly fileName?: string | undefined
 }
 
 /**
@@ -153,7 +158,7 @@ interface OperationSetupOptions {
  * - Progress tracking
  * - Error handling with typed errors
  */
-export class SftpService {
+export class SftpService implements FileService {
   private readonly sessionManager: SftpSessionManager
   private readonly transferManager: TransferManager
   private readonly config: SftpConfig
@@ -186,17 +191,6 @@ export class SftpService {
   }
 
   /**
-   * Get path validation options from config
-   */
-  private getPathValidationOptions(checkExtension: boolean): PathValidationOptions {
-    return {
-      allowedPaths: this.config.allowedPaths,
-      blockedExtensions: this.config.blockedExtensions,
-      checkExtension
-    }
-  }
-
-  /**
    * Resolve path if it contains ~ (SFTP subsystem doesn't expand shell shortcuts)
    */
   private async resolveTildePath(
@@ -222,25 +216,12 @@ export class SftpService {
   private async setupOperation(
     options: OperationSetupOptions
   ): Promise<Result<OperationContext, SftpServiceError>> {
-    // Check if SFTP is enabled
-    if (!this.config.enabled) {
-      return err({
-        code: 'SFTP_NOT_ENABLED',
-        message: SFTP_ERROR_MESSAGES[SFTP_ERROR_CODES.NOT_ENABLED],
-        transferId: options.transferId
-      })
-    }
-
-    // Validate path
-    const pathResult = validatePath(options.path, this.getPathValidationOptions(options.checkExtension))
-    if (!pathResult.ok) {
-      const code = mapPathErrorCode(pathResult.error.code)
-      return err({
-        code,
-        message: pathResult.error.message,
-        path: options.path,
-        transferId: options.transferId
-      })
+    // Validate enabled + path
+    const preflight = validateOperationPreconditions(
+      this.config, options.path, options.checkExtension, options.transferId
+    )
+    if (!preflight.ok) {
+      return preflight
     }
 
     // Get or create session
@@ -250,7 +231,7 @@ export class SftpService {
     }
 
     // Resolve ~ paths
-    const resolveResult = await this.resolveTildePath(sessionResult.value, pathResult.value)
+    const resolveResult = await this.resolveTildePath(sessionResult.value, preflight.value)
     if (!resolveResult.ok) {
       return err({ ...resolveResult.error, transferId: options.transferId })
     }
@@ -452,23 +433,10 @@ export class SftpService {
   async startUpload(
     request: UploadStartRequest
   ): Promise<Result<SftpUploadReadyResponse, SftpServiceError>> {
-    // Validate file size (upload-specific check before common setup)
-    if (request.fileSize > this.config.maxFileSize) {
-      return err({
-        code: 'SFTP_FILE_TOO_LARGE',
-        message: `File size ${request.fileSize} exceeds maximum ${this.config.maxFileSize}`,
-        transferId: request.transferId
-      })
-    }
-
-    // Validate filename (upload-specific check before common setup)
-    const fileNameResult = validateFileName(request.fileName)
-    if (!fileNameResult.ok) {
-      return err({
-        code: 'SFTP_INVALID_REQUEST',
-        message: fileNameResult.error.message,
-        transferId: request.transferId
-      })
+    // Validate file size and filename (upload-specific checks before common setup)
+    const preFlightResult = validateUploadPreFlight(request, this.config.maxFileSize)
+    if (!preFlightResult.ok) {
+      return err(preFlightResult.error)
     }
 
     // Common setup: enabled check, path validation, session, tilde resolution
@@ -480,7 +448,7 @@ export class SftpService {
       transferId: request.transferId
     })
     if (!setup.ok) {
-      return setup
+      return err({ ...setup.error, fileName: request.fileName })
     }
 
     const { session, resolvedPath } = setup.value
@@ -499,22 +467,11 @@ export class SftpService {
     }
 
     // Start tracking transfer
-    const transferResult = this.transferManager.startTransfer({
-      transferId: request.transferId,
-      sessionId: request.sessionId,
-      direction: 'upload',
-      remotePath: resolvedPath,
-      fileName: request.fileName,
-      totalBytes: request.fileSize,
-      rateLimitBytesPerSec: this.config.transferRateLimitBytesPerSec
-    })
-
+    const transferResult = startUploadTransfer(
+      this.transferManager, request, resolvedPath, this.config.transferRateLimitBytesPerSec
+    )
     if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
+      return transferResult
     }
 
     // Open file for writing
@@ -584,11 +541,7 @@ export class SftpService {
     )
 
     if (!updateResult.ok) {
-      return err({
-        code: updateResult.error.code === 'CHUNK_MISMATCH' ? 'SFTP_CHUNK_ERROR' : 'SFTP_INVALID_REQUEST',
-        message: updateResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapChunkUpdateError(updateResult.error, request.transferId))
     }
 
     const transfer = updateResult.value
@@ -654,13 +607,7 @@ export class SftpService {
     this.closeUpload(transferId)
     logger('Upload completed:', transferId)
 
-    return ok({
-      transferId,
-      direction: 'upload',
-      bytesTransferred: result.value.bytesTransferred,
-      durationMs: result.value.durationMs,
-      averageBytesPerSecond: result.value.averageBytesPerSecond
-    })
+    return ok(buildCompleteResponse(transferId, 'upload', result.value))
   }
 
   /**
@@ -740,54 +687,16 @@ export class SftpService {
       })
     }
 
+    // Validate file info, start tracking transfer, and build response
     const fileInfo = statResult.value
-    if (fileInfo.type !== 'file') {
-      return err({
-        code: 'SFTP_INVALID_REQUEST',
-        message: 'Can only download files',
-        path: resolvedPath,
-        transferId: request.transferId
-      })
+    const downloadResult = validateAndStartDownload(
+      this.transferManager, this.config, request, resolvedPath, fileInfo
+    )
+    if (downloadResult.ok) {
+      logger('Download started:', request.transferId, resolvedPath)
     }
 
-    // Check file size (download-specific validation after stat)
-    if (fileInfo.size > this.config.maxFileSize) {
-      return err({
-        code: 'SFTP_FILE_TOO_LARGE',
-        message: `File size ${fileInfo.size} exceeds maximum ${this.config.maxFileSize}`,
-        path: resolvedPath,
-        transferId: request.transferId
-      })
-    }
-
-    // Start tracking transfer
-    const transferResult = this.transferManager.startTransfer({
-      transferId: request.transferId,
-      sessionId: request.sessionId,
-      direction: 'download',
-      remotePath: resolvedPath,
-      fileName: fileInfo.name,
-      totalBytes: fileInfo.size,
-      rateLimitBytesPerSec: this.config.transferRateLimitBytesPerSec
-    })
-
-    if (!transferResult.ok) {
-      return err({
-        code: transferResult.error.code === 'MAX_TRANSFERS' ? 'SFTP_MAX_TRANSFERS' : 'SFTP_INVALID_REQUEST',
-        message: transferResult.error.message,
-        transferId: request.transferId
-      })
-    }
-
-    this.transferManager.activateTransfer(request.transferId)
-    logger('Download started:', request.transferId, resolvedPath)
-
-    return ok({
-      transferId: request.transferId,
-      fileName: fileInfo.name,
-      fileSize: fileInfo.size,
-      mimeType: getMimeType(fileInfo.name)
-    })
+    return downloadResult
   }
 
   /**
@@ -883,13 +792,7 @@ export class SftpService {
             cleanup()
             const completeResult = this.transferManager.completeTransfer(transferId)
             if (completeResult.ok) {
-              callbacks.onComplete({
-                transferId,
-                direction: 'download',
-                bytesTransferred: completeResult.value.bytesTransferred,
-                durationMs: completeResult.value.durationMs,
-                averageBytesPerSecond: completeResult.value.averageBytesPerSecond
-              })
+              callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
             }
             logger('Download completed:', transferId)
             resolve()
@@ -1073,20 +976,6 @@ export class SftpService {
     this.closeUpload(transferId)
   }
 
-}
-
-/**
- * Map path validation error code to service error code
- */
-function mapPathErrorCode(code: string): SftpErrorCode {
-  switch (code) {
-    case 'EXTENSION_BLOCKED':
-      return 'SFTP_EXTENSION_BLOCKED'
-    case 'PATH_FORBIDDEN':
-      return 'SFTP_PATH_FORBIDDEN'
-    default:
-      return 'SFTP_INVALID_REQUEST'
-  }
 }
 
 /**

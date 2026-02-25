@@ -9,7 +9,7 @@ import type { StructuredLogger, StructuredLoggerOptions } from '../logging/struc
 import type { Config } from '../types/config.js'
 import type { Client as SSH2Client } from 'ssh2'
 import type { Duplex } from 'node:stream'
-import type { SftpService } from './sftp/sftp-service.js'
+import type { FileService } from './sftp/file-service.js'
 
 /**
  * Credentials for authentication
@@ -309,13 +309,12 @@ export interface Logger {
 }
 
 /**
- * SFTP service interface
+ * File service interface
  *
- * Note: The actual implementation (SftpService class in sftp-service.ts) has
- * additional methods for uploads and downloads. This interface defines the
- * minimal contract needed by the socket adapter.
+ * Implemented by both SftpService (SFTP subsystem) and ShellFileService
+ * (shell commands for BusyBox). The socket adapter depends only on this.
  */
-export type { SftpService } from './sftp/sftp-service.js'
+export type { FileService } from './sftp/file-service.js'
 
 /**
  * Collection of all services
@@ -325,7 +324,7 @@ export interface Services {
   ssh: SSHService
   terminal: TerminalService
   session: SessionService
-  sftp?: SftpService
+  sftp?: FileService
 }
 
 /**
