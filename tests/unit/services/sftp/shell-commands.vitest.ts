@@ -30,11 +30,11 @@ describe('shell-commands', () => {
     })
 
     it('escapes single quotes in paths', () => {
-      expect(escapeShellPath("/home/user's files")).toBe("'/home/user'\\''s files'")
+      expect(escapeShellPath("/home/user's files")).toBe(String.raw`'/home/user'\''s files'`)
     })
 
     it('handles multiple single quotes', () => {
-      expect(escapeShellPath("it's a 'test'")).toBe("'it'\\''s a '\\''test'\\'''")
+      expect(escapeShellPath("it's a 'test'")).toBe(String.raw`'it'\''s a '\''test'\'''`)
     })
 
     it('handles paths with spaces', () => {
@@ -70,7 +70,7 @@ describe('shell-commands', () => {
     })
 
     it('escapes paths with special characters', () => {
-      expect(buildListCommand("/home/user's dir", false)).toBe("ls -la '/home/user'\\''s dir'")
+      expect(buildListCommand("/home/user's dir", false)).toBe(String.raw`ls -la '/home/user'\''s dir'`)
     })
   })
 
@@ -83,7 +83,7 @@ describe('shell-commands', () => {
     })
 
     it('escapes paths', () => {
-      expect(buildStatCommand('/tmp/my file.txt')).toBe("ls -lad '/tmp/my file.txt'")
+      expect(buildStatCommand('/tmp/my file.txt')).toBe("ls -lad '/tmp/my file.txt'") //NOSONAR
     })
   })
 
@@ -231,7 +231,7 @@ describe('shell-commands', () => {
 
       expect(entry).not.toBeNull()
       expect(entry?.name).toBe('my file name.txt')
-      expect(entry?.path).toBe('/tmp/my file name.txt')
+      expect(entry?.path).toBe('/tmp/my file name.txt') //NOSONAR
     })
 
     it('handles BusyBox-style output (compact spacing)', () => {

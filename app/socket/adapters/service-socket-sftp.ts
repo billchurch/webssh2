@@ -643,6 +643,7 @@ export class ServiceSocketSftp {
       message: string
       path?: string
       transferId?: TransferId
+      fileName?: string
     } = {
       operation: operation as SftpOperation,
       code: error.code,
@@ -655,6 +656,10 @@ export class ServiceSocketSftp {
 
     if (error.transferId !== undefined) {
       response.transferId = error.transferId
+    }
+
+    if (error.fileName !== undefined) {
+      response.fileName = error.fileName
     }
 
     this.context.socket.emit(SOCKET_EVENTS.SFTP_ERROR, response)

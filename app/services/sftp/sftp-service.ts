@@ -56,6 +56,7 @@ export interface SftpServiceError {
   readonly message: string
   readonly path?: string | undefined
   readonly transferId?: TransferId | undefined
+  readonly fileName?: string | undefined
 }
 
 /**
@@ -481,7 +482,7 @@ export class SftpService implements FileService {
       transferId: request.transferId
     })
     if (!setup.ok) {
-      return setup
+      return err({ ...setup.error, fileName: request.fileName })
     }
 
     const { session, resolvedPath } = setup.value
