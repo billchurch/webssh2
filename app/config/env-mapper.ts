@@ -123,6 +123,31 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
     path: 'logging.syslog.tls.rejectUnauthorized',
     type: 'boolean'
   },
+  // Host key verification configuration
+  WEBSSH2_SSH_HOSTKEY_ENABLED: {
+    path: 'ssh.hostKeyVerification.enabled',
+    type: 'boolean' as const,
+  },
+  WEBSSH2_SSH_HOSTKEY_MODE: {
+    path: 'ssh.hostKeyVerification.mode',
+    type: 'string' as const,
+  },
+  WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION: {
+    path: 'ssh.hostKeyVerification.unknownKeyAction',
+    type: 'string' as const,
+  },
+  WEBSSH2_SSH_HOSTKEY_DB_PATH: {
+    path: 'ssh.hostKeyVerification.serverStore.dbPath',
+    type: 'string' as const,
+  },
+  WEBSSH2_SSH_HOSTKEY_SERVER_ENABLED: {
+    path: 'ssh.hostKeyVerification.serverStore.enabled',
+    type: 'boolean' as const,
+  },
+  WEBSSH2_SSH_HOSTKEY_CLIENT_ENABLED: {
+    path: 'ssh.hostKeyVerification.clientStore.enabled',
+    type: 'boolean' as const,
+  },
   // SFTP configuration
   WEBSSH2_SSH_SFTP_BACKEND: { path: 'ssh.sftp.backend', type: 'string' },
   WEBSSH2_SSH_SFTP_ENABLED: { path: 'ssh.sftp.enabled', type: 'boolean' },
