@@ -37,15 +37,18 @@ import {
   type TransferError
 } from './transfer-manager.js'
 import { ok, err } from '../../utils/result.js'
-import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES, getMimeType } from '../../constants/sftp.js'
+import { SFTP_DEFAULTS, SFTP_ERROR_CODES, SFTP_ERROR_MESSAGES } from '../../constants/sftp.js'
 import {
   validatePath,
-  validateFileName,
 } from './path-validator.js'
 import {
   mapPathErrorCode,
   getPathValidationOptions,
-  mapTransferStartError
+  mapTransferStartError,
+  validateUploadPreFlight,
+  mapChunkUpdateError,
+  buildCompleteResponse,
+  buildDownloadReadyResponse
 } from './file-service-shared.js'
 import {
   escapeShellPath,
@@ -194,23 +197,10 @@ export class ShellFileService implements FileService {
   async startUpload(
     request: UploadStartRequest
   ): Promise<Result<SftpUploadReadyResponse, SftpServiceError>> {
-    // Validate file size
-    if (request.fileSize > this.config.maxFileSize) {
-      return err({
-        code: 'SFTP_FILE_TOO_LARGE',
-        message: `File size ${request.fileSize} exceeds maximum ${this.config.maxFileSize}`,
-        transferId: request.transferId
-      })
-    }
-
-    // Validate filename
-    const fileNameResult = validateFileName(request.fileName)
-    if (!fileNameResult.ok) {
-      return err({
-        code: 'SFTP_INVALID_REQUEST',
-        message: fileNameResult.error.message,
-        transferId: request.transferId
-      })
+    // Validate file size and filename (upload-specific checks before common setup)
+    const preFlightResult = validateUploadPreFlight(request, this.config.maxFileSize)
+    if (!preFlightResult.ok) {
+      return err(preFlightResult.error)
     }
 
     const setup = await this.setupOperation({
@@ -323,11 +313,7 @@ export class ShellFileService implements FileService {
     )
 
     if (!updateResult.ok) {
-      return err({
-        code: updateResult.error.code === 'CHUNK_MISMATCH' ? 'SFTP_CHUNK_ERROR' : 'SFTP_INVALID_REQUEST',
-        message: updateResult.error.message,
-        transferId: request.transferId
-      })
+      return err(mapChunkUpdateError(updateResult.error, request.transferId))
     }
 
     const transfer = updateResult.value
@@ -383,13 +369,7 @@ export class ShellFileService implements FileService {
     this.cleanupUpload(transferId)
     logger('Upload completed (shell):', transferId)
 
-    return ok({
-      transferId,
-      direction: 'upload',
-      bytesTransferred: result.value.bytesTransferred,
-      durationMs: result.value.durationMs,
-      averageBytesPerSecond: result.value.averageBytesPerSecond
-    })
+    return ok(buildCompleteResponse(transferId, 'upload', result.value))
   }
 
   cancelUpload(transferId: TransferId): Result<void, SftpServiceError> {
@@ -478,12 +458,7 @@ export class ShellFileService implements FileService {
     this.transferManager.activateTransfer(request.transferId)
     logger('Download started (shell):', request.transferId, resolvedPath)
 
-    return ok({
-      transferId: request.transferId,
-      fileName: fileInfo.name,
-      fileSize: fileInfo.size,
-      mimeType: getMimeType(fileInfo.name)
-    })
+    return ok(buildDownloadReadyResponse(request.transferId, fileInfo))
   }
 
   async streamDownloadChunks(
@@ -598,13 +573,7 @@ export class ShellFileService implements FileService {
           this.downloadStates.delete(transferId)
           const completeResult = this.transferManager.completeTransfer(transferId)
           if (completeResult.ok) {
-            callbacks.onComplete({
-              transferId,
-              direction: 'download',
-              bytesTransferred: completeResult.value.bytesTransferred,
-              durationMs: completeResult.value.durationMs,
-              averageBytesPerSecond: completeResult.value.averageBytesPerSecond
-            })
+            callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
           }
           logger('Download completed (shell):', transferId)
           resolve()
