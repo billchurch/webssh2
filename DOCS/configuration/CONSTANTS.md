@@ -56,12 +56,30 @@ Used in:
 
 - `app/security-headers.ts` (`SECURITY_HEADERS`, `createCSPMiddleware`)
 
+## SOCKET_EVENTS (Host Key Verification)
+
+Location: `app/constants/socket-events.ts`
+
+The following socket events were added for host key verification:
+
+| Constant | Event Name | Direction | Description |
+|----------|-----------|-----------|-------------|
+| `HOSTKEY_VERIFY` | `hostkey:verify` | Server → Client | Request client to verify an unknown host key |
+| `HOSTKEY_VERIFY_RESPONSE` | `hostkey:verify-response` | Client → Server | Client's accept/reject/trusted decision |
+| `HOSTKEY_VERIFIED` | `hostkey:verified` | Server → Client | Key verified successfully, connection proceeds |
+| `HOSTKEY_MISMATCH` | `hostkey:mismatch` | Server → Client | Key mismatch detected, connection refused |
+| `HOSTKEY_ALERT` | `hostkey:alert` | Server → Client | Unknown key warning (connection proceeds) |
+| `HOSTKEY_REJECTED` | `hostkey:rejected` | Server → Client | Unknown key rejected by policy |
+
+See [host-key-protocol.md](../host-key-protocol.md) for full payload schemas and sequence diagrams.
+
 ## Where These Are Used
 
 - Routing and connection setup: `app/routes-v2.ts`, `app/connection/connectionHandler.ts`
 - Middleware and security: `app/middleware.ts`, `app/security-headers.ts`
 - SSH behavior and env handling: `app/services/ssh/ssh-service.ts`
 - Socket behavior: `app/socket-v2.ts`, `app/socket/adapters/service-socket-adapter.ts`
+- Host key verification: `app/services/host-key/host-key-verifier.ts`
 
 ## Conventions
 

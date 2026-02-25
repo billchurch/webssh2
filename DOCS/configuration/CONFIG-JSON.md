@@ -185,7 +185,19 @@ These settings are now managed client-side.
     "envAllowlist": ["ONLY_THIS", "AND_THAT"],
     "maxExecOutputBytes": 10485760,
     "outputRateLimitBytesPerSec": 0,
-    "socketHighWaterMark": 16384
+    "socketHighWaterMark": 16384,
+    "hostKeyVerification": {
+      "enabled": false,
+      "mode": "hybrid",
+      "unknownKeyAction": "prompt",
+      "serverStore": {
+        "enabled": true,
+        "dbPath": "/data/hostkeys.db"
+      },
+      "clientStore": {
+        "enabled": true
+      }
+    }
   },
   "options": {
     "challengeButton": true,
@@ -410,6 +422,163 @@ SFTP is disabled by default. This configuration is only needed if you want to ex
 
 These options can also be configured via environment variables:
 - `WEBSSH2_SSH_SFTP_ENABLED`
+- `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE`
+- `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC`
+- `WEBSSH2_SSH_SFTP_CHUNK_SIZE`
+- `WEBSSH2_SSH_SFTP_MAX_CONCURRENT_TRANSFERS`
+- `WEBSSH2_SSH_SFTP_ALLOWED_PATHS`
+- `WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS`
+- `WEBSSH2_SSH_SFTP_TIMEOUT`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details on environment variable format and examples.
+
+### Host Key Verification
+
+SSH host key verification provides TOFU (Trust On First Use) protection against man-in-the-middle attacks. It supports three modes of operation: server-only (SQLite store), client-only (browser localStorage), and hybrid (server-first with client fallback).
+
+#### Configuration Options
+
+- `ssh.hostKeyVerification.enabled` (boolean, default: `false`): Enable or disable host key verification. When disabled (the default), all host keys are accepted without verification.
+
+- `ssh.hostKeyVerification.mode` (`'server'` | `'client'` | `'hybrid'`, default: `'hybrid'`): Operational mode. `server` uses only the SQLite store, `client` uses only the browser localStorage store, `hybrid` checks the server store first and falls back to the client store for unknown keys. The mode sets sensible defaults for which stores are enabled, but explicit store flags override mode defaults.
+
+- `ssh.hostKeyVerification.unknownKeyAction` (`'prompt'` | `'alert'` | `'reject'`, default: `'prompt'`): Action when an unknown key is encountered (no match in any enabled store). `prompt` asks the user to accept or reject, `alert` allows the connection with a warning, `reject` blocks the connection.
+
+- `ssh.hostKeyVerification.serverStore.enabled` (boolean): Whether the server-side SQLite store is active. Defaults are derived from `mode` but can be overridden explicitly.
+
+- `ssh.hostKeyVerification.serverStore.dbPath` (string, default: `'/data/hostkeys.db'`): Path to the SQLite database file. The application opens it read-only. Use `npm run hostkeys` to manage keys.
+
+- `ssh.hostKeyVerification.clientStore.enabled` (boolean): Whether the client-side browser localStorage store is active. Defaults are derived from `mode` but can be overridden explicitly.
+
+#### Default Host Key Verification Configuration
+
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": false,
+      "mode": "hybrid",
+      "unknownKeyAction": "prompt",
+      "serverStore": {
+        "enabled": true,
+        "dbPath": "/data/hostkeys.db"
+      },
+      "clientStore": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+> **Note:** Host key verification is disabled by default. Set `enabled` to `true` to activate it.
+
+#### Use Cases
+
+**Enable with hybrid mode (recommended):**
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "mode": "hybrid"
+    }
+  }
+}
+```
+Server store is checked first. If the key is unknown on the server, the client's browser store is consulted. Unknown keys prompt the user.
+
+**Server-only mode (centrally managed keys):**
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "mode": "server",
+      "unknownKeyAction": "reject"
+    }
+  }
+}
+```
+Only the server SQLite store is used. Unknown keys are rejected — administrators must pre-seed keys via `npm run hostkeys`.
+
+**Client-only mode (no server database):**
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "mode": "client"
+    }
+  }
+}
+```
+Only the client browser store is used. Users manage their own trusted keys via the settings UI.
+
+**Alert-only (log but don't block):**
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "mode": "server",
+      "unknownKeyAction": "alert"
+    }
+  }
+}
+```
+Unknown keys show a warning indicator but connections proceed. Useful for monitoring before enforcing.
+
+**Override mode defaults with explicit flags:**
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "mode": "server",
+      "serverStore": { "enabled": true, "dbPath": "/data/hostkeys.db" },
+      "clientStore": { "enabled": true }
+    }
+  }
+}
+```
+Mode is `server` but `clientStore.enabled` is explicitly set to `true`, making it behave like hybrid. Explicit flags always take precedence over mode defaults.
+
+#### Seeding the Server Store
+
+Use the built-in CLI tool to manage the SQLite database:
+
+```bash
+# Probe a host and add its key
+npm run hostkeys -- --host server1.example.com
+
+# Probe a host on a non-standard port
+npm run hostkeys -- --host server1.example.com:2222
+
+# Import from OpenSSH known_hosts file
+npm run hostkeys -- --known-hosts ~/.ssh/known_hosts
+
+# List all stored keys
+npm run hostkeys -- --list
+
+# Remove keys for a host
+npm run hostkeys -- --remove server1.example.com
+
+# Use a custom database path
+npm run hostkeys -- --db /custom/path/hostkeys.db --host server1.example.com
+```
+
+#### Environment Variables
+
+These options can also be configured via environment variables:
+- `WEBSSH2_SSH_HOSTKEY_ENABLED`
+- `WEBSSH2_SSH_HOSTKEY_MODE`
+- `WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION`
+- `WEBSSH2_SSH_HOSTKEY_DB_PATH`
+- `WEBSSH2_SSH_HOSTKEY_SERVER_ENABLED`
+- `WEBSSH2_SSH_HOSTKEY_CLIENT_ENABLED`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
 - `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE`
 - `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC`
 - `WEBSSH2_SSH_SFTP_CHUNK_SIZE`
