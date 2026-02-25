@@ -142,7 +142,19 @@ const createConfig = (): Config => ({
       kex: [],
       serverHostKey: []
     },
-    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
+    allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+    hostKeyVerification: {
+      enabled: false,
+      mode: 'hybrid' as const,
+      unknownKeyAction: 'prompt' as const,
+      serverStore: {
+        enabled: true,
+        dbPath: '/data/hostkeys.db',
+      },
+      clientStore: {
+        enabled: true,
+      },
+    }
   },
   header: {
     text: null,
@@ -231,6 +243,43 @@ describe('ServiceSocketAdapter', () => {
       allow_replay: true,
       allow_reauth: true,
       allow_reconnect: true
+    })
+  })
+
+  it('emits permissions with hostKeyVerification on construction', async () => {
+    const { ServiceSocketAdapter } = await import('../../../app/socket/adapters/service-socket-adapter.js')
+
+    const socket = createSocket()
+    const config = createConfig()
+    const services = {} as Services
+
+    new ServiceSocketAdapter(socket, config, services)
+
+    expect(socket.emit).toHaveBeenCalledWith('permissions', {
+      hostKeyVerification: {
+        enabled: false,
+        clientStoreEnabled: true,
+        unknownKeyAction: 'prompt',
+      },
+    })
+  })
+
+  it('emits permissions before auth check (verify emit order)', async () => {
+    const { ServiceSocketAdapter } = await import('../../../app/socket/adapters/service-socket-adapter.js')
+
+    const socket = createSocket()
+    const config = createConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    const services = {} as Services
+
+    new ServiceSocketAdapter(socket, config, services)
+
+    expect(socket.emit).toHaveBeenCalledWith('permissions', {
+      hostKeyVerification: {
+        enabled: true,
+        clientStoreEnabled: true,
+        unknownKeyAction: 'prompt',
+      },
     })
   })
 })

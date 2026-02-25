@@ -255,7 +255,7 @@ function parseKnownHosts(content: string): KnownHostEntry[] {
  * Uses explicit type narrowing rather than indexed access to satisfy
  * the security/detect-object-injection rule.
  */
-function extractDbPathFromConfig(config: unknown): string | undefined {
+export function extractDbPathFromConfig(config: unknown): string | undefined {
   if (typeof config !== 'object' || config === null) {
     return undefined
   }
@@ -283,7 +283,7 @@ function extractDbPathFromConfig(config: unknown): string | undefined {
   return undefined
 }
 
-function resolveDbPath(explicitPath: string | undefined): string {
+export function resolveDbPath(explicitPath: string | undefined): string {
   if (explicitPath !== undefined) {
     return explicitPath
   }
@@ -316,7 +316,7 @@ function resolveDbPath(explicitPath: string | undefined): string {
 // CLI argument parsing
 // ---------------------------------------------------------------------------
 
-interface CliArgs {
+export interface CliArgs {
   command: 'host' | 'hosts' | 'known-hosts' | 'list' | 'remove' | 'help'
   host?: string | undefined
   port?: number | undefined
@@ -330,7 +330,7 @@ function nextArg(args: readonly string[], index: number): string | undefined {
   return next < args.length ? args.at(next) : undefined
 }
 
-function parseArgs(argv: readonly string[]): CliArgs {
+export function parseArgs(argv: readonly string[]): CliArgs {
   const args = argv.slice(2) // skip node and script path
   let command: CliArgs['command'] = 'help'
   let host: string | undefined
@@ -596,5 +596,12 @@ async function main(): Promise<number> {
   return 0
 }
 
-const exitCode = await main()
-process.exitCode = exitCode
+// Only run main() when executed directly (not when imported for testing)
+const isDirectExecution = process.argv[1]?.endsWith('host-key-seed')
+  ?? process.argv[1]?.endsWith('host-key-seed.ts')
+  ?? false
+
+if (isDirectExecution) {
+  const exitCode = await main()
+  process.exitCode = exitCode
+}

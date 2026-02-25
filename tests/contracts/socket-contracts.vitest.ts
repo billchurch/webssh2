@@ -60,7 +60,13 @@ describe('Socket.IO Contracts', () => {
   it('emits authentication(request_auth) on new connection without basic auth', () => {
     const connectionHandler = io.on.mock.calls[0][1]
     connectionHandler(mockSocket)
-    const [event, payload] = mockSocket.emit.mock.calls[0]
+    // permissions with hostKeyVerification is now emitted first, then authentication
+    const authEvent = mockSocket.emit.mock.calls.find((c) => c[0] === 'authentication')
+    expect(authEvent).toBeDefined()
+    if (authEvent === undefined) {
+      return
+    }
+    const [event, payload] = authEvent
     expect(event).toBe('authentication')
     expect(payload).toEqual({ action: 'request_auth' })
   })
@@ -98,16 +104,20 @@ describe('Socket.IO Contracts', () => {
     await new Promise<void>((r) => setImmediate(r))
     await new Promise<void>((r) => setImmediate(r))
 
-    const permEvent = mockSocket.emit.mock.calls.find((c) => c[0] === 'permissions')
-    expect(permEvent).toBeDefined()
-    if (permEvent === undefined) {
+    // There are two permissions events: the pre-auth one with hostKeyVerification only,
+    // and the post-auth one with allowReauth, allowReconnect, allowReplay, autoLog, hostKeyVerification.
+    // Find the post-auth permissions event (the one with allowReplay).
+    const permEvents = mockSocket.emit.mock.calls.filter((c) => c[0] === 'permissions')
+    const postAuthPerm = permEvents.find((c) => isRecord(c[1]) && 'allowReplay' in (c[1] as Record<string, unknown>))
+    expect(postAuthPerm).toBeDefined()
+    if (postAuthPerm === undefined) {
       return
     }
-    const [, payload] = permEvent
+    const [, payload] = postAuthPerm
     expect(isRecord(payload)).toBe(true)
     if (!isRecord(payload)) {
       return
     }
-    expect(Object.keys(payload).sort()).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog', 'hostKeyVerification'].sort())
+    expect(Object.keys(payload).sort((a, b) => a.localeCompare(b))).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog', 'hostKeyVerification'].sort((a, b) => a.localeCompare(b)))
   })
 })

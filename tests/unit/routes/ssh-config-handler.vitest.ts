@@ -14,7 +14,7 @@ const createRequest = (): SshRouteRequest => ({
 })
 
 describe('createSshConfigResponse', () => {
-  it('returns allowed auth methods and disables caching', () => {
+  it('returns allowed auth methods, hostKeyVerification, and disables caching', () => {
     const config = createDefaultConfig('test-session-secret')
     config.ssh.allowedAuthMethods = [
       createAuthMethod(AUTH_METHOD_TOKENS.PUBLIC_KEY),
@@ -32,6 +32,89 @@ describe('createSshConfigResponse', () => {
     expect(result.value.headers).toEqual({ 'Cache-Control': 'no-store' })
     expect(result.value.data).toEqual({
       allowedAuthMethods: ['publickey', 'password'],
+      hostKeyVerification: {
+        enabled: false,
+        clientStoreEnabled: true,
+        unknownKeyAction: 'prompt',
+      },
     })
+  })
+
+  it('includes hostKeyVerification reflecting default config', () => {
+    const config = createDefaultConfig('test-session-secret')
+
+    const result = createSshConfigResponse(createRequest(), config)
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    const data = result.value.data as Record<string, unknown>
+    expect(data['hostKeyVerification']).toEqual({
+      enabled: false,
+      clientStoreEnabled: true,
+      unknownKeyAction: 'prompt',
+    })
+  })
+
+  it('reflects enabled=true when host key verification is enabled', () => {
+    const config = createDefaultConfig('test-session-secret')
+    config.ssh.hostKeyVerification.enabled = true
+
+    const result = createSshConfigResponse(createRequest(), config)
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    const data = result.value.data as Record<string, unknown>
+    const hkv = data['hostKeyVerification'] as Record<string, unknown>
+    expect(hkv['enabled']).toBe(true)
+  })
+
+  it('reflects clientStoreEnabled=false when client store is disabled', () => {
+    const config = createDefaultConfig('test-session-secret')
+    config.ssh.hostKeyVerification.clientStore.enabled = false
+
+    const result = createSshConfigResponse(createRequest(), config)
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    const data = result.value.data as Record<string, unknown>
+    const hkv = data['hostKeyVerification'] as Record<string, unknown>
+    expect(hkv['clientStoreEnabled']).toBe(false)
+  })
+
+  it('reflects unknownKeyAction=reject when configured', () => {
+    const config = createDefaultConfig('test-session-secret')
+    config.ssh.hostKeyVerification.unknownKeyAction = 'reject'
+
+    const result = createSshConfigResponse(createRequest(), config)
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    const data = result.value.data as Record<string, unknown>
+    const hkv = data['hostKeyVerification'] as Record<string, unknown>
+    expect(hkv['unknownKeyAction']).toBe('reject')
+  })
+
+  it('does not expose serverStore internals (dbPath, mode) to client', () => {
+    const config = createDefaultConfig('test-session-secret')
+
+    const result = createSshConfigResponse(createRequest(), config)
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    const data = result.value.data as Record<string, unknown>
+    const hkv = data['hostKeyVerification'] as Record<string, unknown>
+    expect(hkv).not.toHaveProperty('dbPath')
+    expect(hkv).not.toHaveProperty('mode')
+    expect(hkv).not.toHaveProperty('serverStore')
   })
 })
