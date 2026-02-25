@@ -2,11 +2,12 @@
 // Integration tests for the full host key verification flow:
 // temp SQLite DB -> HostKeyService -> createHostKeyVerifier -> mock socket
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
+import type { Socket } from 'socket.io'
 import { HostKeyService } from '../../app/services/host-key/host-key-service.js'
 import {
   createHostKeyVerifier,
@@ -39,9 +40,9 @@ const TEST_HOST = 'server1.example.com'
 const TEST_PORT = 22
 
 interface MockSocket {
-  emit: ReturnType<typeof import('vitest').vi.fn>
-  once: ReturnType<typeof import('vitest').vi.fn>
-  removeListener: ReturnType<typeof import('vitest').vi.fn>
+  emit: ReturnType<typeof vi.fn>
+  once: ReturnType<typeof vi.fn>
+  removeListener: ReturnType<typeof vi.fn>
 }
 
 function createMockSocket(): MockSocket {
@@ -72,7 +73,7 @@ function callVerifier(
 }
 
 /**
- * Create a temp directory with a seeded SQLite host_keys DB.
+ * Seed a SQLite host_keys DB at the given path.
  */
 function seedDb(dbPath: string, rows: Array<{ host: string; port: number; algorithm: string; key: string }>): void {
   const db = new Database(dbPath)
@@ -90,9 +91,9 @@ function seedDb(dbPath: string, rows: Array<{ host: string; port: number; algori
 }
 
 function buildConfig(overrides: Partial<HostKeyVerificationConfig> & {
-  serverStoreEnabled?: boolean
-  clientStoreEnabled?: boolean
-  dbPath?: string
+  serverStoreEnabled?: boolean | undefined
+  clientStoreEnabled?: boolean | undefined
+  dbPath?: string | undefined
 }): HostKeyVerificationConfig {
   return {
     enabled: overrides.enabled ?? true,
@@ -128,7 +129,6 @@ describe('Host key verification integration', () => {
   })
 
   it('trusts a key that matches the server store and emits hostkey:verified with source "server"', async () => {
-    // Determine algorithm from the test key so we seed the DB with the right value
     const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
     const algorithm = extractAlgorithm(keyBuffer)
 
@@ -141,7 +141,7 @@ describe('Host key verification integration', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -168,7 +168,6 @@ describe('Host key verification integration', () => {
     const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
     const algorithm = extractAlgorithm(keyBuffer)
 
-    // Seed DB with a DIFFERENT key for the same host/port/algorithm
     seedDb(dbPath, [
       { host: TEST_HOST, port: TEST_PORT, algorithm, key: DIFFERENT_KEY },
     ])
@@ -178,7 +177,7 @@ describe('Host key verification integration', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -207,7 +206,6 @@ describe('Host key verification integration', () => {
     const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
     const algorithm = extractAlgorithm(keyBuffer)
 
-    // Seed an empty DB (no keys at all)
     seedDb(dbPath, [])
 
     const config = buildConfig({
@@ -220,7 +218,7 @@ describe('Host key verification integration', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -259,7 +257,7 @@ describe('Host key verification integration', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,
@@ -285,7 +283,6 @@ describe('Host key verification integration', () => {
   it('returns true with no socket events when the feature is disabled', async () => {
     const keyBuffer = Buffer.from(TEST_KEY_ED25519, 'base64')
 
-    // DB does not need to exist when the feature is disabled
     const config = buildConfig({
       enabled: false,
       serverStoreEnabled: false,
@@ -295,7 +292,7 @@ describe('Host key verification integration', () => {
 
     const verifier = createHostKeyVerifier({
       hostKeyService: service,
-      socket: socket as unknown as import('socket.io').Socket,
+      socket: socket as unknown as Socket,
       host: TEST_HOST,
       port: TEST_PORT,
       log: mockLog,

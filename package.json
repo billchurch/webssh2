@@ -73,7 +73,8 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "ci": "npm run test",
-    "security:audit": "npm audit"
+    "security:audit": "npm audit",
+    "hostkeys": "tsx scripts/host-key-seed.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
