@@ -418,6 +418,10 @@ export class ServiceSocketAuthentication {
       this.context.config,
       keyboardInteractiveOptions
     )
+
+    // Pass the socket for host key verification communication
+    sshConfig.socket = this.context.socket
+
     const sshResult = await this.context.services.ssh.connect(sshConfig)
 
     if (sshResult.ok) {
@@ -672,11 +676,17 @@ export class ServiceSocketAuthentication {
       success: true
     })
 
+    const hostKeyVerificationConfig = config.ssh.hostKeyVerification
     socket.emit(SOCKET_EVENTS.PERMISSIONS, {
       autoLog: config.options.autoLog,
       allowReplay: config.options.allowReplay,
       allowReconnect: config.options.allowReconnect,
-      allowReauth: config.options.allowReauth
+      allowReauth: config.options.allowReauth,
+      hostKeyVerification: {
+        enabled: hostKeyVerificationConfig.enabled,
+        clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
+        unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
+      },
     })
 
     // Emit SFTP status after successful authentication

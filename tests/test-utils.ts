@@ -506,6 +506,13 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
         compress: ['none']
       },
       allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+      hostKeyVerification: {
+        enabled: false,
+        mode: 'hybrid',
+        unknownKeyAction: 'prompt',
+        serverStore: { enabled: false, dbPath: '/tmp/hostkeys.db' },
+        clientStore: { enabled: false },
+      },
       ...overrides.ssh,
     },
     options: {

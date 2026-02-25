@@ -108,6 +108,6 @@ describe('Socket.IO Contracts', () => {
     if (!isRecord(payload)) {
       return
     }
-    expect(Object.keys(payload).sort()).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog'].sort())
+    expect(Object.keys(payload).sort()).toEqual(['allowReauth', 'allowReconnect', 'allowReplay', 'autoLog', 'hostKeyVerification'].sort())
   })
 })

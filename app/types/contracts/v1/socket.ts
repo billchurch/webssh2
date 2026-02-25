@@ -250,6 +250,11 @@ export interface ServerToClientEvents {
     allowReplay: boolean
     allowReconnect: boolean
     allowReauth: boolean
+    hostKeyVerification?: {
+      enabled: boolean
+      clientStoreEnabled: boolean
+      unknownKeyAction: 'prompt' | 'alert' | 'reject'
+    }
   }) => void
   // UI updates (element + value)
   updateUI: (payload: { element: string; value: unknown }) => void
