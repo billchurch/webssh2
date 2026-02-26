@@ -5,6 +5,8 @@
 import type { Socket } from 'node:net'
 import type { ConnectionId, SessionId } from '../../types/branded.js'
 import type { ProtocolConnection } from '../interfaces.js'
+import type { TelnetNegotiator } from './telnet-negotiation.js'
+import type { TelnetAuthenticator } from './telnet-auth.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:telnet:pool')
@@ -14,6 +16,8 @@ const logger = debug('webssh2:services:telnet:pool')
  */
 export interface TelnetConnection extends ProtocolConnection {
   socket: Socket
+  negotiator?: TelnetNegotiator
+  authenticator?: TelnetAuthenticator
 }
 
 /**
