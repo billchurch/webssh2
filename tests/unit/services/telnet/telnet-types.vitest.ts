@@ -49,7 +49,7 @@ describe('telnet types and constants', () => {
   it('should define ProtocolService interface shape', () => {
     // This test validates at compile time that the interface exists with the right methods.
     // At runtime we just verify the type import resolved (non-null module).
-    const methods: (keyof ProtocolService)[] = [
+    const methods: Array<keyof ProtocolService> = [
       'connect',
       'shell',
       'resize',

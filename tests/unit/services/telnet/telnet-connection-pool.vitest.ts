@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { Socket } from 'node:net'
-import type { ConnectionId, SessionId } from '../../../../app/types/branded.js'
 import { createConnectionId, createSessionId } from '../../../../app/types/branded.js'
-import { TelnetConnectionPool } from '../../../../app/services/telnet/telnet-connection-pool.js'
-import type { TelnetConnection } from '../../../../app/services/telnet/telnet-connection-pool.js'
+import { TelnetConnectionPool, type TelnetConnection } from '../../../../app/services/telnet/telnet-connection-pool.js'
 
 /**
  * Create a mock TelnetConnection for testing pool behavior.

@@ -211,9 +211,9 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
   // Generate a secure secret if none provided
   const secret = sessionSecret ?? crypto.randomBytes(32).toString('hex')
   const loggingConfig = cloneLoggingConfig(DEFAULT_CONFIG_BASE.logging)
-  const telnetConfig = DEFAULT_CONFIG_BASE.telnet !== undefined
-    ? cloneTelnetConfig(DEFAULT_CONFIG_BASE.telnet)
-    : undefined
+  const telnetConfig = DEFAULT_CONFIG_BASE.telnet === undefined
+    ? undefined
+    : cloneTelnetConfig(DEFAULT_CONFIG_BASE.telnet)
   return {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
