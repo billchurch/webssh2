@@ -11,6 +11,10 @@
  * @see RFC 1073 - Telnet Window Size Option (NAWS)
  */
 
+import debug from 'debug'
+
+const iacLogger = debug('webssh2:telnet:iac')
+
 // ── Telnet protocol constants ──────────────────────────────────────────
 
 /** Interpret As Command - marks the start of a telnet command sequence */
@@ -65,6 +69,17 @@ const SUPPORTED_OPTIONS: ReadonlySet<number> = new Set([
   NAWS,
 ])
 
+// ── Option negotiation states ────────────────────────────────────────
+
+type OptionState = 'inactive' | 'offered' | 'active'
+
+const OPTION_NAMES: ReadonlyMap<number, string> = new Map([
+  [ECHO, 'ECHO'],
+  [SGA, 'SGA'],
+  [TERMINAL_TYPE, 'TERMINAL-TYPE'],
+  [NAWS, 'NAWS'],
+])
+
 // ── Parser state enum ──────────────────────────────────────────────────
 
 const enum ParserState {
@@ -94,6 +109,7 @@ export class TelnetNegotiator {
   private state: ParserState = ParserState.Data
   private currentCommand = 0
   private subnegBuffer: number[] = []
+  private readonly optionStates = new Map<number, OptionState>()
 
   constructor(terminalType: string = 'vt100') {
     this.terminalType = terminalType
@@ -107,6 +123,26 @@ export class TelnetNegotiator {
   setWindowSize(cols: number, rows: number): void {
     this.cols = cols
     this.rows = rows
+  }
+
+  /**
+   * Build proactive WILL offers for TERMINAL-TYPE and NAWS.
+   * Call once at shell open to announce capabilities before the server asks.
+   * Returns empty array if offers were already sent.
+   */
+  buildProactiveOffers(): Buffer[] {
+    const offers: Buffer[] = []
+
+    for (const option of [TERMINAL_TYPE, NAWS]) {
+      if (this.getOptionState(option) === 'inactive') {
+        const name = OPTION_NAMES.get(option) ?? String(option)
+        iacLogger('→ [proactive] WILL %s', name)
+        offers.push(Buffer.from([IAC, WILL, option]))
+        this.setOptionState(option, 'offered')
+      }
+    }
+
+    return offers
   }
 
   /**
@@ -162,6 +198,17 @@ export class TelnetNegotiator {
   }
 
   // ── Private helpers ────────────────────────────────────────────────
+
+  private getOptionState(option: number): OptionState {
+    return this.optionStates.get(option) ?? 'inactive'
+  }
+
+  private setOptionState(option: number, state: OptionState): void {
+    const previous = this.getOptionState(option)
+    const name = OPTION_NAMES.get(option) ?? String(option)
+    iacLogger('%s: %s → %s', name, previous, state)
+    this.optionStates.set(option, state)
+  }
 
   private processOneByte(
     byte: number,

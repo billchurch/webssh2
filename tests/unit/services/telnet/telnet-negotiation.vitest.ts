@@ -329,4 +329,24 @@ describe('TelnetNegotiator', () => {
       expect(result.responses[0]).toEqual(Buffer.from([IAC, DONT, ECHO]))
     })
   })
+
+  describe('buildProactiveOffers', () => {
+    it('should return WILL TERMINAL_TYPE and WILL NAWS buffers', () => {
+      const negotiator = new TelnetNegotiator('xterm-256color')
+      const offers = negotiator.buildProactiveOffers()
+
+      expect(offers).toHaveLength(2)
+      expect(offers[0]).toEqual(Buffer.from([IAC, WILL, TERMINAL_TYPE]))
+      expect(offers[1]).toEqual(Buffer.from([IAC, WILL, NAWS]))
+    })
+
+    it('should be idempotent - calling twice returns empty on second call', () => {
+      const negotiator = new TelnetNegotiator()
+      const first = negotiator.buildProactiveOffers()
+      const second = negotiator.buildProactiveOffers()
+
+      expect(first).toHaveLength(2)
+      expect(second).toHaveLength(0)
+    })
+  })
 })
