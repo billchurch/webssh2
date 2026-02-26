@@ -362,8 +362,8 @@ export class TelnetNegotiator {
       return
     }
 
-    const option = this.subnegBuffer[0]
-    const qualifier = this.subnegBuffer[1]
+    const option = this.subnegBuffer[0] as number   // guarded by length >= 2
+    const qualifier = this.subnegBuffer[1] as number // guarded by length >= 2
     const name = OPTION_NAMES.get(option) ?? String(option)
 
     if (option === TERMINAL_TYPE && qualifier === SEND) {

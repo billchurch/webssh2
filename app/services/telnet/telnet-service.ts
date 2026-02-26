@@ -245,9 +245,10 @@ export class TelnetServiceImpl implements ProtocolService {
       }
     })
 
-    // Send initial NAWS if dimensions provided
-    if (options.cols !== undefined && options.rows !== undefined) {
-      socket.write(negotiator.encodeNaws(options.cols, options.rows))
+    // Send proactive option offers (WILL TERMINAL-TYPE, WILL NAWS)
+    const offers = negotiator.buildProactiveOffers()
+    for (const offer of offers) {
+      socket.write(offer)
     }
 
     // Resume the socket now that we have data listeners attached
