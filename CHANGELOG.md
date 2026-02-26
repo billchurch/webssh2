@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.1.0...webssh2-server-v4.1.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* use correct secret name for workflow dispatch PAT ([7036788](https://github.com/billchurch/webssh2/commit/7036788a2d4d2a7504fc8099d48d59e107032618))
+
 ## [4.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.0.1...webssh2-server-v4.1.0) (2026-02-26)
 
 
