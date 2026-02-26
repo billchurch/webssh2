@@ -330,6 +330,64 @@ describe('TelnetNegotiator', () => {
     })
   })
 
+  describe('processInbound - state-aware DO handling', () => {
+    it('should skip WILL when option was already offered proactively', () => {
+      const negotiator = new TelnetNegotiator('xterm-256color')
+      negotiator.buildProactiveOffers()
+
+      // Server responds DO TERMINAL_TYPE to our proactive WILL
+      const input = Buffer.from([IAC, DO, TERMINAL_TYPE])
+      const result = negotiator.processInbound(input)
+
+      // Should NOT re-send WILL TERMINAL_TYPE (already sent proactively)
+      expect(result.responses).toHaveLength(0)
+    })
+
+    it('should send NAWS data when NAWS transitions to active from offered', () => {
+      const negotiator = new TelnetNegotiator()
+      negotiator.setWindowSize(120, 40)
+      negotiator.buildProactiveOffers()
+
+      // Server responds DO NAWS to our proactive WILL
+      const input = Buffer.from([IAC, DO, NAWS])
+      const result = negotiator.processInbound(input)
+
+      // Should send NAWS data (but no duplicate WILL)
+      expect(result.responses).toHaveLength(1)
+      expect(result.responses[0]).toEqual(
+        Buffer.from([IAC, SB, NAWS, 0, 120, 0, 40, IAC, SE])
+      )
+    })
+
+    it('should still send WILL + NAWS data for server-initiated DO NAWS (no proactive offer)', () => {
+      const negotiator = new TelnetNegotiator()
+      negotiator.setWindowSize(80, 24)
+
+      // Server initiates DO NAWS without proactive offer
+      const input = Buffer.from([IAC, DO, NAWS])
+      const result = negotiator.processInbound(input)
+
+      // Should send WILL NAWS + NAWS data
+      expect(result.responses).toHaveLength(2)
+      expect(result.responses[0]).toEqual(Buffer.from([IAC, WILL, NAWS]))
+      expect(result.responses[1]).toEqual(
+        Buffer.from([IAC, SB, NAWS, 0, 80, 0, 24, IAC, SE])
+      )
+    })
+
+    it('should still send WILL for server-initiated DO TERMINAL_TYPE (no proactive offer)', () => {
+      const negotiator = new TelnetNegotiator('xterm-256color')
+
+      // Server initiates DO TERMINAL_TYPE without proactive offer
+      const input = Buffer.from([IAC, DO, TERMINAL_TYPE])
+      const result = negotiator.processInbound(input)
+
+      // Should send WILL TERMINAL_TYPE
+      expect(result.responses).toHaveLength(1)
+      expect(result.responses[0]).toEqual(Buffer.from([IAC, WILL, TERMINAL_TYPE]))
+    })
+  })
+
   describe('buildProactiveOffers', () => {
     it('should return WILL TERMINAL_TYPE and WILL NAWS buffers', () => {
       const negotiator = new TelnetNegotiator('xterm-256color')

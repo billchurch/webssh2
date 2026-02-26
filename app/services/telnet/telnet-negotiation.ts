@@ -290,15 +290,29 @@ export class TelnetNegotiator {
   }
 
   private handleDo(option: number, responses: Buffer[]): void {
-    if (SUPPORTED_OPTIONS.has(option)) {
-      responses.push(Buffer.from([IAC, WILL, option]))
+    const name = OPTION_NAMES.get(option) ?? String(option)
+    iacLogger('← DO %s', name)
 
-      // NAWS: immediately send window size after WILL
-      if (option === NAWS) {
-        responses.push(this.encodeNaws(this.cols, this.rows))
-      }
-    } else {
+    if (!SUPPORTED_OPTIONS.has(option)) {
+      iacLogger('→ WONT %s (unsupported)', name)
       responses.push(Buffer.from([IAC, WONT, option]))
+      return
+    }
+
+    const currentState = this.getOptionState(option)
+
+    // Only send WILL if we haven't already offered
+    if (currentState === 'inactive') {
+      iacLogger('→ WILL %s', name)
+      responses.push(Buffer.from([IAC, WILL, option]))
+    }
+
+    this.setOptionState(option, 'active')
+
+    // NAWS: send window size when option becomes active
+    if (option === NAWS) {
+      iacLogger('→ SB NAWS %dx%d', this.cols, this.rows)
+      responses.push(this.encodeNaws(this.cols, this.rows))
     }
   }
 
