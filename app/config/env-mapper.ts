@@ -164,6 +164,15 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_SSH_SFTP_ALLOWED_PATHS: { path: 'ssh.sftp.allowedPaths', type: 'array' },
   WEBSSH2_SSH_SFTP_BLOCKED_EXTENSIONS: { path: 'ssh.sftp.blockedExtensions', type: 'array' },
   WEBSSH2_SSH_SFTP_TIMEOUT: { path: 'ssh.sftp.timeout', type: 'number' },
+  // Telnet configuration
+  WEBSSH2_TELNET_ENABLED: { path: 'telnet.enabled', type: 'boolean' },
+  WEBSSH2_TELNET_DEFAULT_PORT: { path: 'telnet.defaultPort', type: 'number' },
+  WEBSSH2_TELNET_TIMEOUT: { path: 'telnet.timeout', type: 'number' },
+  WEBSSH2_TELNET_TERM: { path: 'telnet.term', type: 'string' },
+  WEBSSH2_TELNET_AUTH_LOGIN_PROMPT: { path: 'telnet.auth.loginPrompt', type: 'string' },
+  WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT: { path: 'telnet.auth.passwordPrompt', type: 'string' },
+  WEBSSH2_TELNET_AUTH_FAILURE_PATTERN: { path: 'telnet.auth.failurePattern', type: 'string' },
+  WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT: { path: 'telnet.auth.expectTimeout', type: 'number' },
 }
 
 /**
