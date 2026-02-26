@@ -4,6 +4,7 @@ import type { Server as IOServer } from 'socket.io'
 import { getConfig } from './config.js'
 import initSocket from './socket-v2.js'
 import { createRoutesV2 as createRoutes } from './routes/routes-v2.js'
+import { createTelnetRoutes } from './routes/telnet-routes.js'
 import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
 import { configureSocketIO } from './io.js'
@@ -33,6 +34,13 @@ export function createAppAsync(appConfig: Config): {
     const sshRoutes = createRoutes(appConfig)
     app.use('/ssh/assets', express.static(clientPath))
     app.use('/ssh', sshRoutes)
+
+    if (appConfig.telnet?.enabled === true) {
+      const telnetRoutes = createTelnetRoutes(appConfig)
+      app.use('/telnet/assets', express.static(clientPath))
+      app.use('/telnet', telnetRoutes)
+    }
+
     return { app, sessionMiddleware }
   } catch (err) {
     const message = extractErrorMessage(err)
