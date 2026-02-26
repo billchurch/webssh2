@@ -110,7 +110,7 @@ describe('resolveHostKeyMode', () => {
 
   it('should not mutate the input config', () => {
     const config = buildHostKeyConfig({ mode: 'server' })
-    const original = JSON.parse(JSON.stringify(config)) as typeof config
+    const original = structuredClone(config)
     resolveHostKeyMode(config)
 
     expect(config).toEqual(original)

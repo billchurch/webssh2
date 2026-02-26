@@ -183,9 +183,9 @@ export function createHostKeyVerifier(
 
     // Step 3: Client store lookup
     if (hostKeyService.clientStoreEnabled) {
-      awaitClientVerification(
-        socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify
-      )
+      awaitClientVerification({
+        socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify,
+      })
       return
     }
 
@@ -220,27 +220,30 @@ export function createHostKeyVerifier(
 
     // action === 'prompt'
     log('Unknown key action: prompt')
-    awaitClientVerification(
-      socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify
-    )
+    awaitClientVerification({
+      socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify,
+    })
   }
+}
+
+interface ClientVerificationOptions {
+  socket: Socket
+  host: string
+  port: number
+  algorithm: string
+  base64Key: string
+  fingerprint: string
+  log: (...args: unknown[]) => void
+  timeout: number
+  verify: (valid: boolean) => void
 }
 
 /**
  * Emit a verify event to the client and wait for their response
  * with a configurable timeout.
  */
-function awaitClientVerification(
-  socket: Socket,
-  host: string,
-  port: number,
-  algorithm: string,
-  base64Key: string,
-  fingerprint: string,
-  log: (...args: unknown[]) => void,
-  timeout: number,
-  verify: (valid: boolean) => void
-): void {
+function awaitClientVerification(options: ClientVerificationOptions): void {
+  const { socket, host, port, algorithm, base64Key, fingerprint, log, timeout, verify } = options
   const verifyPayload: HostKeyVerifyPayload = {
     host,
     port,
