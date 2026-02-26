@@ -27,6 +27,8 @@ import debug from 'debug'
 import { createAppStructuredLogger } from '../logger.js'
 import type { StructuredLogger, StructuredLoggerOptions } from '../logging/structured-logger.js'
 import { DEFAULT_SFTP_CONFIG } from '../config/default-config.js'
+import { HostKeyService } from './host-key/host-key-service.js'
+import { resolveHostKeyMode } from '../config/config-processor.js'
 
 const factoryLogger = debug('webssh2:services:factory')
 
@@ -92,9 +94,13 @@ export function createServices(
 ): Services {
   factoryLogger('Creating services')
 
+  // Create host key service if configured (needed by SSH service)
+  const hostKeyConfig = resolveHostKeyMode(deps.config.ssh.hostKeyVerification)
+  const hostKey = hostKeyConfig.enabled ? new HostKeyService(hostKeyConfig) : undefined
+
   // Create service implementations
   const auth = new AuthServiceImpl(deps, deps.store)
-  const ssh = new SSHServiceImpl(deps, deps.store)
+  const ssh = new SSHServiceImpl(deps, deps.store, hostKey)
   const terminal = new TerminalServiceImpl(deps, deps.store)
   const session = new SessionServiceImpl(deps, deps.store)
 
@@ -118,7 +124,11 @@ export function createServices(
     ssh,
     terminal,
     session,
-    sftp
+    sftp,
+  }
+
+  if (hostKey !== undefined) {
+    services.hostKey = hostKey
   }
 
   factoryLogger('Services created successfully')

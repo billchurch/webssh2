@@ -201,7 +201,7 @@ export class TestCleanup {
   }
 
   async runAll(): Promise<void> {
-    for (const fn of this.cleanupFns.reverse()) {
+    for (const fn of this.cleanupFns.toReversed()) {
       await fn()
     }
     this.cleanupFns = []

@@ -1,7 +1,7 @@
 // app/config/config-processor.ts
 // Pure functions for config processing
 
-import type { Config } from '../types/config.js'
+import type { Config, HostKeyVerificationConfig } from '../types/config.js'
 import type { Result } from '../types/result.js'
 import { ok, err, deepMerge, validateConfigPure } from '../utils/index.js'
 import { createCompleteDefaultConfig } from './default-config.js'
@@ -98,7 +98,7 @@ export function parseConfigJson(jsonString: string): Result<Partial<Config>, Err
 /**
  * Create CORS configuration from config
  * Pure function - no side effects
- * 
+ *
  * @param config - Application configuration
  * @returns CORS configuration object
  */
@@ -111,5 +111,82 @@ export function createCorsConfig(config: Config): {
     origin: config.http.origins,
     methods: ['GET', 'POST'],
     credentials: true
+  }
+}
+
+/**
+ * Options indicating which store flags were explicitly set by file/env config
+ * (as opposed to being inherited from defaults). When explicit, the flag
+ * overrides the mode-derived default.
+ */
+export interface ResolveHostKeyModeOptions {
+  serverStoreExplicit?: boolean
+  clientStoreExplicit?: boolean
+}
+
+/**
+ * Resolve host key verification mode into store-enabled flags.
+ *
+ * The mode shorthand sets sensible defaults:
+ *   - "server"  → serverStore=true, clientStore=false
+ *   - "client"  → serverStore=false, clientStore=true
+ *   - "hybrid"  → both true
+ *
+ * Explicit store flags from file/env config override the mode defaults.
+ * Pure function - returns a new config without mutating the input.
+ *
+ * @param config - The host key verification config to resolve
+ * @param options - Flags indicating which store settings were explicitly provided
+ * @returns Resolved host key verification config
+ */
+export function resolveHostKeyMode(
+  config: HostKeyVerificationConfig,
+  options?: ResolveHostKeyModeOptions
+): HostKeyVerificationConfig {
+  const serverStoreExplicit = options?.serverStoreExplicit === true
+  const clientStoreExplicit = options?.clientStoreExplicit === true
+
+  // Derive defaults from mode
+  let serverEnabled: boolean
+  let clientEnabled: boolean
+  switch (config.mode) {
+    case 'server':
+      serverEnabled = true
+      clientEnabled = false
+      break
+    case 'client':
+      serverEnabled = false
+      clientEnabled = true
+      break
+    case 'hybrid':
+      serverEnabled = true
+      clientEnabled = true
+      break
+    default: {
+      // Exhaustive check
+      const exhaustiveCheck: never = config.mode
+      throw new Error(`Unknown host key verification mode: ${String(exhaustiveCheck)}`)
+    }
+  }
+
+  // Explicit flags override mode defaults
+  if (serverStoreExplicit) {
+    serverEnabled = config.serverStore.enabled
+  }
+  if (clientStoreExplicit) {
+    clientEnabled = config.clientStore.enabled
+  }
+
+  return {
+    enabled: config.enabled,
+    mode: config.mode,
+    unknownKeyAction: config.unknownKeyAction,
+    serverStore: {
+      enabled: serverEnabled,
+      dbPath: config.serverStore.dbPath,
+    },
+    clientStore: {
+      enabled: clientEnabled,
+    },
   }
 }

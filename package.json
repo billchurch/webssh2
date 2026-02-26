@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "basic-auth": "^2.0.1",
+    "better-sqlite3": "^12.6.2",
     "body-parser": "^2.2.1",
     "debug": "^4.4.3",
     "express": "^5.2.1",
@@ -47,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.23",
-    "webssh2_client": "^3.3.0",
+    "webssh2_client": "^3.4.0",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -72,12 +73,14 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "ci": "npm run test",
-    "security:audit": "npm audit"
+    "security:audit": "npm audit",
+    "hostkeys": "tsx scripts/host-key-seed.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.2",
     "@types/basic-auth": "^1.1.8",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",

@@ -28,7 +28,7 @@ import { ok, err, isErr } from '../app/utils/result.js'
 import { createAuthMethod } from '../app/types/branded.js'
 
 // Re-export Result utility functions for test use
-export { ok, err, isErr }
+export { ok, err, isErr } from '../app/utils/result.js'
 
 export interface StructuredLoggerStub extends StructuredLogger {
   readonly entries: Array<{ level: LogLevel; entry: Omit<StructuredLogInput, 'level'> }>
@@ -342,7 +342,7 @@ export function setupMockStoreStates(mockStore: SessionStore, ...states: unknown
     mockObj.mockReturnValueOnce(state)
   }
   if (states.length > 0) {
-    mockObj.mockReturnValue(states[states.length - 1])
+    mockObj.mockReturnValue(states.at(-1))
   }
   return mockStore
 }
@@ -506,6 +506,13 @@ export function createMockSocketConfig(overrides: Record<string, any> = {}): unk
         compress: ['none']
       },
       allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+      hostKeyVerification: {
+        enabled: false,
+        mode: 'hybrid',
+        unknownKeyAction: 'prompt',
+        serverStore: { enabled: false, dbPath: ':memory:' },
+        clientStore: { enabled: false },
+      },
       ...overrides.ssh,
     },
     options: {

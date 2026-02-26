@@ -78,6 +78,32 @@ const UserSchema = z.object({
 })
 
 /**
+ * Host key verification server store schema
+ */
+const HostKeyServerStoreSchema = z.object({
+  enabled: z.boolean(),
+  dbPath: z.string()
+})
+
+/**
+ * Host key verification client store schema
+ */
+const HostKeyClientStoreSchema = z.object({
+  enabled: z.boolean()
+})
+
+/**
+ * Host key verification configuration schema
+ */
+const HostKeyVerificationSchema = z.object({
+  enabled: z.boolean(),
+  mode: z.enum(['server', 'client', 'hybrid']),
+  unknownKeyAction: z.enum(['prompt', 'alert', 'reject']),
+  serverStore: HostKeyServerStoreSchema,
+  clientStore: HostKeyClientStoreSchema
+})
+
+/**
  * SSH configuration schema
  */
 const SSHSchema = z.object({
@@ -98,7 +124,8 @@ const SSHSchema = z.object({
   maxExecOutputBytes: z.number().int().positive().optional(),
   outputRateLimitBytesPerSec: z.number().int().nonnegative().optional(),
   socketHighWaterMark: z.number().int().positive().optional(),
-  sftp: SftpSchema.optional()
+  sftp: SftpSchema.optional(),
+  hostKeyVerification: HostKeyVerificationSchema
 })
 
 /**

@@ -8,8 +8,10 @@ import type { StructuredLogger, StructuredLoggerOptions } from '../logging/struc
 // import type { AuthCredentials } from '../types/contracts/v1/socket.js' // Not currently used
 import type { Config } from '../types/config.js'
 import type { Client as SSH2Client } from 'ssh2'
+import type { Socket as SocketIoSocket } from 'socket.io'
 import type { Duplex } from 'node:stream'
 import type { FileService } from './sftp/file-service.js'
+import type { HostKeyService } from './host-key/host-key-service.js'
 
 /**
  * Credentials for authentication
@@ -95,6 +97,12 @@ export interface SSHConfig {
    * bypassing auto-answer logic for password prompts.
    */
   forwardAllPrompts?: boolean
+  /**
+   * Socket.IO socket for host key verification communication with client.
+   * When provided alongside an enabled HostKeyService, the SSH service
+   * will set up the hostVerifier callback for the connection.
+   */
+  socket?: SocketIoSocket
 }
 
 /**
@@ -325,6 +333,7 @@ export interface Services {
   terminal: TerminalService
   session: SessionService
   sftp?: FileService
+  hostKey?: HostKeyService
 }
 
 /**

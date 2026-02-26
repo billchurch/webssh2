@@ -13,10 +13,16 @@ export function createSshConfigResponse(
   _request: SshRouteRequest,
   config: Config
 ): Result<SshRouteResponse> {
+  const hostKeyVerificationConfig = config.ssh.hostKeyVerification
   const payload: SshConfigResponse = {
     allowedAuthMethods: config.ssh.allowedAuthMethods.map(
       (method) => `${method}` as AuthMethodToken
     ),
+    hostKeyVerification: {
+      enabled: hostKeyVerificationConfig.enabled,
+      clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
+      unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
+    },
   }
 
   return ok({

@@ -152,6 +152,13 @@ export const createMockConfig = (): MockConfig => ({
       serverHostKey: ['ssh-rsa', 'ssh-ed25519'],
       hmac: ['hmac-sha2-256', 'hmac-sha1'],
       compress: ['none']
+    },
+    hostKeyVerification: {
+      enabled: false,
+      mode: 'hybrid',
+      unknownKeyAction: 'prompt',
+      serverStore: { enabled: false, dbPath: ':memory:' },
+      clientStore: { enabled: false },
     }
   },
   options: {

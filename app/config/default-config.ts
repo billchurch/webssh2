@@ -4,6 +4,7 @@
 import crypto from 'node:crypto'
 import type {
   Config,
+  HostKeyVerificationConfig,
   LoggingConfig,
   LoggingControlsConfig,
   LoggingSamplingConfig,
@@ -100,6 +101,18 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     outputRateLimitBytesPerSec: STREAM_LIMITS.OUTPUT_RATE_LIMIT_BYTES_PER_SEC,
     socketHighWaterMark: STREAM_LIMITS.SOCKET_HIGH_WATER_MARK,
     sftp: DEFAULT_SFTP_CONFIG,
+    hostKeyVerification: {
+      enabled: false,
+      mode: 'hybrid' as const,
+      unknownKeyAction: 'prompt' as const,
+      serverStore: {
+        enabled: true,
+        dbPath: '/data/hostkeys.db',
+      },
+      clientStore: {
+        enabled: true,
+      },
+    },
   },
   header: { text: null, background: 'green' },
   options: {
@@ -155,6 +168,7 @@ function buildSshConfig(): Config['ssh'] {
     },
     allowedSubnets: base.allowedSubnets == null ? [] : [...base.allowedSubnets],
     allowedAuthMethods: [...base.allowedAuthMethods],
+    hostKeyVerification: cloneHostKeyVerificationConfig(base.hostKeyVerification),
   }
 
   // Conditionally add optional properties to satisfy exactOptionalPropertyTypes
@@ -340,5 +354,23 @@ function cloneSftpConfig(sftp: SftpConfig): SftpConfig {
     allowedPaths: sftp.allowedPaths === null ? null : [...sftp.allowedPaths],
     blockedExtensions: [...sftp.blockedExtensions],
     timeout: sftp.timeout,
+  }
+}
+
+/**
+ * Deep clone host key verification configuration
+ */
+function cloneHostKeyVerificationConfig(config: HostKeyVerificationConfig): HostKeyVerificationConfig {
+  return {
+    enabled: config.enabled,
+    mode: config.mode,
+    unknownKeyAction: config.unknownKeyAction,
+    serverStore: {
+      enabled: config.serverStore.enabled,
+      dbPath: config.serverStore.dbPath,
+    },
+    clientStore: {
+      enabled: config.clientStore.enabled,
+    },
   }
 }

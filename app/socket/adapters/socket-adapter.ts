@@ -434,11 +434,17 @@ export class SocketAdapter {
    * Emit permissions
    */
   emitPermissions(): void {
+    const hostKeyVerificationConfig = this.config.ssh.hostKeyVerification
     this.socket.emit(SOCKET_EVENTS.PERMISSIONS, {
       autoLog: !!this.config.options.autoLog,
       allowReplay: !!this.config.options.allowReplay,
       allowReconnect: !!this.config.options.allowReconnect,
       allowReauth: !!this.config.options.allowReauth,
+      hostKeyVerification: {
+        enabled: hostKeyVerificationConfig.enabled,
+        clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
+        unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
+      },
     })
   }
 

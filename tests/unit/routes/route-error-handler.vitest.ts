@@ -10,7 +10,7 @@ import {
 } from '../../../app/routes/route-error-handler.js'
 import { HTTP } from '../../../app/constants/index.js'
 
-void describe('createSshValidationErrorResponse', () => {
+describe('createSshValidationErrorResponse', () => {
   it('returns 401 with auth header for auth errors', () => {
     const result: SshValidationResult = {
       errorType: 'auth',
@@ -79,7 +79,7 @@ void describe('createSshValidationErrorResponse', () => {
   })
 })
 
-void describe('createRouteErrorMessage', () => {
+describe('createRouteErrorMessage', () => {
   it('formats error message correctly', () => {
     const error = new Error('Database connection failed')
     
@@ -98,7 +98,7 @@ void describe('createRouteErrorMessage', () => {
   })
 })
 
-void describe('getErrorStatusCode', () => {
+describe('getErrorStatusCode', () => {
   it('returns 400 for required field errors', () => {
     expect(getErrorStatusCode(new Error('Field is required'))).toBe(400)
     expect(getErrorStatusCode(new Error('required parameter missing'))).toBe(400)

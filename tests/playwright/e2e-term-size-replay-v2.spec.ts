@@ -5,7 +5,7 @@ import { test, expect, type Page, type Browser, type BrowserContext } from '@pla
 import { DEFAULTS } from '../../app/constants/index.js'
 import { SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 
-const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
+const E2E_ENABLED = process.env['ENABLE_E2E_SSH'] === '1'
 
 // V2-specific helpers
 async function waitForV2Terminal(page: Page, timeout = TIMEOUTS.CONNECTION): Promise<void> {
@@ -55,12 +55,12 @@ async function executeV2Command(page: Page, command: string): Promise<void> {
   await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 }
 
-async function openV2WithBasicAuth(browser: Browser, baseURL: string, params: string): Promise<{ page: Page; context: BrowserContext }> {
+async function openV2WithBasicAuth(browser: Browser, baseURL: string | undefined, params: string): Promise<{ page: Page; context: BrowserContext }> {
   const context = await browser.newContext({
     httpCredentials: { username: USERNAME, password: PASSWORD },
   })
   const page = await context.newPage()
-  await page.goto(`${baseURL}/ssh/host/localhost?port=${SSH_PORT}&${params}`)
+  await page.goto(`${baseURL ?? ''}/ssh/host/localhost?port=${SSH_PORT}&${params}`)
   return { page, context }
 }
 
@@ -116,8 +116,8 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Find the match that looks like terminal dimensions (not timestamps or other numbers)
     const sttyMatch = matches.find((m) => {
-      const r = Number.parseInt(m[1])
-      const c = Number.parseInt(m[2])
+      const r = Number.parseInt(m[1] ?? '0')
+      const c = Number.parseInt(m[2] ?? '0')
       // Terminal dimensions should be reasonable
       return r > 0 && r < 500 && c > 0 && c < 500
     })
@@ -126,7 +126,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     if (sttyMatch === undefined) {
       // Fallback to any number pair
-      const match = out.match(/\b(\d+)\s+(\d+)\b/)
+      const match = /\b(\d+)\s+(\d+)\b/.exec(out)
       expect(match).toBeTruthy()
       if (match === null) {
         throw new Error(`Expected fallback dimensions in terminal output: ${out.slice(0, 500)}`)
@@ -185,7 +185,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Extract size from output
     const sizeMatches: RegExpMatchArray[] = [...initialOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
-    const initialSizeMatch: RegExpMatchArray | undefined = sizeMatches[sizeMatches.length - 1]
+    const initialSizeMatch: RegExpMatchArray | undefined = sizeMatches.at(-1)
 
     if (initialSizeMatch === undefined) {
       throw new Error(`No initial size found in terminal output: ${initialOut.slice(0, 500)}`)
@@ -210,7 +210,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     const newSizeMatches: RegExpMatchArray[] = [...newOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
 
     // The last match should be our new size
-    const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches[newSizeMatches.length - 1]
+    const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches.at(-1)
 
     if (lastSizeMatch === undefined) {
       throw new Error(`No size found after resize. Terminal output: ${newOut.slice(0, 500)}`)

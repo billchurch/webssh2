@@ -17,7 +17,7 @@ import {
   type SessionId
 } from '../../types/branded.js'
 import { ok, err, type Result } from '../../state/types.js'
-import { Client as SSH2Client, type ClientChannel, type PseudoTtyOptions } from 'ssh2'
+import { Client as SSH2Client, type ClientChannel, type PseudoTtyOptions, type HostVerifier } from 'ssh2'
 import type { SessionStore } from '../../state/store.js'
 import debug from 'debug'
 import type { Duplex } from 'node:stream'
@@ -36,6 +36,8 @@ import {
   createAlgorithmCapture,
   type AlgorithmCapture
 } from './algorithm-capture.js'
+import type { HostKeyService } from '../host-key/host-key-service.js'
+import { createHostKeyVerifier } from '../host-key/host-key-verifier.js'
 
 const logger = debug('webssh2:services:ssh')
 const ssh2ProtocolLogger = debug('webssh2:ssh2')
@@ -50,7 +52,8 @@ export class SSHServiceImpl implements SSHService {
 
   constructor(
     private readonly deps: ServiceDependencies,
-    private readonly store: SessionStore
+    private readonly store: SessionStore,
+    private readonly hostKeyService?: HostKeyService
   ) {
     this.connectionTimeout = deps.config.ssh.readyTimeout
     this.keepaliveInterval = deps.config.ssh.keepaliveInterval
@@ -73,7 +76,10 @@ export class SSHServiceImpl implements SSHService {
    * Build SSH2 connection config and optionally create algorithm capture
    * @returns Object containing the connect config and optional algorithm capture
    */
-  private buildConnectConfig(config: SSHConfig): {
+  private buildConnectConfig(
+    config: SSHConfig,
+    hostVerifier?: HostVerifier
+  ): {
     connectConfig: Parameters<SSH2Client['connect']>[0]
     algorithmCapture: AlgorithmCapture | null
   } {
@@ -129,6 +135,10 @@ export class SSHServiceImpl implements SSHService {
         ssh2ProtocolLogger(msg)
         algorithmCapture?.parse(msg)
       }
+    }
+
+    if (hostVerifier !== undefined) {
+      connectConfig.hostVerifier = hostVerifier
     }
 
     return { connectConfig, algorithmCapture }
@@ -264,7 +274,23 @@ export class SSHServiceImpl implements SSHService {
           resolve(err(new Error('Connection timeout')))
         }, this.connectionTimeout)
 
-        const { connectConfig, algorithmCapture } = this.buildConnectConfig(config)
+        // Create host key verifier if service is available and socket is provided
+        let hostVerifier: HostVerifier | undefined
+        if (
+          this.hostKeyService !== undefined &&
+          this.hostKeyService.isEnabled &&
+          config.socket !== undefined
+        ) {
+          hostVerifier = createHostKeyVerifier({
+            hostKeyService: this.hostKeyService,
+            socket: config.socket,
+            host: config.host,
+            port: config.port,
+            log: logger,
+          })
+        }
+
+        const { connectConfig, algorithmCapture } = this.buildConnectConfig(config, hostVerifier)
 
         this.setupKeyboardInteractiveHandler(client, config)
         registerConnectionHandlers(

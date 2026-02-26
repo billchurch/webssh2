@@ -31,9 +31,9 @@ const skipNetwork = ['1', 'true', 'yes'].includes(
   String(process.env.WEBSSH2_SKIP_NETWORK || '').toLowerCase()
 )
 if (skipNetwork) {
-  files = files.filter((f) => !/\/ssh\.test\.js$/.test(f))
+  files = files.filter((f) => !f.endsWith('/ssh.test.js'))
   // Also skip HTTP route tests that bind/listen via supertest in restricted envs
-  files = files.filter((f) => !/\/post-auth\.test\.js$/.test(f))
+  files = files.filter((f) => !f.endsWith('/post-auth.test.js'))
 }
 
 if (files.length === 0) {

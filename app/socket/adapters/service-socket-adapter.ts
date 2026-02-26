@@ -85,6 +85,7 @@ export class ServiceSocketAdapter {
 
     this.setupEventHandlers()
     this.logSessionInit()
+    this.emitHostKeyVerificationConfig()
     this.auth.checkInitialAuth()
   }
 
@@ -190,6 +191,21 @@ export class ServiceSocketAdapter {
         allow_reauth: this.context.config.options.allowReauth === true,
         allow_reconnect: this.context.config.options.allowReconnect === true
       }
+    })
+  }
+
+  /**
+   * Emit host key verification config early (before auth) so the client
+   * can show the Trusted Host Keys settings section immediately.
+   */
+  private emitHostKeyVerificationConfig(): void {
+    const hostKeyVerificationConfig = this.config.ssh.hostKeyVerification
+    this.socket.emit(SOCKET_EVENTS.PERMISSIONS, {
+      hostKeyVerification: {
+        enabled: hostKeyVerificationConfig.enabled,
+        clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
+        unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
+      },
     })
   }
 }

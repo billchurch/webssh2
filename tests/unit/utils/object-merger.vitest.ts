@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest'
 import { isPlainObject, deepMergePure } from '../../../app/utils/object-merger.js'
 
-void describe('isPlainObject', () => {
+describe('isPlainObject', () => {
   it('should return true for plain objects', () => {
     expect(isPlainObject({})).toBe(true)
     expect(isPlainObject({ a: 1 })).toBe(true)
@@ -25,7 +25,7 @@ void describe('isPlainObject', () => {
   })
 })
 
-void describe('deepMergePure', () => {
+describe('deepMergePure', () => {
   it('should merge flat objects', () => {
     const target = { a: 1, b: 2 }
     const source = { b: 3, c: 4 }
@@ -67,8 +67,8 @@ void describe('deepMergePure', () => {
   it('should not mutate the original objects', () => {
     const target = { a: 1, nested: { x: 10 } }
     const source = { nested: { y: 20 } }
-    const originalTarget = JSON.parse(JSON.stringify(target)) as typeof target
-    const originalSource = JSON.parse(JSON.stringify(source)) as typeof source
+    const originalTarget = structuredClone(target)
+    const originalSource = structuredClone(source)
     
     const result = deepMergePure(target, source)
     

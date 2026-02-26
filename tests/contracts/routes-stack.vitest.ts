@@ -43,7 +43,7 @@ function getRouteMap(router: unknown): Record<string, string[] | undefined> {
     // eslint-disable-next-line security/detect-object-injection
     for (const m of methods) { byPath[p].add(m) }
   }
-  return Object.fromEntries(Object.entries(byPath).map(([p, s]) => [p, Array.from(s).sort()]))
+  return Object.fromEntries(Object.entries(byPath).map(([p, s]) => [p, Array.from(s).sort((a, b) => a.localeCompare(b))]))
 }
 
 it('router registers expected paths and methods', () => {

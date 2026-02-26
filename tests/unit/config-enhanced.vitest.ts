@@ -356,7 +356,7 @@ describe('Enhanced Config - Validation Functions', () => {
     it('should validate SSH ports correctly', () => {
       expect(validateSshPort(22)).toBe(22)
       expect(validateSshPort(2222)).toBe(2222)
-      expect(validateSshPort(undefined)).toBe(22) // default
+      expect(validateSshPort()).toBe(22) // default
       expect(() => validateSshPort(0)).toThrow('Invalid SSH port')
       expect(() => validateSshPort(65536)).toThrow('Invalid SSH port')
       expect(() => validateSshPort(3.14)).toThrow('Invalid SSH port')

@@ -121,6 +121,29 @@ For more information about detection logic or mitigations, contact the security 
 
 ---
 
-**Last updated:** 2026-01-27
+## Rollup path traversal vulnerability (GHSA-mw96-cpmx-2vgc)
 
-**Next review:** 2026-02-27
+As of 2026-02-26, we evaluated the following vulnerability affecting our dev dependencies:
+
+### GHSA-mw96-cpmx-2vgc (Rollup Arbitrary File Write)
+
+| Aspect            | Status                                              |
+| ----------------- | --------------------------------------------------- |
+| Affected versions | rollup 4.0.0 - 4.58.0                              |
+| Severity          | HIGH                                                |
+| Our version       | rollup@4.59.0 (updated from 4.57.1)                |
+| Status            | **Patched** - updated to fixed version              |
+
+This vulnerability allows arbitrary file writes via path traversal in rollup's bundle output.
+
+**Action taken:**
+
+- Updated rollup from 4.57.1 to 4.59.0 which includes the fix
+- rollup is a dev dependency only (used by Vitest) and does not ship in production builds
+- Exception to the 2-week age-out policy was granted due to high severity
+
+---
+
+**Last updated:** 2026-02-26
+
+**Next review:** 2026-03-26

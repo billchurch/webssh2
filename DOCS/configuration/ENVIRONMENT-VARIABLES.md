@@ -93,6 +93,67 @@ The server applies security headers and a Content Security Policy (CSP) by defau
 | `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Rate limit for shell output streams (bytes/second). `0` disables rate limiting |
 | `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK` | number | `16384` (16KB) | Socket.IO buffer threshold for stream backpressure control |
 
+### Host Key Verification
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_SSH_HOSTKEY_ENABLED` | boolean | `false` | Enable or disable SSH host key verification |
+| `WEBSSH2_SSH_HOSTKEY_MODE` | string | `hybrid` | Verification mode: `server`, `client`, or `hybrid` |
+| `WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION` | string | `prompt` | Action for unknown keys: `prompt`, `alert`, or `reject` |
+| `WEBSSH2_SSH_HOSTKEY_DB_PATH` | string | `/data/hostkeys.db` | Path to the SQLite host key database (opened read-only by the app) |
+| `WEBSSH2_SSH_HOSTKEY_SERVER_ENABLED` | boolean | *(from mode)* | Override: enable/disable server-side SQLite store |
+| `WEBSSH2_SSH_HOSTKEY_CLIENT_ENABLED` | boolean | *(from mode)* | Override: enable/disable client-side browser store |
+
+#### Host Key Verification Examples
+
+**Enable hybrid mode (server-first, client fallback):**
+
+```bash
+WEBSSH2_SSH_HOSTKEY_ENABLED=true
+WEBSSH2_SSH_HOSTKEY_MODE=hybrid
+```
+
+**Server-only with strict rejection of unknown keys:**
+
+```bash
+WEBSSH2_SSH_HOSTKEY_ENABLED=true
+WEBSSH2_SSH_HOSTKEY_MODE=server
+WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION=reject
+WEBSSH2_SSH_HOSTKEY_DB_PATH=/data/hostkeys.db
+```
+
+**Client-only (no server database needed):**
+
+```bash
+WEBSSH2_SSH_HOSTKEY_ENABLED=true
+WEBSSH2_SSH_HOSTKEY_MODE=client
+```
+
+**Docker with host key database volume:**
+
+```bash
+docker run -d \
+  -p 2222:2222 \
+  -v /path/to/hostkeys.db:/data/hostkeys.db:ro \
+  -e WEBSSH2_SSH_HOSTKEY_ENABLED=true \
+  -e WEBSSH2_SSH_HOSTKEY_MODE=server \
+  webssh2:latest
+```
+
+#### Mode Behavior
+
+The `mode` sets sensible defaults for which stores are enabled:
+
+| Mode | Server Store | Client Store |
+|------|-------------|-------------|
+| `server` | enabled | disabled |
+| `client` | disabled | enabled |
+| `hybrid` | enabled | enabled |
+
+Explicit `WEBSSH2_SSH_HOSTKEY_SERVER_ENABLED` and `WEBSSH2_SSH_HOSTKEY_CLIENT_ENABLED` override mode defaults.
+
+See [CONFIG-JSON.md](./CONFIG-JSON.md) for `config.json` examples and the seeding script usage.
+
 ### SFTP Configuration
 
 | Variable | Type | Default | Description |

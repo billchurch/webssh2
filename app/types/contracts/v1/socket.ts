@@ -244,12 +244,17 @@ export interface ServerToClientEvents {
   authFailure: (payload: { error: string; method: string }) => void
   // Connection error (replaces HTML error pages)
   'connection-error': (payload: ConnectionErrorPayload) => void
-  // Permissions negotiated post-auth
+  // Permissions - hostKeyVerification sent pre-auth, remaining fields post-auth
   permissions: (p: {
-    autoLog: boolean
-    allowReplay: boolean
-    allowReconnect: boolean
-    allowReauth: boolean
+    autoLog?: boolean
+    allowReplay?: boolean
+    allowReconnect?: boolean
+    allowReauth?: boolean
+    hostKeyVerification?: {
+      enabled: boolean
+      clientStoreEnabled: boolean
+      unknownKeyAction: 'prompt' | 'alert' | 'reject'
+    }
   }) => void
   // UI updates (element + value)
   updateUI: (payload: { element: string; value: unknown }) => void

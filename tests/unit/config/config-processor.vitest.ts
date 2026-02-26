@@ -13,7 +13,7 @@ import type { Config } from '../../../app/types/config.js'
 import { AUTH_METHOD_TOKENS, DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 import { TEST_SECRET_123, TEST_PASSWORDS, TEST_IPS, TEST_SECRET } from '../../test-constants.js'
 
-void describe('createDefaultConfig', () => {
+describe('createDefaultConfig', () => {
   it('should create default config with auto-generated session secret', () => {
     const config = createDefaultConfig()
 
@@ -52,7 +52,7 @@ void describe('createDefaultConfig', () => {
   })
 })
 
-void describe('mergeConfigs', () => {
+describe('mergeConfigs', () => {
   it('should return default config when no overrides provided', () => {
     const defaultConfig = createDefaultConfig(TEST_PASSWORDS.secret)
     
@@ -105,7 +105,7 @@ void describe('mergeConfigs', () => {
   })
 })
 
-void describe('processConfig', () => {
+describe('processConfig', () => {
   it('should return ok result for valid configuration', () => {
     const defaultConfig = createDefaultConfig(TEST_SECRET)
     
@@ -147,7 +147,7 @@ void describe('processConfig', () => {
   })
 })
 
-void describe('parseConfigJson', () => {
+describe('parseConfigJson', () => {
   it('should parse valid JSON', () => {
     const json = '{"listen": {"port": 3000}, "ssh": {"host": "example.com"}}'
     
@@ -186,7 +186,7 @@ void describe('parseConfigJson', () => {
   })
 })
 
-void describe('createCorsConfig', () => {
+describe('createCorsConfig', () => {
   it('should create CORS config from application config', () => {
     const config = createDefaultConfig()
     config.http.origins = ['http://localhost:3000', 'https://example.com']

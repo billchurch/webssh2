@@ -73,6 +73,14 @@ export const SOCKET_EVENTS = {
   // Connection error events
   /** Server → Client: Structured connection error with debug info */
   CONNECTION_ERROR: 'connection-error',
+
+  // Host key verification events
+  HOSTKEY_VERIFY: 'hostkey:verify',
+  HOSTKEY_VERIFY_RESPONSE: 'hostkey:verify-response',
+  HOSTKEY_VERIFIED: 'hostkey:verified',
+  HOSTKEY_MISMATCH: 'hostkey:mismatch',
+  HOSTKEY_ALERT: 'hostkey:alert',
+  HOSTKEY_REJECTED: 'hostkey:rejected',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]
