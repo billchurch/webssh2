@@ -1,5 +1,38 @@
 # Changelog
 
+## [4.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.0.1...webssh2-server-v4.1.0) (2026-02-26)
+
+
+### Features
+
+* **host-key:** add hostkey socket events to constants ([cc23da0](https://github.com/billchurch/webssh2/commit/cc23da01d552fc32c35125c9995c976e104ed542))
+* **host-key:** add hostKeyVerification to legacy socket-adapter permissions ([1a69405](https://github.com/billchurch/webssh2/commit/1a69405dbc01d09e2749881e88383360a58668dd))
+* **host-key:** implement hostVerifier callback factory ([62ef1cb](https://github.com/billchurch/webssh2/commit/62ef1cbaf8018db7525544c4b01fdfef9e79c43c))
+* **host-key:** send host key config with permissions event ([47a0f70](https://github.com/billchurch/webssh2/commit/47a0f7011f2124c86e8e841b32015c595f75bf90))
+* **host-key:** wire hostVerifier into SSH service connect flow ([eddf34e](https://github.com/billchurch/webssh2/commit/eddf34e4a18ab6b5d05afb62a8577e583e307a06))
+* send host key verification config pre-auth and honor env vars in hostkeys script ([97cb173](https://github.com/billchurch/webssh2/commit/97cb1730ac7f6eac3525b262e554b651668c5980))
+* **sftp:** add shell-command file backend for BusyBox devices ([c33a7e8](https://github.com/billchurch/webssh2/commit/c33a7e88c2f823c9d730f2eb134ea546e0b1cd3d))
+* **sftp:** add shell-command file backend for BusyBox devices ([#483](https://github.com/billchurch/webssh2/issues/483)) ([dbebb23](https://github.com/billchurch/webssh2/commit/dbebb239f35075bd93db3ee28177568777894ebb))
+* SSH host key verification (TOFU) ([dc22703](https://github.com/billchurch/webssh2/commit/dc227030dfc9801aababca9af40a78c3b69070ec))
+* update webssh2_client dependency to version 3.4.0 ([7ae7e63](https://github.com/billchurch/webssh2/commit/7ae7e6308ccd62045320b3653bc298e258ec71aa))
+
+
+### Bug Fixes
+
+* address code review findings for host key verification ([6f53016](https://github.com/billchurch/webssh2/commit/6f530169f93ec8491136d5f72499d5d1eb0849e3))
+* reduce awaitClientVerification params to options object (S107) and use structuredClone (S7784) ([a6163d6](https://github.com/billchurch/webssh2/commit/a6163d6163fed778dc736d07e04deaa1c5f73bcb))
+* remove void operator from test files (S3735) ([3bec992](https://github.com/billchurch/webssh2/commit/3bec992c4aec97afa0a9b2ba2d9d6ee36b748f52))
+* resolve lint errors in test files ([ad14af9](https://github.com/billchurch/webssh2/commit/ad14af90e5722872a79f8338aa32cfcd459785ea))
+* resolve markdownlint warnings in host-key-protocol.md ([142db67](https://github.com/billchurch/webssh2/commit/142db67ba699cb754e0ecba8d24ced642e6fdc72))
+* resolve SonarQube issues across codebase (S3735, S3776, S2871, S4623, S6557, S4043, S7763, S4325, S6594, S7781, S7755, S7784, S7924) ([b33dc6d](https://github.com/billchurch/webssh2/commit/b33dc6dcc73aecdc9b5aa67561ae68fcd51185e0))
+* resolve SonarQube lint warnings in shell-commands ([6c1035e](https://github.com/billchurch/webssh2/commit/6c1035ec285cf70d5901b306caed359c968f402f))
+* resolve SonarQube quality gate failures on PR [#488](https://github.com/billchurch/webssh2/issues/488) ([6315836](https://github.com/billchurch/webssh2/commit/63158369f5ed1b0bdd8efe3304c3042ce9f75b76))
+* SFTP error propagation with fileName + relax waitForPrompt regex ([213ec12](https://github.com/billchurch/webssh2/commit/213ec12cd009c64ee4044d95a66e51efffea4030))
+* **sftp:** use basename for download filename in shell backend ([d84b78c](https://github.com/billchurch/webssh2/commit/d84b78cfad6ab428c8fea0dba646755ae4386f72))
+* **tests:** add hostKeyVerification to socket-v2 mock config ([0a76bea](https://github.com/billchurch/webssh2/commit/0a76bea6c131a5d87818d6f34da521499caa2069))
+* update rollup to 4.59.0 for GHSA-mw96-cpmx-2vgc path traversal fix ([dbea2df](https://github.com/billchurch/webssh2/commit/dbea2dff7c705286f56fd26d16dc0928c983cfdc))
+* use eslint-disable for no-new in side-effect constructors ([bdd7991](https://github.com/billchurch/webssh2/commit/bdd7991aba42b8b3dd1cad4365b0b2dd578dd933))
+
 ## [4.0.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.0.0...webssh2-server-v4.0.1) (2026-02-07)
 
 
