@@ -281,10 +281,16 @@ export class TelnetNegotiator {
     if (command === DO) {
       this.handleDo(byte, responses)
     } else if (command === DONT) {
+      const name = OPTION_NAMES.get(byte) ?? String(byte)
+      iacLogger('← DONT %s', name)
+      iacLogger('→ WONT %s', name)
       responses.push(Buffer.from([IAC, WONT, byte]))
     } else if (command === WILL) {
       this.handleWill(byte, responses)
     } else if (command === WONT) {
+      const name = OPTION_NAMES.get(byte) ?? String(byte)
+      iacLogger('← WONT %s', name)
+      iacLogger('→ DONT %s', name)
       responses.push(Buffer.from([IAC, DONT, byte]))
     }
   }
@@ -317,9 +323,14 @@ export class TelnetNegotiator {
   }
 
   private handleWill(option: number, responses: Buffer[]): void {
+    const name = OPTION_NAMES.get(option) ?? String(option)
+    iacLogger('← WILL %s', name)
+
     if (SUPPORTED_OPTIONS.has(option)) {
+      iacLogger('→ DO %s', name)
       responses.push(Buffer.from([IAC, DO, option]))
     } else {
+      iacLogger('→ DONT %s (unsupported)', name)
       responses.push(Buffer.from([IAC, DONT, option]))
     }
   }
@@ -353,8 +364,11 @@ export class TelnetNegotiator {
 
     const option = this.subnegBuffer[0]
     const qualifier = this.subnegBuffer[1]
+    const name = OPTION_NAMES.get(option) ?? String(option)
 
     if (option === TERMINAL_TYPE && qualifier === SEND) {
+      iacLogger('← SB %s SEND', name)
+      iacLogger('→ SB %s IS %s', name, this.terminalType)
       responses.push(this.encodeTerminalType())
     }
 
