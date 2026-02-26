@@ -24,6 +24,7 @@ import { Duplex } from 'node:stream'
 import { TelnetConnectionPool, type TelnetConnection } from './telnet-connection-pool.js'
 import { TelnetNegotiator } from './telnet-negotiation.js'
 import { TelnetAuthenticator, type TelnetAuthOptions } from './telnet-auth.js'
+import { validateConnectionWithDns } from '../../ssh/hostname-resolver.js'
 import { randomUUID } from 'node:crypto'
 import { Socket as NetSocket } from 'node:net'
 import debug from 'debug'
@@ -48,6 +49,7 @@ interface ConnectionMeta {
  */
 class ShellDuplex extends Duplex {
   private readonly socket: NetSocket
+  private needsDrain = false
 
   constructor(socket: NetSocket) {
     super()
@@ -56,9 +58,15 @@ class ShellDuplex extends Duplex {
 
   /**
    * Push data to the readable side (called by the telnet data handler).
+   * Respects backpressure: if push() returns false, pauses the socket
+   * until _read() is called.
    */
   pushData(chunk: Buffer): void {
-    this.push(chunk)
+    const canPush = this.push(chunk)
+    if (!canPush && !this.needsDrain) {
+      this.needsDrain = true
+      this.socket.pause()
+    }
   }
 
   override _write(
@@ -70,8 +78,11 @@ class ShellDuplex extends Duplex {
   }
 
   override _read(_size: number): void {
-    // Data is pushed via pushData() from the socket data handler.
-    // No pull-based reading needed.
+    // Resume the socket when the consumer is ready for more data
+    if (this.needsDrain) {
+      this.needsDrain = false
+      this.socket.resume()
+    }
   }
 
   override _destroy(
@@ -97,6 +108,12 @@ export class TelnetServiceImpl implements ProtocolService {
    * inside the shell stream via the optional TelnetAuthenticator.
    */
   async connect(config: TelnetConnectionConfig): Promise<Result<ProtocolConnection>> {
+    // Enforce subnet restrictions before establishing the TCP connection
+    const subnetResult = await this.validateSubnets(config.host)
+    if (!subnetResult.ok) {
+      return err(subnetResult.error)
+    }
+
     const connectionId = createConnectionId(randomUUID())
 
     return new Promise((resolve) => {
@@ -191,9 +208,14 @@ export class TelnetServiceImpl implements ProtocolService {
 
     socket.on('data', handleSocketData)
 
-    // Start auth timeout if authenticator is present
+    // Start auth timeout and settle callback if authenticator is present
     if (authenticator !== null) {
       authenticator.startTimeout((bufferedData) => {
+        if (bufferedData.length > 0) {
+          shellStream.pushData(bufferedData)
+        }
+      })
+      authenticator.setOnAuthSettled((bufferedData) => {
         if (bufferedData.length > 0) {
           shellStream.pushData(bufferedData)
         }
@@ -284,6 +306,34 @@ export class TelnetServiceImpl implements ProtocolService {
   }
 
   // ── Private helpers ────────────────────────────────────────────────
+
+  /**
+   * Validate the target host against configured subnet restrictions.
+   * Returns ok if no restrictions or host is within allowed subnets.
+   */
+  private async validateSubnets(host: string): Promise<Result<void>> {
+    const allowedSubnets = this.deps.config.telnet?.allowedSubnets
+    if (allowedSubnets === undefined || allowedSubnets.length === 0) {
+      return ok(undefined)
+    }
+
+    logger('Validating telnet connection to %s against subnet restrictions', host)
+    const validationResult = await validateConnectionWithDns(host, allowedSubnets)
+
+    if (validationResult.ok) {
+      if (validationResult.value) {
+        logger('Host %s passed telnet subnet validation', host)
+        return ok(undefined)
+      }
+
+      const errorMessage = `Telnet connection to host ${host} is not permitted by subnet policy`
+      logger('Host %s is not in allowed subnets: %s', host, allowedSubnets.join(', '))
+      return err(new Error(errorMessage))
+    }
+
+    logger('Telnet host validation failed: %s', validationResult.error.message)
+    return err(new Error(`Host validation failed: ${validationResult.error.message}`))
+  }
 
   /**
    * Build a TelnetAuthenticator from stored config if auth options

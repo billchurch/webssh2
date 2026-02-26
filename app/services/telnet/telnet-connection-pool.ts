@@ -101,6 +101,7 @@ export class TelnetConnectionPool {
   clear(): void {
     for (const connection of this.connections.values()) {
       try {
+        connection.authenticator?.destroy()
         connection.socket.destroy()
       } catch (error) {
         logger('Error destroying socket for connection %s: %O', connection.id, error)

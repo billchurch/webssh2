@@ -160,6 +160,8 @@ describe('TelnetAuthenticator', () => {
   // Test 6: Successful auth flow: login -> password -> authenticated
   describe('successful auth flow', () => {
     it('should transition through login -> password -> authenticated', () => {
+      vi.useFakeTimers()
+
       const auth = new TelnetAuthenticator(baseOptions())
       expect(auth.state).toBe('waiting-login' satisfies TelnetAuthState)
 
@@ -180,10 +182,22 @@ describe('TelnetAuthenticator', () => {
       // Server sends shell prompt (success indicator)
       const shellData = Buffer.from('user@host:~$ ')
       const shellResult = auth.processData(shellData)
-      expect(auth.state).toBe('authenticated' satisfies TelnetAuthState)
-      expect(shellResult.forwardToClient).toEqual(shellData)
-      expect(shellResult.writeToSocket).toBeNull()
+      // Data is buffered during the settle delay, not forwarded yet
+      expect(auth.state).toBe('waiting-result' satisfies TelnetAuthState)
+      expect(shellResult.forwardToClient).toBeNull()
 
+      // Register settle callback and advance past settle delay
+      const onSettled = vi.fn()
+      auth.setOnAuthSettled(onSettled)
+      vi.advanceTimersByTime(500)
+
+      expect(auth.state).toBe('authenticated' satisfies TelnetAuthState)
+      expect(onSettled).toHaveBeenCalledOnce()
+      // Settle callback receives all buffered data
+      const buffered = onSettled.mock.calls[0]?.[0] as Buffer
+      expect(buffered.toString()).toContain('user@host:~$ ')
+
+      vi.useRealTimers()
       auth.destroy()
     })
 
@@ -259,12 +273,18 @@ describe('TelnetAuthenticator', () => {
   // Test 9: After auth completes, data forwarded to client
   describe('post-auth data forwarding', () => {
     it('should forward all data to client after authentication', () => {
+      vi.useFakeTimers()
+
       const auth = new TelnetAuthenticator(baseOptions())
 
       // Complete auth
       auth.processData(Buffer.from('login: '))
       auth.processData(Buffer.from('Password: '))
       auth.processData(Buffer.from('user@host:~$ '))
+
+      // Advance past settle delay to complete authentication
+      auth.setOnAuthSettled(() => { /* no-op */ })
+      vi.advanceTimersByTime(500)
       expect(auth.state).toBe('authenticated' satisfies TelnetAuthState)
 
       // Subsequent data should be forwarded
@@ -274,6 +294,7 @@ describe('TelnetAuthenticator', () => {
       expect(result.forwardToClient).toEqual(data)
       expect(result.writeToSocket).toBeNull()
 
+      vi.useRealTimers()
       auth.destroy()
     })
   })
@@ -375,7 +396,12 @@ describe('TelnetAuthenticator', () => {
       auth.processData(Buffer.from('Password: '))
       auth.processData(Buffer.from('user@host:~$ '))
 
-      // Advance past timeout
+      // Advance past settle delay (500ms) to trigger auth success
+      auth.setOnAuthSettled(() => { /* no-op */ })
+      vi.advanceTimersByTime(500)
+      expect(auth.state).toBe('authenticated' satisfies TelnetAuthState)
+
+      // Advance past original timeout
       vi.advanceTimersByTime(10_000)
 
       expect(onTimeout).not.toHaveBeenCalled()

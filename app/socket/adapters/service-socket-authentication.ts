@@ -843,11 +843,16 @@ export class ServiceSocketAuthentication {
 
 /**
  * Convert a config string pattern to a RegExp, returning undefined
- * for empty or missing patterns.
+ * for empty or missing patterns. Catches invalid regex syntax to
+ * prevent crashes from misconfigured patterns.
  */
 function buildOptionalRegex(pattern: string | undefined): RegExp | undefined {
   if (pattern === undefined || pattern === '') {
     return undefined
   }
-  return new RegExp(pattern)
+  try {
+    return new RegExp(pattern)
+  } catch {
+    return undefined
+  }
 }

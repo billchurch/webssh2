@@ -7,6 +7,14 @@
  * pass-through mode where all data goes directly to the client.
  */
 
+// ── Constants ────────────────────────────────────────────────────────
+
+/** Maximum buffer size before transitioning to pass-through (64KB) */
+const MAX_AUTH_BUFFER_BYTES = 65_536
+
+/** Delay (ms) in waiting-result state before declaring success */
+const RESULT_SETTLE_DELAY_MS = 500
+
 // ── Types ────────────────────────────────────────────────────────────
 
 export type TelnetAuthState =
@@ -16,12 +24,6 @@ export type TelnetAuthState =
   | 'authenticated'
   | 'pass-through'
   | 'failed'
-
-export interface TelnetAuthResult {
-  ok: boolean
-  state: TelnetAuthState
-  bufferedData: Buffer
-}
 
 export interface TelnetAuthOptions {
   username?: string
@@ -44,6 +46,8 @@ export class TelnetAuthenticator {
   private currentState: TelnetAuthState
   private buffer: Buffer = Buffer.alloc(0)
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null
+  private resultSettleHandle: ReturnType<typeof setTimeout> | null = null
+  private onAuthSettled: ((bufferedData: Buffer) => void) | null = null
 
   constructor(options: TelnetAuthOptions) {
     this.options = options
@@ -112,12 +116,18 @@ export class TelnetAuthenticator {
    */
   destroy(): void {
     this.cancelTimeout()
+    this.cancelResultSettle()
   }
 
   // ── Private state handlers ─────────────────────────────────────────
 
   private handleWaitingLogin(data: Buffer): ProcessDataResult {
     this.buffer = Buffer.concat([this.buffer, data])
+
+    if (this.buffer.length > MAX_AUTH_BUFFER_BYTES) {
+      return this.transitionToPassThrough()
+    }
+
     const loginPrompt = this.options.loginPrompt
 
     if (loginPrompt === undefined) {
@@ -142,6 +152,11 @@ export class TelnetAuthenticator {
 
   private handleWaitingPassword(data: Buffer): ProcessDataResult {
     this.buffer = Buffer.concat([this.buffer, data])
+
+    if (this.buffer.length > MAX_AUTH_BUFFER_BYTES) {
+      return this.transitionToPassThrough()
+    }
+
     const passwordPrompt = this.options.passwordPrompt
 
     if (passwordPrompt === undefined) {
@@ -152,6 +167,7 @@ export class TelnetAuthenticator {
     if (passwordPrompt.test(text)) {
       this.buffer = Buffer.alloc(0)
       this.currentState = 'waiting-result'
+      this.resultSettleHandle = null
       return {
         writeToSocket: Buffer.from(`${this.options.password ?? ''}\r\n`),
         forwardToClient: null,
@@ -163,6 +179,11 @@ export class TelnetAuthenticator {
 
   private handleWaitingResult(data: Buffer): ProcessDataResult {
     this.buffer = Buffer.concat([this.buffer, data])
+
+    if (this.buffer.length > MAX_AUTH_BUFFER_BYTES) {
+      return this.transitionToPassThrough()
+    }
+
     const text = this.buffer.toString('utf-8')
 
     // Check for explicit failure
@@ -170,20 +191,66 @@ export class TelnetAuthenticator {
       this.currentState = 'failed'
       this.buffer = Buffer.alloc(0)
       this.cancelTimeout()
+      this.cancelResultSettle()
       return { writeToSocket: null, forwardToClient: data }
     }
 
-    // Heuristic: if we received data without a failure match, consider
-    // authentication successful. We look for any content arriving (the
-    // server sent something back that is not a failure message).
-    if (text.length > 0) {
-      this.currentState = 'authenticated'
-      this.buffer = Buffer.alloc(0)
-      this.cancelTimeout()
-      return { writeToSocket: null, forwardToClient: data }
-    }
+    // Start a settle timer on first data: accumulate for a brief period
+    // to give failure messages time to arrive before declaring success.
+    this.resultSettleHandle ??= setTimeout(() => {
+      this.settleAuthResult()
+    }, RESULT_SETTLE_DELAY_MS)
 
     return noAction()
+  }
+
+  /**
+   * Called after the settle delay to finalize the waiting-result state.
+   * At this point the buffer has not matched a failure pattern, so we
+   * declare success and flush buffered data to the client.
+   */
+  private settleAuthResult(): void {
+    if (this.currentState !== 'waiting-result') {
+      return
+    }
+    this.currentState = 'authenticated'
+    const buffered = this.buffer
+    this.buffer = Buffer.alloc(0)
+    this.cancelTimeout()
+    this.resultSettleHandle = null
+
+    // Notify listeners that auth completed (so buffered data gets flushed)
+    if (this.onAuthSettled !== null) {
+      this.onAuthSettled(buffered)
+    }
+  }
+
+  /**
+   * Register a callback for when auth settles via the result timer.
+   * This allows the shell layer to flush buffered data to the client.
+   */
+  setOnAuthSettled(callback: (bufferedData: Buffer) => void): void {
+    this.onAuthSettled = callback
+  }
+
+  /**
+   * Transition to pass-through mode due to buffer overflow.
+   * Flushes accumulated buffer to the client.
+   */
+  private transitionToPassThrough(): ProcessDataResult {
+    const buffered = this.buffer
+    this.buffer = Buffer.alloc(0)
+    this.currentState = 'pass-through'
+    this.cancelTimeout()
+    this.cancelResultSettle()
+    return { writeToSocket: null, forwardToClient: buffered }
+  }
+
+  private cancelResultSettle(): void {
+    if (this.resultSettleHandle !== null) {
+      clearTimeout(this.resultSettleHandle)
+      this.resultSettleHandle = null
+    }
   }
 }
 

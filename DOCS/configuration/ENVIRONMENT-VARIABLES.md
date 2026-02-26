@@ -233,6 +233,7 @@ WEBSSH2_SSH_SFTP_ENABLED=false
 | `WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT` | string | `[Pp]assword:\s*$` | Regex pattern to detect password prompt |
 | `WEBSSH2_TELNET_AUTH_FAILURE_PATTERN` | string | `Login incorrect\|Access denied\|Login failed` | Regex pattern to detect authentication failure |
 | `WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT` | number | `10000` | Max time (ms) to wait for prompt matches before falling back to pass-through mode |
+| `WEBSSH2_TELNET_ALLOWED_SUBNETS` | array | `[]` | Comma-separated CIDR ranges restricting which hosts can be connected to via telnet (e.g., `10.0.0.0/8,192.168.0.0/16`) |
 
 #### Telnet Configuration Examples
 

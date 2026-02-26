@@ -173,6 +173,7 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT: { path: 'telnet.auth.passwordPrompt', type: 'string' },
   WEBSSH2_TELNET_AUTH_FAILURE_PATTERN: { path: 'telnet.auth.failurePattern', type: 'string' },
   WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT: { path: 'telnet.auth.expectTimeout', type: 'number' },
+  WEBSSH2_TELNET_ALLOWED_SUBNETS: { path: 'telnet.allowedSubnets', type: 'array' },
 }
 
 /**
