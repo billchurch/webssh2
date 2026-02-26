@@ -253,7 +253,7 @@ describe('ServiceSocketAdapter', () => {
     const config = createConfig()
     const services = {} as Services
 
-    void new ServiceSocketAdapter(socket, config, services)
+    const _adapter = new ServiceSocketAdapter(socket, config, services)
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {
@@ -272,7 +272,7 @@ describe('ServiceSocketAdapter', () => {
     config.ssh.hostKeyVerification.enabled = true
     const services = {} as Services
 
-    void new ServiceSocketAdapter(socket, config, services)
+    const _adapter = new ServiceSocketAdapter(socket, config, services)
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {

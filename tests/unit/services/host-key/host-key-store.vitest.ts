@@ -37,7 +37,7 @@ function seedTestDb(dbPath: string): void {
   db.close()
 }
 
-void describe('HostKeyStore', () => {
+describe('HostKeyStore', () => {
   let ctx: TestContext
 
   beforeEach(() => {
@@ -48,7 +48,7 @@ void describe('HostKeyStore', () => {
     cleanupTempDbContext(ctx)
   })
 
-  void describe('constructor', () => {
+  describe('constructor', () => {
     it('should open existing database file', () => {
       createTestDb(ctx.dbPath)
       const store = new HostKeyStore(ctx.dbPath)
@@ -65,7 +65,7 @@ void describe('HostKeyStore', () => {
     })
   })
 
-  void describe('lookup', () => {
+  describe('lookup', () => {
     it('should return "trusted" when key matches stored key', () => {
       seedTestDb(ctx.dbPath)
       const store = new HostKeyStore(ctx.dbPath)
@@ -155,7 +155,7 @@ void describe('HostKeyStore', () => {
     })
   })
 
-  void describe('getAll', () => {
+  describe('getAll', () => {
     it('should return all keys for a host/port', () => {
       seedTestDb(ctx.dbPath)
       const store = new HostKeyStore(ctx.dbPath)
@@ -188,7 +188,7 @@ void describe('HostKeyStore', () => {
     })
   })
 
-  void describe('close', () => {
+  describe('close', () => {
     it('should close the database', () => {
       createTestDb(ctx.dbPath)
       const store = new HostKeyStore(ctx.dbPath)

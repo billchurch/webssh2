@@ -41,7 +41,7 @@ function seedTestDb(dbPath: string): void {
   db.close()
 }
 
-void describe('HostKeyService', () => {
+describe('HostKeyService', () => {
   let ctx: TestContext
 
   beforeEach(() => {
@@ -52,7 +52,7 @@ void describe('HostKeyService', () => {
     cleanupTempDbContext(ctx)
   })
 
-  void describe('getters', () => {
+  describe('getters', () => {
     it('should expose isEnabled', () => {
       const svc = new HostKeyService(buildConfig({ enabled: true }))
       expect(svc.isEnabled).toBe(true)
@@ -88,7 +88,7 @@ void describe('HostKeyService', () => {
     })
   })
 
-  void describe('serverLookup', () => {
+  describe('serverLookup', () => {
     it('should delegate to the underlying store', () => {
       seedTestDb(ctx.dbPath)
       const config = buildConfig({
@@ -115,7 +115,7 @@ void describe('HostKeyService', () => {
     })
   })
 
-  void describe('computeFingerprint', () => {
+  describe('computeFingerprint', () => {
     it('should produce a SHA256: prefixed fingerprint', () => {
       const fingerprint = HostKeyService.computeFingerprint(TEST_KEY_ED25519)
 
@@ -147,7 +147,7 @@ void describe('HostKeyService', () => {
     })
   })
 
-  void describe('close', () => {
+  describe('close', () => {
     it('should close the underlying store', () => {
       seedTestDb(ctx.dbPath)
       const config = buildConfig({

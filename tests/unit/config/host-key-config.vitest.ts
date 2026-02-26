@@ -26,7 +26,7 @@ function buildHostKeyConfig(
   }
 }
 
-void describe('resolveHostKeyMode', () => {
+describe('resolveHostKeyMode', () => {
   it('should set serverStore=true, clientStore=false for mode "server"', () => {
     const config = buildHostKeyConfig({ mode: 'server' })
     const result = resolveHostKeyMode(config)
