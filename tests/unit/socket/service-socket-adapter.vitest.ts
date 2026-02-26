@@ -10,9 +10,7 @@ import type {
   InterServerEvents,
   SocketData
 } from '../../../app/types/contracts/v1/socket.js'
-import type { LogLevel } from '../../../app/logging/levels.js'
-import type { LogEventName } from '../../../app/logging/event-catalog.js'
-import type { SocketLogOptions } from '../../../app/logging/socket-logger.js'
+import type { emitSocketLog } from '../../../app/logging/socket-logger.js'
 import {
   TEST_NETWORK,
   TEST_SECRET,
@@ -22,15 +20,9 @@ import {
 import { DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
 
-type EmitSocketLogArgs = [
-  AdapterContext,
-  LogLevel,
-  LogEventName,
-  string,
-  SocketLogOptions | undefined
-]
+type EmitSocketLogFn = typeof emitSocketLog
 
-const emitSocketLogMock = vi.fn<EmitSocketLogArgs, void>()
+const emitSocketLogMock = vi.fn<EmitSocketLogFn>()
 
 const {
   REMOTE_PASSWORD_HEADER,
@@ -49,7 +41,7 @@ const ensureSocket = (context: AdapterContext): Socket<
 }
 
 vi.mock('../../../app/logging/socket-logger.js', () => ({
-  emitSocketLog: (...args: EmitSocketLogArgs) => {
+  emitSocketLog: (...args: Parameters<EmitSocketLogFn>) => {
     emitSocketLogMock(...args)
   }
 }))
@@ -161,6 +153,7 @@ const createConfig = (): Config => ({
     background: '#000000'
   },
   options: {
+    challengeButton: false,
     allowReplay: true,
     allowReauth: true,
     allowReconnect: true,
@@ -197,11 +190,11 @@ const createSocket = (): TestSocket => {
     handshake: {
       headers,
       address: TEST_NETWORK.HANDSHAKE_IP
-    },
+    } as unknown as TestSocket['handshake'],
     request: {
       headers,
       session: { [SESSION_CREDENTIALS_KEY]: { passwordSource: PASSWORD_SOURCE_NONE } }
-    },
+    } as unknown as TestSocket['request'],
     on: vi.fn(),
     onAny: vi.fn(),
     emit: vi.fn()
@@ -227,7 +220,7 @@ describe('ServiceSocketAdapter', () => {
     expect(adapter).toBeInstanceOf(ServiceSocketAdapter)
 
     expect(emitSocketLogMock).toHaveBeenCalled()
-    const callArgs: EmitSocketLogArgs = emitSocketLogMock.mock.calls[0]
+    const callArgs: Parameters<EmitSocketLogFn> = emitSocketLogMock.mock.calls[0]
     const [context, level, event, message, options] = callArgs
 
     expect(level).toBe('info')
@@ -254,7 +247,7 @@ describe('ServiceSocketAdapter', () => {
     const services = {} as Services
 
     // eslint-disable-next-line no-new -- constructor called for side effects (emits events)
-    new ServiceSocketAdapter(socket, config, services)
+    new ServiceSocketAdapter(socket, config, services) //NOSONAR
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {
@@ -274,7 +267,7 @@ describe('ServiceSocketAdapter', () => {
     const services = {} as Services
 
     // eslint-disable-next-line no-new -- constructor called for side effects (emits events)
-    new ServiceSocketAdapter(socket, config, services)
+    new ServiceSocketAdapter(socket, config, services) //NOSONAR
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {
