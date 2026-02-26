@@ -72,7 +72,7 @@ jobs:
       - name: Trigger Docker build
         if: ${{ steps.release.outputs.release_created }}
         env:
-          GH_TOKEN: ${{ secrets.PAT_WORKFLOW }}
+          GH_TOKEN: ${{ secrets.WEBSSH2_PAT_WORKFLOW }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           gh workflow run docker-publish.yml \
