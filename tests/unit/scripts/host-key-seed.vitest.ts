@@ -79,10 +79,10 @@ describe('resolveDbPath', () => {
 
   afterEach(() => {
     // Restore env
-    if (originalEnv['WEBSSH2_SSH_HOSTKEY_DB_PATH'] !== undefined) {
-      process.env['WEBSSH2_SSH_HOSTKEY_DB_PATH'] = originalEnv['WEBSSH2_SSH_HOSTKEY_DB_PATH']
-    } else {
+    if (originalEnv['WEBSSH2_SSH_HOSTKEY_DB_PATH'] === undefined) {
       delete process.env['WEBSSH2_SSH_HOSTKEY_DB_PATH']
+    } else {
+      process.env['WEBSSH2_SSH_HOSTKEY_DB_PATH'] = originalEnv['WEBSSH2_SSH_HOSTKEY_DB_PATH']
     }
   })
 

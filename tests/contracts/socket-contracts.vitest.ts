@@ -108,7 +108,7 @@ describe('Socket.IO Contracts', () => {
     // and the post-auth one with allowReauth, allowReconnect, allowReplay, autoLog, hostKeyVerification.
     // Find the post-auth permissions event (the one with allowReplay).
     const permEvents = mockSocket.emit.mock.calls.filter((c) => c[0] === 'permissions')
-    const postAuthPerm = permEvents.find((c) => isRecord(c[1]) && 'allowReplay' in (c[1] as Record<string, unknown>))
+    const postAuthPerm = permEvents.find((c) => isRecord(c[1]) && 'allowReplay' in c[1])
     expect(postAuthPerm).toBeDefined()
     if (postAuthPerm === undefined) {
       return
