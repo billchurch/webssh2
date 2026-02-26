@@ -7,7 +7,7 @@ import { createRoutesV2 as createRoutes } from './routes/routes-v2.js'
 import { createTelnetRoutes } from './routes/telnet-routes.js'
 import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
-import { configureSocketIO } from './io.js'
+import { configureSocketIO, configureTelnetNamespace } from './io.js'
 import { handleError, ConfigError } from './errors.js'
 import { createNamespacedDebug, applyLoggingConfiguration } from './logger.js'
 import { MESSAGES } from './constants/index.js'
@@ -73,9 +73,16 @@ export async function initializeServerAsync(): Promise<{
     }
     const io = configureSocketIO(server, sessionMiddleware, cfgForIO)
 
-    // Pass services to socket initialization
-    initSocket(io as Parameters<typeof initSocket>[0], appConfig, services)
-    
+    // Pass services to socket initialization (SSH)
+    initSocket(io as Parameters<typeof initSocket>[0], appConfig, services, 'ssh')
+
+    // Configure telnet namespace if enabled
+    const telnetIo = configureTelnetNamespace(server, sessionMiddleware, appConfig)
+    if (telnetIo !== null) {
+      initSocket(telnetIo as Parameters<typeof initSocket>[0], appConfig, services, 'telnet')
+      debug('Telnet Socket.IO namespace initialized')
+    }
+
     startServer(server, appConfig)
     debug('Server initialized asynchronously')
     return { server, io, app, config: appConfig, services }

@@ -26,7 +26,12 @@ export class ServiceSocketControl {
     this.context.debug('Client disconnected')
 
     if (this.context.state.connectionId !== null) {
-      void this.context.services.ssh.disconnect(createConnectionId(this.context.state.connectionId))
+      const connId = createConnectionId(this.context.state.connectionId)
+      if (this.context.protocol === 'telnet' && this.context.services.telnet !== undefined) {
+        void this.context.services.telnet.disconnect(connId)
+      } else {
+        void this.context.services.ssh.disconnect(connId)
+      }
     }
 
     if (this.context.state.sessionId !== null) {

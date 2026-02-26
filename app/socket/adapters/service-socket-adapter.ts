@@ -3,7 +3,7 @@
  */
 
 import type { Socket } from 'socket.io'
-import type { Services } from '../../services/interfaces.js'
+import type { Services, ProtocolType } from '../../services/interfaces.js'
 import type { Config } from '../../types/config.js'
 import { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
 import type {
@@ -56,7 +56,8 @@ export class ServiceSocketAdapter {
   constructor(
     private readonly socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
     private readonly config: Config,
-    private readonly services: Services
+    private readonly services: Services,
+    private readonly protocol: ProtocolType = 'ssh'
   ) {
     this.authPipeline = new UnifiedAuthPipeline(socket.request, config)
 
@@ -73,6 +74,7 @@ export class ServiceSocketAdapter {
       services,
       authPipeline: this.authPipeline,
       state,
+      protocol,
       debug,
       logger: createAppStructuredLogger({ namespace: 'webssh2:socket', config })
     }
@@ -85,7 +87,12 @@ export class ServiceSocketAdapter {
 
     this.setupEventHandlers()
     this.logSessionInit()
-    this.emitHostKeyVerificationConfig()
+
+    // Host key verification is SSH-only
+    if (this.protocol === 'ssh') {
+      this.emitHostKeyVerificationConfig()
+    }
+
     this.auth.checkInitialAuth()
   }
 
@@ -107,8 +114,11 @@ export class ServiceSocketAdapter {
     })
 
     this.socket.on(SOCKET_EVENTS.AUTH, async (credentials: AuthCredentials | { responses: string[] }) => {
+      // Keyboard-interactive responses are SSH-only
       if ('responses' in credentials) {
-        await this.auth.handleKeyboardInteractiveResponse(credentials.responses)
+        if (this.protocol === 'ssh') {
+          await this.auth.handleKeyboardInteractiveResponse(credentials.responses)
+        }
         return
       }
 
@@ -127,9 +137,12 @@ export class ServiceSocketAdapter {
       this.terminal.handleData(data)
     })
 
-    this.socket.on(SOCKET_EVENTS.EXEC, request => {
-      void this.terminal.handleExec(request)
-    })
+    // Exec is SSH-only
+    if (this.protocol === 'ssh') {
+      this.socket.on(SOCKET_EVENTS.EXEC, request => {
+        void this.terminal.handleExec(request)
+      })
+    }
 
     this.socket.on(SOCKET_EVENTS.CONTROL, message => {
       this.control.handleControl(message)
@@ -137,7 +150,9 @@ export class ServiceSocketAdapter {
 
     this.socket.on(SOCKET_EVENTS.DISCONNECT, () => {
       this.control.handleDisconnect()
-      this.sftp.handleDisconnect()
+      if (this.protocol === 'ssh') {
+        this.sftp.handleDisconnect()
+      }
       this.prompt.handleDisconnect()
     })
 
@@ -146,42 +161,44 @@ export class ServiceSocketAdapter {
       void this.prompt.handlePromptResponse(response)
     })
 
-    // SFTP event handlers
-    this.socket.on(SOCKET_EVENTS.SFTP_LIST, request => {
-      void this.sftp.handleList(request)
-    })
+    // SFTP event handlers (SSH-only)
+    if (this.protocol === 'ssh') {
+      this.socket.on(SOCKET_EVENTS.SFTP_LIST, request => {
+        void this.sftp.handleList(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_STAT, request => {
-      void this.sftp.handleStat(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_STAT, request => {
+        void this.sftp.handleStat(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_MKDIR, request => {
-      void this.sftp.handleMkdir(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_MKDIR, request => {
+        void this.sftp.handleMkdir(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_DELETE, request => {
-      void this.sftp.handleDelete(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_DELETE, request => {
+        void this.sftp.handleDelete(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_START, request => {
-      void this.sftp.handleUploadStart(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_START, request => {
+        void this.sftp.handleUploadStart(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CHUNK, request => {
-      void this.sftp.handleUploadChunk(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CHUNK, request => {
+        void this.sftp.handleUploadChunk(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CANCEL, request => {
-      this.sftp.handleUploadCancel(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CANCEL, request => {
+        this.sftp.handleUploadCancel(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_START, request => {
-      void this.sftp.handleDownloadStart(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_START, request => {
+        void this.sftp.handleDownloadStart(request)
+      })
 
-    this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_CANCEL, request => {
-      this.sftp.handleDownloadCancel(request)
-    })
+      this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_CANCEL, request => {
+        this.sftp.handleDownloadCancel(request)
+      })
+    }
   }
 
   private logSessionInit(): void {

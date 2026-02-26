@@ -147,8 +147,28 @@ export class ServiceSocketTerminal {
       return
     }
 
-    if (this.context.state.shellStream?.setWindow !== undefined) {
+    // Send resize to the appropriate protocol service
+    if (this.context.protocol === 'telnet') {
+      this.resizeTelnet(dimensions)
+    } else if (this.context.state.shellStream?.setWindow !== undefined) {
       this.context.state.shellStream.setWindow(dimensions.rows, dimensions.cols)
+    }
+  }
+
+  private resizeTelnet(dimensions: { rows: number; cols: number }): void {
+    const telnetService = this.context.services.telnet
+    if (telnetService === undefined || this.context.state.connectionId === null) {
+      return
+    }
+
+    const connectionId = createConnectionIdentifier(this.context)
+    if (connectionId === null) {
+      return
+    }
+
+    const result = telnetService.resize(connectionId, dimensions.rows, dimensions.cols)
+    if (!result.ok) {
+      this.context.debug('Telnet resize failed:', result.error.message)
     }
   }
 
@@ -226,15 +246,35 @@ export class ServiceSocketTerminal {
       term: config.term,
       rows: config.rows,
       cols: config.cols,
-      hasEnv: Object.keys(config.env).length > 0
+      hasEnv: Object.keys(config.env).length > 0,
+      protocol: this.context.protocol
     })
 
-    const shellResult = await this.context.services.ssh.shell(connectionId, {
+    const shellOptions = {
       term: config.term,
       rows: config.rows,
       cols: config.cols,
       env: config.env
-    })
+    }
+
+    // Use telnet service for shell when protocol is telnet
+    if (this.context.protocol === 'telnet') {
+      const telnetService = this.context.services.telnet
+      if (telnetService === undefined) {
+        this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, 'Telnet service not available')
+        return null
+      }
+
+      const shellResult = await telnetService.shell(connectionId, shellOptions)
+      if (shellResult.ok) {
+        return shellResult.value as SSH2Stream
+      }
+
+      this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, shellResult.error.message)
+      return null
+    }
+
+    const shellResult = await this.context.services.ssh.shell(connectionId, shellOptions)
 
     if (shellResult.ok) {
       return shellResult.value

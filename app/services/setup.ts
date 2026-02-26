@@ -11,6 +11,7 @@ import {
   createServiceStructuredLogger,
   type ExtendedServiceDependencies
 } from './factory.js'
+import { TelnetServiceImpl } from './telnet/telnet-service.js'
 import debug from 'debug'
 
 const logger = debug('webssh2:services:setup')
@@ -61,6 +62,16 @@ export function setupContainer(config: Config): Container {
     logger('Creating session service')
     const deps = createDependencies(container)
     return createServices(deps).session
+  })
+
+  // Register telnet service factory (creates when telnet is enabled)
+  container.register(TOKENS.TelnetService, () => {
+    logger('Creating telnet service')
+    const deps = createDependencies(container)
+    if (deps.config.telnet?.enabled !== true) {
+      throw new Error('Telnet service requested but telnet is not enabled')
+    }
+    return new TelnetServiceImpl(deps)
   })
 
   // Register all services together

@@ -9,10 +9,11 @@ import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
 import type { AdapterContext } from './service-socket-shared.js'
 import type { ServiceSocketPrompt } from './service-socket-prompt.js'
-import type { KeyboardInteractiveContext, KeyboardInteractiveHandler } from '../../services/interfaces.js'
+import type { KeyboardInteractiveContext, KeyboardInteractiveHandler, TelnetConnectionConfig } from '../../services/interfaces.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { PROMPT_INPUT_TYPES } from '../../constants/prompt.js'
+import { TELNET_DEFAULTS } from '../../constants/core.js'
 import { buildSSHConfig, type KeyboardInteractiveOptions } from './ssh-config.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import { evaluateAuthMethodPolicy, isAuthMethodAllowed } from '../../auth/auth-method-policy.js'
@@ -46,7 +47,8 @@ export class ServiceSocketAuthentication {
     }
 
     if (authPipeline.requiresAuthRequest()) {
-      if (this.context.config.ssh.alwaysSendKeyboardInteractivePrompts === true) {
+      // Keyboard-interactive is SSH-only
+      if (this.context.protocol === 'ssh' && this.context.config.ssh.alwaysSendKeyboardInteractivePrompts === true) {
         this.requestKeyboardInteractiveAuth()
       } else {
         this.requestAuthentication()
@@ -213,12 +215,16 @@ export class ServiceSocketAuthentication {
         return
       }
 
-      const sshResult = await this.connectSSH(authCredentials, authResult.sessionId)
-      if (sshResult === null) {
+      // Branch connection based on protocol
+      const connectionResult = this.context.protocol === 'telnet'
+        ? await this.connectTelnet(authCredentials, authResult.sessionId)
+        : await this.connectSSH(authCredentials, authResult.sessionId)
+
+      if (connectionResult === null) {
         return
       }
 
-      this.finalizeAuthentication(authCredentials, authResult.sessionId, sshResult.id)
+      this.finalizeAuthentication(authCredentials, authResult.sessionId, connectionResult.id)
     } catch (error) {
       this.handleAuthenticationError(error)
     }
@@ -241,7 +247,8 @@ export class ServiceSocketAuthentication {
       return null
     }
 
-    if (!this.enforceAuthMethodPolicy(validatedCreds)) {
+    // Auth method policy enforcement is SSH-only
+    if (this.context.protocol === 'ssh' && !this.enforceAuthMethodPolicy(validatedCreds)) {
       return null
     }
 
@@ -434,6 +441,55 @@ export class ServiceSocketAuthentication {
       authCredentials.host,
       authCredentials.port
     )
+    return null
+  }
+
+  private async connectTelnet(
+    authCredentials: AuthCredentials,
+    sessionId: SessionId
+  ): Promise<{ id: string } | null> {
+    const telnetService = this.context.services.telnet
+    if (telnetService === undefined) {
+      this.emitAuthFailure('Telnet is not enabled on this server')
+      return null
+    }
+
+    const telnetConfig: TelnetConnectionConfig = {
+      sessionId,
+      host: authCredentials.host,
+      port: authCredentials.port,
+      username: authCredentials.username,
+      timeout: this.context.config.telnet?.timeout ?? TELNET_DEFAULTS.TIMEOUT_MS,
+      term: this.context.config.telnet?.term ?? TELNET_DEFAULTS.TERM,
+      expectTimeout: this.context.config.telnet?.auth.expectTimeout ?? TELNET_DEFAULTS.EXPECT_TIMEOUT_MS,
+    }
+
+    if (authCredentials.password !== undefined && authCredentials.password !== '') {
+      telnetConfig.password = authCredentials.password
+    }
+
+    const loginPrompt = buildOptionalRegex(this.context.config.telnet?.auth.loginPrompt)
+    if (loginPrompt !== undefined) {
+      telnetConfig.loginPrompt = loginPrompt
+    }
+
+    const passwordPrompt = buildOptionalRegex(this.context.config.telnet?.auth.passwordPrompt)
+    if (passwordPrompt !== undefined) {
+      telnetConfig.passwordPrompt = passwordPrompt
+    }
+
+    const failurePattern = buildOptionalRegex(this.context.config.telnet?.auth.failurePattern)
+    if (failurePattern !== undefined) {
+      telnetConfig.failurePattern = failurePattern
+    }
+
+    const result = await telnetService.connect(telnetConfig)
+
+    if (result.ok) {
+      return result.value
+    }
+
+    this.emitAuthFailure(result.error.message)
     return null
   }
 
@@ -676,25 +732,36 @@ export class ServiceSocketAuthentication {
       success: true
     })
 
-    const hostKeyVerificationConfig = config.ssh.hostKeyVerification
-    socket.emit(SOCKET_EVENTS.PERMISSIONS, {
-      autoLog: config.options.autoLog,
-      allowReplay: config.options.allowReplay,
-      allowReconnect: config.options.allowReconnect,
-      allowReauth: config.options.allowReauth,
-      hostKeyVerification: {
-        enabled: hostKeyVerificationConfig.enabled,
-        clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
-        unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
-      },
-    })
+    if (this.context.protocol === 'telnet') {
+      // Telnet: simplified permissions (no host key verification, no SFTP)
+      socket.emit(SOCKET_EVENTS.PERMISSIONS, {
+        autoLog: config.options.autoLog,
+        allowReplay: config.options.allowReplay,
+        allowReconnect: config.options.allowReconnect,
+        allowReauth: config.options.allowReauth,
+      })
+    } else {
+      const hostKeyVerificationConfig = config.ssh.hostKeyVerification
+      socket.emit(SOCKET_EVENTS.PERMISSIONS, {
+        autoLog: config.options.autoLog,
+        allowReplay: config.options.allowReplay,
+        allowReconnect: config.options.allowReconnect,
+        allowReauth: config.options.allowReauth,
+        hostKeyVerification: {
+          enabled: hostKeyVerificationConfig.enabled,
+          clientStoreEnabled: hostKeyVerificationConfig.clientStore.enabled,
+          unknownKeyAction: hostKeyVerificationConfig.unknownKeyAction,
+        },
+      })
 
-    // Emit SFTP status after successful authentication
-    this.emitSftpStatus()
+      // Emit SFTP status after successful SSH authentication
+      this.emitSftpStatus()
+    }
 
     socket.emit(SOCKET_EVENTS.GET_TERMINAL, true)
 
-    const connectionString = `ssh://${credentials.host}:${credentials.port}`
+    const protocolScheme = this.context.protocol === 'telnet' ? 'telnet' : 'ssh'
+    const connectionString = `${protocolScheme}://${credentials.host}:${credentials.port}`
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'footer', value: connectionString })
     socket.emit(SOCKET_EVENTS.UPDATE_UI, { element: 'status', value: 'Connected' })
   }
@@ -772,4 +839,15 @@ export class ServiceSocketAuthentication {
       passphrase_present: credentials.passphrase !== undefined && credentials.passphrase !== ''
     }
   }
+}
+
+/**
+ * Convert a config string pattern to a RegExp, returning undefined
+ * for empty or missing patterns.
+ */
+function buildOptionalRegex(pattern: string | undefined): RegExp | undefined {
+  if (pattern === undefined || pattern === '') {
+    return undefined
+  }
+  return new RegExp(pattern)
 }

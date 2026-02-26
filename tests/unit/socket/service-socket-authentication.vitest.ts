@@ -50,6 +50,7 @@ const createBaseContext = (config: Config, services: Services, pipeline: Unified
     services,
     authPipeline: pipeline,
     state: createAdapterSharedState(),
+    protocol: 'ssh',
     debug: vi.fn(),
     logger: createStructuredLoggerStub()
   }

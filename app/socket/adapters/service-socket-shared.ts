@@ -1,6 +1,6 @@
 import type { Socket } from 'socket.io'
 import type { Duplex } from 'node:stream'
-import type { Services } from '../../services/interfaces.js'
+import type { Services, ProtocolType } from '../../services/interfaces.js'
 import type { Config } from '../../types/config.js'
 import type { SessionId } from '../../types/branded.js'
 import type { UnifiedAuthPipeline } from '../../auth/auth-pipeline.js'
@@ -40,6 +40,7 @@ export interface AdapterContext {
   services: Services
   authPipeline: UnifiedAuthPipeline
   state: AdapterSharedState
+  protocol: ProtocolType
   debug: (...args: unknown[]) => void
   logger: StructuredLogger
 }
