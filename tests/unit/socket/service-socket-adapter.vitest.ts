@@ -253,7 +253,8 @@ describe('ServiceSocketAdapter', () => {
     const config = createConfig()
     const services = {} as Services
 
-    const _adapter = new ServiceSocketAdapter(socket, config, services)
+    // eslint-disable-next-line no-new -- constructor called for side effects (emits events)
+    new ServiceSocketAdapter(socket, config, services)
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {
@@ -272,7 +273,8 @@ describe('ServiceSocketAdapter', () => {
     config.ssh.hostKeyVerification.enabled = true
     const services = {} as Services
 
-    const _adapter = new ServiceSocketAdapter(socket, config, services)
+    // eslint-disable-next-line no-new -- constructor called for side effects (emits events)
+    new ServiceSocketAdapter(socket, config, services)
 
     expect(socket.emit).toHaveBeenCalledWith('permissions', {
       hostKeyVerification: {
