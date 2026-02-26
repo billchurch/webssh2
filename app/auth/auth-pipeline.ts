@@ -10,20 +10,13 @@ import type { AuthSession } from './auth-utils.js'
 import {
   BasicAuthProvider,
   PostAuthProvider,
-  type AuthProvider as InternalAuthProvider,
-  type AuthMethod as InternalAuthMethod
+  type AuthProvider,
+  type AuthMethod,
 } from './providers/index.js'
 
-type AuthProvider = InternalAuthProvider
-type AuthMethod = InternalAuthMethod
+export type { AuthProvider, AuthMethod } from './providers/index.js'
 
 const debug = createNamespacedDebug('auth-pipeline')
-
-// Re-export types for backward compatibility
-export type {
-  InternalAuthMethod as AuthMethod,
-  InternalAuthProvider as AuthProvider
-}
 
 type ExtendedRequest = IncomingMessage & {
   session?: AuthSession

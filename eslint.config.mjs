@@ -32,6 +32,7 @@ export default [
       },
       globals: {
         ...nodePlugin.configs.recommended.globals,
+        structuredClone: 'readonly',
       },
     },
     plugins: {

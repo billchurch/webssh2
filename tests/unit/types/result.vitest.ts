@@ -21,7 +21,7 @@ import {
 } from '../../test-utils.js'
 import type { Result } from '../../../app/types/result.js'
 
-void describe('Result type', () => {
+describe('Result type', () => {
   describe('ok and err constructors', () => {
     it('creates success result', () => {
       const result = ok(42)

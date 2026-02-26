@@ -87,7 +87,7 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
 }
 
 function createShellStream(): EventEmitter & { write: ReturnType<typeof vi.fn> } {
-  const stream = new EventEmitter() as EventEmitter & { write: ReturnType<typeof vi.fn> }
+  const stream = new EventEmitter()
   stream.write = vi.fn()
   return stream
 }

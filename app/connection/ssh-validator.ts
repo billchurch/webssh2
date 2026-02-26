@@ -122,7 +122,7 @@ const extractHostnameFromDnsError = (message: string): string => {
     }
     if (part.toUpperCase() !== 'ENOTFOUND') {
       // Sanitize hostname - only allow valid hostname characters
-      return part.replace(/[^a-zA-Z0-9.-]/g, '').slice(0, 253)
+      return part.replaceAll(/[^a-zA-Z0-9.-]/g, '').slice(0, 253)
     }
   }
 

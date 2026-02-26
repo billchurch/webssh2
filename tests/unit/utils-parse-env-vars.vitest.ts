@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseEnvVars } from '../../app/validation/index.js'
 
-void describe('parseEnvVars', () => {
+describe('parseEnvVars', () => {
   it('parses valid pairs', () => {
     const result: Record<string, string> | null = parseEnvVars('FOO:bar,BAR:baz')
     expect(result).toEqual({ FOO: 'bar', BAR: 'baz' })

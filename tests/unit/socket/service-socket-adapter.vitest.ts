@@ -180,7 +180,7 @@ const createConfig = (): Config => ({
       session: 'x-session'
     }
   }
-} as Config)
+})
 
 type TestSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 

@@ -19,17 +19,10 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
   let mockServices: unknown
 
   beforeEach(() => {
-    io = new EventEmitter() as EventEmitter & { on: ReturnType<typeof vi.fn> }
-    io.on = vi.fn(io.on.bind(io)) as ReturnType<typeof vi.fn>
+    io = new EventEmitter()
+    io.on = vi.fn(io.on.bind(io))
 
-    mockSocket = new EventEmitter() as EventEmitter & {
-      id: string
-      request: { session: { save: ReturnType<typeof vi.fn>; sshCredentials: unknown; usedBasicAuth: boolean; envVars: unknown } }
-      emit: ReturnType<typeof vi.fn>
-      disconnect: ReturnType<typeof vi.fn>
-      onAny: ReturnType<typeof vi.fn>
-      offAny: ReturnType<typeof vi.fn>
-    }
+    mockSocket = new EventEmitter()
     mockSocket.id = 'neg-auth-exec'
     mockSocket.request = {
       session: { save: vi.fn((cb: () => void) => cb()), sshCredentials: null, usedBasicAuth: false, envVars: null },

@@ -312,7 +312,7 @@ export async function executeCommandList(page: Page, commands: string[]): Promis
 
     // Wait for command to complete - check for echo output
     if (command.startsWith('echo ')) {
-      const expectedOutput = command.match(/"([^"]+)"/)?.[1]
+      const expectedOutput = /"([^"]+)"/.exec(command)?.[1]
       if (expectedOutput !== undefined && expectedOutput !== '') {
         await waitForCommandOutput(page, expectedOutput, TIMEOUTS.SHORT_WAIT * 2)
       }

@@ -2,7 +2,7 @@
 // app/config.ts
 
 import { inspect } from 'node:util'
-import { generateSecureSecret, enhanceConfig, err } from './utils/index.js'
+import { generateSecureSecret, enhanceConfig, ok, err } from './utils/index.js'
 import { createNamespacedDebug } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
@@ -28,6 +28,39 @@ const debug = createNamespacedDebug('config')
 
 // Session secret will be generated inside loadEnhancedConfig if needed
 
+async function loadFileConfig(
+  resolution: ConfigFileResolution,
+  resolvedPath: string | undefined
+): Promise<Result<Partial<Config> | undefined, ConfigValidationError[]>> {
+  if (!resolution.exists) {
+    debug('No config file found at %s, using environment variables and defaults', resolvedPath)
+    return ok(undefined)
+  }
+
+  const fileResult = await readConfigFile(resolution.location)
+  if (!fileResult.ok) {
+    const error = fileResult.error as { code?: string }
+    if (error.code === 'ENOENT') {
+      debug('Config file not found (expected):', resolvedPath)
+      return ok(undefined)
+    }
+    return err([{
+      path: 'config.json',
+      message: `Failed to read config file: ${fileResult.error.message}`,
+    }])
+  }
+
+  const parseResult = parseConfigJson(fileResult.value)
+  if (!parseResult.ok) {
+    return err([{
+      path: 'config.json',
+      message: `Failed to parse config JSON: ${parseResult.error.message}`,
+    }])
+  }
+
+  return ok(parseResult.value)
+}
+
 async function loadEnhancedConfig(
   resolution: ConfigFileResolution,
   sessionSecret?: string
@@ -48,39 +81,12 @@ async function loadEnhancedConfig(
   const resolvedPath = configLocationToPath(resolution.location)
 
   // Load file config if a valid location exists
-  let fileConfig: Partial<Config> | undefined
-  if (resolution.exists) {
-    const fileResult = await readConfigFile(resolution.location)
-    if (fileResult.ok) {
-      const parseResult = parseConfigJson(fileResult.value)
-      if (parseResult.ok) {
-        fileConfig = parseResult.value
-      } else {
-        return err([{
-          path: 'config.json',
-          message: `Failed to parse config JSON: ${parseResult.error.message}`,
-        }])
-      }
-    } else {
-      // Check if it's just a missing file (ENOENT) - this is expected and not an error
-      const error = fileResult.error as { code?: string }
-      if (error.code === 'ENOENT') {
-        // Missing file is expected and not an error
-        debug('Config file not found (expected):', resolvedPath)
-      } else {
-        // Only treat non-ENOENT errors as actual errors
-        return err([{
-          path: 'config.json',
-          message: `Failed to read config file: ${fileResult.error.message}`,
-        }])
-      }
-      // File doesn't exist - this is fine, we'll use env vars and defaults
-    }
-  } else {
-    // No config file available, skip file loading
-    debug('No config file found at %s, using environment variables and defaults', resolvedPath)
+  const fileConfigResult = await loadFileConfig(resolution, resolvedPath)
+  if (!fileConfigResult.ok) {
+    return fileConfigResult
   }
-  
+  const fileConfig = fileConfigResult.value
+
   // Load environment config
   const envConfig = mapEnvironmentVariables(process.env)
 
