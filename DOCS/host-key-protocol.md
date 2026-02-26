@@ -15,7 +15,7 @@ All events use the `hostkey:` namespace prefix. Event names correspond to the co
 ### Server to Client Events
 
 | Event | Constant | Payload | Description |
-|-------|----------|---------|-------------|
+| ----- | -------- | ------- | ----------- |
 | `hostkey:verify` | `HOSTKEY_VERIFY` | `HostKeyVerifyPayload` | Server requests the client to verify an unknown host key |
 | `hostkey:verified` | `HOSTKEY_VERIFIED` | `HostKeyVerifiedPayload` | Key was verified successfully; connection proceeds |
 | `hostkey:mismatch` | `HOSTKEY_MISMATCH` | `HostKeyMismatchPayload` | Presented key does not match stored key; connection refused |
@@ -25,7 +25,7 @@ All events use the `hostkey:` namespace prefix. Event names correspond to the co
 ### Client to Server Events
 
 | Event | Constant | Payload | Description |
-|-------|----------|---------|-------------|
+| ----- | -------- | ------- | ----------- |
 | `hostkey:verify-response` | `HOSTKEY_VERIFY_RESPONSE` | `HostKeyVerifyResponse` | Client's verification decision in response to `hostkey:verify` |
 
 ## Payload Schemas
@@ -127,7 +127,7 @@ interface HostKeyVerifyResponse {
 **Action values:**
 
 | Value | Meaning |
-|-------|---------|
+| ----- | ------- |
 | `trusted` | The key was already in the client's local key store |
 | `accept` | The key was unknown but the user chose to trust it |
 | `reject` | The user declined to trust the key |
@@ -349,7 +349,7 @@ flowchart TD
 When the server emits `hostkey:verify` and awaits a client response, a timeout governs how long the server will wait.
 
 | Parameter | Default | Description |
-|-----------|---------|-------------|
+| --------- | ------- | ----------- |
 | `timeout` | 30000 ms (30 seconds) | Maximum time to wait for `hostkey:verify-response` |
 
 **When the timeout fires:**
@@ -386,7 +386,7 @@ The timeout is passed as the `timeout` option to `createHostKeyVerifier()`. It c
 ### Action Values Summary
 
 | Action | When to Send | Effect |
-|--------|--------------|--------|
+| ------ | ------------ | ------ |
 | `trusted` | Key is already in the client's local key store and matches | Connection proceeds |
 | `accept` | Key was unknown, user chose to trust it | Connection proceeds |
 | `reject` | Key was unknown or mismatched, user declined | Connection refused |
@@ -399,7 +399,7 @@ All host key verification state is scoped to a single SSH connection attempt. On
 
 Fingerprints are SHA-256 hashes in `SHA256:<base64>` format, matching the convention used by OpenSSH. For example:
 
-```
+```text
 SHA256:jMn3j6dsf7...base64...
 ```
 
@@ -422,13 +422,13 @@ If OpenSSH format is impractical, a JSON-based store keyed by `host:port:algorit
 ### Interactive vs Batch Mode
 
 | Mode | Behavior |
-|------|----------|
+| ---- | -------- |
 | **Interactive** | Prompt the user on `hostkey:verify`, display fingerprint, wait for yes/no |
 | **Batch** | Apply policy without user interaction; fail-closed by default |
 
 In interactive mode, display output similar to OpenSSH:
 
-```
+```text
 The authenticity of host 'server1.example.com (192.168.1.10)' can't be established.
 ssh-ed25519 key fingerprint is SHA256:jMn3j6dsf7...
 Are you sure you want to continue connecting (yes/no)?
@@ -437,7 +437,7 @@ Are you sure you want to continue connecting (yes/no)?
 ### Suggested CLI Flags
 
 | Flag | Description | Default |
-|------|-------------|---------|
+| ---- | ----------- | ------- |
 | `--known-hosts <path>` | Path to known_hosts file | `~/.ssh/known_hosts` |
 | `--accept-unknown` | Automatically accept unknown keys (respond `'accept'`); useful for scripting but insecure | Off |
 | `--fingerprint <fp>` | Expect a specific fingerprint; respond `'trusted'` if it matches, `'reject'` otherwise | None |
@@ -455,7 +455,7 @@ When no interactive terminal is available, the CLI should:
 ### Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ---- | ------- |
 | 0 | Connection succeeded |
 | 1 | General error |
 | 2 | Host key verification failed (mismatch or rejected) |
@@ -464,7 +464,7 @@ When no interactive terminal is available, the CLI should:
 
 On `hostkey:mismatch`, the CLI should print a prominent warning to stderr and exit with code 2, similar to OpenSSH:
 
-```
+```text
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
