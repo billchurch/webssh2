@@ -52,7 +52,7 @@ describe('SSH Validation Functions', () => {
       expect(validatePort('65536')).toBe(DEFAULTS.SSH_PORT)
       expect(validatePort('-1')).toBe(DEFAULTS.SSH_PORT)
       expect(validatePort('abc')).toBe(DEFAULTS.SSH_PORT)
-      expect(validatePort(undefined)).toBe(DEFAULTS.SSH_PORT)
+      expect(validatePort()).toBe(DEFAULTS.SSH_PORT)
       expect(validatePort('')).toBe(DEFAULTS.SSH_PORT)
     })
   })
@@ -67,7 +67,7 @@ describe('SSH Validation Functions', () => {
 
     it('should reject invalid terminal types', () => {
       expect(validateTerm('')).toBe(null)
-      expect(validateTerm(undefined)).toBe(null)
+      expect(validateTerm()).toBe(null)
       expect(validateTerm('xterm; rm -rf /')).toBe(null)
       expect(validateTerm('a'.repeat(31))).toBe(null) // Too long
       expect(validateTerm('xterm$')).toBe(null) // Invalid char

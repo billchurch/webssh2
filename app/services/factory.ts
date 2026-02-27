@@ -10,7 +10,8 @@ import type {
   AuthResult,
   SSHConnection,
   Terminal,
-  Session
+  Session,
+  ProtocolService
 } from './interfaces.js'
 import { AuthServiceImpl } from './auth/auth-service.js'
 import { SSHServiceImpl } from './ssh/ssh-service.js'
@@ -29,6 +30,7 @@ import type { StructuredLogger, StructuredLoggerOptions } from '../logging/struc
 import { DEFAULT_SFTP_CONFIG } from '../config/default-config.js'
 import { HostKeyService } from './host-key/host-key-service.js'
 import { resolveHostKeyMode } from '../config/config-processor.js'
+import { TelnetServiceImpl } from './telnet/telnet-service.js'
 
 const factoryLogger = debug('webssh2:services:factory')
 
@@ -119,12 +121,22 @@ export function createServices(
     ? createShellFileService(sftpConfig, sftpDeps)
     : createSftpService(sftpConfig, sftpDeps)
 
+  // Create telnet service if enabled
+  let telnet: ProtocolService | undefined
+  if (deps.config.telnet?.enabled === true) {
+    telnet = new TelnetServiceImpl(deps)
+  }
+
   const services: Services = {
     auth,
     ssh,
     terminal,
     session,
     sftp,
+  }
+
+  if (telnet !== undefined) {
+    services.telnet = telnet
   }
 
   if (hostKey !== undefined) {

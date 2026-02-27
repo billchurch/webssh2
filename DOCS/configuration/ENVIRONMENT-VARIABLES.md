@@ -219,6 +219,66 @@ WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC=0
 WEBSSH2_SSH_SFTP_ENABLED=false
 ```
 
+### Telnet Configuration
+
+> **Security Warning:** Telnet transmits all data, including credentials, in **plain text**. Only use telnet on trusted networks or for legacy devices that do not support SSH.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `WEBSSH2_TELNET_ENABLED` | boolean | `false` | Enable or disable telnet support. When disabled, `/telnet` routes return 404 |
+| `WEBSSH2_TELNET_DEFAULT_PORT` | number | `23` | Default telnet port |
+| `WEBSSH2_TELNET_TIMEOUT` | number | `30000` | Connection timeout in milliseconds |
+| `WEBSSH2_TELNET_TERM` | string | `vt100` | Terminal type for TERMINAL-TYPE negotiation |
+| `WEBSSH2_TELNET_AUTH_LOGIN_PROMPT` | string | `login:\s*$` | Regex pattern to detect login prompt |
+| `WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT` | string | `[Pp]assword:\s*$` | Regex pattern to detect password prompt |
+| `WEBSSH2_TELNET_AUTH_FAILURE_PATTERN` | string | `Login incorrect\|Access denied\|Login failed` | Regex pattern to detect authentication failure |
+| `WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT` | number | `10000` | Max time (ms) to wait for prompt matches before falling back to pass-through mode |
+| `WEBSSH2_TELNET_ALLOWED_SUBNETS` | array | `[]` | Comma-separated CIDR ranges restricting which hosts can be connected to via telnet (e.g., `10.0.0.0/8,192.168.0.0/16`) |
+
+#### Telnet Configuration Examples
+
+**Enable telnet with defaults:**
+
+```bash
+# Enable telnet support (disabled by default)
+WEBSSH2_TELNET_ENABLED=true
+```
+
+**Custom prompts for non-standard devices:**
+
+```bash
+# Enable telnet
+WEBSSH2_TELNET_ENABLED=true
+
+# Custom prompt patterns for network equipment
+WEBSSH2_TELNET_AUTH_LOGIN_PROMPT="Username:\\s*$"
+WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT="Password:\\s*$"
+WEBSSH2_TELNET_AUTH_FAILURE_PATTERN="Authentication failed|Bad password|Access denied"
+
+# Longer timeout for slow devices
+WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT=15000
+```
+
+**Docker with telnet enabled:**
+
+```bash
+docker run -d \
+  -p 2222:2222 \
+  -e WEBSSH2_TELNET_ENABLED=true \
+  -e WEBSSH2_TELNET_DEFAULT_PORT=23 \
+  -e WEBSSH2_TELNET_TERM=vt100 \
+  webssh2:latest
+```
+
+**Disable telnet (default):**
+
+```bash
+# Telnet is disabled by default, but you can explicitly disable it
+WEBSSH2_TELNET_ENABLED=false
+```
+
+See [CONFIG-JSON.md](./CONFIG-JSON.md) for `config.json` examples and additional details.
+
 #### Authentication Allow List
 
 `WEBSSH2_AUTH_ALLOWED` lets administrators enforce which SSH authentication methods can be used. Supported tokens are:

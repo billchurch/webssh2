@@ -325,6 +325,54 @@ export interface Logger {
 export type { FileService } from './sftp/file-service.js'
 
 /**
+ * Protocol type discriminator
+ */
+export type ProtocolType = 'ssh' | 'telnet'
+
+/**
+ * Protocol-agnostic connection state
+ */
+export interface ProtocolConnection {
+  id: ConnectionId
+  sessionId: SessionId
+  protocol: ProtocolType
+  status: 'connecting' | 'connected' | 'disconnected' | 'error'
+  createdAt: number
+  lastActivity: number
+  host: string
+  port: number
+  username?: string
+}
+
+/**
+ * Telnet-specific connection configuration
+ */
+export interface TelnetConnectionConfig {
+  sessionId: SessionId
+  host: string
+  port: number
+  username?: string
+  password?: string
+  timeout: number
+  term: string
+  loginPrompt?: RegExp
+  passwordPrompt?: RegExp
+  failurePattern?: RegExp
+  expectTimeout?: number
+}
+
+/**
+ * Protocol service interface (common subset for SSH and Telnet)
+ */
+export interface ProtocolService {
+  connect(config: TelnetConnectionConfig): Promise<Result<ProtocolConnection>>
+  shell(connectionId: ConnectionId, options: ShellOptions): Promise<Result<Duplex>>
+  resize(connectionId: ConnectionId, rows: number, cols: number): Result<void>
+  disconnect(connectionId: ConnectionId): Promise<Result<void>>
+  getConnectionStatus(connectionId: ConnectionId): Result<ProtocolConnection | null>
+}
+
+/**
  * Collection of all services
  */
 export interface Services {
@@ -334,6 +382,7 @@ export interface Services {
   session: SessionService
   sftp?: FileService
   hostKey?: HostKeyService
+  telnet?: ProtocolService
 }
 
 /**

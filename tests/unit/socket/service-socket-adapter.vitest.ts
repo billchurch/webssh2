@@ -185,7 +185,7 @@ const createSocket = (): TestSocket => {
     [REMOTE_PASSWORD_HEADER]: SESSION_CREDENTIALS_KEY
   }
 
-  const socket: Partial<TestSocket> = {
+  const socket = {
     id: 'socket-123',
     handshake: {
       headers,
@@ -198,9 +198,9 @@ const createSocket = (): TestSocket => {
     on: vi.fn(),
     onAny: vi.fn(),
     emit: vi.fn()
-  }
+  } as TestSocket
 
-  return socket as TestSocket
+  return socket
 }
 
 describe('ServiceSocketAdapter', () => {

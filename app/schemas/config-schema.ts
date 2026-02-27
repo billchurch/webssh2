@@ -285,6 +285,30 @@ const LoggingSchema = z
   .optional()
 
 /**
+ * Telnet authentication configuration schema
+ */
+const TelnetAuthSchema = z.object({
+  loginPrompt: z.string(),
+  passwordPrompt: z.string(),
+  failurePattern: z.string(),
+  expectTimeout: z.number().int().positive()
+})
+
+/**
+ * Telnet configuration schema (optional)
+ */
+const TelnetSchema = z
+  .object({
+    enabled: z.boolean(),
+    defaultPort: z.number().int().min(1).max(65535),
+    timeout: z.number().int().positive(),
+    term: z.string(),
+    auth: TelnetAuthSchema,
+    allowedSubnets: z.array(z.string())
+  })
+  .optional()
+
+/**
  * Main configuration schema
  */
 export const ConfigSchema = z.object({
@@ -296,6 +320,7 @@ export const ConfigSchema = z.object({
   options: OptionsSchema,
   session: SessionSchema,
   sso: SsoSchema,
+  telnet: TelnetSchema,
   terminal: TerminalSchema,
   logging: LoggingSchema,
   allowedSubnets: z.array(z.string()).optional(),

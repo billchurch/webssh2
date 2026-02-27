@@ -33,6 +33,7 @@ const createTestAdapterContext = (): { context: AdapterContext; logger: Structur
     services: {} as Services,
     authPipeline: {} as UnifiedAuthPipeline,
     state,
+    protocol: 'ssh',
     debug: () => undefined,
     logger
   }
