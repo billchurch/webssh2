@@ -5,9 +5,9 @@ import { validateExecPayload, createExecState } from './exec-validator.js'
 import { mergeEnvironmentVariables } from './exec-environment.js'
 
 // Re-export validator and safety functions for backwards compatibility
-export { validateExecPayload, createExecState }
+export { validateExecPayload, createExecState } from './exec-validator.js'
 export { isCommandSafe, sanitizeEnvVarName, filterEnvironmentVariables } from './exec-safety.js'
-export { mergeEnvironmentVariables }
+export { mergeEnvironmentVariables } from './exec-environment.js'
 
 export interface ExecState {
   command: string
