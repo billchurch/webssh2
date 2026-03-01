@@ -6,7 +6,7 @@
 
 ![Orthrus Mascot](DOCS/images/orthrus2.png)
 
-WebSSH2 is an HTML5 web-based terminal emulator and SSH client. It uses SSH2 as a client on a host to proxy a Websocket / Socket.io connection to an SSH2 server.
+WebSSH2 is an HTML5 web-based terminal emulator and SSH client with optional telnet support. It uses SSH2 as a client on a host to proxy a Websocket / Socket.io connection to an SSH2 server.
 
 ![WebSSH2 Screenshot](DOCS/images/Screenshot_sm.png)
 
@@ -30,7 +30,7 @@ npm install --production
 npm start
 ```
 
-Access WebSSH2 at: `http://localhost:2222/ssh`
+Access WebSSH2 at: `http://localhost:2222/ssh` (or `http://localhost:2222/telnet` if telnet is enabled)
 
 ### Official Containers
 
@@ -129,6 +129,7 @@ Need the Docker Hub mirror instead? Use `docker.io/billchurch/webssh2:latest`.
 - [Exec Channel](./DOCS/features/EXEC-CHANNEL.md) - Non-interactive command execution
 - [Environment Forwarding](./DOCS/features/ENVIRONMENT-FORWARDING.md) - Pass environment variables
 - [Host Key Verification](#host-key-verification) - MITM protection and key management
+- [Telnet Support](#telnet-support) - Optional telnet for legacy devices
 
 ### Development
 
@@ -158,6 +159,7 @@ Need the Docker Hub mirror instead? Use `docker.io/billchurch/webssh2:latest`.
 - 🌍 **Environment Variables** - Pass custom environment to SSH sessions
 - 🛡️ **Subnet Restrictions** - IPv4/IPv6 CIDR subnet validation for access control
 - 📁 **SFTP Support** - File transfer capabilities (v2.6.0+)
+- 📡 **Telnet Support** - Optional telnet protocol for legacy devices (disabled by default)
 
 ## Host Key Verification
 
@@ -337,6 +339,42 @@ If you receive frequent mismatches for hosts you did not change, investigate for
 
 **Client verification times out:**
 When using `prompt` mode, the client has 30 seconds to respond to a `hostkey:verify` event. If the client does not respond in time, the connection is refused. Ensure the client application handles the `hostkey:verify` Socket.IO event.
+
+## Telnet Support
+
+WebSSH2 includes optional telnet protocol support for connecting to legacy devices such as network switches, routers, and older systems that don't support SSH. Telnet is **disabled by default** and must be explicitly enabled.
+
+> **Security Warning:** Telnet transmits all data in plain text, including credentials. Only use on trusted, isolated networks.
+
+### Enabling Telnet
+
+```bash
+# Via environment variable
+docker run --rm -p 2222:2222 \
+  -e WEBSSH2_TELNET_ENABLED=true \
+  ghcr.io/billchurch/webssh2:latest
+```
+
+Or in `config.json`:
+
+```json
+{
+  "telnet": {
+    "enabled": true
+  }
+}
+```
+
+Once enabled, access telnet at `http://localhost:2222/telnet` or connect to a specific host at `http://localhost:2222/telnet/host/192.168.1.1`.
+
+### Telnet Features
+
+- **Expect-style authentication** - Configurable regex patterns for login/password prompt detection
+- **IAC negotiation** - Full RFC 854/857/858/1073/1091 support (ECHO, SGA, NAWS, TERMINAL_TYPE)
+- **Subnet restrictions** - Limit which hosts can be reached via telnet
+- **Security warnings** - Visual banner in the client UI reminding users of telnet's insecurity
+
+For full configuration options, see [Environment Variables](./DOCS/configuration/ENVIRONMENT-VARIABLES.md) and [Config JSON](./DOCS/configuration/CONFIG-JSON.md).
 
 ## Release Workflow Overview
 
