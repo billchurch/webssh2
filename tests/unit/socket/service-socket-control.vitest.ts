@@ -45,6 +45,7 @@ function createContext(
     } as unknown as Services,
     authPipeline: {} as UnifiedAuthPipeline,
     state,
+    protocol: 'ssh',
     debug: vi.fn(),
     logger
   }

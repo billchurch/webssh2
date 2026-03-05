@@ -5,7 +5,7 @@ import type { Server as IOServer } from 'socket.io'
 import { createNamespacedDebug } from './logger.js'
 import { ServiceSocketAdapter } from './socket/adapters/service-socket-adapter.js'
 import type { Config } from './types/config.js'
-import type { Services } from './services/interfaces.js'
+import type { Services, ProtocolType } from './services/interfaces.js'
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -21,15 +21,16 @@ const debug = createNamespacedDebug('socket:v2')
 export default function init(
   io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   config: Config,
-  services: Services
+  services: Services,
+  protocol: ProtocolType = 'ssh'
 ): void {
-  debug('V2 socket init() called - registering connection handler')
+  debug('V2 socket init() called - registering connection handler (protocol=%s)', protocol)
   io.on('connection', (socket) => {
-    debug(`V2 connection handler triggered for socket ${socket.id}`)
+    debug(`V2 connection handler triggered for socket ${socket.id} (protocol=${protocol})`)
     debug('Using service-based socket adapter')
 
     // ServiceSocketAdapter sets up all handlers in its constructor
-    const serviceAdapter = new ServiceSocketAdapter(socket, config, services)
+    const serviceAdapter = new ServiceSocketAdapter(socket, config, services, protocol)
     // Keep reference to prevent GC (adapter manages its own lifecycle via socket events)
     void serviceAdapter //NOSONAR
   })

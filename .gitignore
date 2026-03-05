@@ -57,6 +57,7 @@ dist/
 .migration/
 
 .regression/
+.worktrees/
 config.json.backup
 
 release-artifacts/

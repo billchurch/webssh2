@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { promises as fs } from 'node:fs'
 import { createNamespacedDebug } from './logger.js'
-import { HTTP, MESSAGES, DEFAULTS } from './constants/index.js'
+import { HTTP, MESSAGES, DEFAULTS, TELNET_DEFAULTS } from './constants/index.js'
 import { transformHtml } from './utils/html-transformer.js'
 import type { AuthSession } from './auth/auth-utils.js'
 
@@ -19,11 +19,11 @@ function hasSessionCredentials(session: Sess): boolean {
   )
 }
 
-async function sendClient(config: unknown, res: Response): Promise<void> {
+async function sendClient(config: unknown, res: Response, basePath?: string): Promise<void> {
   try {
     const data = await readClientTemplate()
     debug('Transforming HTML with config')
-    const modifiedHtml = transformHtml(data, config)
+    const modifiedHtml = transformHtml(data, config, basePath)
     res.send(modifiedHtml)
   } catch {
     res.status(HTTP.INTERNAL_SERVER_ERROR).send(MESSAGES.CLIENT_FILE_ERROR)
@@ -75,6 +75,8 @@ interface ConnectionOptions {
   lockedHost?: string
   /** Port that cannot be changed (when connectionMode is 'host-locked') */
   lockedPort?: number
+  /** Protocol type: 'ssh' (default) or 'telnet' */
+  protocol?: 'ssh' | 'telnet'
 }
 
 export default async function handleConnection(
@@ -83,12 +85,18 @@ export default async function handleConnection(
   opts?: ConnectionOptions
 ): Promise<void> {
   debug('Handling connection req.path:', (req as Request).path)
+  const isTelnet = opts?.protocol === 'telnet'
+  const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
   const tempConfig: Record<string, unknown> = {
     socket: {
       url: `${req.protocol}://${req.get('host')}`,
-      path: DEFAULTS.IO_PATH,
+      path: socketPath,
     },
     autoConnect: (req as Request).path.startsWith('/host/'),
+  }
+
+  if (isTelnet) {
+    tempConfig['protocol'] = 'telnet'
   }
 
   // Add connection mode info for client-side LoginModal behavior
@@ -128,5 +136,6 @@ export default async function handleConnection(
     })
   }
 
-  await sendClient(tempConfig, res)
+  const basePath = isTelnet ? '/telnet/assets/' : undefined
+  await sendClient(tempConfig, res, basePath)
 }

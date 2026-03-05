@@ -141,7 +141,7 @@ jobs:
             type=raw,value=${{ steps.release_meta.outputs.semver_full }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
             type=raw,value=${{ steps.release_meta.outputs.semver_minor }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
             type=raw,value=${{ steps.release_meta.outputs.semver_major }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
-            type=ref,event=branch,enable=${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+            type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
             type=sha
 
       - name: Build and push docker image

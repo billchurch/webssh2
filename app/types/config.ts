@@ -238,6 +238,28 @@ export interface LoggingConfig {
 }
 
 /**
+ * Telnet authentication pattern configuration
+ */
+export interface TelnetAuthConfig {
+  loginPrompt: string
+  passwordPrompt: string
+  failurePattern: string
+  expectTimeout: number
+}
+
+/**
+ * Telnet protocol configuration
+ */
+export interface TelnetConfig {
+  enabled: boolean
+  defaultPort: number
+  timeout: number
+  term: string
+  auth: TelnetAuthConfig
+  allowedSubnets: string[]
+}
+
+/**
  * Main configuration interface
  */
 export interface Config {
@@ -254,6 +276,7 @@ export interface Config {
   options: OptionsConfig
   session: SessionConfig
   sso: SsoConfig
+  telnet?: TelnetConfig
   terminal?: TerminalConfig
   logging?: LoggingConfig
   allowedSubnets?: string[]

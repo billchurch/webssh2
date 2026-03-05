@@ -588,3 +588,126 @@ See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
 - `WEBSSH2_SSH_SFTP_TIMEOUT`
 
 See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details on environment variable format and examples.
+
+### Telnet Configuration
+
+> **Security Warning:** Telnet transmits all data, including credentials, in **plain text**. It should only be used on trusted networks or for connecting to legacy devices that do not support SSH. Never expose telnet endpoints to the public internet without additional network-level protections (e.g., VPN, firewall rules).
+
+WebSSH2 includes optional telnet support for connecting to legacy devices and systems that do not support SSH. Telnet is **disabled by default** and must be explicitly enabled.
+
+#### Configuration Options
+
+- `telnet.enabled` (boolean, default: `false`): Enable telnet support. When `false`, all `/telnet` routes return 404.
+
+- `telnet.defaultPort` (number, default: `23`): Default telnet port used when no port is specified in the connection request.
+
+- `telnet.timeout` (number, default: `30000`): Connection timeout in milliseconds. If the connection cannot be established within this time, it is aborted.
+
+- `telnet.term` (string, default: `"vt100"`): Terminal type sent during TERMINAL-TYPE negotiation. Common values include `vt100`, `vt220`, `xterm`, and `ansi`.
+
+- `telnet.auth.loginPrompt` (string, regex, default: `"login:\\s*$"`): Regular expression pattern used to detect the login prompt. The authenticator watches incoming data for this pattern to know when to send the username.
+
+- `telnet.auth.passwordPrompt` (string, regex, default: `"[Pp]assword:\\s*$"`): Regular expression pattern used to detect the password prompt. The authenticator watches incoming data for this pattern to know when to send the password.
+
+- `telnet.auth.failurePattern` (string, regex, default: `"Login incorrect|Access denied|Login failed"`): Regular expression pattern used to detect authentication failure. When matched, the connection reports an authentication error.
+
+- `telnet.auth.expectTimeout` (number, default: `10000`): Maximum time in milliseconds to wait for prompt pattern matches during authentication. If no prompt is detected within this time, the authenticator falls back to pass-through mode, forwarding raw data to the terminal.
+
+- `telnet.allowedSubnets` (string[], default: `[]`): Restrict which hosts can be connected to via telnet. Uses the same CIDR notation format as `ssh.allowedSubnets`. When empty, all hosts are allowed.
+
+#### Default Telnet Configuration
+
+```json
+{
+  "telnet": {
+    "enabled": false,
+    "defaultPort": 23,
+    "timeout": 30000,
+    "term": "vt100",
+    "auth": {
+      "loginPrompt": "login:\\s*$",
+      "passwordPrompt": "[Pp]assword:\\s*$",
+      "failurePattern": "Login incorrect|Access denied|Login failed",
+      "expectTimeout": 10000
+    },
+    "allowedSubnets": []
+  }
+}
+```
+
+> **Note:** Telnet is disabled by default. Set `enabled` to `true` to activate telnet support.
+
+#### Use Cases
+
+**Enable telnet for legacy network devices:**
+
+```json
+{
+  "telnet": {
+    "enabled": true,
+    "defaultPort": 23,
+    "term": "vt100"
+  }
+}
+```
+
+This enables telnet with default authentication patterns, suitable for most Linux/Unix systems and network equipment.
+
+**Custom prompts for non-standard devices:**
+
+```json
+{
+  "telnet": {
+    "enabled": true,
+    "auth": {
+      "loginPrompt": "Username:\\s*$",
+      "passwordPrompt": "Password:\\s*$",
+      "failurePattern": "Authentication failed|Bad password|Access denied",
+      "expectTimeout": 15000
+    }
+  }
+}
+```
+
+Some devices use non-standard prompt text. Adjust the regex patterns to match your equipment.
+
+**Restrict telnet to specific subnets:**
+
+```json
+{
+  "telnet": {
+    "enabled": true,
+    "allowedSubnets": ["10.0.0.0/8", "192.168.1.0/24"],
+    "timeout": 15000
+  }
+}
+```
+
+Only allow telnet connections to hosts within the specified private network ranges.
+
+**Disable telnet (default):**
+
+```json
+{
+  "telnet": {
+    "enabled": false
+  }
+}
+```
+
+Telnet is disabled by default. This configuration is only needed if you want to explicitly disable it after previously enabling it.
+
+#### Environment Variables
+
+These options can also be configured via environment variables:
+
+- `WEBSSH2_TELNET_ENABLED`
+- `WEBSSH2_TELNET_DEFAULT_PORT`
+- `WEBSSH2_TELNET_TIMEOUT`
+- `WEBSSH2_TELNET_TERM`
+- `WEBSSH2_TELNET_AUTH_LOGIN_PROMPT`
+- `WEBSSH2_TELNET_AUTH_PASSWORD_PROMPT`
+- `WEBSSH2_TELNET_AUTH_FAILURE_PATTERN`
+- `WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.

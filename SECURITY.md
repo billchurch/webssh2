@@ -144,6 +144,6 @@ This vulnerability allows arbitrary file writes via path traversal in rollup's b
 
 ---
 
-**Last updated:** 2026-02-26
+**Last updated:** 2026-03-05
 
-**Next review:** 2026-03-26
+**Next review:** 2026-04-05

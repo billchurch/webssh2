@@ -260,6 +260,95 @@ fetch('/ssh', {
 4. **Use SSO integration** when possible for enterprise deployments
 5. **Configure CORS properly** via `http.origins` configuration
 
+## Telnet Routes
+
+> **Telnet support is disabled by default.** Set `WEBSSH2_TELNET_ENABLED=true` or `telnet.enabled: true` in `config.json` to enable these routes. See [Configuration](../configuration/CONFIG-JSON.md) for all telnet options.
+
+> **Security Warning:** Telnet transmits all data, including credentials, in plain text. Only use on trusted, isolated networks. Prefer SSH whenever possible.
+
+### 1. `/telnet` - Interactive Login
+
+- **URL:** `http(s)://your-webssh2-server/telnet`
+- **Method:** GET
+- **Features:**
+  - Interactive login form (telnet-specific UI)
+  - Security warning banner displayed to users
+  - Expect-style authentication with configurable prompt patterns
+  - SFTP and host key features hidden (SSH-only)
+
+### 2. `/telnet/host/:host` - Host-Locked Mode
+
+- **URL:** `http(s)://your-webssh2-server/telnet/host/:host`
+- **Method:** GET
+- **Features:**
+  - Direct connection to a specific telnet host
+  - Optional `port` parameter (e.g., `?port=2323`, default: 23)
+  - Host is locked and cannot be changed by the user
+
+### 3. `/telnet` - HTTP POST Auth
+
+- **URL:** `http(s)://your-webssh2-server/telnet`
+- **Method:** POST
+- **Content-Type:** `application/json`
+- **Features:**
+  - SSO form submission for telnet connections
+  - Same integration patterns as SSH POST auth
+
+#### Request Body
+
+```json
+{
+  "username": "string",
+  "password": "string",
+  "host": "string",
+  "port": 23
+}
+```
+
+### 4. `/telnet/host/:host` - POST with Host Locked
+
+- **URL:** `http(s)://your-webssh2-server/telnet/host/:host`
+- **Method:** POST
+- **Features:**
+  - SSO form submission with host pre-set
+  - Host parameter locked from URL path
+
+### 5. `/telnet/config` - Telnet Configuration Endpoint
+
+- **URL:** `http(s)://your-webssh2-server/telnet/config`
+- **Method:** GET
+- **Purpose:** Exposes telnet server configuration to clients
+- **Response:** JSON with `protocol`, `defaultPort`, and `term`
+
+```json
+{
+  "protocol": "telnet",
+  "defaultPort": 23,
+  "term": "vt100"
+}
+```
+
+### Telnet Query Parameters
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `port` | integer | 23 | Telnet port to connect to |
+| `header` | string | - | Header text override |
+| `headerBackground` | string | green | Header background color |
+
+### Telnet Examples
+
+```text
+http://localhost:2222/telnet/host/192.168.1.1?port=2323
+```
+
+```bash
+# Docker with telnet enabled
+docker run --rm -p 2222:2222 \
+  -e WEBSSH2_TELNET_ENABLED=true \
+  ghcr.io/billchurch/webssh2:latest
+```
+
 ## Related Documentation
 
 - [Authentication Overview](../features/AUTHENTICATION.md)

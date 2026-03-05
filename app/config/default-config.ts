@@ -12,9 +12,10 @@ import type {
   LoggingStdoutConfig,
   LoggingSyslogConfig,
   LoggingSyslogTlsConfig,
-  SftpConfig
+  SftpConfig,
+  TelnetConfig
 } from '../types/config.js'
-import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS } from '../constants/index.js'
+import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS, TELNET_DEFAULTS } from '../constants/index.js'
 import { SFTP_DEFAULTS } from '../constants/sftp.js'
 import { createAuthMethod } from '../types/branded.js'
 
@@ -143,6 +144,19 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
       enabled: true
     }
   },
+  telnet: {
+    enabled: false,
+    defaultPort: TELNET_DEFAULTS.PORT,
+    timeout: TELNET_DEFAULTS.TIMEOUT_MS,
+    term: TELNET_DEFAULTS.TERM,
+    auth: {
+      loginPrompt: TELNET_DEFAULTS.LOGIN_PROMPT,
+      passwordPrompt: TELNET_DEFAULTS.PASSWORD_PROMPT,
+      failurePattern: TELNET_DEFAULTS.FAILURE_PATTERN,
+      expectTimeout: TELNET_DEFAULTS.EXPECT_TIMEOUT_MS,
+    },
+    allowedSubnets: [],
+  },
 }
 
 /**
@@ -197,6 +211,9 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
   // Generate a secure secret if none provided
   const secret = sessionSecret ?? crypto.randomBytes(32).toString('hex')
   const loggingConfig = cloneLoggingConfig(DEFAULT_CONFIG_BASE.logging)
+  const telnetConfig = DEFAULT_CONFIG_BASE.telnet === undefined
+    ? undefined
+    : cloneTelnetConfig(DEFAULT_CONFIG_BASE.telnet)
   return {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
@@ -213,7 +230,8 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
       trustedProxies: [...DEFAULT_CONFIG_BASE.sso.trustedProxies],
       headerMapping: { ...DEFAULT_CONFIG_BASE.sso.headerMapping },
     },
-    ...(loggingConfig === undefined ? {} : { logging: loggingConfig })
+    ...(loggingConfig === undefined ? {} : { logging: loggingConfig }),
+    ...(telnetConfig === undefined ? {} : { telnet: telnetConfig }),
   }
 }
 
@@ -337,6 +355,25 @@ function cloneLoggingSyslogTls(
     ...(tls.certFile === undefined ? {} : { certFile: tls.certFile }),
     ...(tls.keyFile === undefined ? {} : { keyFile: tls.keyFile }),
     ...(tls.rejectUnauthorized === undefined ? {} : { rejectUnauthorized: tls.rejectUnauthorized })
+  }
+}
+
+/**
+ * Deep clone telnet configuration
+ */
+function cloneTelnetConfig(telnet: TelnetConfig): TelnetConfig {
+  return {
+    enabled: telnet.enabled,
+    defaultPort: telnet.defaultPort,
+    timeout: telnet.timeout,
+    term: telnet.term,
+    auth: {
+      loginPrompt: telnet.auth.loginPrompt,
+      passwordPrompt: telnet.auth.passwordPrompt,
+      failurePattern: telnet.auth.failurePattern,
+      expectTimeout: telnet.auth.expectTimeout,
+    },
+    allowedSubnets: [...telnet.allowedSubnets],
   }
 }
 

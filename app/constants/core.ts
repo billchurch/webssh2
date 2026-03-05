@@ -109,6 +109,17 @@ export const HEADERS = {
   STRICT_TRANSPORT_SECURITY: 'Strict-Transport-Security',
 } as const
 
+export const TELNET_DEFAULTS = {
+  PORT: 23,
+  TIMEOUT_MS: 30_000,
+  TERM: 'vt100',
+  EXPECT_TIMEOUT_MS: 10_000,
+  IO_PATH: '/telnet/socket.io',
+  LOGIN_PROMPT: 'login:\\s*$',
+  PASSWORD_PROMPT: '[Pp]assword:\\s*$',
+  FAILURE_PATTERN: 'Login incorrect|Access denied|Login failed',
+} as const
+
 export const STREAM_LIMITS = {
   MAX_EXEC_OUTPUT_BYTES: 10 * 1024 * 1024,      // 10MB
   OUTPUT_RATE_LIMIT_BYTES_PER_SEC: 0,           // 0 = unlimited
