@@ -30,6 +30,8 @@ import {
 } from '../../validation/socket/sftp.js'
 import type { SftpOperation } from '../../types/contracts/v1/sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
+import { createBackpressureController } from '../backpressure.js'
+import { STREAM_LIMITS } from '../../constants/core.js'
 import type { FileService } from '../../services/sftp/file-service.js'
 import type {
   SftpServiceError,
@@ -461,15 +463,23 @@ export class ServiceSocketSftp {
         fileSize: result.value.fileSize
       })
 
-      // Stream download chunks to client
+      // Stream download chunks to client with backpressure control
+      const highWaterMark = STREAM_LIMITS.SOCKET_HIGH_WATER_MARK
+      const bpController = createBackpressureController(
+        this.context.socket as never,
+        highWaterMark
+      )
+
       const downloadCallbacks: DownloadStreamCallbacks = {
-        onChunk: (chunk) => {
+        onChunk: async (chunk) => {
           this.context.socket.emit(SOCKET_EVENTS.SFTP_DOWNLOAD_CHUNK, chunk)
+          await bpController.waitForDrain()
         },
         onProgress: (progress) => {
           this.context.socket.emit(SOCKET_EVENTS.SFTP_PROGRESS, progress)
         },
         onComplete: (complete) => {
+          bpController.destroy()
           this.context.socket.emit(SOCKET_EVENTS.SFTP_COMPLETE, complete)
           this.logSftpOperation('download_complete', 'success', complete.durationMs, {
             transferId,
@@ -477,6 +487,7 @@ export class ServiceSocketSftp {
           })
         },
         onError: (error) => {
+          bpController.destroy()
           this.emitSftpError('download', error)
           this.logSftpOperation('download_chunk', 'failure', 0, {
             transferId,

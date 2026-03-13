@@ -119,7 +119,7 @@ export interface DownloadChunkData {
  */
 export interface DownloadStreamCallbacks {
   /** Called for each chunk */
-  onChunk: (chunk: DownloadChunkData) => void
+  onChunk: (chunk: DownloadChunkData) => void | Promise<void>
   /** Called periodically with progress */
   onProgress: (progress: SftpProgressResponse) => void
   /** Called when download completes */
@@ -748,7 +748,7 @@ export class SftpService implements FileService {
       const downloadState = { cancelled: false }
       this.downloadStreams.set(transferId, { stream: null, cancelled: false })
 
-      const emitBufferedChunks = (): void => {
+      const emitBufferedChunks = async (): Promise<void> => {
         // Emit chunks in order as they become available
         let chunk = chunkBuffer.get(nextChunkToEmit)
         while (chunk !== undefined) {
@@ -760,7 +760,7 @@ export class SftpService implements FileService {
           // Update progress in transfer manager
           this.transferManager.updateProgress(transferId, nextChunkToEmit, chunk.length)
 
-          callbacks.onChunk({
+          await callbacks.onChunk({
             transferId,
             chunkIndex: nextChunkToEmit,
             data: chunk,
@@ -843,7 +843,7 @@ export class SftpService implements FileService {
             chunkBuffer.set(chunkIdx, data.subarray(0, bytesRead))
 
             // Try to emit buffered chunks in order
-            emitBufferedChunks()
+            void emitBufferedChunks()
 
             // Start next chunk read if more to read
             if (nextChunkToRead < totalChunks) {
