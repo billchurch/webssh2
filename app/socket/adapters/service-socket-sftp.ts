@@ -30,7 +30,7 @@ import {
 } from '../../validation/socket/sftp.js'
 import type { SftpOperation } from '../../types/contracts/v1/sftp.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
-import { createBackpressureController } from '../backpressure.js'
+import { createBackpressureController, type BackpressureController } from '../backpressure.js'
 import { STREAM_LIMITS } from '../../constants/core.js'
 import type { FileService } from '../../services/sftp/file-service.js'
 import type {
@@ -48,6 +48,8 @@ import type {
  * - Logging SFTP operations
  */
 export class ServiceSocketSftp {
+  private readonly activeDownloadControllers = new Map<TransferId, BackpressureController>()
+
   constructor(private readonly context: AdapterContext) {}
 
   /**
@@ -464,11 +466,12 @@ export class ServiceSocketSftp {
       })
 
       // Stream download chunks to client with backpressure control
-      const highWaterMark = STREAM_LIMITS.SOCKET_HIGH_WATER_MARK
+      const highWaterMark = this.context.config.ssh.socketHighWaterMark ?? STREAM_LIMITS.SOCKET_HIGH_WATER_MARK
       const bpController = createBackpressureController(
         this.context.socket as never,
         highWaterMark
       )
+      this.activeDownloadControllers.set(transferId, bpController)
 
       const downloadCallbacks: DownloadStreamCallbacks = {
         onChunk: async (chunk) => {
@@ -479,6 +482,7 @@ export class ServiceSocketSftp {
           this.context.socket.emit(SOCKET_EVENTS.SFTP_PROGRESS, progress)
         },
         onComplete: (complete) => {
+          this.activeDownloadControllers.delete(transferId)
           bpController.destroy()
           this.context.socket.emit(SOCKET_EVENTS.SFTP_COMPLETE, complete)
           this.logSftpOperation('download_complete', 'success', complete.durationMs, {
@@ -487,6 +491,7 @@ export class ServiceSocketSftp {
           })
         },
         onError: (error) => {
+          this.activeDownloadControllers.delete(transferId)
           bpController.destroy()
           this.emitSftpError('download', error)
           this.logSftpOperation('download_chunk', 'failure', 0, {
@@ -546,6 +551,13 @@ export class ServiceSocketSftp {
       this.logAuthorizationRejection('download_cancel', request.transferId, ids.sessionId)
       // Silent return - don't reveal transfer existence to potential attacker
       return
+    }
+
+    // Destroy backpressure controller to unblock any pending drain wait
+    const bpController = this.activeDownloadControllers.get(request.transferId)
+    if (bpController !== undefined) {
+      this.activeDownloadControllers.delete(request.transferId)
+      bpController.destroy()
     }
 
     sftp.cancelDownload(request.transferId)
