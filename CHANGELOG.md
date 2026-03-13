@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.1.0...webssh2-server-v4.2.0) (2026-03-13)
+
+
+### Features
+
+* add backpressure control to SFTP download streaming ([ec684ea](https://github.com/billchurch/webssh2/commit/ec684eaa2feb2c2ab1b11d9f743356bbdcb3dccf)), closes [#492](https://github.com/billchurch/webssh2/issues/492)
+* add telnet protocol support ([#490](https://github.com/billchurch/webssh2/issues/490)) ([c7c6103](https://github.com/billchurch/webssh2/commit/c7c6103bfc36aed1461d345a74ece16fcd6e7670))
+* emit raw Buffer for SFTP download chunks instead of base64 ([5d5440f](https://github.com/billchurch/webssh2/commit/5d5440f55eecb9eefecc989b43ed63b714ef457c))
+
+
+### Bug Fixes
+
+* add re-entrancy guard and cancellation cleanup to SFTP backpressure ([5ae39ac](https://github.com/billchurch/webssh2/commit/5ae39ace391a9d33415ed29947ad5ef79e987dab))
+* lint error in SFTP backpressure test (strict boolean expression) ([54a8fbc](https://github.com/billchurch/webssh2/commit/54a8fbc101fb9c1c21a6a42b9b3f0fe681266170))
+* resolve stale waitForDrain promise on concurrent calls, add missing tests ([46c86c1](https://github.com/billchurch/webssh2/commit/46c86c14e778b5e6e2b35880723b95d96399d549))
+* SFTP download backpressure and binary transfer ([#492](https://github.com/billchurch/webssh2/issues/492)) ([ca88c95](https://github.com/billchurch/webssh2/commit/ca88c954a1d55663a1c8020590bc85cb56a60ef9))
+* use correct secret name for workflow dispatch PAT ([7036788](https://github.com/billchurch/webssh2/commit/7036788a2d4d2a7504fc8099d48d59e107032618))
+
 ## [4.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.0.1...webssh2-server-v4.1.0) (2026-02-26)
 
 
