@@ -46,7 +46,9 @@ describe('SFTP Download Backpressure', () => {
 
     buffered = 1000
     const drainCb = listeners.get('drain')
-    if (drainCb) drainCb()
+    if (drainCb !== undefined) {
+      drainCb()
+    }
 
     await drainPromise
     expect(resolved).toBe(true)
