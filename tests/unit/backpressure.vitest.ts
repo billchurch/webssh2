@@ -1,5 +1,5 @@
 // tests/unit/backpressure.vitest.ts
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   getWebSocketBufferedBytes,
   computeBackpressureAction,
@@ -83,6 +83,14 @@ describe('getWebSocketBufferedBytes', () => {
   it('returns 0 when buffer is empty', () => {
     expect(getWebSocketBufferedBytes(makeMockSocket(0))).toBe(0)
   })
+
+  it('returns null when transport.socket is missing', () => {
+    const socket = makeMockSocket(0)
+    const conn = socket.conn as unknown as Record<string, unknown>
+    const transport = conn['transport'] as Record<string, unknown>
+    transport['socket'] = undefined
+    expect(getWebSocketBufferedBytes(socket)).toBeNull()
+  })
 })
 
 describe('createBackpressureController', () => {
@@ -139,5 +147,26 @@ describe('createBackpressureController', () => {
     const controller = createBackpressureController(socket, 16384)
     controller.destroy()
     await controller.waitForDrain()
+  })
+
+  it('waitForDrain resolves via poll timer when drain event is not fired', async () => {
+    vi.useFakeTimers()
+    let currentBuffered = 20000
+    const conn = {
+      transport: { name: 'websocket', socket: { get bufferedAmount() { return currentBuffered } } },
+      once: vi.fn(),
+      removeListener: vi.fn()
+    }
+    const socket = { conn } as unknown as BackpressureSocket
+    const controller = createBackpressureController(socket, 16384)
+
+    const promise = controller.waitForDrain()
+    // Buffer drains but no drain event fires
+    currentBuffered = 1000
+    await vi.advanceTimersByTimeAsync(50)
+    await promise
+
+    controller.destroy()
+    vi.useRealTimers()
   })
 })

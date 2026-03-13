@@ -154,6 +154,14 @@ export function createBackpressureController(
         return Promise.resolve()
       }
       return new Promise<void>((resolve) => {
+        // Resolve any previously pending waiter (single-waiter semantics)
+        if (pendingResolve !== null) {
+          const prev = pendingResolve
+          pendingResolve = null
+          clearTimer()
+          socket.conn.removeListener('drain', onDrain)
+          prev()
+        }
         pendingResolve = resolve
         socket.conn.once('drain', onDrain)
         scheduleTimer()
