@@ -6,6 +6,7 @@ import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { buildTerminalDefaults, createConnectionIdentifier } from './ssh-config.js'
 import { emitSocketLog, type SocketLogOptions } from '../../logging/socket-logger.js'
 import type { LogLevel } from '../../logging/levels.js'
+import { getWebSocketBufferedBytes, computeBackpressureAction, type BackpressureSocket } from '../backpressure.js'
 
 interface TerminalConfig {
   sessionId: SessionId
@@ -21,68 +22,7 @@ interface BackpressureState {
   checkTimerId: ReturnType<typeof setTimeout> | null
 }
 
-const LOW_WATER_MARK_DIVISOR = 4
-
-/**
- * Safely reads bufferedAmount from the ws WebSocket via the Engine.IO
- * transport chain. Returns null when unavailable (polling transport,
- * access failure, or during transport upgrade).
- */
-export function getWebSocketBufferedBytes(
-  socket: AdapterContext['socket']
-): number | null {
-  try {
-    // Access Engine.IO internals via unknown to avoid coupling to private types
-    // while remaining defensive at runtime
-    const conn: unknown = socket.conn
-    if (typeof conn !== 'object' || conn === null) {
-      return null
-    }
-    const transport: unknown = (conn as Record<string, unknown>)['transport']
-    if (typeof transport !== 'object' || transport === null) {
-      return null
-    }
-    const transportRecord = transport as Record<string, unknown>
-    if (transportRecord['name'] !== 'websocket') {
-      return null
-    }
-    const wsSocket: unknown = transportRecord['socket']
-    if (typeof wsSocket !== 'object' || wsSocket === null) {
-      return null
-    }
-    const amount: unknown = (wsSocket as Record<string, unknown>)['bufferedAmount']
-    if (typeof amount !== 'number') {
-      return null
-    }
-    return amount
-  } catch {
-    return null
-  }
-}
-
-/**
- * Pure decision function for backpressure control.
- * Returns 'pause' when buffer exceeds high water mark,
- * 'resume' when buffer drops below low water mark (HWM / 4),
- * or 'none' when no action is needed.
- */
-export function computeBackpressureAction(
-  bufferedBytes: number | null,
-  highWaterMark: number,
-  currentlyPaused: boolean
-): 'pause' | 'resume' | 'none' {
-  if (bufferedBytes === null) {
-    return 'none'
-  }
-  const lowWaterMark = Math.floor(highWaterMark / LOW_WATER_MARK_DIVISOR)
-  if (!currentlyPaused && bufferedBytes >= highWaterMark) {
-    return 'pause'
-  }
-  if (currentlyPaused && bufferedBytes < lowWaterMark) {
-    return 'resume'
-  }
-  return 'none'
-}
+export { getWebSocketBufferedBytes, computeBackpressureAction } from '../backpressure.js'
 
 export class ServiceSocketTerminal {
   constructor(private readonly context: AdapterContext) {}
@@ -297,6 +237,7 @@ export class ServiceSocketTerminal {
     // Backpressure state for WebSocket outbound buffer
     const highWaterMark = this.context.config.ssh.socketHighWaterMark ?? 16384
     const backpressure: BackpressureState = { paused: false, checkTimerId: null }
+    const bpSocket = this.context.socket as unknown as BackpressureSocket
 
     const clearResumeSchedule = (): void => {
       if (backpressure.checkTimerId !== null) {
@@ -311,7 +252,7 @@ export class ServiceSocketTerminal {
     }
 
     const checkResume = (): void => {
-      const buffered = getWebSocketBufferedBytes(this.context.socket)
+      const buffered = getWebSocketBufferedBytes(bpSocket)
       const action = computeBackpressureAction(buffered, highWaterMark, backpressure.paused)
       if (action === 'resume') {
         backpressure.paused = false
@@ -334,7 +275,7 @@ export class ServiceSocketTerminal {
     }
 
     const checkBackpressure = (): void => {
-      const buffered = getWebSocketBufferedBytes(this.context.socket)
+      const buffered = getWebSocketBufferedBytes(bpSocket)
       const action = computeBackpressureAction(buffered, highWaterMark, backpressure.paused)
       if (action === 'pause') {
         backpressure.paused = true

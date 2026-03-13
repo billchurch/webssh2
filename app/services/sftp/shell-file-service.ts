@@ -479,11 +479,10 @@ export class ShellFileService implements FileService {
         const emitChunk = (data: Buffer, isLast: boolean): void => {
           this.transferManager.updateProgress(transferId, chunkIndex, data.length)
 
-          const base64Data = data.toString('base64')
           callbacks.onChunk({
             transferId,
             chunkIndex,
-            data: base64Data,
+            data,
             isLast
           })
 

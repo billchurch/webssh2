@@ -110,7 +110,7 @@ export interface DownloadStartRequest {
 export interface DownloadChunkData {
   readonly transferId: TransferId
   readonly chunkIndex: number
-  readonly data: string // Base64 encoded
+  readonly data: Buffer
   readonly isLast: boolean
 }
 
@@ -119,7 +119,7 @@ export interface DownloadChunkData {
  */
 export interface DownloadStreamCallbacks {
   /** Called for each chunk */
-  onChunk: (chunk: DownloadChunkData) => void
+  onChunk: (chunk: DownloadChunkData) => void | Promise<void>
   /** Called periodically with progress */
   onProgress: (progress: SftpProgressResponse) => void
   /** Called when download completes */
@@ -748,59 +748,70 @@ export class SftpService implements FileService {
       const downloadState = { cancelled: false }
       this.downloadStreams.set(transferId, { stream: null, cancelled: false })
 
-      const emitBufferedChunks = (): void => {
-        // Emit chunks in order as they become available
-        let chunk = chunkBuffer.get(nextChunkToEmit)
-        while (chunk !== undefined) {
-          chunkBuffer.delete(nextChunkToEmit)
+      let isEmitting = false
+      const emitBufferedChunks = async (): Promise<void> => {
+        if (isEmitting) {
+          return
+        }
+        isEmitting = true
+        try {
+          // Emit chunks in order as they become available
+          let chunk = chunkBuffer.get(nextChunkToEmit)
+          while (chunk !== undefined) {
+            chunkBuffer.delete(nextChunkToEmit)
 
-          bytesTransferred += chunk.length
-          const isLast = nextChunkToEmit === totalChunks - 1
+            bytesTransferred += chunk.length
+            const isLast = nextChunkToEmit === totalChunks - 1
 
-          // Update progress in transfer manager
-          this.transferManager.updateProgress(transferId, nextChunkToEmit, chunk.length)
+            // Update progress in transfer manager
+            this.transferManager.updateProgress(transferId, nextChunkToEmit, chunk.length)
 
-          // Encode chunk as base64 and emit
-          const base64Data = chunk.toString('base64')
-          callbacks.onChunk({
-            transferId,
-            chunkIndex: nextChunkToEmit,
-            data: base64Data,
-            isLast
-          })
+            await callbacks.onChunk({
+              transferId,
+              chunkIndex: nextChunkToEmit,
+              data: chunk,
+              isLast
+            })
 
-          // Emit progress periodically
-          const now = Date.now()
-          if (now - lastProgressTime >= progressInterval) {
-            lastProgressTime = now
-            const progressResult = this.getProgress(transferId)
-            if (progressResult.ok) {
-              callbacks.onProgress(progressResult.value)
+            // Emit progress periodically
+            const now = Date.now()
+            if (now - lastProgressTime >= progressInterval) {
+              lastProgressTime = now
+              const progressResult = this.getProgress(transferId)
+              if (progressResult.ok) {
+                callbacks.onProgress(progressResult.value)
+              }
             }
-          }
 
-          // Log timing every 100 chunks
-          if (nextChunkToEmit > 0 && nextChunkToEmit % 100 === 0) {
-            const currentRate = bytesTransferred / ((now - startTime) / 1000)
-            logger('Download chunk #%d: rate=%s KB/s', nextChunkToEmit, (currentRate / 1024).toFixed(2))
-          }
-
-          nextChunkToEmit++
-
-          if (isLast) {
-            // All chunks emitted - complete the transfer
-            cleanup()
-            const completeResult = this.transferManager.completeTransfer(transferId)
-            if (completeResult.ok) {
-              callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
+            // Log timing every 100 chunks
+            if (nextChunkToEmit > 0 && nextChunkToEmit % 100 === 0) {
+              const currentRate = bytesTransferred / ((now - startTime) / 1000)
+              logger('Download chunk #%d: rate=%s KB/s', nextChunkToEmit, (currentRate / 1024).toFixed(2))
             }
-            logger('Download completed:', transferId)
-            resolve()
-            return
-          }
 
-          // Get next chunk for the while loop
-          chunk = chunkBuffer.get(nextChunkToEmit)
+            nextChunkToEmit++
+
+            if (isLast) {
+              // All chunks emitted - complete the transfer
+              cleanup()
+              const completeResult = this.transferManager.completeTransfer(transferId)
+              if (completeResult.ok) {
+                callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
+              }
+              logger('Download completed:', transferId)
+              resolve()
+              return
+            }
+
+            // Get next chunk for the while loop
+            chunk = chunkBuffer.get(nextChunkToEmit)
+          }
+        } finally {
+          isEmitting = false
+          // Re-check: new chunks may have arrived while we were emitting
+          if (chunkBuffer.has(nextChunkToEmit)) {
+            void emitBufferedChunks()
+          }
         }
       }
 
@@ -845,7 +856,7 @@ export class SftpService implements FileService {
             chunkBuffer.set(chunkIdx, data.subarray(0, bytesRead))
 
             // Try to emit buffered chunks in order
-            emitBufferedChunks()
+            void emitBufferedChunks()
 
             // Start next chunk read if more to read
             if (nextChunkToRead < totalChunks) {

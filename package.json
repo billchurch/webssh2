@@ -48,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.23",
-    "webssh2_client": "^3.5.0",
+    "webssh2_client": "^3.6.0",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -114,5 +114,8 @@
     "test": "tests"
   },
   "author": "Bill Church",
-  "type": "module"
+  "type": "module",
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.59.0"
+  }
 }
