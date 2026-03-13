@@ -110,7 +110,7 @@ export interface DownloadStartRequest {
 export interface DownloadChunkData {
   readonly transferId: TransferId
   readonly chunkIndex: number
-  readonly data: string // Base64 encoded
+  readonly data: Buffer
   readonly isLast: boolean
 }
 
@@ -760,12 +760,10 @@ export class SftpService implements FileService {
           // Update progress in transfer manager
           this.transferManager.updateProgress(transferId, nextChunkToEmit, chunk.length)
 
-          // Encode chunk as base64 and emit
-          const base64Data = chunk.toString('base64')
           callbacks.onChunk({
             transferId,
             chunkIndex: nextChunkToEmit,
-            data: base64Data,
+            data: chunk,
             isLast
           })
 
