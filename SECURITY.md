@@ -144,6 +144,87 @@ This vulnerability allows arbitrary file writes via path traversal in rollup's b
 
 ---
 
-**Last updated:** 2026-03-05
+## TeamPCP / CanisterWorm supply chain attack (Trivy compromise)
 
-**Next review:** 2026-04-05
+As of 2026-03-24, we evaluated the TeamPCP campaign that compromised
+Aqua Security's GitHub and Docker Hub accounts, injecting malware
+into the Trivy vulnerability scanner and propagating a
+self-replicating worm ("CanisterWorm") through npm packages.
+
+### Exposure assessment
+
+This repository uses `aquasecurity/trivy-action` in CI (`ci.yml`):
+
+| Aspect | Status |
+| --- | --- |
+| Trivy action pinning | Pinned to commit SHA `76071ef0...` (v0.31.0) |
+| Compromised packages in deps | **None found** |
+| Filesystem IOCs | **None found** |
+| npm publishing | **Not applicable** — webssh2 is not published to npm |
+| Status | **Not compromised** |
+
+### Why we are not affected
+
+- GitHub Actions are **pinned to commit SHAs**, not mutable tags,
+  preventing silent tag-based substitution
+- The pinned SHA `76071ef0d7ec797419534a183b498b4d6366cf37` predates
+  the compromise and was verified against the pre-incident
+  repository state
+- This repository does not publish to npm, so there are no npm
+  tokens for the worm to exfiltrate or abuse
+- No known compromised dependencies were found in
+  `package-lock.json`
+
+### Remediation actions taken
+
+1. **NPM token rotation**: All npm tokens with CI access were
+   rotated as a precaution (2026-03-24)
+2. **Trivy action review**: Confirmed pinned SHAs correspond to
+   legitimate pre-compromise commits
+3. **IOC scan**: Checked build systems for CanisterWorm filesystem
+   artifacts — none found
+4. **Dependency audit**: Scanned all `package-lock.json` files
+   against known compromised package list — clean
+
+### CanisterWorm indicators of compromise (IOCs)
+
+For reference, the following IOCs were published by Aikido and
+Socket:
+
+**C2 infrastructure:**
+
+- ICP canister: `tdtqy-oyaaa-aaaae-af2dq-cai.raw.icp0.io`
+- Cloudflare tunnels:
+  `souls-entire-defined-routes.trycloudflare.com`,
+  `investigation-launches-hearings-copying.trycloudflare.com`,
+  `championships-peoples-point-cassette.trycloudflare.com`
+
+**Filesystem artifacts:**
+
+- `~/.local/share/pgmon/service.py`,
+  `~/.config/systemd/user/pgmon.service`
+- `/var/lib/svc_internal/runner.py`, `/var/lib/pgmon/pgmon.py`
+- `/tmp/pglog`, `/tmp/.pg_state`
+
+**Kubernetes artifacts (kube-system namespace):**
+
+- DaemonSets: `host-provisioner-iran`, `host-provisioner-std`
+- Container names: `kamikaze` (wiper), `provisioner` (backdoor)
+
+**Compromised npm packages (partial list):**
+
+- 28 packages in `@EmilGroup` scope, 16 in `@opengov` scope
+- `@teale.io/eslint-config` (v1.8.11, v1.8.12),
+  `@airtm/uuid-base32`, `@pypestream/floating-ui-dom`
+
+### References
+
+- [Ars Technica — Self-propagating malware poisons open source software](https://arstechnica.com/security/2026/03/self-propagating-malware-poisons-open-source-software-and-wipes-iran-based-machines/)
+- [Aikido — TeamPCP Deploys CanisterWorm on NPM Following Trivy Compromise](https://www.aikido.dev/blog/teampcp-deploys-worm-npm-trivy-compromise)
+- [Aikido — CanisterWorm Gets Teeth: TeamPCP's Kubernetes Wiper Targets Iran](https://www.aikido.dev/blog/teampcp-stage-payload-canisterworm-iran)
+
+---
+
+**Last updated:** 2026-03-24
+
+**Next review:** 2026-04-24
