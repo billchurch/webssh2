@@ -170,20 +170,19 @@ This repository uses `aquasecurity/trivy-action` in CI (`ci.yml`):
 - The pinned SHA `76071ef0d7ec797419534a183b498b4d6366cf37` predates
   the compromise and was verified against the pre-incident
   repository state
-- This repository does not publish to npm, so there are no npm
-  tokens for the worm to exfiltrate or abuse
+- This repository does not publish to npm and has no npm tokens
+  configured, so there is nothing for the worm to exfiltrate or
+  abuse
 - No known compromised dependencies were found in
   `package-lock.json`
 
 ### Remediation actions taken
 
-1. **NPM token rotation**: All npm tokens with CI access were
-   rotated as a precaution (2026-03-24)
-2. **Trivy action review**: Confirmed pinned SHAs correspond to
+1. **Trivy action review**: Confirmed pinned SHAs correspond to
    legitimate pre-compromise commits
-3. **IOC scan**: Checked build systems for CanisterWorm filesystem
+2. **IOC scan**: Checked build systems for CanisterWorm filesystem
    artifacts — none found
-4. **Dependency audit**: Scanned all `package-lock.json` files
+3. **Dependency audit**: Scanned all `package-lock.json` files
    against known compromised package list — clean
 
 ### CanisterWorm indicators of compromise (IOCs)
