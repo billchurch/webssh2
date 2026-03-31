@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.0...webssh2-server-v4.2.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* sync package-lock.json with webssh2_client 3.6.0 ([eece96d](https://github.com/billchurch/webssh2/commit/eece96dd833a9b5e27a353a18eff8763e59cc486))
+
 ## [4.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.1.0...webssh2-server-v4.2.0) (2026-03-13)
 
 
