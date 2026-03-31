@@ -222,8 +222,60 @@ Socket:
 - [Aikido — TeamPCP Deploys CanisterWorm on NPM Following Trivy Compromise](https://www.aikido.dev/blog/teampcp-deploys-worm-npm-trivy-compromise)
 - [Aikido — CanisterWorm Gets Teeth: TeamPCP's Kubernetes Wiper Targets Iran](https://www.aikido.dev/blog/teampcp-stage-payload-canisterworm-iran)
 
+## Axios npm supply chain attack (March 2026)
+
+As of 2026-03-31, we evaluated the axios npm supply chain attack in which
+a compromised maintainer account was used to publish malicious versions
+containing a cross-platform RAT delivered via a hidden `plain-crypto-js`
+dependency.
+
+### Exposure assessment
+
+| Aspect | Status |
+| --- | --- |
+| Compromised versions | `axios@1.14.1`, `axios@0.30.4` |
+| axios in dependencies | **Not present** — webssh2 does not use axios |
+| `plain-crypto-js` in deps | **Not found** |
+| Other compromised packages | **Not found** (`@qqbrowser/openclaw-qbot`, `@shadanai/openclaw`) |
+| Filesystem IOCs | **None found** |
+| Status | **Not compromised** |
+
+### Why we are not affected
+
+- webssh2 **does not depend on axios** at all — neither directly nor
+  transitively
+- The malicious dependency `plain-crypto-js@4.2.1` is not present in
+  `package-lock.json`
+- No filesystem IOCs were found on build systems
+- This repository does not publish to npm and has no npm tokens configured
+
+### Indicators of compromise (IOCs)
+
+For reference, the following IOCs were published by Snyk:
+
+**C2 infrastructure:**
+
+- Domain: `sfrclak[.]com:8000` (IP: `142.11.206.73`)
+
+**Filesystem artifacts:**
+
+- macOS: `/Library/Caches/com.apple.act.mond`
+- Windows: `%PROGRAMDATA%\wt.exe`
+- Linux: `/tmp/ld.py`
+
+**Compromised npm packages:**
+
+- `axios@1.14.1`, `axios@0.30.4`
+- `plain-crypto-js@4.2.1` (hidden malicious dependency)
+- `@qqbrowser/openclaw-qbot@0.0.130`
+- `@shadanai/openclaw` (versions `2026.3.31-1`, `2026.3.31-2`)
+
+### References
+
+- [Snyk — Axios npm package compromised in supply chain attack](https://snyk.io/blog/axios-npm-package-compromised-supply-chain-attack-delivers-cross-platform/)
+
 ---
 
-**Last updated:** 2026-03-24
+**Last updated:** 2026-03-31
 
-**Next review:** 2026-04-24
+**Next review:** 2026-04-30
