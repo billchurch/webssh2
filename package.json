@@ -39,7 +39,7 @@
   ],
   "dependencies": {
     "basic-auth": "^2.0.1",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "12.8.0",
     "body-parser": "^2.2.1",
     "debug": "^4.4.3",
     "express": "^5.2.1",
@@ -77,11 +77,11 @@
     "hostkeys": "tsx scripts/host-key-seed.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "9.39.4",
     "@playwright/test": "^1.58.2",
     "@types/basic-auth": "^1.1.8",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/debug": "^4.1.12",
+    "@types/debug": "4.1.13",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
     "@types/node": "^24.10.13",
@@ -90,9 +90,9 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
-    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/coverage-v8": "4.0.18",
     "baseline-browser-mapping": "^2.8.32",
-    "eslint": "^9.39.1",
+    "eslint": "9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-security": "^3.0.1",
@@ -100,7 +100,7 @@
     "supertest": "^7.1.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "4.0.18"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -115,6 +115,12 @@
   },
   "author": "Bill Church",
   "type": "module",
+  "overrides": {
+    "socket.io-parser": "4.2.6",
+    "flatted": "3.4.2",
+    "picomatch": "4.0.4",
+    "path-to-regexp": "8.4.0"
+  },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.59.0"
   }
