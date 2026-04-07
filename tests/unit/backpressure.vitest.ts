@@ -1,5 +1,5 @@
 // tests/unit/backpressure.vitest.ts
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   getWebSocketBufferedBytes,
   computeBackpressureAction,
@@ -123,7 +123,9 @@ describe('createBackpressureController', () => {
 
     currentBuffered = 1000
     const drainCb = listeners.get('drain')
-    if (drainCb) drainCb()
+    if (drainCb !== undefined) {
+      drainCb()
+    }
 
     await promise
     expect(resolved).toBe(true)
