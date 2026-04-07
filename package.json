@@ -119,7 +119,8 @@
     "socket.io-parser": "4.2.6",
     "flatted": "3.4.2",
     "picomatch": "4.0.4",
-    "path-to-regexp": "8.4.0"
+    "path-to-regexp": "8.4.0",
+    "vite": "7.3.2"
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.59.0"
