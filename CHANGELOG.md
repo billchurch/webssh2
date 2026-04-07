@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.0...webssh2-server-v4.2.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* add vite override to resolve HIGH audit finding in CI ([4c20966](https://github.com/billchurch/webssh2/commit/4c20966330534613a90a8f1caa9b918eda1c7c76))
+* patch HIGH CVE dependencies and pin versions ([391d64f](https://github.com/billchurch/webssh2/commit/391d64f60c0d04c3dfa3ede98f9858698f269048))
+* resolve lint errors blocking CI ([6e576d6](https://github.com/billchurch/webssh2/commit/6e576d6a248155af6caf5d85259f55b291894905))
+* sync package-lock.json with webssh2_client 3.6.0 ([eece96d](https://github.com/billchurch/webssh2/commit/eece96dd833a9b5e27a353a18eff8763e59cc486))
+* update trivy-action to v0.35.0 and add vite override ([4fb397d](https://github.com/billchurch/webssh2/commit/4fb397d461c3644e30d191483ad82c0245ebae70))
+
 ## [4.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.1.0...webssh2-server-v4.2.0) (2026-03-13)
 
 
