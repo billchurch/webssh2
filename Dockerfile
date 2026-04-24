@@ -1,11 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
+ARG BASE_IMAGE=node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
+
 # =============================================================================
 # Stage 1: Dependencies
 # Purpose: Install and cache all dependencies with BuildKit cache mounts
 # This stage is optimized for layer caching and reuse
 # =============================================================================
-FROM node:22-alpine AS deps
+FROM ${BASE_IMAGE} AS deps
 WORKDIR /srv/webssh2
 
 # Install dependencies with cache mount for faster rebuilds
@@ -22,7 +24,7 @@ RUN --mount=type=cache,target=/root/.npm \
 # Purpose: Compile TypeScript to JavaScript
 # Uses dependencies from deps stage to avoid reinstalling
 # =============================================================================
-FROM node:22-alpine AS builder
+FROM ${BASE_IMAGE} AS builder
 WORKDIR /srv/webssh2
 
 ENV NODE_ENV=development
@@ -46,7 +48,7 @@ RUN npm run build
 # Purpose: Minimal production image with only runtime dependencies
 # Includes tini for proper init system (signal handling, zombie reaping)
 # =============================================================================
-FROM node:22-alpine AS runtime
+FROM ${BASE_IMAGE} AS runtime
 WORKDIR /srv/webssh2
 
 # Install tini for proper signal handling and zombie process reaping
