@@ -24,8 +24,8 @@ on:
       - main
 
 concurrency:
-  group: docker-publish-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: image-publish
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -144,6 +144,50 @@ jobs:
             type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
             type=sha
 
+      - name: Build amd64 image (load, for scan + smoke)
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          platforms: linux/amd64
+          tags: local/webssh2:scan
+          cache-from: type=gha,scope=publish-${{ github.ref }}
+          cache-to: type=gha,mode=max,scope=publish-${{ github.ref }}
+
+      - name: Trivy image scan (fail closed)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: local/webssh2:scan
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: true
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Smoke-test amd64 image
+        run: |
+          CID=$(docker run -d --rm \
+            -e DEBUG=webssh2:* local/webssh2:scan)
+          for i in {1..30}; do
+            if docker logs "$CID" 2>&1 | grep -q "server started successfully"; then
+              docker stop "$CID"
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$CID"
+          docker stop "$CID" || true
+          exit 1
+
       - name: Build and push docker image
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -158,36 +202,11 @@ jobs:
           # BuildKit cache configuration
           # - Use GitHub Actions cache for faster rebuilds
           # - mode=max caches all layers (not just final stage)
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=publish-${{ github.ref }}
+          cache-to: type=gha,mode=max,scope=publish-${{ github.ref }}
           # BuildKit features for optimization
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-
-      - name: Test docker image
-        run: |
-          # Pull the image we just built (for current platform)
-          docker pull ${{ steps.ghcr.outputs.image }}:sha-${GITHUB_SHA::7}
-
-          # Start container and verify it runs
-          CONTAINER_ID=$(docker run -d --rm \
-            -e DEBUG=webssh2:* \
-            ${{ steps.ghcr.outputs.image }}:sha-${GITHUB_SHA::7})
-
-          # Wait up to 30 seconds for startup
-          for i in {1..30}; do
-            if docker logs "$CONTAINER_ID" 2>&1 | grep -q "server started successfully"; then
-              echo "✓ Container started successfully"
-              docker stop "$CONTAINER_ID"
-              exit 0
-            fi
-            sleep 1
-          done
-
-          echo "✗ Container failed to start"
-          docker logs "$CONTAINER_ID"
-          docker stop "$CONTAINER_ID"
-          exit 1
 
       - name: Update release notes with Docker images
         if: ${{ steps.release_meta.outputs.has_release == 'true' }}
