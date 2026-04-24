@@ -1,0 +1,155 @@
+name: rebuild-release-tags
+
+on:
+  workflow_run:
+    workflows: ['docker-publish']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      simulate:
+        description: 'Run all steps except the final docker push'
+        default: 'false'
+        required: true
+        type: choice
+        options: ['true', 'false']
+
+concurrency:
+  group: image-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.decide.outputs.proceed }}
+      head_sha: ${{ steps.ctx.outputs.head_sha }}
+      new_digest: ${{ steps.extract.outputs.new_digest }}
+      release_tag: ${{ steps.release.outputs.tag }}
+      release_sha: ${{ steps.release.outputs.sha }}
+    if: >-
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.triggering_actor.login == 'renovate[bot]' &&
+        github.event.workflow_run.actor.login == 'renovate[bot]' &&
+        vars.ALLOW_AUTO_REBUILD == 'true'
+      ) ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - id: ctx
+        name: Resolve triggering commit SHA
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "head_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ steps.ctx.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Verify commit is signed and verified (workflow_run only)
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+        run: |
+          verification=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA} \
+            --jq '.commit.verification')
+          verified=$(echo "$verification" | jq -r '.verified')
+          reason=$(echo  "$verification" | jq -r '.reason')
+          if [ "$verified" != "true" ] || [ "$reason" != "valid" ]; then
+            echo "::error::Commit ${HEAD_SHA} verification=${verified} reason=${reason}"
+            exit 1
+          fi
+
+      - name: Verify diff is digest-only on Dockerfile (workflow_run only)
+        if: github.event_name == 'workflow_run'
+        env:
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+        run: |
+          parent=$(git rev-parse ${HEAD_SHA}^)
+          files=$(git diff --name-status "${parent}" "${HEAD_SHA}")
+          if [ "$files" != $'M\tDockerfile' ]; then
+            echo "::error::Unexpected diff: $files"; exit 1
+          fi
+          hunks=$(git diff "${parent}" "${HEAD_SHA}" -- Dockerfile | \
+                  grep -E '^[+-]ARG BASE_IMAGE=' || true)
+          removed=$(echo "$hunks" | grep -c '^-ARG BASE_IMAGE=' || true)
+          added=$(echo   "$hunks" | grep -c '^+ARG BASE_IMAGE=' || true)
+          if [ "$removed" != "1" ] || [ "$added" != "1" ]; then
+            echo "::error::Expected exactly one BASE_IMAGE line change; got -$removed +$added"
+            exit 1
+          fi
+          pattern='^[+-]ARG BASE_IMAGE=node:22-alpine@sha256:[0-9a-f]{64}$'
+          if ! echo "$hunks" | grep -Eq "$pattern"; then
+            echo "::error::Diff lines do not match strict pattern"
+            echo "Offending diff:"; echo "$hunks"
+            exit 1
+          fi
+
+      - name: Defer if a release was published in the last 10 minutes
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          published=$(gh release list --limit 1 --json publishedAt --jq '.[0].publishedAt')
+          if [ -n "$published" ]; then
+            delta=$(( $(date +%s) - $(date -d "$published" +%s) ))
+            if [ "$delta" -lt 600 ]; then
+              echo "::error::Release published ${delta}s ago; deferring to release flow"
+              exit 1
+            fi
+          fi
+
+      - id: extract
+        name: Extract new BASE_IMAGE digest from Dockerfile at head_sha
+        run: |
+          digest=$(grep -E '^ARG BASE_IMAGE=' Dockerfile | head -1 | sed 's/^ARG BASE_IMAGE=//')
+          if [ -z "$digest" ]; then echo "::error::Could not read BASE_IMAGE"; exit 1; fi
+          echo "new_digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - id: release
+        name: Resolve latest release tag via isLatest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag=$(gh release list --limit 50 --json tagName,isLatest,isDraft,isPrerelease \
+                --jq '.[] | select(.isLatest==true and .isDraft==false and .isPrerelease==false) | .tagName')
+          if [[ ! "$tag" =~ ^webssh2-server-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::notice::No qualifying release tag; skipping"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sha=$(gh api repos/${{ github.repository }}/git/ref/tags/${tag} \
+                --jq '.object.sha')
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - id: decide
+        name: Per-head_sha idempotency check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          body=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
+          if echo "$body" | grep -q "rebuild-sha: ${HEAD_SHA}"; then
+            echo "::notice::Already rebuilt for ${HEAD_SHA}"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
