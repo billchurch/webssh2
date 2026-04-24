@@ -31,6 +31,9 @@ jobs:
       new_digest: ${{ steps.extract.outputs.new_digest }}
       release_tag: ${{ steps.release.outputs.tag }}
       release_sha: ${{ steps.release.outputs.sha }}
+    # NOTE: workflow_dispatch intentionally bypasses ALLOW_AUTO_REBUILD so operators
+    # retain a manual rebuild path even when the kill-switch is set to 'false'.
+    # Only users with write access can dispatch; the branch is still protected.
     if: >-
       (
         github.event_name == 'workflow_run' &&
@@ -78,23 +81,39 @@ jobs:
           HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
         run: |
           parent=$(git rev-parse ${HEAD_SHA}^)
+
+          # 1. Exactly one file must have changed, and it must be Dockerfile.
           files=$(git diff --name-status "${parent}" "${HEAD_SHA}")
           if [ "$files" != $'M\tDockerfile' ]; then
             echo "::error::Unexpected diff: $files"; exit 1
           fi
-          hunks=$(git diff "${parent}" "${HEAD_SHA}" -- Dockerfile | \
-                  grep -E '^[+-]ARG BASE_IMAGE=' || true)
-          removed=$(echo "$hunks" | grep -c '^-ARG BASE_IMAGE=' || true)
-          added=$(echo   "$hunks" | grep -c '^+ARG BASE_IMAGE=' || true)
-          if [ "$removed" != "1" ] || [ "$added" != "1" ]; then
-            echo "::error::Expected exactly one BASE_IMAGE line change; got -$removed +$added"
+
+          # 2. Every +/- line in the Dockerfile diff must be an ARG BASE_IMAGE= line.
+          #    (Reject changes to any OTHER Dockerfile line, even comments / whitespace.)
+          changed=$(git diff "${parent}" "${HEAD_SHA}" -- Dockerfile | grep -E '^[+-]' | grep -Ev '^[+-]{3} ')
+          non_arg=$(echo "$changed" | grep -Ev '^[+-]ARG BASE_IMAGE=' || true)
+          if [ -n "$non_arg" ]; then
+            echo "::error::Dockerfile has non-BASE_IMAGE changes:"; echo "$non_arg"; exit 1
+          fi
+
+          # 3. Exactly one removed and one added BASE_IMAGE line.
+          removed_line=$(echo "$changed" | grep '^-ARG BASE_IMAGE=' || true)
+          added_line=$(echo   "$changed" | grep '^+ARG BASE_IMAGE=' || true)
+          if [ "$(echo "$removed_line" | grep -c .)" != "1" ] || \
+             [ "$(echo "$added_line"   | grep -c .)" != "1" ]; then
+            echo "::error::Expected exactly one BASE_IMAGE line change"
+            echo "Removed: $removed_line"
+            echo "Added:   $added_line"
             exit 1
           fi
+
+          # 4. BOTH the removed and added lines must independently match the strict pattern.
           pattern='^[+-]ARG BASE_IMAGE=node:22-alpine@sha256:[0-9a-f]{64}$'
-          if ! echo "$hunks" | grep -Eq "$pattern"; then
-            echo "::error::Diff lines do not match strict pattern"
-            echo "Offending diff:"; echo "$hunks"
-            exit 1
+          if ! echo "$removed_line" | grep -Eq "$pattern"; then
+            echo "::error::Removed line does not match strict pattern: $removed_line"; exit 1
+          fi
+          if ! echo "$added_line" | grep -Eq "$pattern"; then
+            echo "::error::Added line does not match strict pattern: $added_line"; exit 1
           fi
 
       - name: Defer if a release was published in the last 10 minutes
@@ -277,7 +296,7 @@ jobs:
           SEMVER_MAJOR: ${{ steps.semver.outputs.major }}
         run: |
           body=$(printf '%s\n' \
-            "🔁 Base image refreshed (no source changes)" \
+            "[base-refresh] Base image refreshed (no source changes)" \
             "- Base image: ${NEW_DIGEST}" \
             "- Refreshed tags: ${SEMVER_FULL}, ${SEMVER_MINOR}, ${SEMVER_MAJOR}" \
             "- New image digest: ${IMAGE_DIGEST}" \
