@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.1...webssh2-server-v4.2.2) (2026-04-25)
+
+
+### Bug Fixes
+
+* pin node:22-alpine base image by digest ([#498](https://github.com/billchurch/webssh2/issues/498)) ([#499](https://github.com/billchurch/webssh2/issues/499)) ([ac41510](https://github.com/billchurch/webssh2/commit/ac4151097bc3f32c2440060a0b56e5d2691a5e40))
+
 ## [4.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.0...webssh2-server-v4.2.1) (2026-04-07)
 
 
