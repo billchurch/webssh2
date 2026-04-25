@@ -166,6 +166,12 @@ jobs:
           exit-code: '1'
           cache: true
           trivyignores: .trivyignore
+          # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation
+          # and exit-code evaluation. Without this, trivy-action unsets
+          # TRIVY_SEVERITY in sarif mode (to capture all severities), which
+          # silently disables our gate and lets MEDIUM/LOW findings fail
+          # the publish.
+          limit-severities-for-sarif: 'true'
 
       - name: Upload SARIF
         if: always()
