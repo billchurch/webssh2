@@ -22,6 +22,23 @@ on:
   push:
     branches:
       - main
+    # Only rebuild when files that actually affect the image change.
+    # Workflow-only and docs-only commits skip this build; `release:published`
+    # and `workflow_dispatch` are unaffected.
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app/**'
+      - 'index.ts'
+      - 'types/**'
+      - 'scripts/**'
+      - 'tsconfig.json'
+      - 'tsconfig.build.json'
+      - 'LICENSE'
+      - 'README.md'
+      - '.github/workflows/docker-publish.yml'
 
 concurrency:
   group: image-publish
