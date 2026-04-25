@@ -18,9 +18,10 @@ concurrency:
   group: image-publish
   cancel-in-progress: false
 
+# Workflow-level permissions are read-only. Each job overrides with the
+# minimum it needs (least privilege per Sonar githubactions:S8233).
 permissions:
   contents: read
-  packages: write
 
 jobs:
   guard:
