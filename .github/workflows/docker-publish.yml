@@ -37,6 +37,12 @@ jobs:
     permissions:
       contents: write
       packages: write
+      # Required for github/codeql-action/upload-sarif to push the
+      # Trivy image-scan SARIF into the repo's Security tab. Without
+      # this, the upload step fails with "Resource not accessible by
+      # integration" and aborts the rest of the pipeline (smoke test
+      # and multi-arch push get skipped via default success() gating).
+      security-events: write
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKER_TOKEN }}
