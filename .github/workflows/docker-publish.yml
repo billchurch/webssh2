@@ -50,7 +50,7 @@ jobs:
       - name: Check required secrets
         if: ${{ env.DOCKERHUB_USER == '' || env.DOCKERHUB_TOKEN == '' }}
         run: |
-          echo '::error::DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets are required' >&2
+          echo '::error::DOCKER_USERNAME and DOCKER_TOKEN secrets are required' >&2
           exit 1
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
