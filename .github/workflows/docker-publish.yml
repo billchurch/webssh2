@@ -165,6 +165,7 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
           cache: true
+          trivyignores: .trivyignore
 
       - name: Upload SARIF
         if: always()

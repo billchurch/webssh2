@@ -1,0 +1,10 @@
+# Trivy ignore rules — every entry MUST link to a SECURITY.md assessment.
+# Format: one CVE per line; trailing comment optional but encouraged.
+
+# CVE-2026-33671 — picomatch 4.0.3 ReDoS bundled inside the global npm shipped
+# in node:22-alpine. Not exploitable in our runtime image: the container
+# entrypoint is `node dist/index.js`; the bundled npm is never invoked.
+# See SECURITY.md → "CVE-2026-33671 (picomatch ReDoS in bundled npm)".
+# Re-evaluate when upstream node:22-alpine ships an npm release that pulls
+# picomatch >= 4.0.4; remove this entry then.
+CVE-2026-33671

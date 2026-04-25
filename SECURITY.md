@@ -89,6 +89,34 @@ This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in clien
 - All JSX uses Solid.js safe text binding
 - Terminal output is rendered through xterm.js which safely handles escape sequences
 
+### CVE-2026-33671 (picomatch ReDoS in bundled npm)
+
+| Aspect             | Status                                                                          |
+| ------------------ | ------------------------------------------------------------------------------- |
+| Vulnerability type | Regular Expression Denial of Service (ReDoS) via crafted extglob patterns       |
+| Affected versions  | picomatch < 4.0.4 (also fixed in 3.0.2 and 2.3.2)                               |
+| Our exposure       | picomatch 4.0.3 bundled inside the global `npm` shipped in `node:22-alpine`     |
+| Path on disk       | `/usr/local/lib/node_modules/npm/node_modules/picomatch` (in the runtime image) |
+| Status             | **Not exploitable** — bundled `npm` is never executed at runtime                |
+
+**Why we are not affected:**
+
+- The container's `ENTRYPOINT` is `tini` and `CMD` is `node dist/index.js`.
+- The application never invokes `npm`, `npx`, or any code path that loads
+  `picomatch` from the global npm install. There is no shell exec of `npm`,
+  no `child_process.spawn('npm', ...)`, and no library in our production
+  dependency closure that pulls picomatch.
+- An attacker would need code execution inside the container to reach
+  picomatch — at which point ReDoS is the least of our concerns.
+
+**Mitigation status:**
+
+- The `.trivyignore` file at the repo root suppresses this single CVE for the
+  Trivy image scan gate so unrelated image regressions still fail the build.
+- Tracking upstream: re-evaluate when `node:22-alpine` ships a bundled
+  `npm` whose `picomatch` is `>= 4.0.4`. At that point Renovate's auto-merged
+  digest bump will land the fix and the `.trivyignore` entry should be removed.
+
 ---
 
 ## Shai-hulud 2.0 supply chain risk
