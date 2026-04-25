@@ -195,7 +195,20 @@ jobs:
           echo "SHA_TAG_SHORT=${short}"          >> "$GITHUB_ENV"
           echo "SHA_TAG_DIGEST_BEFORE=${before}" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # Pull only .trivyignore from main into the workspace root so the
+      # Trivy step below can suppress documented bundled-npm CVEs. The
+      # release tag's own source tree (older releases) may not include
+      # this file; the scan policy must track current main, not the
+      # release's frozen state.
+      - name: Checkout main .trivyignore for scan suppression
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            .trivyignore
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout release-tag source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ env.RELEASE_SHA }}
           path: release-src
@@ -239,6 +252,12 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
           cache: true
+          trivyignores: .trivyignore
+          # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation
+          # and exit-code evaluation. Without this, trivy-action unsets
+          # TRIVY_SEVERITY in sarif mode, silently disabling the gate
+          # (same bug fixed in docker-publish.yml in commit 0390fcc).
+          limit-severities-for-sarif: 'true'
 
       - id: semver
         name: Derive semver tags from RELEASE_TAG
