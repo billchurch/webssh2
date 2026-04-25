@@ -1,4 +1,8 @@
-# Use node:22-alpine as a parent image for smallest size and best security
+# NOTE: This is a documentation sample, not the production Dockerfile.
+# For production, pin the base image to a specific manifest digest, e.g.:
+#   ARG BASE_IMAGE=node:22-alpine@sha256:<64-hex>
+#   FROM ${BASE_IMAGE}
+# This protects against upstream tag mutation and supply-chain attacks.
 FROM node:22-alpine
 
 # Alpine uses ash shell by default, which is sufficient for our needs
