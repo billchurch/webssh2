@@ -1,0 +1,328 @@
+name: rebuild-release-tags
+
+on:
+  workflow_run:
+    workflows: ['docker-publish']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      simulate:
+        description: 'Run all steps except the final docker push'
+        default: 'false'
+        required: true
+        type: choice
+        options: ['true', 'false']
+
+concurrency:
+  group: image-publish
+  cancel-in-progress: false
+
+# Workflow-level permissions are read-only. Each job overrides with the
+# minimum it needs (least privilege per Sonar githubactions:S8233).
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.decide.outputs.proceed }}
+      head_sha: ${{ steps.ctx.outputs.head_sha }}
+      new_digest: ${{ steps.extract.outputs.new_digest }}
+      release_tag: ${{ steps.release.outputs.tag }}
+      release_sha: ${{ steps.release.outputs.sha }}
+    # NOTE: workflow_dispatch intentionally bypasses ALLOW_AUTO_REBUILD so operators
+    # retain a manual rebuild path even when the kill-switch is set to 'false'.
+    # Only users with write access can dispatch; the branch is still protected.
+    if: >-
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.triggering_actor.login == 'renovate[bot]' &&
+        github.event.workflow_run.actor.login == 'renovate[bot]' &&
+        vars.ALLOW_AUTO_REBUILD == 'true'
+      ) ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - id: ctx
+        name: Resolve triggering commit SHA
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "head_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ steps.ctx.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Verify commit is signed and verified (workflow_run only)
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+        run: |
+          verification=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA} \
+            --jq '.commit.verification')
+          verified=$(echo "$verification" | jq -r '.verified')
+          reason=$(echo  "$verification" | jq -r '.reason')
+          if [ "$verified" != "true" ] || [ "$reason" != "valid" ]; then
+            echo "::error::Commit ${HEAD_SHA} verification=${verified} reason=${reason}"
+            exit 1
+          fi
+
+      - name: Verify diff is digest-only on Dockerfile (workflow_run only)
+        if: github.event_name == 'workflow_run'
+        env:
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+        run: |
+          parent=$(git rev-parse ${HEAD_SHA}^)
+
+          # 1. Exactly one file must have changed, and it must be Dockerfile.
+          files=$(git diff --name-status "${parent}" "${HEAD_SHA}")
+          if [ "$files" != $'M\tDockerfile' ]; then
+            echo "::error::Unexpected diff: $files"; exit 1
+          fi
+
+          # 2. Every +/- line in the Dockerfile diff must be an ARG BASE_IMAGE= line.
+          #    (Reject changes to any OTHER Dockerfile line, even comments / whitespace.)
+          changed=$(git diff "${parent}" "${HEAD_SHA}" -- Dockerfile | grep -E '^[+-]' | grep -Ev '^[+-]{3} ')
+          non_arg=$(echo "$changed" | grep -Ev '^[+-]ARG BASE_IMAGE=' || true)
+          if [ -n "$non_arg" ]; then
+            echo "::error::Dockerfile has non-BASE_IMAGE changes:"; echo "$non_arg"; exit 1
+          fi
+
+          # 3. Exactly one removed and one added BASE_IMAGE line.
+          removed_line=$(echo "$changed" | grep '^-ARG BASE_IMAGE=' || true)
+          added_line=$(echo   "$changed" | grep '^+ARG BASE_IMAGE=' || true)
+          if [ "$(echo "$removed_line" | grep -c .)" != "1" ] || \
+             [ "$(echo "$added_line"   | grep -c .)" != "1" ]; then
+            echo "::error::Expected exactly one BASE_IMAGE line change"
+            echo "Removed: $removed_line"
+            echo "Added:   $added_line"
+            exit 1
+          fi
+
+          # 4. BOTH the removed and added lines must independently match the strict pattern.
+          pattern='^[+-]ARG BASE_IMAGE=node:22-alpine@sha256:[0-9a-f]{64}$'
+          if ! echo "$removed_line" | grep -Eq "$pattern"; then
+            echo "::error::Removed line does not match strict pattern: $removed_line"; exit 1
+          fi
+          if ! echo "$added_line" | grep -Eq "$pattern"; then
+            echo "::error::Added line does not match strict pattern: $added_line"; exit 1
+          fi
+
+      - name: Defer if a release was published in the last 10 minutes
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          published=$(gh release list --limit 1 --json publishedAt --jq '.[0].publishedAt')
+          if [ -n "$published" ]; then
+            delta=$(( $(date +%s) - $(date -d "$published" +%s) ))
+            if [ "$delta" -lt 600 ]; then
+              echo "::error::Release published ${delta}s ago; deferring to release flow"
+              exit 1
+            fi
+          fi
+
+      - id: extract
+        name: Extract new BASE_IMAGE digest from Dockerfile at head_sha
+        run: |
+          digest=$(grep -E '^ARG BASE_IMAGE=' Dockerfile | head -1 | sed 's/^ARG BASE_IMAGE=//')
+          if [ -z "$digest" ]; then echo "::error::Could not read BASE_IMAGE"; exit 1; fi
+          echo "new_digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - id: release
+        name: Resolve latest release tag via isLatest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag=$(gh release list --limit 50 --json tagName,isLatest,isDraft,isPrerelease \
+                --jq '.[] | select(.isLatest==true and .isDraft==false and .isPrerelease==false) | .tagName')
+          if [[ ! "$tag" =~ ^webssh2-server-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::notice::No qualifying release tag; skipping"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sha=$(gh api repos/${{ github.repository }}/git/ref/tags/${tag} \
+                --jq '.object.sha')
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - id: decide
+        name: Per-head_sha idempotency check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          body=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
+          if echo "$body" | grep -q "rebuild-sha: ${HEAD_SHA}"; then
+            echo "::notice::Already rebuilt for ${HEAD_SHA}"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  rebuild:
+    runs-on: ubuntu-latest
+    needs: guard
+    if: needs.guard.outputs.proceed == 'true'
+    permissions:
+      contents: write       # to post release comment
+      packages: write
+    env:
+      HEAD_SHA: ${{ needs.guard.outputs.head_sha }}
+      NEW_DIGEST: ${{ needs.guard.outputs.new_digest }}
+      RELEASE_TAG: ${{ needs.guard.outputs.release_tag }}
+      RELEASE_SHA: ${{ needs.guard.outputs.release_sha }}
+      SIMULATE: ${{ github.event.inputs.simulate || 'false' }}
+    steps:
+      - name: Snapshot existing sha-tag digest (for post-push assertion)
+        run: |
+          short="${RELEASE_SHA:0:7}"
+          before=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${short}" \
+            | jq -r '.digest' 2>/dev/null || echo "")
+          echo "SHA_TAG_SHORT=${short}"          >> "$GITHUB_ENV"
+          echo "SHA_TAG_DIGEST_BEFORE=${before}" >> "$GITHUB_ENV"
+
+      # Pull only .trivyignore from main into the workspace root so the
+      # Trivy step below can suppress documented bundled-npm CVEs. The
+      # release tag's own source tree (older releases) may not include
+      # this file; the scan policy must track current main, not the
+      # release's frozen state.
+      - name: Checkout main .trivyignore for scan suppression
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            .trivyignore
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout release-tag source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          path: release-src
+          fetch-depth: 0
+
+      - name: Overlay new BASE_IMAGE digest onto release-src Dockerfile
+        working-directory: release-src
+        run: |
+          sed -i "s|^ARG BASE_IMAGE=.*|ARG BASE_IMAGE=${NEW_DIGEST}|" Dockerfile
+          grep -E '^ARG BASE_IMAGE=' Dockerfile
+
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build amd64 for scan
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: release-src
+          load: true
+          platforms: linux/amd64
+          tags: local/webssh2-rebuild:scan
+
+      - name: Trivy image scan (fail closed)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: local/webssh2-rebuild:scan
+          format: sarif
+          output: trivy-rebuild.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: true
+          trivyignores: .trivyignore
+          # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation
+          # and exit-code evaluation. Without this, trivy-action unsets
+          # TRIVY_SEVERITY in sarif mode, silently disabling the gate
+          # (same bug fixed in docker-publish.yml in commit 0390fcc).
+          limit-severities-for-sarif: 'true'
+
+      - id: semver
+        name: Derive semver tags from RELEASE_TAG
+        run: |
+          tag="${RELEASE_TAG#webssh2-server-v}"
+          major="${tag%%.*}"
+          minor="${tag%.*}"
+          echo "full=$tag"    >> "$GITHUB_OUTPUT"
+          echo "minor=$minor" >> "$GITHUB_OUTPUT"
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+
+      - name: Multi-arch build and push (semver tags only; no sha-tag)
+        id: push
+        if: env.SIMULATE != 'true'
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: release-src
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            docker.io/billchurch/webssh2:${{ steps.semver.outputs.full }}
+            docker.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}
+            docker.io/billchurch/webssh2:${{ steps.semver.outputs.major }}
+            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.full }}
+            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}
+            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.major }}
+
+      - name: Simulate push (dry-run)
+        if: env.SIMULATE == 'true'
+        run: |
+          echo "SIMULATE=true; would have pushed:"
+          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.full }}"
+          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}"
+          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.major }}"
+          echo "  (ghcr counterparts)"
+
+      - name: Assert sha-tag digest unchanged
+        if: env.SIMULATE != 'true'
+        run: |
+          after=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${SHA_TAG_SHORT}" \
+            | jq -r '.digest')
+          if [ "$after" != "${SHA_TAG_DIGEST_BEFORE}" ]; then
+            echo "::error::sha-${SHA_TAG_SHORT} digest changed from ${SHA_TAG_DIGEST_BEFORE} to ${after}"
+            exit 1
+          fi
+
+      - name: Comment on release with new image digest
+        if: env.SIMULATE != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+          SEMVER_FULL: ${{ steps.semver.outputs.full }}
+          SEMVER_MINOR: ${{ steps.semver.outputs.minor }}
+          SEMVER_MAJOR: ${{ steps.semver.outputs.major }}
+        run: |
+          body=$(printf '%s\n' \
+            "[base-refresh] Base image refreshed (no source changes)" \
+            "- Base image: ${NEW_DIGEST}" \
+            "- Refreshed tags: ${SEMVER_FULL}, ${SEMVER_MINOR}, ${SEMVER_MAJOR}" \
+            "- New image digest: ${IMAGE_DIGEST}" \
+            "- Triggered by: ${PR_URL}" \
+            "" \
+            "rebuild-sha: ${HEAD_SHA}")
+          current=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
+          notes=$(printf '%s\n\n%s\n' "${current}" "${body}")
+          gh release edit "$RELEASE_TAG" --notes "${notes}"

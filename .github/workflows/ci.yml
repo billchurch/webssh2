@@ -72,3 +72,75 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
+
+  docker-image-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    concurrency:
+      group: docker-image-scan-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            image:
+              - 'Dockerfile'
+              - 'package-lock.json'
+              - 'package.json'
+              - '.github/workflows/docker-publish.yml'
+
+      - name: Note when nothing image-relevant changed
+        if: steps.filter.outputs.image != 'true'
+        run: echo "No image-relevant changes; passing required check as a no-op."
+
+      - name: Note fork PR skip
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: echo "Fork PR; image scan skipped (advisory; main-branch scan is the gate)."
+
+      - name: Login to Docker Hub (raise anon rate-limit)
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Set up buildx
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Build amd64 image for scanning
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          load: true
+          tags: webssh2:pr-${{ github.event.pull_request.number }}
+          platforms: linux/amd64
+          cache-from: type=gha,scope=publish-refs/heads/main
+
+      - name: Trivy image scan
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: webssh2:pr-${{ github.event.pull_request.number }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          cache: true
+          trivyignores: .trivyignore

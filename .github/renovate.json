@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "schedule": ["* 0-6 * * *"],
+  "timezone": "America/New_York",
+  "dockerfile": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "Auto-merge digest-only base image updates for node:22-alpine",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["digest"],
+      "matchDepNames": ["node"],
+      "matchCurrentValue": "22-alpine",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "rebaseWhen": "behind-base-branch",
+      "groupName": null,
+      "separateMinorPatch": true
+    },
+    {
+      "description": "Require human review for base image version bumps",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "automerge": false
+    }
+  ]
+}
