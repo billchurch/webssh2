@@ -20,8 +20,8 @@ export function transformAssetPaths(html: string, basePath: string = '/ssh/asset
  * Script-safe: escapes characters that could break out of a `<script>` tag or
  * cause unintended JavaScript execution:
  *   - `<` → `<`  (prevents `</script>` and `<!--` injection)
- *   - U+2028 (line separator, \u2028 — valid JS line terminator)
- *   - U+2029 (paragraph separator, \u2029 — valid JS line terminator)
+ *   - U+2028 (line separator) → `\u2028` (valid JS line terminator)
+ *   - U+2029 (paragraph separator) → `\u2029` (valid JS line terminator)
  *
  * @param html - HTML string to modify
  * @param config - Configuration object to inject
@@ -30,8 +30,8 @@ export function transformAssetPaths(html: string, basePath: string = '/ssh/asset
 export function injectConfig(html: string, config: unknown): string {
   const safeJson = JSON.stringify(config)
     .replaceAll('<', '\\u003c')
-    .replaceAll(' ', '\\u2028')
-    .replaceAll(' ', '\\u2029')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029')
   return html.replace(
     'window.webssh2Config = null;',
     `window.webssh2Config = ${safeJson};`
