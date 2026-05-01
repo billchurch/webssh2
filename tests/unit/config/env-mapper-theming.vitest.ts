@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mapEnvironmentVariables } from '../../../app/config/env-mapper.js'
 
 describe('env-mapper theming', () => {
@@ -72,5 +72,55 @@ describe('env-mapper theming', () => {
       theming?: { headerBackground?: string }
     } | undefined
     expect(options?.theming?.headerBackground).toBeUndefined()
+  })
+
+  it('emits onThemingWarning hook for invalid additionalThemes entries', () => {
+    const json = JSON.stringify([
+      { name: 'Default', colors: { background: '#101010' } }, // collides with builtin
+      { name: 'Corp', colors: { background: '#101010' } }
+    ])
+    const b64 = Buffer.from(json, 'utf8').toString('base64')
+    const onThemingWarning = vi.fn()
+    mapEnvironmentVariables(
+      {
+        WEBSSH2_THEMING_ENABLED: 'true',
+        WEBSSH2_THEMING_ADDITIONAL_THEMES: b64
+      },
+      { onThemingWarning }
+    )
+    expect(onThemingWarning).toHaveBeenCalled()
+    const calls = onThemingWarning.mock.calls as Array<
+      [{ source: string; path: string; reason: string }]
+    >
+    const warnings = calls.map((args) => args[0])
+    expect(warnings.some((w) => w.source === 'WEBSSH2_THEMING_ADDITIONAL_THEMES')).toBe(true)
+    expect(warnings.some((w) => /collid|builtin|reserved/i.test(w.reason))).toBe(true)
+  })
+
+  it('emits onThemingWarning hook when base64 decode fails', () => {
+    const onThemingWarning = vi.fn()
+    mapEnvironmentVariables(
+      {
+        WEBSSH2_THEMING_ENABLED: 'true',
+        WEBSSH2_THEMING_ADDITIONAL_THEMES: 'GARBAGE!!!'
+      },
+      { onThemingWarning }
+    )
+    expect(onThemingWarning).toHaveBeenCalledTimes(1)
+    const warning = onThemingWarning.mock.calls[0]?.[0] as {
+      source: string
+      reason: string
+    }
+    expect(warning.source).toBe('WEBSSH2_THEMING_ADDITIONAL_THEMES')
+    expect(warning.reason).toMatch(/base64|json|notArray|oversize/i)
+  })
+
+  it('does not invoke hooks when additionalThemes is absent', () => {
+    const onThemingWarning = vi.fn()
+    mapEnvironmentVariables(
+      { WEBSSH2_THEMING_ENABLED: 'true' },
+      { onThemingWarning }
+    )
+    expect(onThemingWarning).not.toHaveBeenCalled()
   })
 })

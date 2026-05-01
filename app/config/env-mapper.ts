@@ -11,7 +11,19 @@ import { getAlgorithmPreset } from './algorithm-presets.js'
 import { createSafeKey, safeGet, safePathToKeys, safeSetNested } from '../utils/index.js'
 import { ALGORITHM_ENV_VARS } from '../constants/algorithm-env-vars.js'
 import { THEME_NAME_REGEX } from '../services/theming/theme-name.js'
-import { loadAdditionalThemes } from '../services/theming/theme-loader.js'
+import {
+  loadAdditionalThemes,
+  type ThemeValidationWarning
+} from '../services/theming/theme-loader.js'
+
+/**
+ * Optional callbacks invoked while mapping theming env vars. Lets the caller
+ * surface dropped/invalid entries via the application logger without coupling
+ * env-mapper to a logger module.
+ */
+export interface EnvMapperHooks {
+  readonly onThemingWarning?: (warning: ThemeValidationWarning) => void
+}
 
 export interface EnvVarMap { 
   path: string
@@ -199,10 +211,14 @@ const VALID_HEADER_BACKGROUND = new Set(['independent', 'followTerminal', 'locke
  * Map environment variables to configuration object
  * Individual algorithm settings take precedence over preset values
  * @param env - Environment variables object
+ * @param hooks - Optional callbacks (e.g., to surface theming warnings)
  * @returns Configuration object with mapped values
  * @pure
  */
-export function mapEnvironmentVariables(env: Record<string, string | undefined>): Record<string, unknown> {
+export function mapEnvironmentVariables(
+  env: Record<string, string | undefined>,
+  hooks?: EnvMapperHooks
+): Record<string, unknown> {
   const config: Record<string, unknown> = {}
 
   // First pass: process preset if it exists (provides base algorithm values)
@@ -276,8 +292,20 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
         builtinNames: BUILTIN_THEME_NAMES,
       })
       setNestedProperty(config, 'options.theming.additionalThemes', loaded.valid)
+      if (hooks?.onThemingWarning !== undefined) {
+        for (const warning of loaded.warnings) {
+          hooks.onThemingWarning(warning)
+        }
+      }
     } else {
       setNestedProperty(config, 'options.theming.additionalThemes', [])
+      if (hooks?.onThemingWarning !== undefined) {
+        hooks.onThemingWarning({
+          source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
+          path: '',
+          reason: parsed.detail === undefined ? parsed.reason : `${parsed.reason}: ${parsed.detail}`
+        })
+      }
     }
   }
 

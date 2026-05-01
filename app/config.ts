@@ -3,7 +3,7 @@
 
 import { inspect } from 'node:util'
 import { generateSecureSecret, enhanceConfig, ok, err } from './utils/index.js'
-import { createNamespacedDebug } from './logger.js'
+import { createNamespacedDebug, logThemingConfigWarning } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
@@ -90,7 +90,11 @@ export async function loadEnhancedConfig(
 
   // Load environment config
   const resolvedEnv = env ?? process.env
-  const envConfig = mapEnvironmentVariables(resolvedEnv)
+  const envConfig = mapEnvironmentVariables(resolvedEnv, {
+    onThemingWarning: (warning) => {
+      logThemingConfigWarning(warning)
+    }
+  })
 
   // Log environment variables for algorithm debugging
   debug('Environment variables mapped', {
