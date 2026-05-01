@@ -1,5 +1,8 @@
-// app/services/theming/theme-color-keys.ts
-// THEME_COLOR_KEYS allowlist constant
+/**
+ * Theme color keys allowlist for terminal theming.
+ * The validator iterates these keys (not input keys) to defend against
+ * prototype-pollution. The set provides O(1) membership checks.
+ */
 
 import type { ThemeColors } from '../../types/config.js'
 
