@@ -1,6 +1,9 @@
 // app/utils/html-transformer.ts
 // Pure functions for HTML transformation
 
+/** Placeholder string in the client HTML that gets replaced with the runtime config. */
+const CONFIG_PLACEHOLDER = 'window.webssh2Config = null;'
+
 /**
  * Transform HTML by modifying asset paths
  * Pure function - no side effects
@@ -33,7 +36,7 @@ export function injectConfig(html: string, config: unknown): string {
     .replaceAll('\u2028', '\\u2028')
     .replaceAll('\u2029', '\\u2029')
   return html.replace(
-    'window.webssh2Config = null;',
+    CONFIG_PLACEHOLDER,
     `window.webssh2Config = ${safeJson};`
   )
 }
@@ -62,14 +65,18 @@ export function transformHtml(html: string, config: unknown, basePath?: string):
  * Edge case: when `configWithoutTheming` serializes to `{}`, the result is
  * `{"theming":<json>}` rather than the malformed `{,"theming":<json>}`.
  *
+ * The parameter is narrowed to `Record<string, unknown>` so callers cannot
+ * accidentally pass `null`, an array, or a primitive - any of which would
+ * stringify to a non-object form and produce malformed merged JSON.
+ *
  * @param html - HTML string to modify
- * @param configWithoutTheming - Configuration object (must NOT contain a `theming` key)
+ * @param configWithoutTheming - Plain config object (must NOT contain a `theming` key)
  * @param themingJson - Pre-serialized, script-safe theming JSON string
  * @returns HTML with merged configuration injected
  */
 export function injectConfigWithThemingString(
   html: string,
-  configWithoutTheming: unknown,
+  configWithoutTheming: Record<string, unknown>,
   themingJson: string
 ): string {
   const base = JSON.stringify(configWithoutTheming)
@@ -80,7 +87,7 @@ export function injectConfigWithThemingString(
     ? `{"theming":${themingJson}}`
     : `${base.slice(0, -1)},"theming":${themingJson}}`
   return html.replace(
-    'window.webssh2Config = null;',
+    CONFIG_PLACEHOLDER,
     `window.webssh2Config = ${merged};`
   )
 }

@@ -49,7 +49,11 @@ function hasSessionCredentials(session: Sess): boolean {
   )
 }
 
-async function sendClient(config: unknown, res: Response, basePath?: string): Promise<void> {
+async function sendClient(
+  config: Record<string, unknown>,
+  res: Response,
+  basePath?: string
+): Promise<void> {
   try {
     const data = await readClientTemplate()
     debug('Transforming HTML with config')

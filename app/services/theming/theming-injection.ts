@@ -10,7 +10,7 @@
  * Pure functions; no I/O, no side effects.
  */
 
-import type { ThemingConfig } from '../../types/config.js'
+import type { ThemeColors, ThemingConfig } from '../../types/config.js'
 
 export type ClientThemingPayload =
   | { readonly enabled: false }
@@ -20,7 +20,7 @@ export type ClientThemingPayload =
       readonly themes: readonly string[] | null
       readonly additionalThemes: ReadonlyArray<{
         readonly name: string
-        readonly colors: Record<string, string>
+        readonly colors: ThemeColors
         readonly license?: string
         readonly source?: string
       }>
@@ -44,7 +44,7 @@ export function buildClientThemingPayload(cfg: ThemingConfig): ClientThemingPayl
     themes: cfg.themes,
     additionalThemes: cfg.additionalThemes.map((t) => ({
       name: t.name,
-      colors: { ...t.colors } as Record<string, string>,
+      colors: { ...t.colors },
       ...(t.license !== undefined && { license: t.license }),
       ...(t.source !== undefined && { source: t.source })
     })),
