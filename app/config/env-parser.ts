@@ -191,9 +191,7 @@ export function parseBase64JsonArrayEnv(
     // Verify the string is valid base64 by round-tripping (strip padding for comparison)
     const roundTripped = Buffer.from(decoded, 'utf8').toString('base64').replace(/=+$/u, '')
     const rawStripped = raw.replace(/=+$/u, '')
-    if (roundTripped === rawStripped) {
-      // valid base64 — continue
-    } else {
+    if (roundTripped !== rawStripped) {
       return { ok: false, reason: 'base64' }
     }
   } catch {
