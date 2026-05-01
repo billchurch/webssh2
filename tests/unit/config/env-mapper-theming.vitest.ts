@@ -51,4 +51,26 @@ describe('env-mapper theming', () => {
     } | undefined
     expect(options?.theming?.additionalThemes).toEqual([])
   })
+
+  it('accepts valid WEBSSH2_THEMING_HEADER_BACKGROUND values', () => {
+    const out = mapEnvironmentVariables({
+      WEBSSH2_THEMING_ENABLED: 'true',
+      WEBSSH2_THEMING_HEADER_BACKGROUND: 'followTerminal'
+    })
+    const options = out['options'] as {
+      theming?: { headerBackground?: string }
+    } | undefined
+    expect(options?.theming?.headerBackground).toBe('followTerminal')
+  })
+
+  it('leaves headerBackground unset on invalid WEBSSH2_THEMING_HEADER_BACKGROUND', () => {
+    const out = mapEnvironmentVariables({
+      WEBSSH2_THEMING_ENABLED: 'true',
+      WEBSSH2_THEMING_HEADER_BACKGROUND: 'rainbow'
+    })
+    const options = out['options'] as {
+      theming?: { headerBackground?: string }
+    } | undefined
+    expect(options?.theming?.headerBackground).toBeUndefined()
+  })
 })

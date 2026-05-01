@@ -12,7 +12,6 @@ import { createSafeKey, safeGet, safePathToKeys, safeSetNested } from '../utils/
 import { ALGORITHM_ENV_VARS } from '../constants/algorithm-env-vars.js'
 import { THEME_NAME_REGEX } from '../services/theming/theme-name.js'
 import { loadAdditionalThemes } from '../services/theming/theme-loader.js'
-import type { AdditionalTheme } from '../types/config.js'
 
 export interface EnvVarMap { 
   path: string
@@ -276,11 +275,7 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
         source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
         builtinNames: BUILTIN_THEME_NAMES,
       })
-      setNestedProperty(
-        config,
-        'options.theming.additionalThemes',
-        loaded.valid as unknown as AdditionalTheme[]
-      )
+      setNestedProperty(config, 'options.theming.additionalThemes', loaded.valid)
     } else {
       setNestedProperty(config, 'options.theming.additionalThemes', [])
     }
