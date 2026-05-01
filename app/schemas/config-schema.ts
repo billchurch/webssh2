@@ -137,6 +137,50 @@ const HeaderSchema = z.object({
 })
 
 /**
+ * Theme colors schema
+ */
+const ThemeColorsSchema = z.object({
+  black: z.string().optional(),
+  red: z.string().optional(),
+  green: z.string().optional(),
+  yellow: z.string().optional(),
+  blue: z.string().optional(),
+  magenta: z.string().optional(),
+  cyan: z.string().optional(),
+  white: z.string().optional(),
+  brightBlack: z.string().optional(),
+  brightRed: z.string().optional(),
+  brightGreen: z.string().optional(),
+  brightYellow: z.string().optional(),
+  brightBlue: z.string().optional(),
+  brightMagenta: z.string().optional(),
+  brightCyan: z.string().optional(),
+  brightWhite: z.string().optional()
+})
+
+/**
+ * Additional theme schema
+ */
+const AdditionalThemeSchema = z.object({
+  name: z.string(),
+  colors: ThemeColorsSchema,
+  license: z.string().optional(),
+  source: z.string().optional()
+})
+
+/**
+ * Theming configuration schema
+ */
+const ThemingSchema = z.object({
+  enabled: z.boolean(),
+  allowCustom: z.boolean(),
+  themes: z.array(z.string()).nullable(),
+  additionalThemes: z.array(AdditionalThemeSchema),
+  defaultTheme: z.string(),
+  headerBackground: z.enum(['independent', 'followTerminal', 'locked'])
+}).optional()
+
+/**
  * Options configuration schema
  */
 const OptionsSchema = z.object({
@@ -145,7 +189,8 @@ const OptionsSchema = z.object({
   allowReauth: z.boolean(),
   allowReconnect: z.boolean(),
   allowReplay: z.boolean(),
-  replayCRLF: z.boolean().optional()
+  replayCRLF: z.boolean().optional(),
+  theming: ThemingSchema
 })
 
 /**

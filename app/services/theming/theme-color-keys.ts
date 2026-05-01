@@ -6,7 +6,7 @@
 
 import type { ThemeColors } from '../../types/config.js'
 
-export const THEME_COLOR_KEYS: readonly (keyof ThemeColors)[] = [
+export const THEME_COLOR_KEYS: ReadonlyArray<keyof ThemeColors> = [
   'background',
   'foreground',
   'cursor',

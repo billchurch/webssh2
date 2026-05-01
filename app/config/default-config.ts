@@ -13,7 +13,8 @@ import type {
   LoggingSyslogConfig,
   LoggingSyslogTlsConfig,
   SftpConfig,
-  TelnetConfig
+  TelnetConfig,
+  ThemingConfig
 } from '../types/config.js'
 import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS, TELNET_DEFAULTS } from '../constants/index.js'
 import { SFTP_DEFAULTS } from '../constants/sftp.js'
@@ -80,6 +81,19 @@ export const DEFAULT_SSH_ALGORITHMS: Config['ssh']['algorithms'] = {
 }
 
 /**
+ * Default theming configuration (disabled).
+ * Opt-in: enabled=false means no behavior change on upgrade.
+ */
+export const DEFAULT_THEMING_CONFIG: ThemingConfig = {
+  enabled: false,
+  allowCustom: true,
+  themes: null,
+  additionalThemes: [],
+  defaultTheme: 'Default',
+  headerBackground: 'independent'
+}
+
+/**
  * Base default configuration (without session secret)
  */
 export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Config['session'], 'secret'> } = {
@@ -123,6 +137,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     allowReconnect: true,
     allowReplay: true,
     replayCRLF: false,
+    theming: DEFAULT_THEMING_CONFIG,
   },
   session: {
     name: DEFAULTS.SESSION_COOKIE_NAME,
