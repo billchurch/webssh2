@@ -1,3 +1,4 @@
+/* global window, localStorage */
 /**
  * Terminal theming Playwright tests
  *
@@ -54,15 +55,10 @@ test.describe('Terminal Theming', () => {
     // Open the Menu dropdown by hovering (the dropdown uses onMouseEnter to open)
     await page.locator('button', { hasText: 'Menu' }).hover()
 
-    // Wait for the menu to appear
-    await page
-      .locator('button[role="menuitem"]', { hasText: 'Settings' })
-      .waitFor({ state: 'visible' })
-
-    // Click Settings menu item
-    await page
-      .locator('button[role="menuitem"]', { hasText: 'Settings' })
-      .click()
+    // Wait for the menu to appear and click Settings menu item
+    const settingsItem = page.locator('button[role="menuitem"]', { hasText: 'Settings' })
+    await settingsItem.waitFor({ state: 'visible' })
+    await settingsItem.click()
 
     // The Terminal Theme section is gated on theming.enabled — expand it
     await page.locator('button', { hasText: 'Terminal Theme' }).click()
@@ -87,6 +83,7 @@ test.describe('Terminal Theming', () => {
     await waitForV2Terminal(page)
     await page.locator('.xterm-screen').waitFor({ state: 'visible' })
 
+    await expect(wrapper).toBeVisible({ timeout: TIMEOUTS.DEFAULT })
     const bgAfterReload = await wrapper.evaluate(
       (el) => window.getComputedStyle(el).backgroundColor
     )
