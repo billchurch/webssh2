@@ -140,6 +140,13 @@ const HeaderSchema = z.object({
  * Theme colors schema
  */
 const ThemeColorsSchema = z.object({
+  background: z.string().optional(),
+  foreground: z.string().optional(),
+  cursor: z.string().optional(),
+  cursorAccent: z.string().optional(),
+  selectionBackground: z.string().optional(),
+  selectionForeground: z.string().optional(),
+  selectionInactiveBackground: z.string().optional(),
   black: z.string().optional(),
   red: z.string().optional(),
   green: z.string().optional(),
