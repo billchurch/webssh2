@@ -64,21 +64,51 @@ describe('transformHtml', () => {
   it('should apply both transformations', () => {
     const html = '<link href="styles.css"><script>window.webssh2Config = null;</script>'
     const config = { theme: 'dark' }
-    
+
     const result = transformHtml(html, config)
-    
+
     expect(result).toBe('<link href="/ssh/assets/styles.css"><script>window.webssh2Config = {"theme":"dark"};</script>')
   })
-  
+
   it('should be pure - not mutate inputs', () => {
     const html = '<link href="styles.css">'
     const config = { test: 'value' }
     const originalHtml = html
     const originalConfig = { ...config }
-    
+
     transformHtml(html, config)
-    
+
     expect(html).toBe(originalHtml)
     expect(config).toEqual(originalConfig)
+  })
+})
+
+describe('injectConfig — script-safe escaping', () => {
+  const HOST = '<script>window.webssh2Config = null;</script>'
+
+  it('escapes </script> in admin string fields', () => {
+    const config = { name: '</script><script>alert(1)</script>' }
+    const html = injectConfig(HOST, config)
+    expect(html).not.toContain('</script><script>alert(1)')
+    expect(html).toContain('\\u003c')
+  })
+
+  it('escapes </Script> case-insensitively', () => {
+    const config = { name: '</Script>' }
+    expect(injectConfig(HOST, config)).not.toContain('</Script>')
+  })
+
+  it('escapes <!-- HTML comment open', () => {
+    const config = { x: '<!-- bait' }
+    expect(injectConfig(HOST, config)).not.toContain('<!--')
+  })
+
+  it('escapes U+2028 and U+2029', () => {
+    const config = { x: 'a\u2028b\u2029c' }
+    const html = injectConfig(HOST, config)
+    expect(html).not.toContain('\u2028')
+    expect(html).not.toContain('\u2029')
+    expect(html).toContain('\\u2028')
+    expect(html).toContain('\\u2029')
   })
 })

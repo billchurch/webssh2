@@ -16,15 +16,25 @@ export function transformAssetPaths(html: string, basePath: string = '/ssh/asset
 /**
  * Inject configuration into HTML
  * Pure function - no side effects
- * 
+ *
+ * Script-safe: escapes characters that could break out of a `<script>` tag or
+ * cause unintended JavaScript execution:
+ *   - `<` → `<`  (prevents `</script>` and `<!--` injection)
+ *   - U+2028 (line separator, \u2028 — valid JS line terminator)
+ *   - U+2029 (paragraph separator, \u2029 — valid JS line terminator)
+ *
  * @param html - HTML string to modify
  * @param config - Configuration object to inject
  * @returns HTML with injected configuration
  */
 export function injectConfig(html: string, config: unknown): string {
+  const safeJson = JSON.stringify(config)
+    .replaceAll('<', '\\u003c')
+    .replaceAll(' ', '\\u2028')
+    .replaceAll(' ', '\\u2029')
   return html.replace(
     'window.webssh2Config = null;',
-    `window.webssh2Config = ${JSON.stringify(config)};`
+    `window.webssh2Config = ${safeJson};`
   )
 }
 
