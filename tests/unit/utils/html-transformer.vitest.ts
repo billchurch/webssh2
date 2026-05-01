@@ -7,6 +7,7 @@ import {
   injectConfig,
   transformHtml
 } from '../../../app/utils/index.js'
+import { injectConfigWithThemingString } from '../../../app/utils/html-transformer.js'
 
 describe('transformAssetPaths', () => {
   it('should transform relative asset paths', () => {
@@ -110,5 +111,51 @@ describe('injectConfig — script-safe escaping', () => {
     expect(html).not.toContain('\u2029')
     expect(html).toContain('\\u2028')
     expect(html).toContain('\\u2029')
+  })
+})
+
+describe('injectConfigWithThemingString', () => {
+  const HOST = '<script>window.webssh2Config = null;</script>'
+
+  it('splices theming JSON into a non-empty config', () => {
+    const html = injectConfigWithThemingString(
+      HOST,
+      { autoConnect: true },
+      '{"enabled":false}'
+    )
+    expect(html).toBe(
+      '<script>window.webssh2Config = {"autoConnect":true,"theming":{"enabled":false}};</script>'
+    )
+  })
+
+  it('handles empty config without producing malformed JSON', () => {
+    const html = injectConfigWithThemingString(HOST, {}, '{"enabled":false}')
+    expect(html).toBe(
+      '<script>window.webssh2Config = {"theming":{"enabled":false}};</script>'
+    )
+    expect(html).not.toContain('{,')
+  })
+
+  it('preserves the script-safe escaping of the base config', () => {
+    const html = injectConfigWithThemingString(
+      HOST,
+      { msg: '</script>a\u2028b\u2029c' },
+      '{"enabled":false}'
+    )
+    expect(html).not.toContain('</script>a')
+    expect(html).not.toContain('\u2028')
+    expect(html).not.toContain('\u2029')
+    expect(html).toContain('\\u003c')
+    expect(html).toContain('\\u2028')
+    expect(html).toContain('\\u2029')
+  })
+
+  it('does not modify HTML without the placeholder', () => {
+    const html = injectConfigWithThemingString(
+      '<script>console.log("noop")</script>',
+      { x: 1 },
+      '{"enabled":false}'
+    )
+    expect(html).toBe('<script>console.log("noop")</script>')
   })
 })

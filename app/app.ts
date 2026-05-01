@@ -17,6 +17,8 @@ import { initializeGlobalContainer } from './services/setup.js'
 import { extractErrorMessage } from './utils/error-messages.js'
 import { TOKENS } from './services/container.js'
 import type { Services } from './services/interfaces.js'
+import { setHandlerThemingConfig } from './connectionHandler.js'
+import { setLoadedThemingForInjection } from './services/theming/index.js'
 
 const debug = createNamespacedDebug('app')
 
@@ -60,6 +62,16 @@ export async function initializeServerAsync(): Promise<{
     debug('Configuration loaded asynchronously')
 
     applyLoggingConfiguration(appConfig.logging)
+
+    // Pre-warm the theming injection cache and wire the resolved theming
+    // config into the connection handler. When theming is disabled (or
+    // missing), the handler falls back to the legacy injection path with
+    // zero observable behavior change.
+    const themingCfg = appConfig.options.theming
+    setHandlerThemingConfig(themingCfg)
+    if (themingCfg?.enabled === true) {
+      setLoadedThemingForInjection(themingCfg)
+    }
 
     // Initialize DI container and services
     const container = initializeGlobalContainer(appConfig)

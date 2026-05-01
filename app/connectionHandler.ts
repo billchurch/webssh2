@@ -2,12 +2,42 @@ import type { Request, Response } from 'express'
 import { promises as fs } from 'node:fs'
 import { createNamespacedDebug } from './logger.js'
 import { HTTP, MESSAGES, DEFAULTS, TELNET_DEFAULTS } from './constants/index.js'
-import { transformHtml } from './utils/html-transformer.js'
+import {
+  transformAssetPaths,
+  transformHtml,
+  injectConfigWithThemingString
+} from './utils/html-transformer.js'
+import { getCachedThemingJson } from './services/theming/index.js'
 import type { AuthSession } from './auth/auth-utils.js'
+import type { ThemingConfig } from './types/config.js'
 
 const debug = createNamespacedDebug('connectionHandler')
 
 type Sess = AuthSession
+
+/**
+ * Module-level reference to the resolved theming config. Set once at startup
+ * via `setHandlerThemingConfig` so per-request handling does not need to
+ * re-resolve config. When `null` or when `enabled === false`, the legacy
+ * non-theming injection path is used (zero behavior change).
+ */
+let loadedTheming: ThemingConfig | null = null
+
+/**
+ * Wire the resolved server theming config into the connection handler.
+ * Called once at startup from the app bootstrap.
+ */
+export function setHandlerThemingConfig(cfg: ThemingConfig | undefined): void {
+  loadedTheming = cfg ?? null
+}
+
+/**
+ * Test-only helper to clear the wired theming config so each test starts
+ * from the legacy (no-theming) code path.
+ */
+export function resetHandlerThemingConfigForTests(): void {
+  loadedTheming = null
+}
 
 /**
  * Check if session has any type of credentials (Basic Auth or POST)
@@ -23,6 +53,18 @@ async function sendClient(config: unknown, res: Response, basePath?: string): Pr
   try {
     const data = await readClientTemplate()
     debug('Transforming HTML with config')
+    const themingCfg = loadedTheming
+    if (themingCfg !== null && themingCfg.enabled === true) {
+      const htmlWithAssetPaths = transformAssetPaths(data, basePath)
+      const themingJson = getCachedThemingJson(themingCfg)
+      const modifiedHtml = injectConfigWithThemingString(
+        htmlWithAssetPaths,
+        config,
+        themingJson
+      )
+      res.send(modifiedHtml)
+      return
+    }
     const modifiedHtml = transformHtml(data, config, basePath)
     res.send(modifiedHtml)
   } catch {

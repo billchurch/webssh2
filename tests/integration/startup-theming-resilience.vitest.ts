@@ -1,6 +1,8 @@
+import { performance } from 'node:perf_hooks'
 import { describe, expect, it } from 'vitest'
 import { loadEnhancedConfig } from '../../app/config.js'
 import type { ConfigFileResolution } from '../../app/config/config-loader.js'
+import { transformHtml } from '../../app/utils/html-transformer.js'
 
 const noFileResolution: ConfigFileResolution = {
   location: 'currentWorkingDirectory',
@@ -43,5 +45,16 @@ describe('startup with malformed theming env', () => {
     if (result.ok) {
       expect(result.value.options.theming?.enabled).toBe(true)
     }
+  })
+
+  it('injects 64 KiB theming payload in <1 ms', () => {
+    const big = 'x'.repeat(64 * 1024)
+    const config = { x: big }
+    const start = performance.now()
+    for (let i = 0; i < 100; i++) {
+      transformHtml('window.webssh2Config = null;', config)
+    }
+    const avg = (performance.now() - start) / 100
+    expect(avg).toBeLessThan(1)
   })
 })

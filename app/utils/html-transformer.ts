@@ -51,3 +51,36 @@ export function transformHtml(html: string, config: unknown, basePath?: string):
   const htmlWithAssetPaths = transformAssetPaths(html, basePath)
   return injectConfig(htmlWithAssetPaths, config)
 }
+
+/**
+ * Inject configuration with a pre-serialized theming JSON slice.
+ *
+ * The base config object is stringified and script-safe-escaped using the same
+ * rules as `injectConfig`. The provided `themingJson` (already script-safe)
+ * is then spliced in as a `theming` property before the closing brace.
+ *
+ * Edge case: when `configWithoutTheming` serializes to `{}`, the result is
+ * `{"theming":<json>}` rather than the malformed `{,"theming":<json>}`.
+ *
+ * @param html - HTML string to modify
+ * @param configWithoutTheming - Configuration object (must NOT contain a `theming` key)
+ * @param themingJson - Pre-serialized, script-safe theming JSON string
+ * @returns HTML with merged configuration injected
+ */
+export function injectConfigWithThemingString(
+  html: string,
+  configWithoutTheming: unknown,
+  themingJson: string
+): string {
+  const base = JSON.stringify(configWithoutTheming)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029')
+  const merged = base === '{}'
+    ? `{"theming":${themingJson}}`
+    : `${base.slice(0, -1)},"theming":${themingJson}}`
+  return html.replace(
+    'window.webssh2Config = null;',
+    `window.webssh2Config = ${merged};`
+  )
+}
