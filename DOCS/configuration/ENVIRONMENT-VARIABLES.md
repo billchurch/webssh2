@@ -582,6 +582,107 @@ docker run --name webssh2 --rm -it \
 | `WEBSSH2_OPTIONS_ALLOW_REPLAY` | boolean | `true` | Allow session replay |
 | `WEBSSH2_OPTIONS_REPLAY_CRLF` | boolean | `false` | Send CRLF for credential replay (default is CR) |
 
+### Terminal Theming (`options.theming`)
+
+WebSSH2 ships an opt-in terminal theming system. Defaults preserve the previous (non-themed) appearance on upgrade. See [features/THEMING.md](../features/THEMING.md) for the operator guide and [CONFIG-JSON.md](./CONFIG-JSON.md#terminal-theming-optionstheming) for the full schema.
+
+| Variable | Type | Default | Description |
+| --- | --- | --- | --- |
+| `WEBSSH2_THEMING_ENABLED` | boolean | `false` | Master switch for terminal theming |
+| `WEBSSH2_THEMING_ALLOW_CUSTOM` | boolean | `true` | Show the JSON paste textarea in the settings modal |
+| `WEBSSH2_THEMING_THEMES` | csv | (all built-ins) | Comma-separated allowlist of built-in theme names. Names that fail the name regex are silently filtered out. |
+| `WEBSSH2_THEMING_ADDITIONAL_THEMES` | base64 JSON | `[]` | Base64-encoded JSON array of operator-defined themes. Decoded payload must be ≤ 64 KiB. |
+| `WEBSSH2_THEMING_DEFAULT_THEME` | string | `Default` | Initial picker value. Falls back to `Default` if the value fails the name regex. |
+| `WEBSSH2_THEMING_HEADER_BACKGROUND` | enum | `independent` | One of `independent`, `followTerminal`, `locked`. Invalid values are ignored. |
+
+#### Built-in Theme Names
+
+`WEBSSH2_THEMING_THEMES` accepts these names (case-sensitive, comma-separated):
+
+```text
+Default, Dracula, Nord, Solarized Dark, One Dark, Monokai,
+Gruvbox Dark, Tokyo Night, Catppuccin Mocha
+```
+
+(Solarized Light is not shipped because it fails WCAG AA contrast at 4.13:1.)
+
+#### Theming Configuration Examples
+
+**Enable theming with all built-ins and custom paste enabled:**
+
+```bash
+WEBSSH2_THEMING_ENABLED=true
+```
+
+**Restrict to a curated subset and disable custom paste:**
+
+```bash
+WEBSSH2_THEMING_ENABLED=true
+WEBSSH2_THEMING_ALLOW_CUSTOM=false
+WEBSSH2_THEMING_THEMES="Default,Dracula,Tokyo Night"
+WEBSSH2_THEMING_DEFAULT_THEME="Tokyo Night"
+WEBSSH2_THEMING_HEADER_BACKGROUND=followTerminal
+```
+
+#### Encoding `WEBSSH2_THEMING_ADDITIONAL_THEMES`
+
+The variable holds a base64-encoded JSON array. Each array entry is an
+operator-defined theme of the shape `{ name, colors, license?, source? }`.
+See [features/THEMING.md](../features/THEMING.md) for the full validator
+rules.
+
+**Source JSON** (one branded theme):
+
+```json
+[
+  {
+    "name": "Acme Corp",
+    "license": "Proprietary - Acme Corp",
+    "source": "https://internal.acme.example/themes/acme-corp",
+    "colors": {
+      "background": "#0b1220",
+      "foreground": "#e6edf3",
+      "cursor": "#58a6ff"
+    }
+  }
+]
+```
+
+**Encode with `printf` and `base64`:**
+
+```bash
+printf '[{"name":"Acme Corp","license":"Proprietary - Acme Corp","source":"https://internal.acme.example/themes/acme-corp","colors":{"background":"#0b1220","foreground":"#e6edf3","cursor":"#58a6ff"}}]' \
+  | base64
+```
+
+On GNU coreutils, pass `-w 0` (or pipe through `tr -d '\n'`) so the
+output is a single line:
+
+```bash
+printf '...' | base64 -w 0
+```
+
+**Resulting base64** (no line wrapping):
+
+```text
+W3sibmFtZSI6IkFjbWUgQ29ycCIsImxpY2Vuc2UiOiJQcm9wcmlldGFyeSAtIEFjbWUgQ29ycCIsInNvdXJjZSI6Imh0dHBzOi8vaW50ZXJuYWwuYWNtZS5leGFtcGxlL3RoZW1lcy9hY21lLWNvcnAiLCJjb2xvcnMiOnsiYmFja2dyb3VuZCI6IiMwYjEyMjAiLCJmb3JlZ3JvdW5kIjoiI2U2ZWRmMyIsImN1cnNvciI6IiM1OGE2ZmYifX1d
+```
+
+**Apply it:**
+
+```bash
+WEBSSH2_THEMING_ENABLED=true
+WEBSSH2_THEMING_ADDITIONAL_THEMES="W3sibmFtZSI6IkFjbWUgQ29ycCIsImxpY2Vuc2UiOiJQcm9wcmlldGFyeSAtIEFjbWUgQ29ycCIsInNvdXJjZSI6Imh0dHBzOi8vaW50ZXJuYWwuYWNtZS5leGFtcGxlL3RoZW1lcy9hY21lLWNvcnAiLCJjb2xvcnMiOnsiYmFja2dyb3VuZCI6IiMwYjEyMjAiLCJmb3JlZ3JvdW5kIjoiI2U2ZWRmMyIsImN1cnNvciI6IiM1OGE2ZmYifX1d"
+WEBSSH2_THEMING_DEFAULT_THEME="Acme Corp"
+```
+
+> **Note:** Malformed values for `WEBSSH2_THEMING_ADDITIONAL_THEMES`
+> (invalid base64, oversized payload, non-array JSON, individual entry
+> validation failure) cause the whole `additionalThemes` field to fall
+> back to `[]`. Other theming env vars are unaffected. Compare the
+> array length you supplied against `additionalThemesCount` in the
+> startup log to confirm how many entries actually loaded.
+
 ### Session Management
 
 | Variable | Type | Default | Description |

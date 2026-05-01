@@ -5,7 +5,9 @@ This document outlines the breaking changes and updates to the configuration for
 ## Major Structure Changes
 
 ### Removed Sections
+
 The following sections have been completely removed:
+
 - `socketio` - Socket.IO configuration is now handled internally
 - `terminal` - Terminal configuration moved to client-side
 - `serverlog` - Logging configuration simplified
@@ -17,8 +19,10 @@ The following sections have been completely removed:
 ### Renamed and Restructured Sections
 
 #### HTTP Configuration
+
 - Old: `socketio.origins`
 - New: `http.origins`
+
 ```diff
 - "socketio": {
 -   "serveClient": false,
@@ -31,8 +35,10 @@ The following sections have been completely removed:
 ```
 
 #### SSH Algorithms
+
 - Old: Root-level `algorithms` object
 - New: Moved to `ssh.algorithms`
+
 ```diff
 - "algorithms": {
 + "ssh": {
@@ -47,6 +53,7 @@ The following sections have been completely removed:
 ```
 
 #### Session Configuration
+
 ```diff
   "session": {
 -   "name": "WebSSH2",
@@ -58,7 +65,9 @@ The following sections have been completely removed:
 ### New Options
 
 #### SSH Configuration
+
 Added under the `ssh` section:
+
 ```json
 {
   "ssh": {
@@ -69,7 +78,9 @@ Added under the `ssh` section:
 ```
 
 #### Feature Options
+
 Renamed and expanded options:
+
 ```diff
   "options": {
     "challengeButton": true,
@@ -84,26 +95,32 @@ Renamed and expanded options:
 ## Detailed Changes
 
 ### 1. Authentication Options
+
 - Added support for SSH private key authentication via `user.privateKey` and passphrase encrypted private keys via `user.passphrase`
 - Removed `user.overridebasic` option
 - Added keyboard-interactive authentication controls
 
 ### 2. Server Settings
+
 - Default port changed from 2224 to 2222
 - Socket.IO path is now fixed at "/ssh/socket.io"
 - Added server host key algorithm configurations
 
 ### 2a. Security Headers (New Default)
+
 - The server now applies a secure set of HTTP response headers by default via `app/security-headers.js`.
 - A Content Security Policy (CSP) is included and tuned for xterm.js and terminal styling. It purposely allows `'unsafe-inline'` for scripts/styles required by the client-side terminal rendering.
 - These headers are applied before session middleware in `app/middleware.js`.
 
 Notes:
+
 - There is no config.json or environment toggle for CSP or headers at this time. To customize, adjust `app/security-headers.js` (or add a route-specific CSP using `createCSPMiddleware`).
 - HSTS (`Strict-Transport-Security`) is set only when the request is HTTPS (`req.secure`).
 
 ### 3. Terminal Configuration
+
 All terminal-specific configurations have been removed from server config:
+
 ```diff
 - "terminal": {
 -   "cursorBlink": true,
@@ -113,6 +130,7 @@ All terminal-specific configurations have been removed from server config:
 -   "fontSize": 14
 - }
 ```
+
 These settings are now managed client-side.
 
 ## Migration Guide
@@ -226,9 +244,11 @@ To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-
 ### Centralized Constants
 
 Common defaults live in `app/constants.ts`:
+
 - `DEFAULTS`: server defaults (e.g., `SSH_READY_TIMEOUT_MS`, `IO_PING_INTERVAL_MS`, `SESSION_COOKIE_NAME`, `HSTS_MAX_AGE_SECONDS`).
 - `ENV_LIMITS`: caps for environment variables forwarded to SSH.
 - `HEADERS`: canonical HTTP header names used by the server.
+
 ### Credential Replay Line Ending
 
 You can choose whether credential replay sends a carriage return (CR) or carriage return + line feed (CRLF).
@@ -245,6 +265,7 @@ Control which environment variable names are forwarded to the SSH session. If un
 - Env var: `WEBSSH2_SSH_ENV_ALLOWLIST` can be provided as comma-separated or JSON array.
 
 Notes:
+
 - Keys must still match `^[A-Z][A-Z0-9_]*$` and values must not contain `; & | \` $` characters.
 - A safety cap limits forwarding to the first 50 pairs.
 
@@ -265,6 +286,7 @@ Control resource usage when SSH commands or shell sessions generate large amount
 #### Use Cases
 
 **Prevent OOM from infinite streams:**
+
 ```json
 {
   "ssh": {
@@ -272,9 +294,11 @@ Control resource usage when SSH commands or shell sessions generate large amount
   }
 }
 ```
+
 This limits shell output to 1MB/s, preventing Node.js heap exhaustion from commands like `cat /dev/urandom | base64`.
 
 **Limit exec command output:**
+
 ```json
 {
   "ssh": {
@@ -282,9 +306,11 @@ This limits shell output to 1MB/s, preventing Node.js heap exhaustion from comma
   }
 }
 ```
+
 Exec commands (via Socket.IO `exec` event) will truncate at 5MB instead of the default 10MB.
 
 **High-throughput environments:**
+
 ```json
 {
   "ssh": {
@@ -294,9 +320,11 @@ Exec commands (via Socket.IO `exec` event) will truncate at 5MB instead of the d
   }
 }
 ```
+
 Allows 50MB exec output, 5MB/s rate limit, and 64KB socket buffer for trusted users with high-volume workflows.
 
 **Restricted environments:**
+
 ```json
 {
   "ssh": {
@@ -306,11 +334,13 @@ Allows 50MB exec output, 5MB/s rate limit, and 64KB socket buffer for trusted us
   }
 }
 ```
+
 Strict limits (1MB exec, 256KB/s rate, 8KB buffer) for untrusted users or resource-constrained deployments.
 
 #### Environment Variables
 
 These options can also be configured via environment variables:
+
 - `WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES`
 - `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC`
 - `WEBSSH2_SSH_SOCKET_HIGH_WATER_MARK`
@@ -363,6 +393,7 @@ The SFTP feature provides a web-based file browser for uploading and downloading
 #### Use Cases
 
 **Enable SFTP with basic settings:**
+
 ```json
 {
   "ssh": {
@@ -372,9 +403,11 @@ The SFTP feature provides a web-based file browser for uploading and downloading
   }
 }
 ```
+
 This enables SFTP with all default settings (100MB file limit, no rate limiting).
 
 **Restricted file access for shared hosting:**
+
 ```json
 {
   "ssh": {
@@ -388,9 +421,11 @@ This enables SFTP with all default settings (100MB file limit, no rate limiting)
   }
 }
 ```
+
 This configuration enables SFTP, limits uploads to 50MB, restricts browsing to home and `/var/www` directories, blocks executable files, and limits transfer speed to 1MB/s.
 
 **High-performance for trusted environments:**
+
 ```json
 {
   "ssh": {
@@ -404,9 +439,11 @@ This configuration enables SFTP, limits uploads to 50MB, restricts browsing to h
   }
 }
 ```
+
 This enables SFTP and allows 500MB files, uses 64KB chunks for better throughput, allows 5 concurrent transfers, and has no rate limiting.
 
 **Disable SFTP (default):**
+
 ```json
 {
   "ssh": {
@@ -416,11 +453,13 @@ This enables SFTP and allows 500MB files, uses 64KB chunks for better throughput
   }
 }
 ```
+
 SFTP is disabled by default. This configuration is only needed if you want to explicitly disable it after previously enabling it.
 
 #### Environment Variables
 
 These options can also be configured via environment variables:
+
 - `WEBSSH2_SSH_SFTP_ENABLED`
 - `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE`
 - `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC`
@@ -476,6 +515,7 @@ SSH host key verification provides TOFU (Trust On First Use) protection against 
 #### Use Cases
 
 **Enable with hybrid mode (recommended):**
+
 ```json
 {
   "ssh": {
@@ -486,9 +526,11 @@ SSH host key verification provides TOFU (Trust On First Use) protection against 
   }
 }
 ```
+
 Server store is checked first. If the key is unknown on the server, the client's browser store is consulted. Unknown keys prompt the user.
 
 **Server-only mode (centrally managed keys):**
+
 ```json
 {
   "ssh": {
@@ -500,9 +542,11 @@ Server store is checked first. If the key is unknown on the server, the client's
   }
 }
 ```
+
 Only the server SQLite store is used. Unknown keys are rejected — administrators must pre-seed keys via `npm run hostkeys`.
 
 **Client-only mode (no server database):**
+
 ```json
 {
   "ssh": {
@@ -513,9 +557,11 @@ Only the server SQLite store is used. Unknown keys are rejected — administrato
   }
 }
 ```
+
 Only the client browser store is used. Users manage their own trusted keys via the settings UI.
 
 **Alert-only (log but don't block):**
+
 ```json
 {
   "ssh": {
@@ -527,9 +573,11 @@ Only the client browser store is used. Users manage their own trusted keys via t
   }
 }
 ```
+
 Unknown keys show a warning indicator but connections proceed. Useful for monitoring before enforcing.
 
 **Override mode defaults with explicit flags:**
+
 ```json
 {
   "ssh": {
@@ -542,6 +590,7 @@ Unknown keys show a warning indicator but connections proceed. Useful for monito
   }
 }
 ```
+
 Mode is `server` but `clientStore.enabled` is explicitly set to `true`, making it behave like hybrid. Explicit flags always take precedence over mode defaults.
 
 #### Seeding the Server Store
@@ -571,6 +620,7 @@ npm run hostkeys -- --db /custom/path/hostkeys.db --host server1.example.com
 #### Environment Variables
 
 These options can also be configured via environment variables:
+
 - `WEBSSH2_SSH_HOSTKEY_ENABLED`
 - `WEBSSH2_SSH_HOSTKEY_MODE`
 - `WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION`
@@ -579,6 +629,7 @@ These options can also be configured via environment variables:
 - `WEBSSH2_SSH_HOSTKEY_CLIENT_ENABLED`
 
 See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
+
 - `WEBSSH2_SSH_SFTP_MAX_FILE_SIZE`
 - `WEBSSH2_SSH_SFTP_TRANSFER_RATE_LIMIT_BYTES_PER_SEC`
 - `WEBSSH2_SSH_SFTP_CHUNK_SIZE`
@@ -711,3 +762,135 @@ These options can also be configured via environment variables:
 - `WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT`
 
 See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
+
+### Terminal Theming (`options.theming`)
+
+WebSSH2 includes an opt-in terminal theming system. Theming is **disabled by default** so upgrades do not change the rendered terminal appearance. See [features/THEMING.md](../features/THEMING.md) for the operator guide.
+
+#### Configuration Options
+
+- `options.theming.enabled` (boolean, default: `false`): Master switch for the theming system. When `false`, the settings modal hides theming controls and the terminal renders with the previous (non-themed) defaults.
+
+- `options.theming.allowCustom` (boolean, default: `true`): When `true`, the settings modal exposes a JSON paste textarea that lets users define their own theme. User-pasted themes are stored in browser `localStorage` only and are never sent to the server. When `false`, users can only choose from the operator-supplied list.
+
+- `options.theming.themes` (array of strings or `null`, default: `null`): Allowlist of built-in theme names. `null` exposes all built-ins. An explicit array (even empty) restricts the picker to those names only. Built-in names: `Default`, `Dracula`, `Nord`, `Solarized Dark`, `One Dark`, `Monokai`, `Gruvbox Dark`, `Tokyo Night`, `Catppuccin Mocha`. (Solarized Light is not shipped because it fails WCAG AA contrast at 4.13:1.)
+
+- `options.theming.additionalThemes` (array of `AdditionalTheme`, default: `[]`): Operator-defined themes injected at startup. Each entry has the shape:
+
+```text
+{
+  name:    string (must match /^[\w .\-()]{1,64}$/u),
+  colors:  object of hex strings keyed by allowed color names,
+  license: optional attribution string (max 256 chars),
+  source:  optional https:// URL (max 256 chars)
+}
+```
+
+Names that collide with a built-in (case-insensitive) are rejected. The reserved names `default` and `custom` are rejected. Each theme's serialized JSON must be ≤ 4 KiB. Color values must be hex (`#rgb`, `#rrggbb`, or `#rrggbbaa`). Allowed color keys are: `background`, `foreground`, `cursor`, `cursorAccent`, `selectionBackground`, `selectionForeground`, `selectionInactiveBackground`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `brightBlack`, `brightRed`, `brightGreen`, `brightYellow`, `brightBlue`, `brightMagenta`, `brightCyan`, `brightWhite`. Entries that fail validation are dropped at startup; the rest of the array is preserved.
+
+- `options.theming.defaultTheme` (string, default: `"Default"`): The picker's initial value. Must resolve to either a built-in (subject to `themes` filtering) or an entry in `additionalThemes`. Falls back to `"Default"` if the configured value fails the name regex.
+
+- `options.theming.headerBackground` (`"independent"` | `"followTerminal"` | `"locked"`, default: `"independent"`): Header bar coupling. `independent` keeps the header at the configured `header.background` color (current behavior). `followTerminal` makes the header track the active terminal theme's background color. `locked` is reserved for a future "always honor configured value, even when followTerminal would otherwise apply" mode and currently behaves identically to `independent`.
+
+#### Default Theming Configuration
+
+```json
+{
+  "options": {
+    "theming": {
+      "enabled": false,
+      "allowCustom": true,
+      "themes": null,
+      "additionalThemes": [],
+      "defaultTheme": "Default",
+      "headerBackground": "independent"
+    }
+  }
+}
+```
+
+> **Note:** Theming is disabled by default. Set `enabled` to `true` to activate it.
+
+#### Use Cases
+
+**Enable theming with all built-ins:**
+
+```json
+{
+  "options": {
+    "theming": {
+      "enabled": true
+    }
+  }
+}
+```
+
+This enables theming with all nine built-in themes available in the picker, the JSON paste textarea visible, and the header bar in `independent` mode.
+
+**Restrict the picker to a curated subset:**
+
+```json
+{
+  "options": {
+    "theming": {
+      "enabled": true,
+      "themes": ["Default", "Dracula", "Tokyo Night"],
+      "defaultTheme": "Tokyo Night",
+      "allowCustom": false
+    }
+  }
+}
+```
+
+Only three built-ins are exposed, the user cannot paste custom themes, and the picker starts on `Tokyo Night`.
+
+**Ship a branded theme and follow the terminal background:**
+
+```json
+{
+  "options": {
+    "theming": {
+      "enabled": true,
+      "allowCustom": false,
+      "headerBackground": "followTerminal",
+      "defaultTheme": "Acme Corp",
+      "additionalThemes": [
+        {
+          "name": "Acme Corp",
+          "license": "Proprietary - Acme Corp",
+          "source": "https://internal.acme.example/themes/acme-corp",
+          "colors": {
+            "background": "#0b1220",
+            "foreground": "#e6edf3",
+            "cursor": "#58a6ff",
+            "selectionBackground": "#1f6feb",
+            "black": "#1f2937",
+            "red": "#f87171",
+            "green": "#4ade80",
+            "yellow": "#fde047",
+            "blue": "#60a5fa",
+            "magenta": "#c084fc",
+            "cyan": "#67e8f9",
+            "white": "#e6edf3"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+The branded `Acme Corp` theme is the default, the user cannot paste custom themes, and the header bar background tracks the terminal background color.
+
+#### Environment Variables
+
+These options can also be configured via environment variables:
+
+- `WEBSSH2_THEMING_ENABLED`
+- `WEBSSH2_THEMING_ALLOW_CUSTOM`
+- `WEBSSH2_THEMING_THEMES`
+- `WEBSSH2_THEMING_ADDITIONAL_THEMES` (base64-encoded JSON array)
+- `WEBSSH2_THEMING_DEFAULT_THEME`
+- `WEBSSH2_THEMING_HEADER_BACKGROUND`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details and the base64 encoding example, and [features/THEMING.md](../features/THEMING.md) for the full operator guide.
