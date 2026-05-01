@@ -188,7 +188,7 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
 
 /** Built-in theme names used to block collisions when loading additional themes */
 const BUILTIN_THEME_NAMES: readonly string[] = [
-  'Default', 'Dracula', 'Nord', 'Solarized Dark', 'Solarized Light',
+  'Default', 'Dracula', 'Nord', 'Solarized Dark',
   'One Dark', 'Monokai', 'Gruvbox Dark', 'Tokyo Night', 'Catppuccin Mocha',
 ]
 
