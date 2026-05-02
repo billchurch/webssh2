@@ -188,9 +188,11 @@ export function parseBase64JsonArrayEnv(
       return { ok: false, reason: 'oversize' }
     }
     decoded = buf.toString('utf8')
-    // Verify the string is valid base64 by round-tripping (strip padding for comparison)
-    const roundTripped = Buffer.from(decoded, 'utf8').toString('base64').replace(/=+$/u, '')
-    const rawStripped = raw.replace(/=+$/u, '')
+    // Verify the string is valid base64 by round-tripping. Base64 only uses '='
+    // for end-padding, so stripping all '=' is equivalent to trimming trailing
+    // padding and avoids a regex on attacker-controlled input.
+    const roundTripped = Buffer.from(decoded, 'utf8').toString('base64').replaceAll('=', '')
+    const rawStripped = raw.replaceAll('=', '')
     if (roundTripped !== rawStripped) {
       return { ok: false, reason: 'base64' }
     }
