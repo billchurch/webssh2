@@ -10,6 +10,10 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client with optional tel
 
 ![WebSSH2 Screenshot](DOCS/images/Screenshot_sm.png)
 
+## Sponsors
+
+WebSSH2 development is supported by [Tailwind Resource Group](https://tailwindrg.com), an engineering-led IT services firm specializing in application delivery, zero trust security, and identity for federal and commercial customers.
+
 ## Quick Start
 
 ### Requirements
