@@ -125,12 +125,12 @@ export function parseNumberEnv(
   if (value === undefined || value === '') {
     return defaultValue
   }
-  
+
   const parsed = Number.parseInt(value, 10)
   if (Number.isNaN(parsed)) {
     return defaultValue
   }
-  
+
   let result = parsed
   if (min !== undefined && result < min) {
     result = min
@@ -138,6 +138,82 @@ export function parseNumberEnv(
   if (max !== undefined && result > max) {
     result = max
   }
-  
+
   return result
+}
+
+/**
+ * Result of decoding a base64-encoded JSON-array environment variable.
+ * Used for `WEBSSH2_THEMING_ADDITIONAL_THEMES`.
+ */
+export interface ParseBase64JsonArrayOk {
+  readonly ok: true
+  readonly value: readonly unknown[]
+}
+
+export interface ParseBase64JsonArrayErr {
+  readonly ok: false
+  readonly reason:
+    | 'rawOversize'
+    | 'base64'
+    | 'oversize'
+    | 'json'
+    | 'notArray'
+  readonly detail?: string
+}
+
+export type ParseBase64JsonArrayResult =
+  | ParseBase64JsonArrayOk
+  | ParseBase64JsonArrayErr
+
+const RAW_BASE64_CAP = Math.floor((64 * 1024 * 4) / 3) + 8 // ~89_408
+const DECODED_CAP = 64 * 1024
+
+/**
+ * Decode a base64-encoded JSON array environment variable, with strict caps
+ * and structured error reasons. Does NOT validate the array contents — the
+ * caller is responsible for per-element validation (e.g. validateTheme).
+ */
+export function parseBase64JsonArrayEnv(
+  raw: string
+): ParseBase64JsonArrayResult {
+  if (raw.length > RAW_BASE64_CAP) {
+    return { ok: false, reason: 'rawOversize' }
+  }
+
+  let decoded: string
+  try {
+    const buf = Buffer.from(raw, 'base64')
+    if (buf.length > DECODED_CAP) {
+      return { ok: false, reason: 'oversize' }
+    }
+    decoded = buf.toString('utf8')
+    // Verify the string is valid base64 by round-tripping. Base64 only uses '='
+    // for end-padding, so stripping all '=' is equivalent to trimming trailing
+    // padding and avoids a regex on attacker-controlled input.
+    const roundTripped = Buffer.from(decoded, 'utf8').toString('base64').replaceAll('=', '')
+    const rawStripped = raw.replaceAll('=', '')
+    if (roundTripped !== rawStripped) {
+      return { ok: false, reason: 'base64' }
+    }
+  } catch {
+    return { ok: false, reason: 'base64' }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(decoded)
+  } catch (error) {
+    return {
+      ok: false,
+      reason: 'json',
+      detail: error instanceof Error ? error.message : String(error)
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    return { ok: false, reason: 'notArray' }
+  }
+
+  return { ok: true, value: parsed }
 }

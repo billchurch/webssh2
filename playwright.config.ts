@@ -41,7 +41,9 @@ export default defineConfig({
       E2E_SSH_PORT: String(SSH_PORT),
       E2E_SSH_USER: USERNAME,
       E2E_SSH_PASS: PASSWORD,
-      WEBSSH2_SSH_READY_TIMEOUT: '10000' // Faster timeout for test suite
+      WEBSSH2_SSH_READY_TIMEOUT: '10000', // Faster timeout for test suite
+      WEBSSH2_THEMING_ENABLED: 'true',
+      WEBSSH2_THEMING_ALLOW_CUSTOM: 'true'
     },
   },
   // Always run global teardown to clean up config.json

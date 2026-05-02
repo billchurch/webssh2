@@ -57,6 +57,31 @@ export function createAppStructuredLogger(
   })
 }
 
+export interface ThemingConfigWarning {
+  readonly source: string
+  readonly path: string
+  readonly reason: string
+}
+
+export function logThemingConfigWarning(warning: ThemingConfigWarning): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'theming_config_invalid',
+    message: 'Theming configuration entry rejected',
+    context: {
+      status: 'failure',
+      reason: warning.reason
+    },
+    data: {
+      source: warning.source,
+      path: warning.path
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit theming config warning log:', result.error)
+  }
+}
+
 export function logError(message: string, error?: Error, context?: Partial<LogContext>): void {
   const structuredContext: LogContext = {
     status: 'failure',

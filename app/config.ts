@@ -3,7 +3,7 @@
 
 import { inspect } from 'node:util'
 import { generateSecureSecret, enhanceConfig, ok, err } from './utils/index.js'
-import { createNamespacedDebug } from './logger.js'
+import { createNamespacedDebug, logThemingConfigWarning } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
@@ -61,9 +61,10 @@ async function loadFileConfig(
   return ok(parseResult.value)
 }
 
-async function loadEnhancedConfig(
+export async function loadEnhancedConfig(
   resolution: ConfigFileResolution,
-  sessionSecret?: string
+  sessionSecret?: string,
+  env?: Record<string, string | undefined>
 ): Promise<Result<Config, ConfigValidationError[]>> {
   const loadStartTime = Date.now()
   debug('Config loading started', { timestamp: loadStartTime })
@@ -88,17 +89,22 @@ async function loadEnhancedConfig(
   const fileConfig = fileConfigResult.value
 
   // Load environment config
-  const envConfig = mapEnvironmentVariables(process.env)
+  const resolvedEnv = env ?? process.env
+  const envConfig = mapEnvironmentVariables(resolvedEnv, {
+    onThemingWarning: (warning) => {
+      logThemingConfigWarning(warning)
+    }
+  })
 
   // Log environment variables for algorithm debugging
   debug('Environment variables mapped', {
     envAlgorithms: (envConfig as { ssh?: { algorithms?: Record<string, unknown> } }).ssh?.algorithms,
     rawEnvVars: {
-      preset: process.env[ALGORITHM_ENV_VARS.PRESET],
-      kex: process.env[ALGORITHM_ENV_VARS.KEX],
-      hmac: process.env[ALGORITHM_ENV_VARS.HMAC],
-      cipher: process.env[ALGORITHM_ENV_VARS.CIPHER],
-      serverHostKey: process.env[ALGORITHM_ENV_VARS.SERVER_HOST_KEY]
+      preset: resolvedEnv[ALGORITHM_ENV_VARS.PRESET],
+      kex: resolvedEnv[ALGORITHM_ENV_VARS.KEX],
+      hmac: resolvedEnv[ALGORITHM_ENV_VARS.HMAC],
+      cipher: resolvedEnv[ALGORITHM_ENV_VARS.CIPHER],
+      serverHostKey: resolvedEnv[ALGORITHM_ENV_VARS.SERVER_HOST_KEY]
     }
   })
 

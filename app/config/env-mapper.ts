@@ -1,10 +1,29 @@
-// app/config/env-mapper.ts
-// Pure functions for mapping environment variables to configuration
+/**
+ * Pure functions for mapping environment variables to configuration.
+ * Complex theming env vars (WEBSSH2_THEMING_THEMES, WEBSSH2_THEMING_DEFAULT_THEME,
+ * WEBSSH2_THEMING_HEADER_BACKGROUND, WEBSSH2_THEMING_ADDITIONAL_THEMES) are handled
+ * in a post-processing pass after the generic ENV_VAR_MAPPING loop.
+ * Structured WARN logging for dropped/invalid entries is added in Task 10.
+ */
 
-import { parseEnvValue, type EnvValueType } from './env-parser.js'
+import { parseEnvValue, parseBase64JsonArrayEnv, type EnvValueType } from './env-parser.js'
 import { getAlgorithmPreset } from './algorithm-presets.js'
 import { createSafeKey, safeGet, safePathToKeys, safeSetNested } from '../utils/index.js'
 import { ALGORITHM_ENV_VARS } from '../constants/algorithm-env-vars.js'
+import { THEME_NAME_REGEX } from '../services/theming/theme-name.js'
+import {
+  loadAdditionalThemes,
+  type ThemeValidationWarning
+} from '../services/theming/theme-loader.js'
+
+/**
+ * Optional callbacks invoked while mapping theming env vars. Lets the caller
+ * surface dropped/invalid entries via the application logger without coupling
+ * env-mapper to a logger module.
+ */
+export interface EnvMapperHooks {
+  readonly onThemingWarning?: (warning: ThemeValidationWarning) => void
+}
 
 export interface EnvVarMap { 
   path: string
@@ -174,16 +193,32 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_TELNET_AUTH_FAILURE_PATTERN: { path: 'telnet.auth.failurePattern', type: 'string' },
   WEBSSH2_TELNET_AUTH_EXPECT_TIMEOUT: { path: 'telnet.auth.expectTimeout', type: 'number' },
   WEBSSH2_TELNET_ALLOWED_SUBNETS: { path: 'telnet.allowedSubnets', type: 'array' },
+  // Terminal theming configuration
+  WEBSSH2_THEMING_ENABLED: { path: 'options.theming.enabled', type: 'boolean' },
+  WEBSSH2_THEMING_ALLOW_CUSTOM: { path: 'options.theming.allowCustom', type: 'boolean' },
 }
+
+/** Built-in theme names used to block collisions when loading additional themes */
+const BUILTIN_THEME_NAMES: readonly string[] = [
+  'Default', 'Dracula', 'Nord', 'Solarized Dark',
+  'One Dark', 'Monokai', 'Gruvbox Dark', 'Tokyo Night', 'Catppuccin Mocha',
+]
+
+/** Valid values for the headerBackground theming option */
+const VALID_HEADER_BACKGROUND = new Set(['independent', 'followTerminal', 'locked'])
 
 /**
  * Map environment variables to configuration object
  * Individual algorithm settings take precedence over preset values
  * @param env - Environment variables object
+ * @param hooks - Optional callbacks (e.g., to surface theming warnings)
  * @returns Configuration object with mapped values
  * @pure
  */
-export function mapEnvironmentVariables(env: Record<string, string | undefined>): Record<string, unknown> {
+export function mapEnvironmentVariables(
+  env: Record<string, string | undefined>,
+  hooks?: EnvMapperHooks
+): Record<string, unknown> {
   const config: Record<string, unknown> = {}
 
   // First pass: process preset if it exists (provides base algorithm values)
@@ -219,6 +254,58 @@ export function mapEnvironmentVariables(env: Record<string, string | undefined>)
     if (envValue !== undefined && typeof envValue === 'string') {
       const parsedValue = parseEnvValue(envValue, mapping.type)
       setNestedProperty(config, mapping.path, parsedValue)
+    }
+  }
+
+  // Third pass: complex theming env vars that require bespoke validation.
+  // Structured WARN logging for dropped/invalid entries is wired in Task 10.
+
+  const themesRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_THEMES'))
+  if (themesRaw !== undefined && typeof themesRaw === 'string') {
+    const valid = themesRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => THEME_NAME_REGEX.test(s))
+    setNestedProperty(config, 'options.theming.themes', valid)
+  }
+
+  const defaultThemeRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_DEFAULT_THEME'))
+  if (defaultThemeRaw !== undefined && typeof defaultThemeRaw === 'string') {
+    const trimmed = defaultThemeRaw.trim()
+    const resolved = THEME_NAME_REGEX.test(trimmed) ? trimmed : 'Default'
+    setNestedProperty(config, 'options.theming.defaultTheme', resolved)
+  }
+
+  const headerBgRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_HEADER_BACKGROUND'))
+  if (headerBgRaw !== undefined && typeof headerBgRaw === 'string') {
+    if (VALID_HEADER_BACKGROUND.has(headerBgRaw)) {
+      setNestedProperty(config, 'options.theming.headerBackground', headerBgRaw)
+    }
+  }
+
+  const additionalRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_ADDITIONAL_THEMES'))
+  if (additionalRaw !== undefined && typeof additionalRaw === 'string') {
+    const parsed = parseBase64JsonArrayEnv(additionalRaw)
+    if (parsed.ok) {
+      const loaded = loadAdditionalThemes(parsed.value, {
+        source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
+        builtinNames: BUILTIN_THEME_NAMES,
+      })
+      setNestedProperty(config, 'options.theming.additionalThemes', loaded.valid)
+      if (hooks?.onThemingWarning !== undefined) {
+        for (const warning of loaded.warnings) {
+          hooks.onThemingWarning(warning)
+        }
+      }
+    } else {
+      setNestedProperty(config, 'options.theming.additionalThemes', [])
+      if (hooks?.onThemingWarning !== undefined) {
+        hooks.onThemingWarning({
+          source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
+          path: '',
+          reason: parsed.detail === undefined ? parsed.reason : `${parsed.reason}: ${parsed.detail}`
+        })
+      }
     }
   }
 

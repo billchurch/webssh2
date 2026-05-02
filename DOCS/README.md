@@ -29,6 +29,7 @@ Explore WebSSH2 capabilities:
 
 - **[Client Features](./features/CLIENT-FEATURES.md)** - Terminal, clipboard, search, and UI features
 - **[SFTP File Transfer](./features/SFTP.md)** - Upload and download files through the browser
+- **[Terminal Theming](./features/THEMING.md)** - Opt-in theming with built-in palettes and operator-injected themes
 - **[Authentication Methods](./features/AUTHENTICATION.md)** - Password, key-based, and SSO authentication
 - **[Private Key Authentication](./features/PRIVATE-KEYS.md)** - SSH key setup and usage
 - **[Keyboard Interactive](./features/KEYBOARD-INTERACTIVE.md)** - Multi-factor authentication support
@@ -87,33 +88,41 @@ Historical and reference documentation:
 ### "I want to..."
 
 #### Deploy WebSSH2
+
 - [Quick Start](./getting-started/QUICK-START.md)
 - [Docker Setup](./getting-started/DOCKER.md)
 - [Installation Guide](./getting-started/INSTALLATION.md)
 
 #### Configure Authentication
+
 - [Authentication Overview](./features/AUTHENTICATION.md)
 - [Private Keys](./features/PRIVATE-KEYS.md)
 - [SSO Setup](./features/SSO.md)
 
 #### Customize the Interface
+
 - [URL Parameters](./configuration/URL-PARAMETERS.md)
 - [Environment Variables](./configuration/ENVIRONMENT-VARIABLES.md)
+- [Terminal Theming](./features/THEMING.md)
 
 #### Transfer Files
+
 - [SFTP File Browser](./features/SFTP.md)
 - [Client Features](./features/CLIENT-FEATURES.md)
 
 #### Integrate with My Application
+
 - [Routes API](./api/ROUTES.md)
 - [WebSocket API](./api/WEBSOCKET-API.md)
 - [Exec Channel](./features/EXEC-CHANNEL.md)
 
 #### Troubleshoot Issues
+
 - [Troubleshooting Guide](./reference/TROUBLESHOOTING.md)
 - [Debug Mode](./reference/TROUBLESHOOTING.md#debugging)
 
 #### Contribute to the Project
+
 - [Contributing Guide](./development/CONTRIBUTING.md)
 - [Development Setup](./development/SETUP.md)
 - [PR Checklist](./development/LOCAL-PR-CHECKLIST.md)
@@ -121,6 +130,7 @@ Historical and reference documentation:
 ## 📋 Configuration Examples
 
 ### Basic Setup
+
 ```bash
 export WEBSSH2_LISTEN_PORT=2222
 export WEBSSH2_SSH_HOST=ssh.example.com
@@ -128,6 +138,7 @@ npm start
 ```
 
 ### Docker with SSL
+
 ```bash
 docker run -d \
   -p 443:2222 \
@@ -138,6 +149,7 @@ docker run -d \
 ```
 
 ### Kubernetes with ConfigMap
+
 ```yaml
 kubectl create configmap webssh2 \
   --from-literal=WEBSSH2_LISTEN_PORT=2222 \
