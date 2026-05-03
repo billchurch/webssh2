@@ -6,8 +6,8 @@ We currently support only the latest released version of WebSSH2 with security u
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 3.1.x   | :white_check_mark: |
-| < 3.1.0 | :x:                |
+| 4.2.x   | :white_check_mark: |
+| < 4.2.0 | :x:                |
 
 **We strongly recommend always using the latest release to ensure you have the most recent security patches and improvements.**
 
@@ -304,6 +304,6 @@ For reference, the following IOCs were published by Snyk:
 
 ---
 
-**Last updated:** 2026-03-31
+**Last updated:** 2026-05-03
 
-**Next review:** 2026-04-30
+**Next review:** 2026-06-01
