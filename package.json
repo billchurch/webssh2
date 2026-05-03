@@ -39,7 +39,7 @@
   ],
   "dependencies": {
     "basic-auth": "^2.0.1",
-    "better-sqlite3": "12.8.0",
+    "better-sqlite3": "12.9.0",
     "body-parser": "^2.2.1",
     "debug": "^4.4.3",
     "express": "^5.2.1",
@@ -47,7 +47,7 @@
     "jsmasker": "^2.0.0",
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
-    "validator": "^13.15.23",
+    "validator": "^13.15.35",
     "webssh2_client": "^3.6.0",
     "zod": "^4.1.12"
   },
@@ -78,19 +78,19 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.59.1",
     "@types/basic-auth": "^1.1.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/debug": "4.1.13",
     "@types/express": "^5.0.6",
-    "@types/express-session": "^1.18.2",
-    "@types/node": "^24.10.13",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^24.12.2",
     "@types/ssh2": "^1.15.5",
     "@types/validator": "^13.15.10",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
-    "@vitest/coverage-v8": "4.0.18",
+    "@typescript-eslint/eslint-plugin": "8.58.2",
+    "@typescript-eslint/parser": "8.58.2",
+    "@vitest/coverage-v8": "4.1.4",
     "baseline-browser-mapping": "^2.8.32",
     "eslint": "9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -100,7 +100,7 @@
     "supertest": "^7.1.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "4.0.18"
+    "vitest": "4.1.4"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -123,6 +123,6 @@
     "vite": "7.3.2"
   },
   "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.59.0"
+    "@rollup/rollup-darwin-arm64": "^4.60.2"
   }
 }
