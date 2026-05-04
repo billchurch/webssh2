@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.2...webssh2-server-v4.3.0) (2026-05-03)
+
+
+### Features
+
+* **theming:** opt-in server-side theming — config, env, validation, injection ([#513](https://github.com/billchurch/webssh2/issues/513)) ([f7978d1](https://github.com/billchurch/webssh2/commit/f7978d168f045aeeb873de703e30d0a11261b31e))
+
 ## [4.2.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.1...webssh2-server-v4.2.2) (2026-04-25)
 
 
