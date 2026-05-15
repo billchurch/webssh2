@@ -5,11 +5,12 @@ import { HTTP, MESSAGES, DEFAULTS, TELNET_DEFAULTS } from './constants/index.js'
 import {
   transformAssetPaths,
   transformHtml,
-  injectConfigWithThemingString
+  injectConfigWithThemingString,
 } from './utils/html-transformer.js'
 import { getCachedThemingJson } from './services/theming/index.js'
 import type { AuthSession } from './auth/auth-utils.js'
-import type { ThemingConfig } from './types/config.js'
+import type { Config, ThemingConfig } from './types/config.js'
+import { getConfig } from './config.js'
 
 const debug = createNamespacedDebug('connectionHandler')
 
@@ -45,14 +46,14 @@ export function resetHandlerThemingConfigForTests(): void {
 function hasSessionCredentials(session: Sess): boolean {
   return Boolean(
     session.sshCredentials != null &&
-    (session.usedBasicAuth === true || session.authMethod === 'POST')
+    (session.usedBasicAuth === true || session.authMethod === 'POST'),
   )
 }
 
 async function sendClient(
   config: Record<string, unknown>,
   res: Response,
-  basePath?: string
+  basePath?: string,
 ): Promise<void> {
   try {
     const data = await readClientTemplate()
@@ -61,11 +62,7 @@ async function sendClient(
     if (themingCfg !== null && themingCfg.enabled === true) {
       const htmlWithAssetPaths = transformAssetPaths(data, basePath)
       const themingJson = getCachedThemingJson(themingCfg)
-      const modifiedHtml = injectConfigWithThemingString(
-        htmlWithAssetPaths,
-        config,
-        themingJson
-      )
+      const modifiedHtml = injectConfigWithThemingString(htmlWithAssetPaths, config, themingJson)
       res.send(modifiedHtml)
       return
     }
@@ -89,7 +86,10 @@ async function readClientTemplate(): Promise<string> {
       cachedClientTemplate = template
       return template
     } catch (error) {
-      debug('Client template candidate failed: %s', (error as { message?: string }).message ?? 'unknown error')
+      debug(
+        'Client template candidate failed: %s',
+        (error as { message?: string }).message ?? 'unknown error',
+      )
     }
   }
 
@@ -110,7 +110,7 @@ const readFromGrandParentRoot: TemplateReader = () =>
 const CLIENT_TEMPLATE_READERS: readonly TemplateReader[] = [
   readFromProjectRoot,
   readFromParentRoot,
-  readFromGrandParentRoot
+  readFromGrandParentRoot,
 ]
 
 interface ConnectionOptions {
@@ -125,14 +125,14 @@ interface ConnectionOptions {
   protocol?: 'ssh' | 'telnet'
 }
 
-export default async function handleConnection(
+export function buildTempConfig(
   req: Request & { session?: Sess; sessionID?: string },
-  res: Response,
-  opts?: ConnectionOptions
-): Promise<void> {
-  debug('Handling connection req.path:', (req as Request).path)
+  cfg: Config,
+  opts?: ConnectionOptions,
+): Partial<Config> {
   const isTelnet = opts?.protocol === 'telnet'
   const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
+
   const tempConfig: Record<string, unknown> = {
     socket: {
       url: `${req.protocol}://${req.get('host')}`,
@@ -157,7 +157,7 @@ export default async function handleConnection(
     debug('Connection mode set:', {
       mode: opts.connectionMode,
       lockedHost: opts.lockedHost,
-      lockedPort: opts.lockedPort
+      lockedPort: opts.lockedPort,
     })
   }
 
@@ -181,7 +181,40 @@ export default async function handleConnection(
       hasCredentials: true,
     })
   }
+  // Env / config.json defaults
+  if (cfg.header.text != null || cfg.header.background !== '#000') {
+    tempConfig['header'] = {
+      text: cfg.header.text,
+      background: cfg.header.background,
+    }
+  }
 
+  // Per-request override (URL query / POST form)
+  if (s?.headerOverride != null) {
+    tempConfig['header'] = {
+      ...(tempConfig['header'] as object | undefined),
+      ...(s.headerOverride.text != null && { text: s.headerOverride.text }),
+      ...(s.headerOverride.background != null && { background: s.headerOverride.background }),
+    }
+  }
+
+  return tempConfig
+}
+
+export default async function handleConnection(
+  req: Request & { session?: Sess; sessionID?: string },
+  res: Response,
+  opts?: ConnectionOptions,
+): Promise<Record<string, unknown>> {
+  debug('Handling connection req.path:', (req as Request).path)
+
+  const cfg = await getConfig()
+  const tempConfig = buildTempConfig(req, cfg, opts)
+
+  const isTelnet = opts?.protocol === 'telnet'
   const basePath = isTelnet ? '/telnet/assets/' : undefined
+
   await sendClient(tempConfig, res, basePath)
+
+  return tempConfig
 }
