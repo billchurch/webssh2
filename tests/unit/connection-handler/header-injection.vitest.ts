@@ -1,10 +1,7 @@
 // tests/unit/connection/ssh-validator.vitest.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getConfig } from '../../../app/config'
-import handleConnection, { buildTempConfig } from '../../../app/connectionHandler'
+import { buildTempConfig } from '../../../app/connectionHandler'
 import { createDefaultConfig } from '../../../app/config/config-processor'
-import { backup } from 'node:sqlite'
-import { Request } from 'express'
 
 const dummyHost = '192.0.2.1'
 
