@@ -6,6 +6,8 @@ import { createDefaultConfig } from '../../../app/config/config-processor'
 import { backup } from 'node:sqlite'
 import { Request } from 'express'
 
+const dummyHost = '192.0.2.1'
+
 // --- helpers ---
 function makeReq(overrides: Record<string, unknown> = {}) {
   return {
@@ -14,7 +16,7 @@ function makeReq(overrides: Record<string, unknown> = {}) {
     get: (key: string) => (key === 'host' ? 'localhost:3000' : undefined),
     session: {
       sshCredentials: {
-        host: '10.0.0.1',
+        host: dummyHost,
         port: 22,
         term: 'xterm',
       },
@@ -61,7 +63,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -85,7 +87,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -109,7 +111,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -133,7 +135,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -157,7 +159,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -181,7 +183,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
@@ -205,7 +207,7 @@ describe('handleConnection - tempConfig.header', () => {
     const req = makeReq({
       session: {
         sshCredentials: {
-          host: '10.0.0.1',
+          host: dummyHost,
           port: 22,
           term: 'xterm',
         },
