@@ -184,7 +184,6 @@ export function processHeaderParams(
   source: Record<string, unknown> | undefined,
 ): HeaderOverride | null {
   const sourceType = detectSourceType(source)
-  debug('Source type', sourceType)
   if (sourceType === SourceType.NONE) {
     return null
   }
