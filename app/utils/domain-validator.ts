@@ -77,8 +77,8 @@ export function validateBusinessRules(config: Config): Result<Config, ConfigVali
     errors
   )
 
-  // Validate CSS color for header background
-  if (config.header.background !== '') {
+  // Validate CSS color for header background (skip when null or empty)
+  if (config.header.background !== null && config.header.background !== '') {
     validateField(
       () => validateCssColor(config.header.background),
       'header.background',

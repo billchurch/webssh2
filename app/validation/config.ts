@@ -32,7 +32,7 @@ export function validateSshPort(port: number = 22): SshPort {
 /**
  * Validate CSS color
  */
-export function validateCssColor(color: string | undefined): CssColor | undefined {
+export function validateCssColor(color: string | null | undefined): CssColor | undefined {
   if (color == null || color === '') {
     return undefined
   }

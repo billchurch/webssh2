@@ -107,7 +107,7 @@ export interface SSHConfig {
  */
 export interface HeaderConfig {
   text: string | null
-  background: string
+  background: string | null
 }
 
 /** Validated xterm.js theme color palette (subset of xterm's ITheme exposed for opt-in theming) */

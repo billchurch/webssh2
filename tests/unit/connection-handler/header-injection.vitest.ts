@@ -33,7 +33,7 @@ describe('handleConnection - tempConfig.header', () => {
   it('omits header when config is default and no session override', async () => {
     const req = makeReq()
     const tmpcfg = buildTempConfig(req as any, defaultConfig)
-    expect(tmpcfg.header).toMatchObject({ text: null, background: 'green' })
+    expect(tmpcfg.header).toMatchObject({ text: null, background: null })
   })
 
   it('sets header.text from config when present', async () => {
@@ -43,7 +43,7 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Test header' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Test header', background: 'green' })
+    expect(tmpcfg.header).toMatchObject({ text: 'Test header', background: null })
   })
 
   it('sets header.background from config when non-default', async () => {
@@ -149,7 +149,7 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Text from config' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: 'green' })
+    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: null })
   })
 
   it('invalid override text values (null) do not appear in header', async () => {
@@ -173,7 +173,7 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Text from config' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: 'green' })
+    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: null })
   })
 
   it('invalid override background values (undefined) do not appear in header', async () => {
