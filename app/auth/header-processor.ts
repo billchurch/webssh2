@@ -29,7 +29,7 @@ export interface HeaderValues {
 export enum SourceType {
   GET = 'GET',
   POST = 'POST',
-  NONE = 'NONE',
+  NONE = 'NONE'
 }
 
 /**
@@ -37,28 +37,23 @@ export enum SourceType {
  * Pure function - no side effects
  */
 export function detectSourceType(source: Record<string, unknown> | undefined): SourceType {
-  if (source == null) {
-    return SourceType.NONE
-  }
+  if (source == null) {return SourceType.NONE}
 
-  // Body parameters override query parameters
+  // POST body parameters take precedence over GET query parameters.
+  // When both are present, body wins — query is ignored.
   const hasPostParams =
     Object.hasOwn(source, 'header.name') ||
     Object.hasOwn(source, 'header.color') ||
     Object.hasOwn(source, 'header.background')
 
-  if (hasPostParams) {
-    return SourceType.POST
-  }
+  if (hasPostParams) {return SourceType.POST}
 
   const hasGetParams =
     Object.hasOwn(source, 'header') ||
     Object.hasOwn(source, 'headerBackground') ||
     Object.hasOwn(source, 'headerStyle')
 
-  if (hasGetParams) {
-    return SourceType.GET
-  }
+  if (hasGetParams) {return SourceType.GET}
 
   return SourceType.NONE
 }
@@ -77,9 +72,7 @@ export function validateHeaderValue(value: unknown): string | null {
     .slice(0, 100)
     .filter((char) => {
       const codePoint = char.codePointAt(0)
-      if (codePoint == null) {
-        return false
-      }
+      if (codePoint == null) {return false}
 
       return codePoint > 0x1f && codePoint !== 0x7f
     })
@@ -92,15 +85,13 @@ export function validateHeaderValue(value: unknown): string | null {
  */
 export function colorToStyle(color: unknown): string | null {
   const validated = validateHeaderValue(color)
-  if (validated == null) {
-    return null
-  }
-
+  if (validated == null) {return null}
+  
   // Basic validation for CSS color values
   if (!/^[a-zA-Z0-9#(),.\s-]+$/.test(validated)) {
     return null
   }
-
+  
   return `color: ${validated}`
 }
 
@@ -110,24 +101,24 @@ export function colorToStyle(color: unknown): string | null {
  */
 export function extractHeaderValues(
   source: Record<string, unknown>,
-  sourceType: SourceType,
+  sourceType: SourceType
 ): HeaderValues {
   if (sourceType === SourceType.GET) {
     return {
       header: source['header'],
       background: source['headerBackground'],
-      color: source['headerStyle'],
+      color: source['headerStyle']
     }
   }
-
+  
   if (sourceType === SourceType.POST) {
     return {
       header: source['header.name'],
       background: source['header.background'],
-      color: source['header.color'],
+      color: source['header.color']
     }
   }
-
+  
   return {}
 }
 
@@ -137,28 +128,23 @@ export function extractHeaderValues(
  */
 export function createHeaderOverride(
   values: HeaderValues,
-  sourceType: SourceType,
+  sourceType: SourceType
 ): HeaderOverride | null {
   const text = validateHeaderValue(values.header)
   const background = validateHeaderValue(values.background)
-  const style =
-    sourceType === SourceType.GET ? validateHeaderValue(values.color) : colorToStyle(values.color)
+  const style = sourceType === SourceType.GET 
+    ? validateHeaderValue(values.color)
+    : colorToStyle(values.color)
 
   if (text == null && background == null && style == null) {
     return null
   }
 
   const override: HeaderOverride = {}
-  if (text != null) {
-    override.text = text
-  }
-  if (background != null) {
-    override.background = background
-  }
-  if (style != null) {
-    override.style = style
-  }
-
+  if (text != null) {override.text = text}
+  if (background != null) {override.background = background}
+  if (style != null) {override.style = style}
+  
   return override
 }
 
@@ -168,11 +154,11 @@ export function createHeaderOverride(
  */
 export function mergeHeaderOverride(
   existing: HeaderOverride | undefined,
-  override: HeaderOverride,
+  override: HeaderOverride
 ): HeaderOverride {
   return {
     ...existing,
-    ...override,
+    ...override
   }
 }
 
@@ -181,19 +167,17 @@ export function mergeHeaderOverride(
  * Pure function composition
  */
 export function processHeaderParams(
-  source: Record<string, unknown> | undefined,
+  source: Record<string, unknown> | undefined
 ): HeaderOverride | null {
   const sourceType = detectSourceType(source)
-  if (sourceType === SourceType.NONE) {
-    return null
-  }
-
+  if (sourceType === SourceType.NONE) {return null}
+  
   const values = extractHeaderValues(source ?? {}, sourceType)
   const override = createHeaderOverride(values, sourceType)
-
+  
   if (override != null) {
     debug('Processed header override: %O from %s', override, sourceType)
   }
-
+  
   return override
 }
