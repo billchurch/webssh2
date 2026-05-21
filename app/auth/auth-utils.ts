@@ -56,21 +56,28 @@ export interface AuthCredentials {
 }
 
 /**
- * Process header customization parameters from URL query or POST body
- * Wrapper for backward compatibility - mutates session
+ * Process header customization parameters from URL query or POST body.
+ *
+ * Each request's override fully replaces any prior request's override
+ * (no field-wise merge across requests). When the current request has
+ * no override, any stale headerOverride is cleared. This prevents an
+ * unauthenticated GET from pre-seeding session.headerOverride for a
+ * subsequent authenticated request to inherit.
+ *
+ * Wrapper for backward compatibility - mutates session.
  */
 export function processHeaderParameters(
   source: Record<string, unknown> | undefined,
   session: AuthSession
 ): void {
   const override = processHeaderParams(source)
-  
+
   if (override != null) {
-    session.headerOverride = {
-      ...session.headerOverride,
-      ...override
-    }
+    session.headerOverride = override
     debug('Header override set in session: %O', override)
+  } else if (session.headerOverride != null) {
+    delete session.headerOverride
+    debug('Header override cleared from session (no override on this request)')
   }
 }
 
