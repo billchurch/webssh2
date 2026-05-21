@@ -33,7 +33,7 @@ describe('handleConnection - tempConfig.header', () => {
   it('omits header when config is default and no session override', async () => {
     const req = makeReq()
     const tmpcfg = buildTempConfig(req as any, defaultConfig)
-    expect(tmpcfg.header).toMatchObject({ text: null, background: null })
+    expect(tmpcfg.header).toEqual(undefined)
   })
 
   it('sets header.text from config when present', async () => {
@@ -43,7 +43,8 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Test header' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Test header', background: null })
+    expect(tmpcfg.header).toMatchObject({ text: 'Test header' })
+    expect((tmpcfg.header as Record<string, unknown>)['background']).toBeUndefined()
   })
 
   it('sets header.background from config when non-default', async () => {
@@ -53,7 +54,8 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, background: '#ff00aa' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: null, background: '#ff00aa' })
+    expect(tmpcfg.header).toMatchObject({ background: '#ff00aa' })
+    expect((tmpcfg.header as Record<string, unknown>)['text']).toBeUndefined()
   })
 
   it('session headerOverride.text wins over config.header.text', async () => {
@@ -149,7 +151,8 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Text from config' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: null })
+    expect(tmpcfg.header).toMatchObject({ text: 'Text from config' })
+    expect((tmpcfg.header as Record<string, unknown>)['background']).toBeUndefined()
   })
 
   it('invalid override text values (null) do not appear in header', async () => {
@@ -173,7 +176,8 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, text: 'Text from config' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: 'Text from config', background: null })
+    expect(tmpcfg.header).toMatchObject({ text: 'Text from config' })
+    expect((tmpcfg.header as Record<string, unknown>)['background']).toBeUndefined()
   })
 
   it('invalid override background values (undefined) do not appear in header', async () => {
@@ -197,7 +201,8 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, background: '#123456' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: null, background: '#123456' })
+    expect(tmpcfg.header).toMatchObject({ background: '#123456' })
+    expect((tmpcfg.header as Record<string, unknown>)['text']).toBeUndefined()
   })
 
   it('invalid override background values (null) do not appear in header', async () => {
@@ -221,10 +226,11 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, background: '#123456' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toMatchObject({ text: null, background: '#123456' })
+    expect(tmpcfg.header).toMatchObject({ background: '#123456' })
+    expect((tmpcfg.header as Record<string, unknown>)['text']).toBeUndefined()
   })
 
-  it('background #000 with no override omits header', async () => {
+  it('background #000 with no override includes header (no magic-string sentinel)', async () => {
     const req = makeReq()
 
     const cfg = {
@@ -232,6 +238,7 @@ describe('handleConnection - tempConfig.header', () => {
       header: { ...defaultConfig.header, background: '#000' },
     }
     const tmpcfg = buildTempConfig(req as any, cfg)
-    expect(tmpcfg.header).toEqual(undefined)
+    expect(tmpcfg.header).toMatchObject({ background: '#000' })
+    expect((tmpcfg.header as Record<string, unknown>)['text']).toBeUndefined()
   })
 })

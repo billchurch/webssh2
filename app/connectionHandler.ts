@@ -50,6 +50,115 @@ function hasSessionCredentials(session: Sess): boolean {
   )
 }
 
+function buildSocketConfig(
+  req: Request,
+  isTelnet: boolean,
+): Record<string, unknown> {
+  const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
+  const result: Record<string, unknown> = {
+    socket: {
+      url: `${req.protocol}://${req.get('host')}`,
+      path: socketPath,
+    },
+    autoConnect: req.path.startsWith('/host/'),
+  }
+  if (isTelnet) {
+    result['protocol'] = 'telnet'
+  }
+  return result
+}
+
+function buildConnectionMode(opts: ConnectionOptions | undefined): Record<string, unknown> {
+  if (opts?.connectionMode === undefined) {
+    return {}
+  }
+  const result: Record<string, unknown> = {
+    connectionMode: opts.connectionMode,
+  }
+  if (opts.lockedHost !== undefined) {
+    result['lockedHost'] = opts.lockedHost
+  }
+  if (opts.lockedPort !== undefined) {
+    result['lockedPort'] = opts.lockedPort
+  }
+  debug('Connection mode set:', {
+    mode: opts.connectionMode,
+    lockedHost: opts.lockedHost,
+    lockedPort: opts.lockedPort,
+  })
+  return result
+}
+
+function buildSshCredentials(
+  session: Sess | undefined,
+  req: Request & { sessionID?: string },
+): Record<string, unknown> {
+  if (session == null || !hasSessionCredentials(session) || session.sshCredentials == null) {
+    return {}
+  }
+  const creds = session.sshCredentials
+  const sshFragment: Record<string, unknown> = {
+    host: creds.host,
+    port: creds.port,
+  }
+  if (creds.term != null && creds.term !== '') {
+    sshFragment['sshterm'] = creds.term
+  }
+  const authType = session.usedBasicAuth === true ? 'Basic Auth' : (session.authMethod ?? 'Unknown')
+  debug('Session-only auth enabled - credentials remain server-side: %O', {
+    authType,
+    host: creds.host,
+    port: creds.port,
+    term: creds.term,
+    sessionId: req.sessionID,
+    hasCredentials: true,
+  })
+  return {
+    ssh: sshFragment,
+    autoConnect: true,
+  }
+}
+
+/**
+ * Build the header fragment for tempConfig.
+ *
+ * Returns an empty object (no header slice) when nothing is configured —
+ * the client falls back to its own default rendering (no bar shown).
+ * Otherwise returns { header: {...} } with text and background populated
+ * based on field-wise override precedence: session.headerOverride > cfg.header.
+ *
+ * SECURITY: The `style` field from session.headerOverride is intentionally
+ * NOT consumed here. The GET path's validateHeaderValue runs only a
+ * printable-ASCII filter — it does not enforce the colorToStyle regex —
+ * so forwarding `style` would re-introduce the Tailwind-class injection
+ * vector. Only `text` and `background` are forwarded.
+ */
+function buildHeaderConfig(
+  cfg: Config,
+  session: Sess | undefined,
+): Record<string, unknown> {
+  const overrideText = session?.headerOverride?.text
+  const overrideBackground = session?.headerOverride?.background
+  // NOTE: session.headerOverride.style is intentionally NOT consumed
+  // here. See function jsdoc for rationale.
+
+  const text = overrideText ?? cfg.header.text
+  const background = overrideBackground ?? cfg.header.background
+
+  if (text == null && background == null) {
+    return {}
+  }
+
+  const header: Record<string, unknown> = {}
+  if (text != null) {
+    header['text'] = text
+  }
+  if (background != null) {
+    header['background'] = background
+  }
+  return { header }
+}
+
 async function sendClient(
   config: Record<string, unknown>,
   res: Response,
@@ -131,73 +240,10 @@ export function buildTempConfig(
   opts?: ConnectionOptions,
 ): Partial<Config> {
   const isTelnet = opts?.protocol === 'telnet'
-  const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
-
-  const tempConfig: Record<string, unknown> = {
-    socket: {
-      url: `${req.protocol}://${req.get('host')}`,
-      path: socketPath,
-    },
-    autoConnect: (req as Request).path.startsWith('/host/'),
-  }
-
-  if (isTelnet) {
-    tempConfig['protocol'] = 'telnet'
-  }
-
-  // Add connection mode info for client-side LoginModal behavior
-  if (opts?.connectionMode !== undefined) {
-    tempConfig['connectionMode'] = opts.connectionMode
-    if (opts.lockedHost !== undefined) {
-      tempConfig['lockedHost'] = opts.lockedHost
-    }
-    if (opts.lockedPort !== undefined) {
-      tempConfig['lockedPort'] = opts.lockedPort
-    }
-    debug('Connection mode set:', {
-      mode: opts.connectionMode,
-      lockedHost: opts.lockedHost,
-      lockedPort: opts.lockedPort,
-    })
-  }
-
-  const s = req.session
-  if (hasSessionCredentials(s) && s.sshCredentials != null) {
-    const creds = s.sshCredentials
-    tempConfig['ssh'] = {
-      host: creds.host,
-      port: creds.port,
-      ...(creds.term != null && creds.term !== '' && { sshterm: creds.term }),
-    }
-    tempConfig['autoConnect'] = true
-
-    const authType = s.usedBasicAuth === true ? 'Basic Auth' : (s.authMethod ?? 'Unknown')
-    debug('Session-only auth enabled - credentials remain server-side: %O', {
-      authType,
-      host: creds.host,
-      port: creds.port,
-      term: creds.term,
-      sessionId: req.sessionID,
-      hasCredentials: true,
-    })
-  }
-  // Env / config.json defaults
-  if (cfg.header.text != null || cfg.header.background !== '#000') {
-    tempConfig['header'] = {
-      text: cfg.header.text,
-      background: cfg.header.background,
-    }
-  }
-
-  // Per-request override (URL query / POST form)
-  if (s?.headerOverride != null) {
-    tempConfig['header'] = {
-      ...(tempConfig['header'] as object | undefined),
-      ...(s.headerOverride.text != null && { text: s.headerOverride.text }),
-      ...(s.headerOverride.background != null && { background: s.headerOverride.background }),
-    }
-  }
-
+  const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet)
+  Object.assign(tempConfig, buildConnectionMode(opts))
+  Object.assign(tempConfig, buildSshCredentials(req.session, req))
+  Object.assign(tempConfig, buildHeaderConfig(cfg, req.session))
   return tempConfig
 }
 
@@ -205,7 +251,7 @@ export default async function handleConnection(
   req: Request & { session?: Sess; sessionID?: string },
   res: Response,
   opts?: ConnectionOptions,
-): Promise<Record<string, unknown>> {
+): Promise<void> {
   debug('Handling connection req.path:', (req as Request).path)
 
   const cfg = await getConfig()
@@ -215,6 +261,4 @@ export default async function handleConnection(
   const basePath = isTelnet ? '/telnet/assets/' : undefined
 
   await sendClient(tempConfig, res, basePath)
-
-  return tempConfig
 }
