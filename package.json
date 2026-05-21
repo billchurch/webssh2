@@ -48,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.35",
-    "webssh2_client": "^3.6.0",
+    "webssh2_client": "^3.7.0",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -59,7 +59,7 @@
     "lint": "eslint app tests scripts",
     "lint:fix": "eslint app tests scripts --fix",
     "lint:complexity": "eslint app scripts --config eslint.config.complexity.mjs",
-    "dev": "cross-env NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
+    "dev": "NODE_ENV=development DEBUG=webssh2:* tsx watch index.ts",
     "watch": "npm run dev",
     "test": "npm run build && vitest run",
     "test:e2e": "npm run build && CONTAINER_RUNTIME=apple ENABLE_E2E_SSH=1 playwright test -c playwright.config.ts tests/playwright",
@@ -92,7 +92,6 @@
     "@typescript-eslint/parser": "8.58.2",
     "@vitest/coverage-v8": "4.1.4",
     "baseline-browser-mapping": "^2.8.32",
-    "cross-env": "^10.1.0",
     "eslint": "9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-node": "^11.1.0",
