@@ -1,14 +1,10 @@
 import { describe, beforeEach, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { Socket } from 'socket.io'
-import {
-  SOCKET_EVENTS,
-  VALIDATION_MESSAGES,
-  DEFAULT_AUTH_METHODS,
-} from '../../../app/constants/index.js'
+import { SOCKET_EVENTS, VALIDATION_MESSAGES, DEFAULT_AUTH_METHODS } from '../../../app/constants/index.js'
 import {
   createInitialSessionState,
-  type SessionState,
+  type SessionState
 } from '../../../app/socket/handlers/auth-handler.js'
 import type { Config } from '../../../app/types/config.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
@@ -17,7 +13,7 @@ import {
   TEST_PASSWORDS,
   TEST_SECRET,
   TEST_SOCKET_CONSTANTS,
-  TEST_USER_AGENTS,
+  TEST_USER_AGENTS
 } from '../../test-constants.js'
 
 interface ControlHandlerModule {
@@ -25,7 +21,7 @@ interface ControlHandlerModule {
     socket: Socket,
     config: Config,
     sessionState: SessionState,
-    shellStream: (EventEmitter & { write?: (data: string) => void }) | null,
+    shellStream: (EventEmitter & { write?: (data: string) => void }) | null
   ) => void
 }
 
@@ -40,21 +36,9 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
       name: null,
       password: null,
       privateKey: null,
-      passphrase: null,
+      passphrase: null
     },
     ssh: {
-      hostKeyVerification: {
-        enabled: false,
-        mode: 'server',
-        unknownKeyAction: 'prompt',
-        serverStore: {
-          enabled: false,
-          dbPath: '',
-        },
-        clientStore: {
-          enabled: false,
-        },
-      },
       host: null,
       port: 22,
       term: 'xterm-256color',
@@ -68,13 +52,13 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
         compress: [],
         hmac: [],
         kex: [],
-        serverHostKey: [],
+        serverHostKey: []
       },
-      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod),
+      allowedAuthMethods: DEFAULT_AUTH_METHODS.map(createAuthMethod)
     },
     header: {
       text: null,
-      background: '#000000',
+      background: '#000000'
     },
     options: {
       challengeButton: false,
@@ -83,11 +67,11 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
       allowReconnect: true,
       allowReplay: true,
       replayCRLF: true,
-      ...options,
+      ...options
     },
     session: {
       secret: TEST_SECRET,
-      name: 'test-session',
+      name: 'test-session'
     },
     sso: {
       enabled: false,
@@ -96,9 +80,9 @@ function createTestConfig(options: Partial<Config['options']> = {}): Config {
       headerMapping: {
         username: 'x-remote-user',
         password: TEST_SOCKET_CONSTANTS.REMOTE_PASSWORD_HEADER,
-        session: 'x-remote-session',
-      },
-    },
+        session: 'x-remote-session'
+      }
+    }
   }
 }
 
@@ -115,10 +99,10 @@ async function importModule(): Promise<void> {
 
   vi.doMock('../../../app/logger.js', () => ({
     createNamespacedDebug: () => debugStub,
-    createAppStructuredLogger: () => loggerStub,
+    createAppStructuredLogger: () => loggerStub
   }))
 
-  moduleUnderTest = (await import('../../../app/socket/control-handler.js')) as ControlHandlerModule
+  moduleUnderTest = await import('../../../app/socket/control-handler.js')
 }
 
 describe('handleReplayCredentials structured logging', () => {
@@ -130,7 +114,7 @@ describe('handleReplayCredentials structured logging', () => {
     const emit = vi.fn()
     const request = {
       session: { sshCredentials: { password: TEST_PASSWORDS.session } },
-      headers: { 'user-agent': TEST_USER_AGENTS.DEFAULT },
+      headers: { 'user-agent': TEST_USER_AGENTS.DEFAULT }
     }
     const socket = { id: 'socket-1', emit, request } as unknown as Socket
 
@@ -139,7 +123,7 @@ describe('handleReplayCredentials structured logging', () => {
       username: 'jane',
       host: 'ssh.example.com',
       port: 2222,
-      password: TEST_PASSWORDS.state,
+      password: TEST_PASSWORDS.state
     }
 
     const shellStream = createShellStream()
@@ -162,7 +146,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: true,
       lineEnding: 'crlf',
-      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY,
+      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY
     })
   })
 
@@ -170,7 +154,7 @@ describe('handleReplayCredentials structured logging', () => {
     const emit = vi.fn()
     const request = {
       session: { sshCredentials: { password: TEST_PASSWORDS.session } },
-      headers: { 'user-agent': TEST_USER_AGENTS.BLOCKED },
+      headers: { 'user-agent': TEST_USER_AGENTS.BLOCKED }
     }
     const socket = { id: 'socket-2', emit, request } as unknown as Socket
 
@@ -179,7 +163,7 @@ describe('handleReplayCredentials structured logging', () => {
       username: 'alex',
       host: 'ssh.example.com',
       port: 2022,
-      password: TEST_PASSWORDS.state,
+      password: TEST_PASSWORDS.state
     }
 
     const shellStream = createShellStream()
@@ -198,7 +182,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: false,
       lineEnding: 'cr',
-      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY,
+      passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY
     })
   })
 
@@ -206,7 +190,7 @@ describe('handleReplayCredentials structured logging', () => {
     const emit = vi.fn()
     const request = {
       session: { sshCredentials: {} },
-      headers: { 'user-agent': TEST_USER_AGENTS.NO_PASSWORD },
+      headers: { 'user-agent': TEST_USER_AGENTS.NO_PASSWORD }
     }
     const socket = { id: 'socket-3', emit, request } as unknown as Socket
 
@@ -218,10 +202,7 @@ describe('handleReplayCredentials structured logging', () => {
     moduleUnderTest.handleReplayCredentials(socket, config, sessionState, shellStream)
 
     expect(shellStream.write).not.toHaveBeenCalled()
-    expect(emit).toHaveBeenCalledWith(
-      SOCKET_EVENTS.SSH_ERROR,
-      VALIDATION_MESSAGES.NO_REPLAY_PASSWORD,
-    )
+    expect(emit).toHaveBeenCalledWith(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.NO_REPLAY_PASSWORD)
 
     expect(loggerStub.entries).toHaveLength(1)
     const entry = loggerStub.entries[0]
@@ -231,7 +212,7 @@ describe('handleReplayCredentials structured logging', () => {
     expect(entry.entry.data).toMatchObject({
       allowReplay: true,
       lineEnding: 'crlf',
-      passwordSource: TEST_SOCKET_CONSTANTS.PASSWORD_SOURCE_NONE,
+      passwordSource: TEST_SOCKET_CONSTANTS.PASSWORD_SOURCE_NONE
     })
   })
 
@@ -239,7 +220,7 @@ describe('handleReplayCredentials structured logging', () => {
     const emit = vi.fn()
     const request = {
       session: { sshCredentials: { password: TEST_PASSWORDS.session } },
-      headers: { 'user-agent': TEST_USER_AGENTS.WRITE_FAIL },
+      headers: { 'user-agent': TEST_USER_AGENTS.WRITE_FAIL }
     }
     const socket = { id: 'socket-4', emit, request } as unknown as Socket
 
@@ -248,7 +229,7 @@ describe('handleReplayCredentials structured logging', () => {
       username: 'kim',
       host: 'ssh.example.com',
       port: 2222,
-      password: TEST_PASSWORDS.state,
+      password: TEST_PASSWORDS.state
     }
 
     const shellStream = createShellStream()
@@ -272,7 +253,7 @@ describe('handleReplayCredentials structured logging', () => {
       allowReplay: true,
       lineEnding: 'crlf',
       passwordSource: TEST_SOCKET_CONSTANTS.SESSION_CREDENTIALS_KEY,
-      writeFailure: true,
+      writeFailure: true
     })
   })
 })
