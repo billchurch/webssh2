@@ -14,14 +14,9 @@ import type {
   LoggingSyslogTlsConfig,
   SftpConfig,
   TelnetConfig,
-  ThemingConfig,
+  ThemingConfig
 } from '../types/config.js'
-import {
-  DEFAULT_AUTH_METHODS,
-  DEFAULTS,
-  STREAM_LIMITS,
-  TELNET_DEFAULTS,
-} from '../constants/index.js'
+import { DEFAULT_AUTH_METHODS, DEFAULTS, STREAM_LIMITS, TELNET_DEFAULTS } from '../constants/index.js'
 import { SFTP_DEFAULTS } from '../constants/sftp.js'
 import { createAuthMethod } from '../types/branded.js'
 
@@ -95,15 +90,13 @@ export const DEFAULT_THEMING_CONFIG: ThemingConfig = {
   themes: null,
   additionalThemes: [],
   defaultTheme: 'Default',
-  headerBackground: 'independent',
+  headerBackground: 'independent'
 }
 
 /**
  * Base default configuration (without session secret)
  */
-export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & {
-  session: Omit<Config['session'], 'secret'>
-} = {
+export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Config['session'], 'secret'> } = {
   listen: { ip: '0.0.0.0', port: DEFAULTS.LISTEN_PORT },
   http: { origins: ['*:*'] },
   user: { name: null, password: null, privateKey: null, passphrase: null },
@@ -163,8 +156,8 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & {
     namespace: 'webssh2:app',
     minimumLevel: 'info',
     stdout: {
-      enabled: true,
-    },
+      enabled: true
+    }
   },
   telnet: {
     enabled: false,
@@ -233,10 +226,9 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
   // Generate a secure secret if none provided
   const secret = sessionSecret ?? crypto.randomBytes(32).toString('hex')
   const loggingConfig = cloneLoggingConfig(DEFAULT_CONFIG_BASE.logging)
-  const telnetConfig =
-    DEFAULT_CONFIG_BASE.telnet === undefined
-      ? undefined
-      : cloneTelnetConfig(DEFAULT_CONFIG_BASE.telnet)
+  const telnetConfig = DEFAULT_CONFIG_BASE.telnet === undefined
+    ? undefined
+    : cloneTelnetConfig(DEFAULT_CONFIG_BASE.telnet)
   return {
     listen: { ...DEFAULT_CONFIG_BASE.listen },
     http: { origins: [...DEFAULT_CONFIG_BASE.http.origins] },
@@ -272,12 +264,12 @@ function cloneLoggingConfig(config: LoggingConfig | undefined): LoggingConfig | 
     ...(config.minimumLevel === undefined ? {} : { minimumLevel: config.minimumLevel }),
     ...(clonedControls === undefined ? {} : { controls: clonedControls }),
     ...(clonedStdout === undefined ? {} : { stdout: clonedStdout }),
-    ...(clonedSyslog === undefined ? {} : { syslog: clonedSyslog }),
+    ...(clonedSyslog === undefined ? {} : { syslog: clonedSyslog })
   }
 }
 
 function cloneLoggingControls(
-  controls: LoggingControlsConfig | undefined,
+  controls: LoggingControlsConfig | undefined
 ): LoggingControlsConfig | undefined {
   if (controls === undefined) {
     return undefined
@@ -292,31 +284,29 @@ function cloneLoggingControls(
 
   return {
     ...(sampling === undefined ? {} : { sampling }),
-    ...(rateLimit === undefined ? {} : { rateLimit }),
+    ...(rateLimit === undefined ? {} : { rateLimit })
   }
 }
 
 function cloneLoggingSampling(
-  sampling: LoggingSamplingConfig | undefined,
+  sampling: LoggingSamplingConfig | undefined
 ): LoggingSamplingConfig | undefined {
   if (sampling === undefined) {
     return undefined
   }
 
   return {
-    ...(sampling.defaultSampleRate === undefined
-      ? {}
-      : { defaultSampleRate: sampling.defaultSampleRate }),
+    ...(sampling.defaultSampleRate === undefined ? {} : { defaultSampleRate: sampling.defaultSampleRate }),
     ...(sampling.rules === undefined
       ? {}
       : {
-          rules: sampling.rules.map((rule) => ({ ...rule })),
-        }),
+          rules: sampling.rules.map((rule) => ({ ...rule }))
+        })
   }
 }
 
 function cloneLoggingRateLimit(
-  rateLimit: LoggingRateLimitConfig | undefined,
+  rateLimit: LoggingRateLimitConfig | undefined
 ): LoggingRateLimitConfig | undefined {
   if (rateLimit === undefined) {
     return undefined
@@ -326,13 +316,13 @@ function cloneLoggingRateLimit(
     ...(rateLimit.rules === undefined
       ? {}
       : {
-          rules: rateLimit.rules.map((rule) => ({ ...rule })),
-        }),
+          rules: rateLimit.rules.map((rule) => ({ ...rule }))
+        })
   }
 }
 
 function cloneLoggingStdout(
-  stdout: LoggingStdoutConfig | undefined,
+  stdout: LoggingStdoutConfig | undefined
 ): LoggingStdoutConfig | undefined {
   if (stdout === undefined) {
     return undefined
@@ -340,12 +330,12 @@ function cloneLoggingStdout(
 
   return {
     enabled: stdout.enabled,
-    ...(stdout.minimumLevel === undefined ? {} : { minimumLevel: stdout.minimumLevel }),
+    ...(stdout.minimumLevel === undefined ? {} : { minimumLevel: stdout.minimumLevel })
   }
 }
 
 function cloneLoggingSyslog(
-  syslog: LoggingSyslogConfig | undefined,
+  syslog: LoggingSyslogConfig | undefined
 ): LoggingSyslogConfig | undefined {
   if (syslog === undefined) {
     return undefined
@@ -361,14 +351,14 @@ function cloneLoggingSyslog(
     ...(syslog.enterpriseId === undefined ? {} : { enterpriseId: syslog.enterpriseId }),
     ...(syslog.bufferSize === undefined ? {} : { bufferSize: syslog.bufferSize }),
     ...(syslog.flushIntervalMs === undefined ? {} : { flushIntervalMs: syslog.flushIntervalMs }),
-    ...(syslog.includeJson === undefined ? {} : { includeJson: syslog.includeJson }),
+    ...(syslog.includeJson === undefined ? {} : { includeJson: syslog.includeJson })
   }
 
   return clonedTls === undefined ? base : { ...base, tls: clonedTls }
 }
 
 function cloneLoggingSyslogTls(
-  tls: LoggingSyslogTlsConfig | undefined,
+  tls: LoggingSyslogTlsConfig | undefined
 ): LoggingSyslogTlsConfig | undefined {
   if (tls === undefined) {
     return undefined
@@ -379,7 +369,7 @@ function cloneLoggingSyslogTls(
     ...(tls.caFile === undefined ? {} : { caFile: tls.caFile }),
     ...(tls.certFile === undefined ? {} : { certFile: tls.certFile }),
     ...(tls.keyFile === undefined ? {} : { keyFile: tls.keyFile }),
-    ...(tls.rejectUnauthorized === undefined ? {} : { rejectUnauthorized: tls.rejectUnauthorized }),
+    ...(tls.rejectUnauthorized === undefined ? {} : { rejectUnauthorized: tls.rejectUnauthorized })
   }
 }
 
@@ -422,9 +412,7 @@ function cloneSftpConfig(sftp: SftpConfig): SftpConfig {
 /**
  * Deep clone host key verification configuration
  */
-function cloneHostKeyVerificationConfig(
-  config: HostKeyVerificationConfig,
-): HostKeyVerificationConfig {
+function cloneHostKeyVerificationConfig(config: HostKeyVerificationConfig): HostKeyVerificationConfig {
   return {
     enabled: config.enabled,
     mode: config.mode,
