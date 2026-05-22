@@ -38,4 +38,28 @@ describe('processHeaderParameters', () => {
     processHeaderParameters(undefined, session)
     expect(session.headerOverride).toBeUndefined()
   })
+
+  it('preserves headerOverride when request has only legacy header.color (#102)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Prod', background: 'red' }
+    }
+    processHeaderParameters({ 'header.color': 'blue' }, session)
+    expect(session.headerOverride).toEqual({ text: 'Prod', background: 'red' })
+  })
+
+  it('preserves headerOverride when request has only legacy headerStyle (#102)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Prod' }
+    }
+    processHeaderParameters({ headerStyle: 'bg-red-500' }, session)
+    expect(session.headerOverride).toEqual({ text: 'Prod' })
+  })
+
+  it('clears headerOverride when request has zero header keys (non-header POST)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'stale' }
+    }
+    processHeaderParameters({ username: 'alice' }, session)
+    expect(session.headerOverride).toBeUndefined()
+  })
 })
