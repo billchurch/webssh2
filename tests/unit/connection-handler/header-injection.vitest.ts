@@ -106,11 +106,11 @@ describe('buildTempConfig - tempConfig.header', () => {
     // field through anyway so this assertion continues to catch a
     // future maintainer who reintroduces style consumption inside
     // buildHeaderConfig (e.g. by re-adding the field to the type).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
     const req = reqWithOverride({
       text: 'Test',
       background: 'green',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...({ style: 'bg-red-500 text-white' } as any)
+      ...({ style: 'bg-red-500 text-white' } as any),
     })
     const result = buildTempConfig(req, defaultConfig)
     expect(result['header']).toMatchObject({ text: 'Test', background: 'green' })
