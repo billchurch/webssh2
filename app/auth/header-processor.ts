@@ -11,7 +11,6 @@ const debug = createNamespacedDebug('auth:header')
 export interface HeaderOverride {
   text?: string
   background?: string
-  style?: string
 }
 
 /**
@@ -20,7 +19,6 @@ export interface HeaderOverride {
 export interface HeaderValues {
   header?: unknown
   background?: unknown
-  color?: unknown
 }
 
 /**
@@ -109,22 +107,6 @@ export function hasAnyHeaderKey(
 }
 
 /**
- * Convert color value to style string
- * Pure function - no side effects
- */
-export function colorToStyle(color: unknown): string | null {
-  const validated = validateHeaderValue(color)
-  if (validated == null) {return null}
-  
-  // Basic validation for CSS color values
-  if (!/^[a-zA-Z0-9#(),.\s-]+$/.test(validated)) {
-    return null
-  }
-  
-  return `color: ${validated}`
-}
-
-/**
  * Extract header values based on source type
  * Pure function - no side effects
  */
@@ -135,16 +117,14 @@ export function extractHeaderValues(
   if (sourceType === SourceType.GET) {
     return {
       header: source['header'],
-      background: source['headerBackground'],
-      color: source['headerStyle']
+      background: source['headerBackground']
     }
   }
-  
+
   if (sourceType === SourceType.POST) {
     return {
       header: source['header.name'],
-      background: source['header.background'],
-      color: source['header.color']
+      background: source['header.background']
     }
   }
   
@@ -157,23 +137,19 @@ export function extractHeaderValues(
  */
 export function createHeaderOverride(
   values: HeaderValues,
-  sourceType: SourceType
+  _sourceType: SourceType
 ): HeaderOverride | null {
   const text = validateHeaderValue(values.header)
   const background = validateHeaderValue(values.background)
-  const style = sourceType === SourceType.GET 
-    ? validateHeaderValue(values.color)
-    : colorToStyle(values.color)
 
-  if (text == null && background == null && style == null) {
+  if (text == null && background == null) {
     return null
   }
 
   const override: HeaderOverride = {}
   if (text != null) {override.text = text}
   if (background != null) {override.background = background}
-  if (style != null) {override.style = style}
-  
+
   return override
 }
 

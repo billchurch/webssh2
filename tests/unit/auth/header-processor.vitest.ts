@@ -5,7 +5,6 @@ import { describe, it, expect } from 'vitest'
 import {
   detectSourceType,
   validateHeaderValue,
-  colorToStyle,
   extractHeaderValues,
   createHeaderOverride,
   mergeHeaderOverride,
@@ -67,55 +66,37 @@ describe('validateHeaderValue', () => {
   })
 })
 
-describe('colorToStyle', () => {
-  it('should convert valid colors to style', () => {
-    expect(colorToStyle('red')).toBe('color: red')
-    expect(colorToStyle('#ff0000')).toBe('color: #ff0000')
-    expect(colorToStyle('rgb(255, 0, 0)')).toBe('color: rgb(255, 0, 0)')
-  })
-  
-  it('should return null for invalid values', () => {
-    expect(colorToStyle(null)).toBe(null)
-    expect(colorToStyle('')).toBe(null)
-    // Testing XSS protection - this is a test string, not actual code execution //NOSONAR
-    expect(colorToStyle('javascript:alert(1)')).toBe(null) //NOSONAR
-    expect(colorToStyle('<script>')).toBe(null)
-  })
-})
-
 describe('extractHeaderValues', () => {
-  it('should extract GET parameters', () => {
+  it('should extract GET parameters (header + background only)', () => {
     const source = {
       header: 'Title',
       headerBackground: 'blue',
-      headerStyle: 'bold'
+      headerStyle: 'bold' // ignored
     }
-    
+
     const result = extractHeaderValues(source, SourceType.GET)
-    
+
     expect(result).toEqual({
       header: 'Title',
-      background: 'blue',
-      color: 'bold'
+      background: 'blue'
     })
   })
-  
-  it('should extract POST parameters', () => {
+
+  it('should extract POST parameters (header.name + header.background only)', () => {
     const source = {
       'header.name': 'Title',
       'header.background': 'green',
-      'header.color': 'white'
+      'header.color': 'white' // ignored
     }
-    
+
     const result = extractHeaderValues(source, SourceType.POST)
-    
+
     expect(result).toEqual({
       header: 'Title',
-      background: 'green',
-      color: 'white'
+      background: 'green'
     })
   })
-  
+
   it('should return empty for NONE type', () => {
     const result = extractHeaderValues({ some: 'data' }, SourceType.NONE)
     expect(result).toEqual({})
@@ -123,92 +104,81 @@ describe('extractHeaderValues', () => {
 })
 
 describe('createHeaderOverride', () => {
-  it('should create override from valid values', () => {
+  it('should create override with text + background', () => {
     const values = {
       header: 'My Title',
-      background: 'blue',
-      color: 'white'
+      background: 'blue'
     }
-    
+
     const result = createHeaderOverride(values, SourceType.POST)
-    
+
     expect(result).toEqual({
       text: 'My Title',
-      background: 'blue',
-      style: 'color: white'
+      background: 'blue'
     })
   })
-  
-  it('should handle GET source type for style', () => {
-    const values = {
-      header: 'Title',
-      color: 'bold'
-    }
-    
-    const result = createHeaderOverride(values, SourceType.GET)
-    
-    expect(result).toEqual({
-      text: 'Title',
-      style: 'bold'
-    })
-  })
-  
-  it('should return null for all invalid values', () => {
+
+  it('should return null when both text and background are invalid', () => {
     const values = {
       header: '',
-      background: null,
-      color: undefined
+      background: null
     }
-    
+
     const result = createHeaderOverride(values, SourceType.POST)
-    
+
     expect(result).toBe(null)
   })
-  
+
   it('should include only valid fields', () => {
     const values = {
       header: 'Title',
-      background: '',
-      color: null
+      background: ''
     }
-    
+
     const result = createHeaderOverride(values, SourceType.GET)
-    
+
     expect(result).toEqual({
       text: 'Title'
     })
+  })
+
+  it('should never produce a style field (issue #102)', () => {
+    const result = createHeaderOverride(
+      { header: 'X', background: 'red' },
+      SourceType.POST
+    )
+    expect(result).not.toHaveProperty('style')
   })
 })
 
 describe('mergeHeaderOverride', () => {
   it('should merge overrides', () => {
     const existing = { text: 'Old', background: 'red' }
-    const override = { background: 'blue', style: 'bold' }
-    
+    const override = { background: 'blue' }
+
     const result = mergeHeaderOverride(existing, override)
-    
+
     expect(result).toEqual({
       text: 'Old',
-      background: 'blue',
-      style: 'bold'
+      background: 'blue'
     })
   })
-  
+
   it('should handle undefined existing', () => {
     const override = { text: 'New' }
-    
+
     const result = mergeHeaderOverride(undefined, override)
-    
+
     expect(result).toEqual({ text: 'New' })
   })
-  
+
   it('should be pure - not mutate inputs', () => {
     const existing = { text: 'Original' }
     const override = { background: 'green' }
     const originalExisting = { ...existing }
-    
+
     mergeHeaderOverride(existing, override)
-    
+
     expect(existing).toEqual(originalExisting)
   })
 })
@@ -234,18 +204,26 @@ describe('processHeaderParams', () => {
     expect(processHeaderParams({ other: 'value' })).toBe(null)
   })
   
-  it('should process POST parameters', () => {
+  it('should process POST parameters (no color extraction)', () => {
     const source = {
       'header.name': 'Dashboard',
-      'header.color': '#333'
+      'header.background': '#333'
     }
 
     const result = processHeaderParams(source)
 
     expect(result).toEqual({
       text: 'Dashboard',
-      style: 'color: #333'
+      background: '#333'
     })
+  })
+
+  it('returns null for legacy-only sources', () => {
+    expect(processHeaderParams({ headerStyle: 'bold' })).toBe(null)
+    expect(processHeaderParams({ 'header.color': 'red' })).toBe(null)
+    expect(
+      processHeaderParams({ headerStyle: 'bold', 'header.color': 'red' })
+    ).toBe(null)
   })
 })
 
