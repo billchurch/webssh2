@@ -43,15 +43,13 @@ export function detectSourceType(source: Record<string, unknown> | undefined): S
   // When both are present, body wins — query is ignored.
   const hasPostParams =
     Object.hasOwn(source, 'header.name') ||
-    Object.hasOwn(source, 'header.color') ||
     Object.hasOwn(source, 'header.background')
 
   if (hasPostParams) {return SourceType.POST}
 
   const hasGetParams =
     Object.hasOwn(source, 'header') ||
-    Object.hasOwn(source, 'headerBackground') ||
-    Object.hasOwn(source, 'headerStyle')
+    Object.hasOwn(source, 'headerBackground')
 
   if (hasGetParams) {return SourceType.GET}
 

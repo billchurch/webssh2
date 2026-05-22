@@ -15,19 +15,26 @@ import {
 } from '../../../app/auth/header-processor.js'
 
 describe('detectSourceType', () => {
-  it('should detect GET source', () => {
+  it('detects GET parameters', () => {
     expect(detectSourceType({ header: 'test' })).toBe(SourceType.GET)
     expect(detectSourceType({ headerBackground: 'red' })).toBe(SourceType.GET)
-    expect(detectSourceType({ headerStyle: 'bold' })).toBe(SourceType.GET)
   })
-  
-  it('should detect POST source', () => {
+
+  it('detects POST parameters', () => {
     expect(detectSourceType({ 'header.name': 'test' })).toBe(SourceType.POST)
-    expect(detectSourceType({ 'header.color': 'red' })).toBe(SourceType.POST)
     expect(detectSourceType({ 'header.background': 'blue' })).toBe(SourceType.POST)
   })
-  
-  it('should return NONE for undefined or empty', () => {
+
+  it('returns NONE for legacy-only sources (issue #102)', () => {
+    // headerStyle and header.color are silently ignored. They do NOT
+    // cause source-type classification, so processHeaderParams returns
+    // null for legacy-only requests. The clear-vs-preserve behavior is
+    // handled in auth-utils.ts via hasAnyHeaderKey.
+    expect(detectSourceType({ headerStyle: 'bold' })).toBe(SourceType.NONE)
+    expect(detectSourceType({ 'header.color': 'red' })).toBe(SourceType.NONE)
+  })
+
+  it('returns NONE for empty or unrelated sources', () => {
     expect(detectSourceType(undefined)).toBe(SourceType.NONE)
     expect(detectSourceType({})).toBe(SourceType.NONE)
     expect(detectSourceType({ other: 'value' })).toBe(SourceType.NONE)
