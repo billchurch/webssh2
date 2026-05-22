@@ -36,8 +36,7 @@ const CSS_COLOR_RE = /^[a-zA-Z0-9#(),.\s-]+$/
  *
  * Accepts named colors, hex colors, and basic rgb()/rgba()/hsl()/hsla()
  * function notation. Rejects anything containing CSS injection characters
- * (semicolons, curly braces, etc.). Same regex as colorToStyle in
- * app/auth/header-processor.ts.
+ * (semicolons, curly braces, etc.).
  */
 export function validateCssColor(color: string | null | undefined): CssColor | undefined {
   if (color == null || color === '') {
