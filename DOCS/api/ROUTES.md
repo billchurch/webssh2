@@ -45,18 +45,22 @@ WebSSH2 validates SSH credentials immediately upon receiving HTTP Basic Auth cre
 **Expected Behavior:**
 
 1. **URL without embedded credentials:**
+
    ```text
    http://localhost:2222/ssh/host/example.com
    ```
+
    - Invalid credentials → 401 Unauthorized
    - Browser shows auth dialog
    - User can enter correct credentials
    - Success
 
 2. **URL with embedded credentials:**
+
    ```text
    http://user:pass@localhost:2222/ssh/host/example.com
    ```
+
    - Browser always uses URL credentials
    - Never prompts for new ones
    - Invalid credentials → 401 Unauthorized
@@ -160,7 +164,6 @@ All routes support the following query parameters:
 | `sshterm`          | string  | xterm-color | Terminal type                                         |
 | `header`           | string  | -           | Header text override                                  |
 | `headerBackground` | string  | green       | Header background color                               |
-| `headerStyle`      | string  | -           | Additional inline styles (e.g., `color: red`)         |
 | `env`              | string  | -           | Comma-separated env pairs (e.g., `FOO:bar,BAR:baz`)   |
 
 ### Example with Query Parameters
@@ -189,6 +192,7 @@ WebSSH2 uses content negotiation to return appropriate error responses based on 
 ### Browser Requests (Accept: text/html)
 
 When a browser requests a page and an SSH error occurs, WebSSH2 returns a styled HTML error page with:
+
 - Error title and description
 - Host and port details
 - "Try Again" button (for 401 authentication errors)
@@ -211,6 +215,7 @@ API clients receive JSON error responses:
 ### Content Negotiation
 
 The response format is determined by the `Accept` header:
+
 - If `text/html` appears before `application/json` → HTML error page
 - Otherwise → JSON response
 
@@ -232,12 +237,14 @@ curl -H "Accept: application/json" \
 ### From Basic Auth to POST Auth
 
 **Old Method (Deprecated):**
+
 ```javascript
 // Using Basic Auth
 window.location.href = 'http://user:pass@server:2222/ssh/host/example.com';
 ```
 
 **New Method (Recommended):**
+
 ```javascript
 // Using POST Auth
 fetch('/ssh', {

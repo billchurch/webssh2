@@ -124,8 +124,10 @@ The client supports extensive URL parameter configuration:
 ### Header Customization
 
 - `header`: Header text to display
-- `headerStyle`: Complete header styling with Tailwind CSS classes
-- `headerBackground`: Legacy header background styling
+- `headerBackground` — CSS color for the header bar background.
+  Accepts hex (`#ff00aa`), rgb/rgba functions, named colors
+  (`red`, `transparent`). Strings matching attack patterns
+  (Tailwind classes, CSS injection payloads) are rejected.
 
 See [URL Parameters Documentation](../configuration/URL-PARAMETERS.md) for detailed header styling options.
 
