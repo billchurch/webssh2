@@ -80,6 +80,37 @@ export function validateHeaderValue(value: unknown): string | null {
 }
 
 /**
+ * Returns true if `source` carries any header-related key — current
+ * (`header`, `headerBackground`, `header.name`, `header.background`) or
+ * legacy (`headerStyle`, `header.color`).
+ *
+ * Used by `processHeaderParameters` to suppress override-clearing when a
+ * request includes only legacy fields (issue #102). The legacy fields are
+ * silently ignored for extraction but still inhibit the clear, so a
+ * request that only sends `header.color` does NOT wipe a previously-set
+ * `session.headerOverride`.
+ */
+export function hasAnyHeaderKey(
+  source: Record<string, unknown> | undefined
+): boolean {
+  if (source == null) {
+    return false
+  }
+  if (
+    Object.hasOwn(source, 'header') ||
+    Object.hasOwn(source, 'headerBackground') ||
+    Object.hasOwn(source, 'header.name') ||
+    Object.hasOwn(source, 'header.background')
+  ) {
+    return true
+  }
+  return (
+    Object.hasOwn(source, 'headerStyle') ||
+    Object.hasOwn(source, 'header.color')
+  )
+}
+
+/**
  * Convert color value to style string
  * Pure function - no side effects
  */

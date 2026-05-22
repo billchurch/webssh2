@@ -10,6 +10,7 @@ import {
   createHeaderOverride,
   mergeHeaderOverride,
   processHeaderParams,
+  hasAnyHeaderKey,
   SourceType
 } from '../../../app/auth/header-processor.js'
 
@@ -231,12 +232,42 @@ describe('processHeaderParams', () => {
       'header.name': 'Dashboard',
       'header.color': '#333'
     }
-    
+
     const result = processHeaderParams(source)
-    
+
     expect(result).toEqual({
       text: 'Dashboard',
       style: 'color: #333'
     })
+  })
+})
+
+describe('hasAnyHeaderKey', () => {
+  it('returns false for undefined source', () => {
+    expect(hasAnyHeaderKey(undefined)).toBe(false)
+  })
+
+  it('returns false for empty source', () => {
+    expect(hasAnyHeaderKey({})).toBe(false)
+  })
+
+  it('returns false for unrelated keys', () => {
+    expect(hasAnyHeaderKey({ port: '22', username: 'x' })).toBe(false)
+  })
+
+  it.each([
+    ['header'],
+    ['headerBackground'],
+    ['header.name'],
+    ['header.background']
+  ])('returns true for current key: %s', (key) => {
+    expect(hasAnyHeaderKey({ [key]: 'x' })).toBe(true)
+  })
+
+  it.each([
+    ['headerStyle'],
+    ['header.color']
+  ])('returns true for legacy key: %s', (key) => {
+    expect(hasAnyHeaderKey({ [key]: 'x' })).toBe(true)
   })
 })
