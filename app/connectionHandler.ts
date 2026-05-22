@@ -126,12 +126,6 @@ function buildSshCredentials(
  * the client falls back to its own default rendering (no bar shown).
  * Otherwise returns { header: {...} } with text and background populated
  * based on field-wise override precedence: session.headerOverride > cfg.header.
- *
- * SECURITY: The `style` field from session.headerOverride is intentionally
- * NOT consumed here. The GET path's validateHeaderValue runs only a
- * printable-ASCII filter — it does not enforce the colorToStyle regex —
- * so forwarding `style` would re-introduce the Tailwind-class injection
- * vector. Only `text` and `background` are forwarded.
  */
 function buildHeaderConfig(
   cfg: Config,
@@ -139,8 +133,6 @@ function buildHeaderConfig(
 ): Record<string, unknown> {
   const overrideText = session?.headerOverride?.text
   const overrideBackground = session?.headerOverride?.background
-  // NOTE: session.headerOverride.style is intentionally NOT consumed
-  // here. See function jsdoc for rationale.
 
   const text = overrideText ?? cfg.header.text
   const background = overrideBackground ?? cfg.header.background
