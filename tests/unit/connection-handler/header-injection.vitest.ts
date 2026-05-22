@@ -100,12 +100,17 @@ describe('buildTempConfig - tempConfig.header', () => {
   })
 
   it('does not emit style field even when session.headerOverride.style is set', () => {
-    // SECURITY: the GET path validates text and background but not style.
-    // Forwarding style would re-introduce a Tailwind-class injection vector.
+    // Defense-in-depth regression guard for #102. HeaderOverride no
+    // longer carries a `style` field — the type system already enforces
+    // what this test asserts. The runtime cast below forces a `style`
+    // field through anyway so this assertion continues to catch a
+    // future maintainer who reintroduces style consumption inside
+    // buildHeaderConfig (e.g. by re-adding the field to the type).
     const req = reqWithOverride({
       text: 'Test',
       background: 'green',
-      style: 'bg-red-500 text-white'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...({ style: 'bg-red-500 text-white' } as any)
     })
     const result = buildTempConfig(req, defaultConfig)
     expect(result['header']).toMatchObject({ text: 'Test', background: 'green' })
