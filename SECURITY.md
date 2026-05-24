@@ -6,8 +6,8 @@ We currently support only the latest released version of WebSSH2 with security u
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 4.2.x   | :white_check_mark: |
-| < 4.2.0 | :x:                |
+| 5.x     | :white_check_mark: |
+| < 5.0.0 | :x:                |
 
 **We strongly recommend always using the latest release to ensure you have the most recent security patches and improvements.**
 
