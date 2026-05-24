@@ -14,6 +14,17 @@ WebSSH2 is an HTML5 web-based terminal emulator and SSH client with optional tel
 
 WebSSH2 development is supported by [Tailwind Resource Group](https://tailwindrg.com), an engineering-led IT services firm specializing in application delivery, zero trust security, and identity for federal and commercial customers.
 
+## Compatibility
+
+WebSSH2 server bundles a matching version of the [`webssh2_client`](https://github.com/billchurch/webssh2_client) browser bundle as an npm dependency. The compatibility matrix below tracks which client major each server major ships with.
+
+| Server (`webssh2`) | Client (`webssh2_client`) | Notes |
+| --- | --- | --- |
+| 5.x | ^4.0.0 | `headerStyle` / `header.color` removed ([#102](https://github.com/billchurch/webssh2_client/issues/102)) |
+| 4.x | ^3.x | Theming UI support (3.7.0+) |
+
+Operators using the published Docker image or installing `webssh2` from npm get the correct client automatically. The matrix matters if you self-build the client, link a local fork, or pin to a different client version than the server's dependency declares.
+
 ## Quick Start
 
 ### Requirements

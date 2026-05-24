@@ -104,10 +104,18 @@ jobs:
           github.event.pull_request.head.repo.full_name != github.repository
         run: echo "Fork PR; image scan skipped (advisory; main-branch scan is the gate)."
 
+      - name: Note dependabot PR skip
+        if: >-
+          steps.filter.outputs.image == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor == 'dependabot[bot]'
+        run: echo "Dependabot PR; image scan skipped (advisory; main-branch scan is the gate). GitHub does not expose repo secrets to dependabot-triggered workflows by default, so the Docker Hub login required here cannot succeed."
+
       - name: Login to Docker Hub (raise anon rate-limit)
         if: >-
           steps.filter.outputs.image == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -116,13 +124,15 @@ jobs:
       - name: Set up buildx
         if: >-
           steps.filter.outputs.image == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]'
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Build amd64 image for scanning
         if: >-
           steps.filter.outputs.image == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]'
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
@@ -134,7 +144,8 @@ jobs:
       - name: Trivy image scan
         if: >-
           steps.filter.outputs.image == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]'
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: webssh2:pr-${{ github.event.pull_request.number }}
