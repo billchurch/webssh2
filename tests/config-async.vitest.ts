@@ -51,6 +51,21 @@ describe('Config Module - Async Tests', () => {
     expect(typeof config.session.secret === 'string' && config.session.secret !== '').toBeTruthy()
   })
 
+  it('loads default config with null header background and passes schema validation', async () => {
+    // Verifies the schema/type/default change: with no config.json and no env vars,
+    // the default header.background of null is valid and does not crash startup.
+    const configManager = requireConfigManager(testEnv)
+    if (configManager.configExists()) {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      fs.unlinkSync(configManager.configPath)
+    }
+
+    const config = await loadConfigAsync()
+
+    expect(config.header.background).toBeNull()
+    expect(config.header.text).toBeNull()
+  })
+
   it('loadConfigAsync loads and merges custom config from config.json', async () => {
     const configManager = requireConfigManager(testEnv)
     const customConfig = {

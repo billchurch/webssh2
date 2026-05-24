@@ -102,7 +102,7 @@ async function importModule(): Promise<void> {
     createAppStructuredLogger: () => loggerStub
   }))
 
-  moduleUnderTest = (await import('../../../app/socket/control-handler.js')) as ControlHandlerModule
+  moduleUnderTest = await import('../../../app/socket/control-handler.js')
 }
 
 describe('handleReplayCredentials structured logging', () => {

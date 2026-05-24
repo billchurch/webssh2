@@ -80,6 +80,7 @@ Alternatively, add the following configuration to your `config.json`:
 Authenticate and connect to the default configured host.
 
 **Request:**
+
 ```http
 POST /ssh/host/
 Content-Type: application/x-www-form-urlencoded
@@ -92,6 +93,7 @@ username=john&password=secret123&port=22
 Authenticate and connect to a specific host.
 
 **Request:**
+
 ```http
 POST /ssh/host/myserver.example.com
 Content-Type: application/x-www-form-urlencoded
@@ -110,10 +112,13 @@ username=john&password=secret123&port=2222
 | `sshterm` | string | Terminal type | No (default: xterm-256color) |
 | `header.name` | string | Custom header text | No |
 | `header.background` | string | Header background color | No |
-| `header.color` | string | Header text color | No |
 | `allowreplay` | boolean | Enable session replay | No |
 | `mrhsession` | string | Session recording ID | No |
 | `readyTimeout` | number | Connection timeout (ms) | No |
+
+> Note: the legacy `header.color` POST field was removed in
+> [issue #102](https://github.com/billchurch/webssh2_client/issues/102).
+> Use `header.background` (validated CSS color) for colored header bars.
 
 ## BIG-IP APM Integration
 
@@ -319,5 +324,6 @@ fetch('/ssh/config').then(r => r.json()).then(console.log)
 ## Support
 
 For issues or questions:
+
 - GitHub Issues: [webssh2/issues](https://github.com/billchurch/webssh2/issues)
 - Documentation: [webssh2/docs](https://github.com/billchurch/webssh2/tree/main/docs)

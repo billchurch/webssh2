@@ -29,14 +29,22 @@ export function validateSshPort(port: number = 22): SshPort {
   return port as SshPort
 }
 
+const CSS_COLOR_RE = /^[a-zA-Z0-9#(),.\s-]+$/
+
 /**
  * Validate CSS color
+ *
+ * Accepts named colors, hex colors, and basic rgb()/rgba()/hsl()/hsla()
+ * function notation. Rejects anything containing CSS injection characters
+ * (semicolons, curly braces, etc.).
  */
-export function validateCssColor(color: string | undefined): CssColor | undefined {
+export function validateCssColor(color: string | null | undefined): CssColor | undefined {
   if (color == null || color === '') {
     return undefined
   }
-  // Basic validation - could be enhanced with actual CSS color validation
+  if (!CSS_COLOR_RE.test(color)) {
+    return undefined
+  }
   return color as CssColor
 }
 

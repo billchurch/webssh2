@@ -9,15 +9,14 @@ import {
 import { TEST_PASSWORDS } from './test-constants.js'
 
 it('processHeaderParameters sets session overrides from GET-like source', () => {
-  const session: { headerOverride?: { text: string; background: string; style: string } } = {}
+  const session: { headerOverride?: { text?: string; background?: string } } = {}
   processHeaderParameters(
-    { header: 'Hello', headerBackground: 'blue', headerStyle: 'color: white' },
+    { header: 'Hello', headerBackground: 'blue' },
     session
   )
   expect(session.headerOverride).toEqual({
     text: 'Hello',
     background: 'blue',
-    style: 'color: white',
   })
 })
 

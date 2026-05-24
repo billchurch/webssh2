@@ -1,6 +1,7 @@
 # WebSSH2 HTTP POST Authentication Flow Analysis
 
 ## Overview
+
 This document maps the complete event flow for WebSSH2's HTTP POST authentication using the `/ssh/host/:host` route. This flow enables form-based authentication similar to BIG-IP APM WebSSO integration where credentials and parameters are submitted via HTTP POST.
 
 ## HTTP POST Authentication Flow Diagram
@@ -103,6 +104,7 @@ sequenceDiagram
 ## HTTP POST Form Structure
 
 ### Standard POST Form (like BIG-IP APM)
+
 ```html
 <form method="POST" action="/ssh/host/target">
   <!-- Authentication -->
@@ -128,6 +130,7 @@ sequenceDiagram
 ```
 
 ### Supported POST Parameters
+
 ```typescript
 interface POSTAuthParams {
   // Required Authentication
@@ -152,6 +155,7 @@ interface POSTAuthParams {
 ## Key Differences from Other Flows
 
 ### 1. **POST-Redirect-GET Pattern**
+
 ```javascript
 // HTTP POST Flow
 POST /ssh/host/target → 302 Redirect → GET /ssh/host/target?session=xyz
@@ -164,6 +168,7 @@ GET /ssh → Show form → User interaction
 ```
 
 ### 2. **Form Data Processing**
+
 ```javascript
 // Server processes POST body
 'Content-Type': 'application/x-www-form-urlencoded'
@@ -180,6 +185,7 @@ GET /ssh → Show form → User interaction
 ```
 
 ### 3. **Header Customization Support**
+
 ```javascript
 // Server logs show header processing
 'Header text from POST: 🏢 Production Database Server'  
@@ -195,6 +201,7 @@ header: {
 ```
 
 ### 4. **Session-Based Storage**
+
 ```javascript
 // POST credentials stored in Express session
 connectionHandler: "POST credentials exist in session"
@@ -208,6 +215,7 @@ hasCredentials: true
 ## BIG-IP APM Integration
 
 ### WebSSO Configuration
+
 ```javascript
 // F5 BIG-IP APM WebSSO Profile
 Form Detection:
@@ -223,6 +231,7 @@ Variable Mapping:
 ```
 
 ### APM Session Variables
+
 ```javascript
 // Common APM variables for WebSSH2
 session.logon.last.username     // Primary username
@@ -234,6 +243,7 @@ session.custom.header_color     // UI customization
 ```
 
 ### Auto-Submit JavaScript (APM-generated)
+
 ```javascript
 // APM can generate auto-submit forms
 function apmAutoSubmit() {
@@ -252,6 +262,7 @@ function apmAutoSubmit() {
 ## Security Considerations
 
 ### POST Data Handling
+
 1. **HTTPS Required**: POST body contains plaintext credentials
 2. **Session Security**: Credentials stored in secure Express session
 3. **CSRF Protection**: Consider CSRF tokens for form submissions
@@ -259,6 +270,7 @@ function apmAutoSubmit() {
 5. **Session Timeout**: Sessions expire with browser close
 
 ### APM Integration Security
+
 1. **Secure Variables**: Use secure APM variables for passwords
 2. **Transport Encryption**: HTTPS between APM and WebSSH2
 3. **Session Isolation**: Each POST creates isolated SSH session
@@ -267,6 +279,7 @@ function apmAutoSubmit() {
 ## Performance Characteristics
 
 ### POST Auth Timeline
+
 1. **Form Submission**: 0-5ms (POST processing)
 2. **Redirect**: ~5ms (302 response + GET request)  
 3. **Client Init**: ~15ms (SolidJS mount with auto-connect)
@@ -276,6 +289,7 @@ function apmAutoSubmit() {
 7. **Total**: ~95ms from form submit to ready terminal
 
 ### Performance Benefits
+
 - **Form-based UX**: Familiar login experience
 - **Auto-connect**: No additional user interaction
 - **Parameter Passing**: All config in single POST
@@ -297,18 +311,21 @@ function apmAutoSubmit() {
 ## Use Cases
 
 ### Enterprise SSO Integration
+
 - **BIG-IP APM**: Full WebSSO integration with session variables
 - **SAML/AD Integration**: User identity passed through APM
 - **Multi-Factor Auth**: APM handles MFA before WebSSH2 access
 - **Role-Based Access**: APM controls which servers users can access
 
 ### Custom Portal Integration  
+
 - **Company Portals**: Embed WebSSH2 in existing web applications
 - **Service Desks**: Automated SSH access for support teams
 - **DevOps Platforms**: Integrated terminal access in CI/CD tools
 - **Training Systems**: Controlled SSH access for educational purposes
 
 ### Advanced UI Customization
+
 - **Environment Indicators**: Color-coded headers for prod/staging/dev
 - **Server Branding**: Custom headers with server names and purposes
 - **Warning Messages**: Special styling for production environments
@@ -317,6 +334,7 @@ function apmAutoSubmit() {
 ## Debug Logging for POST Flow
 
 ### Client-Side Events
+
 ```javascript
 // Key indicators of POST flow
 'logging-service Session footer set: ssh://localhost:2244'  // Set from POST
@@ -326,6 +344,7 @@ function apmAutoSubmit() {
 ```
 
 ### Server-Side Events
+
 ```javascript  
 // POST processing
 'security Security headers applied to POST /ssh/host/target'
@@ -349,3 +368,7 @@ WebSSH2's HTTP POST authentication flow provides enterprise-grade integration ca
 - **95ms Performance**: Fast connection with rich parameter support
 
 This flow bridges the gap between simple Basic Auth and enterprise SSO requirements, making WebSSH2 suitable for large-scale corporate deployments with existing identity management infrastructure.
+
+---
+
+> **Historical note:** `header.color` was removed in [`webssh2_client#102`](https://github.com/billchurch/webssh2_client/issues/102). The analysis above describes behavior that existed at the time of writing.

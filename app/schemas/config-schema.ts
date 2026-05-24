@@ -133,7 +133,7 @@ const SSHSchema = z.object({
  */
 const HeaderSchema = z.object({
   text: z.string().nullable(),
-  background: z.string()
+  background: z.string().nullable()
 })
 
 /**

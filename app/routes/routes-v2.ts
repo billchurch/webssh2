@@ -241,6 +241,12 @@ async function handlePostAuthRoute(
   )
   debug('POST auth - Credentials stored:', sanitized)
 
+  // Body parameters take precedence over query parameters for header overrides.
+  // detectSourceType in header-processor checks POST keys first, so when both
+  // are present the POST body wins.
+  const source = { ...expressReq.query, ...bodyWithHost }
+  processAuthParameters(source, expressReq.session)
+
   // Serve the client page
   await handleConnection(
     expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },

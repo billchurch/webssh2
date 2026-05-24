@@ -129,7 +129,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
       },
     },
   },
-  header: { text: null, background: 'green' },
+  header: { text: null, background: null },
   options: {
     challengeButton: true,
     autoLog: false,

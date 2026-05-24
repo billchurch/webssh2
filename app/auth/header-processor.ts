@@ -11,7 +11,6 @@ const debug = createNamespacedDebug('auth:header')
 export interface HeaderOverride {
   text?: string
   background?: string
-  style?: string
 }
 
 /**
@@ -20,7 +19,6 @@ export interface HeaderOverride {
 export interface HeaderValues {
   header?: unknown
   background?: unknown
-  color?: unknown
 }
 
 /**
@@ -38,21 +36,21 @@ export enum SourceType {
  */
 export function detectSourceType(source: Record<string, unknown> | undefined): SourceType {
   if (source == null) {return SourceType.NONE}
-  
-  const hasGetParams = 
-    Object.hasOwn(source, 'header') ||
-    Object.hasOwn(source, 'headerBackground') ||
-    Object.hasOwn(source, 'headerStyle')
-  
-  if (hasGetParams) {return SourceType.GET}
-  
-  const hasPostParams = 
+
+  // POST body parameters take precedence over GET query parameters.
+  // When both are present, body wins — query is ignored.
+  const hasPostParams =
     Object.hasOwn(source, 'header.name') ||
-    Object.hasOwn(source, 'header.color') ||
     Object.hasOwn(source, 'header.background')
-  
+
   if (hasPostParams) {return SourceType.POST}
-  
+
+  const hasGetParams =
+    Object.hasOwn(source, 'header') ||
+    Object.hasOwn(source, 'headerBackground')
+
+  if (hasGetParams) {return SourceType.GET}
+
   return SourceType.NONE
 }
 
@@ -78,19 +76,34 @@ export function validateHeaderValue(value: unknown): string | null {
 }
 
 /**
- * Convert color value to style string
- * Pure function - no side effects
+ * Returns true if `source` carries any header-related key — current
+ * (`header`, `headerBackground`, `header.name`, `header.background`) or
+ * legacy (`headerStyle`, `header.color`).
+ *
+ * Used by `processHeaderParameters` to suppress override-clearing when a
+ * request includes only legacy fields (issue #102). The legacy fields are
+ * silently ignored for extraction but still inhibit the clear, so a
+ * request that only sends `header.color` does NOT wipe a previously-set
+ * `session.headerOverride`.
  */
-export function colorToStyle(color: unknown): string | null {
-  const validated = validateHeaderValue(color)
-  if (validated == null) {return null}
-  
-  // Basic validation for CSS color values
-  if (!/^[a-zA-Z0-9#(),.\s-]+$/.test(validated)) {
-    return null
+export function hasAnyHeaderKey(
+  source: Record<string, unknown> | undefined
+): boolean {
+  if (source == null) {
+    return false
   }
-  
-  return `color: ${validated}`
+  if (
+    Object.hasOwn(source, 'header') ||
+    Object.hasOwn(source, 'headerBackground') ||
+    Object.hasOwn(source, 'header.name') ||
+    Object.hasOwn(source, 'header.background')
+  ) {
+    return true
+  }
+  return (
+    Object.hasOwn(source, 'headerStyle') ||
+    Object.hasOwn(source, 'header.color')
+  )
 }
 
 /**
@@ -104,16 +117,14 @@ export function extractHeaderValues(
   if (sourceType === SourceType.GET) {
     return {
       header: source['header'],
-      background: source['headerBackground'],
-      color: source['headerStyle']
+      background: source['headerBackground']
     }
   }
-  
+
   if (sourceType === SourceType.POST) {
     return {
       header: source['header.name'],
-      background: source['header.background'],
-      color: source['header.color']
+      background: source['header.background']
     }
   }
   
@@ -126,23 +137,19 @@ export function extractHeaderValues(
  */
 export function createHeaderOverride(
   values: HeaderValues,
-  sourceType: SourceType
+  _sourceType: SourceType
 ): HeaderOverride | null {
   const text = validateHeaderValue(values.header)
   const background = validateHeaderValue(values.background)
-  const style = sourceType === SourceType.GET 
-    ? validateHeaderValue(values.color)
-    : colorToStyle(values.color)
 
-  if (text == null && background == null && style == null) {
+  if (text == null && background == null) {
     return null
   }
 
   const override: HeaderOverride = {}
   if (text != null) {override.text = text}
   if (background != null) {override.background = background}
-  if (style != null) {override.style = style}
-  
+
   return override
 }
 
