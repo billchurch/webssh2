@@ -1,5 +1,23 @@
 # Changelog
 
+## [5.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.2...webssh2-server-v5.0.0) (2026-05-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **security:** HeaderOverride.style and HeaderValues.color no longer exist on the public types. The header.color POST field and headerStyle GET parameter are silently ignored.
+
+### Features
+
+* **theming:** opt-in server-side theming — config, env, validation, injection ([#513](https://github.com/billchurch/webssh2/issues/513)) ([f7978d1](https://github.com/billchurch/webssh2/commit/f7978d168f045aeeb873de703e30d0a11261b31e))
+
+
+### Bug Fixes
+
+* **deps:** bump webssh2_client to ^3.7.0 for theming UI support ([#520](https://github.com/billchurch/webssh2/issues/520)) ([0b88c49](https://github.com/billchurch/webssh2/commit/0b88c493c53fd938c43ca356045ba920b89761b7)), closes [#518](https://github.com/billchurch/webssh2/issues/518)
+* **deps:** bump webssh2_client to ^4.0.0 for issue [#102](https://github.com/billchurch/webssh2/issues/102) fix ([#524](https://github.com/billchurch/webssh2/issues/524)) ([cf46eb7](https://github.com/billchurch/webssh2/commit/cf46eb74b33702b29fa44d14b155d76b204dcb49))
+* **security:** remove header.color and colorToStyle ([#102](https://github.com/billchurch/webssh2/issues/102) + supersedes [#519](https://github.com/billchurch/webssh2/issues/519)) ([#522](https://github.com/billchurch/webssh2/issues/522)) ([ee657d7](https://github.com/billchurch/webssh2/commit/ee657d7581e0f7a7c58d1a4fa6954252f323562e))
+
 ## [4.2.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.1...webssh2-server-v4.2.2) (2026-04-25)
 
 
