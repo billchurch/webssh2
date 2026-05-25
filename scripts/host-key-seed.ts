@@ -631,10 +631,9 @@ export function isMainModule(
   )
 }
 
-// Only run main() when executed directly (not when imported for testing)
-const isDirectExecution = process.argv[1]?.endsWith('host-key-seed')
-  ?? process.argv[1]?.endsWith('host-key-seed.ts')
-  ?? false
+// Only run main() when executed directly (not when imported for testing).
+// See isMainModule above for why both checks are needed.
+const isDirectExecution = isMainModule(import.meta.url, process.argv[1])
 
 if (isDirectExecution) {
   const exitCode = await main()
