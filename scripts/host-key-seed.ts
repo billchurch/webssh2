@@ -11,7 +11,8 @@
 
 import crypto from 'node:crypto'
 import fs from 'node:fs'
-import path from 'node:path'
+import path, { basename } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import Database, { type Database as DatabaseType } from 'better-sqlite3'
 import { Client as SSH2Client } from 'ssh2'
 
@@ -594,6 +595,40 @@ async function main(): Promise<number> {
   }
 
   return 0
+}
+
+/**
+ * Returns true when this module is the program entry point.
+ *
+ * Combines two checks:
+ *   - Canonical: import.meta.url === pathToFileURL(argv1).href. The standard
+ *     ESM "is this the entry?" idiom. Rename-proof — works regardless of
+ *     filename or extension.
+ *   - Basename allowlist: matches the three known basenames this script can
+ *     legitimately be invoked under. Acts as a safety net for cases where
+ *     the canonical check fails because import.meta.url and argv1 use
+ *     different path representations (macOS /tmp → /private/tmp realpath,
+ *     symlinked checkouts, npm/pnpm wrapper scripts, Windows casing). Tested
+ *     independently from the canonical branch.
+ *
+ * Pure function — exported for unit testing.
+ */
+export function isMainModule(
+  importMetaUrl: string,
+  argv1: string | undefined
+): boolean {
+  if (argv1 === undefined || argv1 === '') {
+    return false
+  }
+  if (importMetaUrl === pathToFileURL(argv1).href) {
+    return true
+  }
+  const base = basename(argv1)
+  return (
+    base === 'host-key-seed' ||
+    base === 'host-key-seed.js' ||
+    base === 'host-key-seed.ts'
+  )
 }
 
 // Only run main() when executed directly (not when imported for testing)
