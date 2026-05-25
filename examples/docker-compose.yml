@@ -36,7 +36,12 @@ services:
       WEBSSH2_OPTIONS_ALLOW_RECONNECT: true
       WEBSSH2_OPTIONS_ALLOW_REPLAY: true
       WEBSSH2_OPTIONS_AUTO_LOG: false
-      
+
+      # Host key verification (SQLite store). See README "Seeding from inside
+      # the production container" for how to populate /data/hostkeys.db.
+      WEBSSH2_SSH_HOSTKEY_ENABLED: "true"
+      WEBSSH2_SSH_HOSTKEY_DB_PATH: /data/hostkeys.db
+
       # Debug output (optional)
       DEBUG: "webssh2:config,webssh2:envConfig"
     
@@ -50,6 +55,14 @@ services:
     
     # Restart policy
     restart: unless-stopped
+
+    # Named volume for /data. Named volumes inherit image ownership
+    # (node:node from the Dockerfile); bind mounts would auto-create as
+    # root and re-introduce EACCES. Operators who want a host-managed
+    # directory can change this to a bind mount AFTER running
+    # `chown 1000:1000 /path/on/host`.
+    volumes:
+      - hostkeys-data:/data
 
   # Production-like configuration with strict security
   webssh2-production:
@@ -179,4 +192,6 @@ networks:
 # Volumes (optional - for persistent session storage)
 volumes:
   webssh2_sessions:
+    driver: local
+  hostkeys-data:
     driver: local
