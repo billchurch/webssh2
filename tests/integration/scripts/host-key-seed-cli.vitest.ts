@@ -22,7 +22,13 @@ describe('host-key-seed CLI (compiled artifact)', () => {
   })
 
   it('prints the usage banner and exits 0 when invoked with --help', () => {
-    const result = spawnSync('node', [distScript, '--help'], {
+    // Use process.execPath (the absolute path to the currently-running node
+    // binary) rather than the bare 'node' string. Bare 'node' would be
+    // resolved via $PATH, which Sonar rule typescript:S4036 flags as unsafe
+    // if PATH contains a writable directory. process.execPath is fixed at
+    // process start, bypasses PATH entirely, and guarantees we spawn the
+    // same node version that ran the test.
+    const result = spawnSync(process.execPath, [distScript, '--help'], {
       encoding: 'utf8',
       timeout: 10_000
     })
