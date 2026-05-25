@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock external dependencies before importing the module under test
@@ -8,7 +9,7 @@ vi.mock('ssh2', () => ({
   Client: vi.fn()
 }))
 
-const { extractDbPathFromConfig, resolveDbPath, parseArgs } = await import(
+const { extractDbPathFromConfig, resolveDbPath, parseArgs, isMainModule } = await import(
   '../../../scripts/host-key-seed.js'
 )
 
@@ -174,5 +175,69 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'script', '--list', '--db', '/custom/path.db'])
     expect(result.command).toBe('list')
     expect(result.dbPath).toBe('/custom/path.db')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// isMainModule
+// ---------------------------------------------------------------------------
+
+describe('isMainModule', () => {
+  it('returns false when argv1 is undefined (early return)', () => {
+    expect(isMainModule('file:///irrelevant', undefined)).toBe(false)
+  })
+
+  it('returns false when argv1 is empty string (early return)', () => {
+    expect(isMainModule('file:///irrelevant', '')).toBe(false)
+  })
+
+  it('returns true via the canonical branch when argv1 URL matches import.meta.url', () => {
+    // Use a basename NOT in the allowlist so a true result definitively proves
+    // the canonical branch matched, not the basename fallback. The path is
+    // never touched on disk — pathToFileURL is a pure string-to-URL transform.
+    const argv1 = '/srv/webssh2/scripts/arbitrary-name.mjs'
+    const importMetaUrl = pathToFileURL(argv1).href
+    expect(isMainModule(importMetaUrl, argv1)).toBe(true)
+  })
+
+  it('returns true via the basename branch for "host-key-seed.js"', () => {
+    // Set importMetaUrl to a different URL so the canonical branch CANNOT match;
+    // only the basename allowlist can rescue this.
+    expect(
+      isMainModule('file:///somewhere/else.js', '/app/dist/scripts/host-key-seed.js')
+    ).toBe(true)
+  })
+
+  it('returns true via the basename branch for "host-key-seed.ts"', () => {
+    expect(
+      isMainModule('file:///somewhere/else.js', '/app/scripts/host-key-seed.ts')
+    ).toBe(true)
+  })
+
+  it('returns true via the basename branch for extensionless "host-key-seed"', () => {
+    expect(
+      isMainModule('file:///somewhere/else.js', '/usr/local/bin/host-key-seed')
+    ).toBe(true)
+  })
+
+  it('returns false for unrelated basename "tsx"', () => {
+    expect(isMainModule('file:///somewhere/else.js', '/usr/local/bin/tsx')).toBe(false)
+  })
+
+  it('returns false for unrelated basename "node"', () => {
+    expect(isMainModule('file:///somewhere/else.js', '/usr/local/bin/node')).toBe(false)
+  })
+
+  it('returns false for unrelated basename "other-script.js"', () => {
+    expect(
+      isMainModule('file:///somewhere/else.js', '/app/scripts/other-script.js')
+    ).toBe(false)
+  })
+
+  it('returns false for prefix-collision basename "host-key-seed-helper.js"', () => {
+    // Verifies === semantics, not prefix/suffix matching.
+    expect(
+      isMainModule('file:///somewhere/else.js', '/app/scripts/host-key-seed-helper.js')
+    ).toBe(false)
   })
 })
