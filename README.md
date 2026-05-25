@@ -263,6 +263,53 @@ docker run --rm -p 2222:2222 \
   ghcr.io/billchurch/webssh2:latest
 ```
 
+### Seeding from inside the production container
+
+> **WARNING:** You **must** mount `/data` (named volume or bind mount) before
+> running any seeding commands inside a production container. The image
+> deliberately does **not** declare `VOLUME /data` — without an operator-
+> provided mount, the seeded `hostkeys.db` is written to the container's
+> writable layer and is destroyed by `docker rm`. The absent `VOLUME`
+> directive is intentional: silent anonymous-volume data loss (which is what
+> Docker does when a `VOLUME` is declared but unmounted) is a worse failure
+> mode than container-fs loss, because the latter is an obvious operator
+> mistake while the former looks like everything is working until the
+> container is removed.
+
+The production image ships the compiled CLI at `dist/scripts/host-key-seed.js`
+and exposes it via `npm run hostkeys:prod`. The dev-only `npm run hostkeys`
+script uses `tsx` (a devDependency that is **not** present in the image), so
+inside the container you must always use `:prod`.
+
+**Seed against a running container** (most common):
+
+```bash
+docker exec <container> npm run hostkeys:prod -- --host ssh.example.com
+```
+
+**One-shot pre-seed before the first container start:**
+
+```bash
+docker run --rm \
+  -v hostkeys-data:/data \
+  -e WEBSSH2_SSH_HOSTKEY_DB_PATH=/data/hostkeys.db \
+  ghcr.io/billchurch/webssh2:latest \
+  npm run hostkeys:prod -- --host ssh.example.com
+```
+
+**Troubleshooting:**
+
+- **`EACCES: permission denied` writing `/data/hostkeys.db`** — the
+  bind-mounted host directory is not writable by uid 1000 (the `node` user
+  inside the container). Either `chown 1000:1000 /path/on/host/hostkeys` on
+  the host before mounting, or switch to a named volume managed by the
+  Docker daemon (named volumes inherit image ownership and avoid this).
+- **The seeded database "disappears" between container restarts** — the
+  operator forgot to mount `/data`. Verify with `docker inspect <container>`
+  that `/data` is listed under `Mounts` as a `bind` or `volume` source, not
+  a container-local path. The `examples/docker-compose.yml` file shows the
+  expected named-volume setup.
+
 ### Seeding Script Usage
 
 The `npm run hostkeys` command manages the SQLite host key database. It probes remote hosts via SSH to capture their public keys and stores them for later verification.
