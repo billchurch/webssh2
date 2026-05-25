@@ -241,3 +241,51 @@ describe('isMainModule', () => {
     ).toBe(false)
   })
 })
+
+// ---------------------------------------------------------------------------
+// sanitizeForDisplay
+// ---------------------------------------------------------------------------
+
+const { sanitizeForDisplay } = await import('../../../scripts/host-key-seed.js')
+
+describe('sanitizeForDisplay', () => {
+  it('returns plain printable ASCII unchanged', () => {
+    expect(sanitizeForDisplay('example.com')).toBe('example.com')
+    expect(sanitizeForDisplay('host-1.sub.example.com:22')).toBe(
+      'host-1.sub.example.com:22'
+    )
+    expect(sanitizeForDisplay('')).toBe('')
+  })
+
+  it('escapes ESC and CSI control sequences', () => {
+    expect(sanitizeForDisplay('\x1b[31mred\x1b[0m')).toBe('\\x1B[31mred\\x1B[0m')
+  })
+
+  it('escapes C0 control characters', () => {
+    expect(sanitizeForDisplay('\x00nul')).toBe('\\x00nul')
+    expect(sanitizeForDisplay('\x07bell')).toBe('\\x07bell')
+    expect(sanitizeForDisplay('\x08bs')).toBe('\\x08bs')
+    expect(sanitizeForDisplay('\rcr')).toBe('\\x0Dcr')
+    expect(sanitizeForDisplay('\nlf')).toBe('\\x0Alf')
+  })
+
+  it('escapes DEL (0x7F)', () => {
+    expect(sanitizeForDisplay('a\x7Fb')).toBe('a\\x7Fb')
+  })
+
+  it('escapes C1 control characters (0x80-0x9F)', () => {
+    expect(sanitizeForDisplay('a\x80b')).toBe('a\\x80b')
+    expect(sanitizeForDisplay('a\x9Bb')).toBe('a\\x9Bb')
+    expect(sanitizeForDisplay('a\x9Fb')).toBe('a\\x9Fb')
+  })
+
+  it('passes through printable Unicode above 0x9F', () => {
+    expect(sanitizeForDisplay('münchen.example')).toBe('münchen.example')
+    expect(sanitizeForDisplay('host. space')).toBe('host. space')
+  })
+
+  it('produces uppercase hex digits', () => {
+    expect(sanitizeForDisplay('\x1b')).toBe('\\x1B')
+    expect(sanitizeForDisplay('\x0a')).toBe('\\x0A')
+  })
+})

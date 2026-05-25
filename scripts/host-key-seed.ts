@@ -69,6 +69,25 @@ Examples:
 `.trim()
 
 // ---------------------------------------------------------------------------
+// Display sanitization
+// ---------------------------------------------------------------------------
+
+/**
+ * Escape control characters in a string for safe terminal display.
+ *
+ * Replaces bytes in [0x00, 0x1F] (C0 controls), 0x7F (DEL), and [0x80, 0x9F]
+ * (C1 controls) with `\xNN` escape notation. Printable ASCII (0x20-0x7E) and
+ * printable Unicode above 0x9F pass through unchanged.
+ */
+export function sanitizeForDisplay(input: string): string {
+  // eslint-disable-next-line no-control-regex
+  return input.replace(/[\x00-\x1F\x7F-\x9F]/g, (ch) => {
+    const code = ch.charCodeAt(0)
+    return `\\x${code.toString(16).padStart(2, '0').toUpperCase()}`
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Algorithm extraction (mirrors host-key-verifier.ts)
 // ---------------------------------------------------------------------------
 
@@ -387,16 +406,17 @@ async function handleProbeHost(
   host: string,
   port: number
 ): Promise<void> {
-  process.stdout.write(`Probing ${host}:${port}...\n`)
+  const safeHost = sanitizeForDisplay(host)
+  process.stdout.write(`Probing ${safeHost}:${port}...\n`)
   try {
     const result = await probeHostKey(host, port)
     upsertKey(db, host, port, result.algorithm, result.key)
     const fingerprint = computeFingerprint(result.key)
-    process.stdout.write(`Added ${result.algorithm} key for ${host}:${port}\n`)
+    process.stdout.write(`Added ${result.algorithm} key for ${safeHost}:${port}\n`)
     process.stdout.write(`Fingerprint: ${fingerprint}\n`)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
-    process.stderr.write(`Error probing ${host}:${port}: ${message}\n`)
+    process.stderr.write(`Error probing ${safeHost}:${port}: ${message}\n`)
   }
 }
 
@@ -405,7 +425,7 @@ async function handleProbeHosts(
   filePath: string
 ): Promise<void> {
   if (!fs.existsSync(filePath)) {
-    process.stderr.write(`File not found: ${filePath}\n`)
+    process.stderr.write(`File not found: ${sanitizeForDisplay(filePath)}\n`)
     return
   }
 
@@ -443,7 +463,7 @@ function handleKnownHosts(
   filePath: string
 ): void {
   if (!fs.existsSync(filePath)) {
-    process.stderr.write(`File not found: ${filePath}\n`)
+    process.stderr.write(`File not found: ${sanitizeForDisplay(filePath)}\n`)
     return
   }
 
@@ -503,7 +523,7 @@ function handleList(db: DatabaseType): void {
       ? `${fingerprint.slice(0, 36)}...`
       : fingerprint
     process.stdout.write(formatListRow(
-      row.host,
+      sanitizeForDisplay(row.host),
       String(row.port),
       row.algorithm,
       truncatedFp,
@@ -528,7 +548,7 @@ function handleRemove(db: DatabaseType, target: string): void {
   }
 
   const result = db.prepare('DELETE FROM host_keys WHERE host = ? AND port = ?').run(host, port)
-  process.stdout.write(`Removed ${String(result.changes)} key(s) for ${host}:${port}\n`)
+  process.stdout.write(`Removed ${String(result.changes)} key(s) for ${sanitizeForDisplay(host)}:${port}\n`)
 }
 
 // ---------------------------------------------------------------------------
