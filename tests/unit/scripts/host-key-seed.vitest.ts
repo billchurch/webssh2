@@ -193,8 +193,9 @@ describe('isMainModule', () => {
 
   it('returns true via the canonical branch when argv1 URL matches import.meta.url', () => {
     // Use a basename NOT in the allowlist so a true result definitively proves
-    // the canonical branch matched, not the basename fallback.
-    const argv1 = '/tmp/arbitrary-name.mjs'
+    // the canonical branch matched, not the basename fallback. The path is
+    // never touched on disk — pathToFileURL is a pure string-to-URL transform.
+    const argv1 = '/srv/webssh2/scripts/arbitrary-name.mjs'
     const importMetaUrl = pathToFileURL(argv1).href
     expect(isMainModule(importMetaUrl, argv1)).toBe(true)
   })
