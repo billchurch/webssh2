@@ -83,6 +83,15 @@ COPY --from=builder /srv/webssh2/dist ./dist
 # Copy essential documentation (smaller than copying all .md files)
 COPY LICENSE README.md ./
 
+# Create /data and hand it to the runtime user so the host-key-seed CLI
+# (npm run hostkeys:prod) can write hostkeys.db there. Operators are expected
+# to bind-mount or named-volume /data; without a mount the data lives in the
+# container's writable layer and is destroyed on `docker rm`. No VOLUME
+# directive: anonymous-volume silent data loss (on `docker rm`) is a worse
+# failure mode than container-fs loss, and we want the missing-mount case to
+# be an obvious operator mistake rather than a silent Docker "fix."
+RUN mkdir -p /data && chown node:node /data
+
 # Run as non-root user for security
 USER node
 
