@@ -48,12 +48,15 @@ Commands:
   --host <hostname> [--port <port>]   Probe a host via SSH and store its key
   --hosts <file>                      Probe hosts from a file (host[:port] per line)
                                       Capped at 1000 entries by default; see --max-hosts
-  --known-hosts <file>                Import keys from an OpenSSH known_hosts file
+  --known-hosts <file>                Preview keys from an OpenSSH known_hosts file
+                                      (dry-run by default; add --commit to write)
   --list                              List all stored host keys
   --remove <host:port>                Remove all keys for a host:port pair
   --help                              Show this help message
 
 Options:
+  --commit                            With --known-hosts, write to the trust store
+                                      (otherwise the command is a dry-run preview)
   --max-hosts <N>                     Override the default --hosts cap (default 1000)
   --db <path>                         Database file path
                                       Resolution order:
@@ -66,7 +69,8 @@ Examples:
   npm run hostkeys -- --host example.com
   npm run hostkeys -- --host example.com --port 2222
   npm run hostkeys -- --hosts servers.txt
-  npm run hostkeys -- --known-hosts ~/.ssh/known_hosts
+  npm run hostkeys -- --known-hosts ~/.ssh/known_hosts            # preview only
+  npm run hostkeys -- --known-hosts ~/.ssh/known_hosts --commit   # write
   npm run hostkeys -- --list
   npm run hostkeys -- --list --db /custom/path/hostkeys.db
   npm run hostkeys -- --remove example.com:22
@@ -381,7 +385,7 @@ export function checkHostsCap(
 // known_hosts parsing
 // ---------------------------------------------------------------------------
 
-interface KnownHostEntry {
+export interface KnownHostEntry {
   host: string
   port: number
   algorithm: string
@@ -640,7 +644,8 @@ async function handleProbeHost(
     const result = await probeHostKey(host, port)
     upsertKey(db, host, port, result.algorithm, result.key)
     const fingerprint = computeFingerprint(result.key)
-    process.stdout.write(`Added ${result.algorithm} key for ${safeHost}:${port}\n`)
+    const safeAlgorithm = sanitizeForDisplay(result.algorithm)
+    process.stdout.write(`Added ${safeAlgorithm} key for ${safeHost}:${port}\n`)
     process.stdout.write(`Fingerprint: ${fingerprint}\n`)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
@@ -677,7 +682,8 @@ async function handleProbeHosts(
 
 function handleKnownHosts(
   db: DatabaseType,
-  filePath: string
+  filePath: string,
+  commit: boolean
 ): void {
   if (!fs.existsSync(filePath)) {
     process.stderr.write(`File not found: ${sanitizeForDisplay(filePath)}\n`)
@@ -692,13 +698,25 @@ function handleKnownHosts(
     return
   }
 
-  let imported = 0
+  process.stdout.write(formatListRow('Host', 'Port', 'Algorithm', 'Fingerprint', '(preview)'))
   for (const entry of entries) {
-    upsertKey(db, entry.host, entry.port, entry.algorithm, entry.key)
-    imported++
+    process.stdout.write(formatKnownHostsPreviewRow(entry))
   }
 
-  process.stdout.write(`Imported ${String(imported)} key(s) from ${filePath}\n`)
+  const safePath = sanitizeForDisplay(filePath)
+  if (!commit) {
+    process.stdout.write(
+      `\nDRY RUN: would import ${String(entries.length)} key(s) from ${safePath}.\n` +
+      `Re-run with --commit to write to the trust store.\n`
+    )
+    return
+  }
+
+  for (const entry of entries) {
+    upsertKey(db, entry.host, entry.port, entry.algorithm, entry.key)
+  }
+
+  process.stdout.write(`\nImported ${String(entries.length)} key(s) from ${safePath}\n`)
 }
 
 function formatListRow(
@@ -714,6 +732,25 @@ function formatListRow(
   const fpWidth = 38
   const dateWidth = 20
   return `${hostVal.padEnd(hostWidth)}${portVal.padEnd(portWidth)}${algVal.padEnd(algWidth)}${fpVal.padEnd(fpWidth)}${dateVal.padEnd(dateWidth)}\n`
+}
+
+/**
+ * Format one preview row for `--known-hosts` dry-run output. Sanitizes the
+ * host for safe terminal display, computes the SHA-256 fingerprint, and
+ * lays out the columns using formatListRow's widths.
+ */
+export function formatKnownHostsPreviewRow(entry: KnownHostEntry): string {
+  const fingerprint = computeFingerprint(entry.key)
+  const truncatedFp = fingerprint.length > 36
+    ? `${fingerprint.slice(0, 36)}...`
+    : fingerprint
+  return formatListRow(
+    sanitizeForDisplay(entry.host),
+    String(entry.port),
+    sanitizeForDisplay(entry.algorithm),
+    truncatedFp,
+    ''
+  )
 }
 
 function handleList(db: DatabaseType): void {
@@ -742,7 +779,7 @@ function handleList(db: DatabaseType): void {
     process.stdout.write(formatListRow(
       sanitizeForDisplay(row.host),
       String(row.port),
-      row.algorithm,
+      sanitizeForDisplay(row.algorithm),
       truncatedFp,
       row.added_at
     ))
@@ -828,7 +865,7 @@ async function main(): Promise<number> {
           process.stderr.write('Error: --known-hosts requires a file path\n')
           return 1
         }
-        handleKnownHosts(db, cli.file)
+        handleKnownHosts(db, cli.file, cli.commit)
         break
       }
       case 'list': {

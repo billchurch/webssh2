@@ -199,4 +199,80 @@ describe('host-key-seed CLI (compiled artifact)', () => {
       rmSync(tmp, { recursive: true, force: true })
     }
   })
+
+  it('--known-hosts without --commit is a dry-run (DB row count unchanged)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-kh-dry-'))
+    const dbPath = join(tmp, 'keys.db')
+    const khFile = join(tmp, 'known_hosts')
+    try {
+      writeFileSync(khFile, 'example.com ssh-rsa AAAAB3NzaC1yc2EAAAA\n')
+
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--known-hosts', khFile, '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+
+      expect(result.status).toBe(0)
+      expect(result.stdout).toContain('DRY RUN')
+      expect(result.stdout).toContain('--commit')
+
+      const listResult = spawnSync(
+        process.execPath,
+        [distScript, '--list', '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+      expect(listResult.stdout).toContain('No host keys stored.')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('--known-hosts --commit writes to the DB', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-kh-commit-'))
+    const dbPath = join(tmp, 'keys.db')
+    const khFile = join(tmp, 'known_hosts')
+    try {
+      writeFileSync(khFile, 'example.com ssh-rsa AAAAB3NzaC1yc2EAAAA\n')
+
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--known-hosts', khFile, '--commit', '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+
+      expect(result.status).toBe(0)
+      expect(result.stdout).toContain('Imported 1 key(s)')
+
+      const listResult = spawnSync(
+        process.execPath,
+        [distScript, '--list', '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+      expect(listResult.stdout).toContain('example.com')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('--known-hosts preview sanitizes adversarial hostnames', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-kh-adv-'))
+    const dbPath = join(tmp, 'keys.db')
+    const khFile = join(tmp, 'known_hosts')
+    try {
+      writeFileSync(khFile, '\x1b[31mevil\x1b[0m ssh-rsa AAAAB3NzaC1yc2EAAAA\n')
+
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--known-hosts', khFile, '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+
+      expect(result.status).toBe(0)
+      expect(result.stdout).toContain('\\x1B[31mevil\\x1B[0m')
+      expect(result.stdout.includes('\x1b')).toBe(false)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
 })

@@ -22,6 +22,8 @@ const {
   readConfiguredDbPath,
   parseHostsFile,
   checkHostsCap,
+  formatKnownHostsPreviewRow,
+  sanitizeForDisplay,
 } = await import('../../../scripts/host-key-seed.js')
 
 // ---------------------------------------------------------------------------
@@ -290,9 +292,6 @@ describe('isMainModule', () => {
 // ---------------------------------------------------------------------------
 // sanitizeForDisplay
 // ---------------------------------------------------------------------------
-
-// sanitizeForDisplay is already destructured in the main import above
-const { sanitizeForDisplay } = await import('../../../scripts/host-key-seed.js')
 
 describe('sanitizeForDisplay', () => {
   it('returns plain printable ASCII unchanged', () => {
@@ -565,5 +564,35 @@ describe('checkHostsCap', () => {
 
   it('rejects NaN cap', () => {
     expect(checkHostsCap(0, Number.NaN, true).ok).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// formatKnownHostsPreviewRow
+// ---------------------------------------------------------------------------
+
+describe('formatKnownHostsPreviewRow', () => {
+  it('formats a plain entry with host, port, algorithm, and fingerprint', () => {
+    const row = formatKnownHostsPreviewRow({
+      host: 'example.com',
+      port: 22,
+      algorithm: 'ssh-rsa',
+      key: 'AAAA'
+    })
+    expect(row).toContain('example.com')
+    expect(row).toContain('22')
+    expect(row).toContain('ssh-rsa')
+    expect(row).toContain('SHA256:')
+  })
+
+  it('escapes control characters in the host column', () => {
+    const row = formatKnownHostsPreviewRow({
+      host: '\x1b[31mhost\x1b[0m',
+      port: 22,
+      algorithm: 'ssh-rsa',
+      key: 'AAAA'
+    })
+    expect(row).toContain('\\x1B[31mhost\\x1B[0m')
+    expect(row.includes('\x1b')).toBe(false)
   })
 })
