@@ -13,6 +13,7 @@ export const PASSWORD_MASK = '********' //NOSONAR
  */
 export const DEFAULT_SSO_HEADERS = {
   username: 'x-forwarded-user',
-  password: 'x-forwarded-password', //NOSONAR - field name, not a password
+  // eslint-disable-next-line sonarjs/no-hardcoded-passwords -- HTTP header name, not a password
+  password: 'x-forwarded-password',
   session: 'x-forwarded-session',
 } as const

@@ -47,6 +47,7 @@ export const DEFAULTS = {
   SESSION_TIMEOUT_MS: 86_400_000, // 24 hours
   SSO_HEADERS: {
     USERNAME: 'x-apm-username',
+    // eslint-disable-next-line sonarjs/no-hardcoded-passwords -- HTTP header name, not a password
     PASSWORD: 'x-apm-password',
     SESSION: 'x-apm-session',
   },

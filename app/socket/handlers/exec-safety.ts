@@ -13,6 +13,7 @@ export function isCommandSafe(command: string): boolean {
   // Basic safety checks - can be expanded based on requirements
   const dangerousPatterns = [
     /;\s*rm\s+-rf\s+\//i,     // rm -rf /
+    // eslint-disable-next-line sonarjs/slow-regex -- dangerous-command detector; input is already length-bounded upstream
     /dd\s+.*of=\/dev\//i,     // NOSONAR dd overwriting devices
     />\s*\/dev\/s[a-z]+/i,    // Redirecting to block devices
   ]

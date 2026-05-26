@@ -5,9 +5,11 @@ import prettierConfig from 'eslint-config-prettier'
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import unicornPlugin from 'eslint-plugin-unicorn'
+import sonarjsPlugin from 'eslint-plugin-sonarjs'
 
 export default [
   eslint.configs.recommended,
+  sonarjsPlugin.configs.recommended,
   prettierConfig,
   {
     ignores: [
@@ -86,6 +88,13 @@ export default [
       // S7744 parity: prevent useless fallback objects in spreads
       'unicorn/no-useless-fallback-in-spread': 'error',
       'unicorn/consistent-function-scoping': 'warn',
+      // sonarjs downgrades: existing functions exceed the threshold; refactors
+      // are tracked separately (see SonarCloud project for canonical findings).
+      // Keeping these visible as warnings so new violations are surfaced.
+      'sonarjs/cognitive-complexity': 'warn',
+      // The codebase uses `Result<T, E>` and discriminated-union returns by
+      // design — this rule misreads those as inconsistent return types.
+      'sonarjs/function-return-type': 'warn',
     },
   },
   {
@@ -215,6 +224,27 @@ export default [
           allow: ['constructors', 'methods'],
         },
       ],
+      // sonarjs overrides for tests, mirroring exclusions in
+      // sonar-project.properties (S2068, S1313, S4036, S6290) plus rules
+      // that fire on intentional test patterns.
+      'sonarjs/no-hardcoded-passwords': 'off',
+      'sonarjs/no-hardcoded-ip': 'off',
+      'sonarjs/no-os-command-from-path': 'off',
+      'sonarjs/no-clear-text-protocols': 'off',
+      'sonarjs/assertions-in-tests': 'off',
+      'sonarjs/constructor-for-side-effects': 'off',
+      'sonarjs/os-command': 'off',
+      'sonarjs/publicly-writable-directories': 'off',
+      'sonarjs/prefer-regexp-exec': 'warn',
+      'sonarjs/slow-regex': 'warn',
+    },
+  },
+  {
+    files: ['scripts/**/*.{ts,js}'],
+    rules: {
+      // Postinstall and CLI scripts legitimately resolve binaries from PATH.
+      // Mirrors sonar-project.properties exclusion of typescript:S4036 for scripts/**.
+      'sonarjs/no-os-command-from-path': 'off',
     },
   },
   {

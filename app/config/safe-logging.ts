@@ -105,7 +105,7 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
   // The following guards use eslint-disable because Config types declare these
   // fields as required, but tests pass partial objects via `as unknown as Config`.
   // The guards prevent runtime crashes in that scenario.
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison */
   const httpOrigins: string[] =
     config.http === undefined ? [] : [...config.http.origins]
   const sshMasked: MaskedConfig['ssh'] =
@@ -147,7 +147,7 @@ export const maskSensitiveConfig = (config: Config): MaskedConfig => {
     privateKey: maskWhenFilled(config.user?.privateKey),
     passphrase: maskWhenFilled(config.user?.passphrase)
   }
-  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison */
 
   return {
     listen: config.listen,

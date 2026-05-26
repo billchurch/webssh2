@@ -32,6 +32,7 @@ export default function init(
     // ServiceSocketAdapter sets up all handlers in its constructor
     const serviceAdapter = new ServiceSocketAdapter(socket, config, services, protocol)
     // Keep reference to prevent GC (adapter manages its own lifecycle via socket events)
+    // eslint-disable-next-line sonarjs/void-use -- intentional GC pin; see comment above
     void serviceAdapter //NOSONAR
   })
 }

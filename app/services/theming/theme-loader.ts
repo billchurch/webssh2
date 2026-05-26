@@ -51,9 +51,10 @@ export function loadAdditionalThemes(
       continue
     }
     for (const err of result.errors) {
+      const errSuffix = err.path === '' ? '' : `.${err.path}`
       warnings.push({
         source: options.source,
-        path: `[${index}]${err.path === '' ? '' : `.${err.path}`}`,
+        path: `[${index}]${errSuffix}`,
         reason: err.reason
       })
     }

@@ -56,8 +56,8 @@ const getClientIp = (req: Request): string | undefined => {
   if (typeof req.ip === 'string' && req.ip !== '') {
     return req.ip
   }
-  const connection = req.connection as { remoteAddress?: string } | undefined
-  return connection?.remoteAddress
+  const socket = req.socket as { remoteAddress?: string } | undefined
+  return socket?.remoteAddress
 }
 
 const hasSsoHeaders = (req: Request): boolean => {
