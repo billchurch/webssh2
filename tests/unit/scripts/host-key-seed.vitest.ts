@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -9,9 +12,15 @@ vi.mock('ssh2', () => ({
   Client: vi.fn()
 }))
 
-const { extractDbPathFromConfig, resolveDbPath, parseArgs, isMainModule } = await import(
-  '../../../scripts/host-key-seed.js'
-)
+const {
+  extractDbPathFromConfig,
+  resolveDbPath,
+  parseArgs,
+  isMainModule,
+  buildDbPathAllowlist,
+  validateDbPath,
+  readConfiguredDbPath,
+} = await import('../../../scripts/host-key-seed.js')
 
 // ---------------------------------------------------------------------------
 // extractDbPathFromConfig
@@ -246,6 +255,7 @@ describe('isMainModule', () => {
 // sanitizeForDisplay
 // ---------------------------------------------------------------------------
 
+// sanitizeForDisplay is already destructured in the main import above
 const { sanitizeForDisplay } = await import('../../../scripts/host-key-seed.js')
 
 describe('sanitizeForDisplay', () => {
@@ -287,5 +297,159 @@ describe('sanitizeForDisplay', () => {
   it('produces uppercase hex digits', () => {
     expect(sanitizeForDisplay('\x1b')).toBe('\\x1B')
     expect(sanitizeForDisplay('\x0a')).toBe('\\x0A')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// buildDbPathAllowlist / validateDbPath
+// ---------------------------------------------------------------------------
+
+describe('buildDbPathAllowlist', () => {
+  it('always includes /data and cwd', () => {
+    const list = buildDbPathAllowlist({}, undefined, '/srv/app')
+    expect(list).toContain('/data')
+    expect(list).toContain('/srv/app')
+  })
+
+  it('adds env var dirname when WEBSSH2_SSH_HOSTKEY_DB_PATH is set', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/var/lib/webssh2/db.sqlite' },
+      undefined,
+      '/srv/app'
+    )
+    expect(list).toContain('/var/lib/webssh2')
+  })
+
+  it('ignores empty env var', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '' },
+      undefined,
+      '/srv/app'
+    )
+    expect(list).not.toContain('')
+  })
+
+  it('adds config dbPath dirname when provided', () => {
+    const list = buildDbPathAllowlist({}, '/etc/webssh2/keys.db', '/srv/app')
+    expect(list).toContain('/etc/webssh2')
+  })
+
+  it('deduplicates equal entries', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/data/keys.db' },
+      '/data/keys.db',
+      '/data'
+    )
+    const dataCount = list.filter((p) => p === '/data').length
+    expect(dataCount).toBe(1)
+  })
+
+  it('returns entries in documented priority order: /data, env, config, cwd', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/env/keys.db' },
+      '/cfg/keys.db',
+      '/srv/app'
+    )
+    expect(list).toEqual(['/data', '/env', '/cfg', '/srv/app'])
+  })
+})
+
+describe('validateDbPath', () => {
+  it('returns ok when the parent directory exists anywhere', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-validate-'))
+    try {
+      const target = join(tmp, 'keys.db')
+      const result = validateDbPath(target, ['/data'])
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.value).toBe(target)
+      }
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns ok when parent does not exist but path is under allowlist entry', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-validate-'))
+    try {
+      const target = join(tmp, 'subdir', 'keys.db')   // subdir does not exist
+      const result = validateDbPath(target, [tmp])    // tmp is in allowlist
+      expect(result.ok).toBe(true)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns error when parent does not exist and path is outside allowlist', () => {
+    const result = validateDbPath('/nonexistent/sub/dir/keys.db', ['/data'])
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('refusing to create directories')
+      expect(result.error).toContain('/data')
+    }
+  })
+
+  it('rejects /datafoo when allowlist only contains /data (no prefix collision)', () => {
+    const result = validateDbPath('/datafoo/keys.db', ['/data'])
+    expect(result.ok).toBe(false)
+  })
+
+  it('resolves relative paths against cwd', () => {
+    const result = validateDbPath('keys.db', ['/data'])
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.startsWith('/')).toBe(true)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// readConfiguredDbPath
+// ---------------------------------------------------------------------------
+
+describe('readConfiguredDbPath', () => {
+  it('returns undefined when config.json does not exist', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-missing-'))
+    const originalCwd = process.cwd()
+    try {
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBeUndefined()
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns undefined when config.json is malformed JSON', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-bad-'))
+    const originalCwd = process.cwd()
+    try {
+      writeFileSync(join(tmp, 'config.json'), '{ this is not json')
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBeUndefined()
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns the dbPath from a valid nested config', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-valid-'))
+    const originalCwd = process.cwd()
+    try {
+      const cfg = {
+        ssh: {
+          hostKeyVerification: {
+            serverStore: { dbPath: '/custom/path/keys.db' }
+          }
+        }
+      }
+      writeFileSync(join(tmp, 'config.json'), JSON.stringify(cfg))
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBe('/custom/path/keys.db')
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
   })
 })

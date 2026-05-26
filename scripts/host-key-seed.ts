@@ -15,6 +15,7 @@ import path, { basename } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import Database, { type Database as DatabaseType } from 'better-sqlite3'
 import { Client as SSH2Client } from 'ssh2'
+import type { Result } from '../app/types/result.js'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -118,6 +119,118 @@ function computeFingerprint(base64Key: string): string {
 // ---------------------------------------------------------------------------
 // Database helpers
 // ---------------------------------------------------------------------------
+
+const BASE_DB_ALLOWLIST: readonly string[] = ['/data']
+
+/**
+ * Resolve a path to its real (symlink-free) canonical form.
+ *
+ * If the path does not exist, walks up the ancestor chain to find the
+ * deepest existing prefix, resolves that via `realpathSync`, then
+ * re-appends the non-existing tail.  This normalises macOS symlinks such
+ * as `/var/folders` → `/private/var/folders` even when the full path does
+ * not yet exist on disk.
+ */
+function resolveRealpath(p: string): string {
+  let current = path.resolve(p)
+  const tail: string[] = []
+
+  while (current !== path.dirname(current)) {
+    try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      const real = fs.realpathSync(current)
+      // Re-append any non-existing tail segments
+      return tail.length === 0 ? real : path.join(real, ...tail.toReversed())
+    } catch {
+      tail.push(path.basename(current))
+      current = path.dirname(current)
+    }
+  }
+  return p
+}
+
+/**
+ * Compose the `--db` path allowlist from its four sources, in priority order:
+ *   1. `/data` (the documented default)
+ *   2. The directory of `WEBSSH2_SSH_HOSTKEY_DB_PATH` if set
+ *   3. The directory of `config.json`'s `ssh.hostKeyVerification.serverStore.dbPath` if set
+ *   4. The current working directory
+ *
+ * Each entry is resolved to an absolute path. Duplicates are removed while
+ * preserving the order above so the runtime allowlist reads in priority order.
+ */
+export function buildDbPathAllowlist(
+  env: Record<string, string | undefined>,
+  configDbPath: string | undefined,
+  cwd: string
+): string[] {
+  const candidates: string[] = [...BASE_DB_ALLOWLIST]
+
+  const envPath = env['WEBSSH2_SSH_HOSTKEY_DB_PATH']
+  if (typeof envPath === 'string' && envPath !== '') {
+    candidates.push(path.dirname(path.resolve(envPath)))
+  }
+
+  if (configDbPath !== undefined && configDbPath !== '') {
+    candidates.push(path.dirname(path.resolve(configDbPath)))
+  }
+
+  candidates.push(path.resolve(cwd))
+
+  const seen = new Set<string>()
+  const dedup: string[] = []
+  for (const entry of candidates) {
+    if (!seen.has(entry)) {
+      seen.add(entry)
+      dedup.push(entry)
+    }
+  }
+  return dedup
+}
+
+/**
+ * Validate a `--db` path. Returns the canonical absolute path on ok.
+ *
+ * Policy:
+ *   1. Resolve the requested path to a canonical absolute path.
+ *   2. If the parent directory exists anywhere on disk, accept.
+ *   3. If the parent directory does not exist, accept only when the canonical
+ *      path equals an allowlist entry or sits under one (matched with a path
+ *      separator to avoid /datafoo matching /data).
+ *   4. Otherwise reject with a message listing the allowlist.
+ */
+export function validateDbPath(
+  requestedPath: string,
+  allowlist: readonly string[]
+): Result<string, string> {
+  const canonical = path.resolve(requestedPath)
+  const parentDir = path.dirname(canonical)
+
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  if (fs.existsSync(parentDir)) {
+    return { ok: true, value: canonical }
+  }
+
+  // Resolve symlinks on both sides of the comparison so that macOS paths
+  // such as /var/folders (symlink → /private/var/folders) match correctly
+  // even when the destination does not yet exist.
+  const realCanonical = resolveRealpath(canonical)
+
+  for (const allowed of allowlist) {
+    const realAllowed = resolveRealpath(path.resolve(allowed))
+    if (
+      realCanonical === realAllowed ||
+      realCanonical.startsWith(`${realAllowed}${path.sep}`)
+    ) {
+      return { ok: true, value: canonical }
+    }
+  }
+
+  return {
+    ok: false,
+    error: `refusing to create directories outside allowlist for --db. Allowed: ${allowlist.join(', ')}`
+  }
+}
 
 function openDb(dbPath: string): DatabaseType {
   const dir = path.dirname(dbPath)
@@ -301,6 +414,25 @@ export function extractDbPathFromConfig(config: unknown): string | undefined {
   }
 
   return undefined
+}
+
+/**
+ * Read the dbPath from config.json without applying any fallbacks.
+ * Used by buildDbPathAllowlist so an operator-configured dbPath dir is
+ * in the allowlist even when no DB exists there yet.
+ */
+export function readConfiguredDbPath(): string | undefined {
+  const configPath = path.resolve(process.cwd(), 'config.json')
+  if (!fs.existsSync(configPath)) {
+    return undefined
+  }
+  try {
+    const raw = fs.readFileSync(configPath, 'utf8')
+    const config: unknown = JSON.parse(raw)
+    return extractDbPathFromConfig(config)
+  } catch {
+    return undefined
+  }
 }
 
 export function resolveDbPath(explicitPath: string | undefined): string {
@@ -564,7 +696,20 @@ async function main(): Promise<number> {
   }
 
   const dbPath = resolveDbPath(cli.dbPath)
-  const db = openDb(dbPath)
+
+  const configuredDbPath = readConfiguredDbPath()
+  const allowlist = buildDbPathAllowlist(
+    process.env,
+    configuredDbPath,
+    process.cwd()
+  )
+  const validation = validateDbPath(dbPath, allowlist)
+  if (!validation.ok) {
+    process.stderr.write(`Error: ${validation.error}\n`)
+    return 1
+  }
+
+  const db = openDb(validation.value)
 
   try {
     switch (cli.command) {

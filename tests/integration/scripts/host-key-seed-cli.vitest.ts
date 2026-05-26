@@ -74,4 +74,52 @@ describe('host-key-seed CLI (compiled artifact)', () => {
       rmSync(tmp, { recursive: true, force: true })
     }
   })
+
+  it('rejects --db with missing parent dir outside allowlist', () => {
+    const result = spawnSync(
+      process.execPath,
+      [distScript, '--list', '--db', '/nonexistent/sub/dir/keys.db'],
+      { encoding: 'utf8', timeout: 10_000 }
+    )
+
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain('refusing to create directories')
+  })
+
+  it('accepts --db with existing parent dir', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-db-'))
+    const dbPath = join(tmp, 'keys.db')
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--list', '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+      expect(result.status).toBe(0)
+      expect(result.stdout).toContain('No host keys stored.')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('accepts --db with missing parent dir under cwd (allowlist member)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-cwd-'))
+    const dbPath = join(tmp, 'fresh-subdir', 'keys.db')
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--list', '--db', dbPath],
+        {
+          encoding: 'utf8',
+          timeout: 10_000,
+          cwd: tmp
+        }
+      )
+      expect(result.status).toBe(0)
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      expect(existsSync(join(tmp, 'fresh-subdir'))).toBe(true)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
 })
