@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -9,9 +12,19 @@ vi.mock('ssh2', () => ({
   Client: vi.fn()
 }))
 
-const { extractDbPathFromConfig, resolveDbPath, parseArgs, isMainModule } = await import(
-  '../../../scripts/host-key-seed.js'
-)
+const {
+  extractDbPathFromConfig,
+  resolveDbPath,
+  parseArgs,
+  isMainModule,
+  buildDbPathAllowlist,
+  validateDbPath,
+  readConfiguredDbPath,
+  parseHostsFile,
+  checkHostsCap,
+  formatKnownHostsPreviewRow,
+  sanitizeForDisplay,
+} = await import('../../../scripts/host-key-seed.js')
 
 // ---------------------------------------------------------------------------
 // extractDbPathFromConfig
@@ -176,6 +189,40 @@ describe('parseArgs', () => {
     expect(result.command).toBe('list')
     expect(result.dbPath).toBe('/custom/path.db')
   })
+
+  it('parses --max-hosts with a positive integer', () => {
+    const result = parseArgs([
+      'node', 'script', '--hosts', 'f.txt', '--max-hosts', '50'
+    ])
+    expect(result.maxHosts).toBe(50)
+    expect(result.maxHostsExplicit).toBe(true)
+  })
+
+  it('leaves maxHostsExplicit false when --max-hosts is not passed', () => {
+    const result = parseArgs(['node', 'script', '--hosts', 'f.txt'])
+    expect(result.maxHostsExplicit).toBe(false)
+    expect(result.maxHosts).toBeUndefined()
+  })
+
+  it('captures non-numeric --max-hosts verbatim (validation deferred)', () => {
+    const result = parseArgs([
+      'node', 'script', '--hosts', 'f.txt', '--max-hosts', 'abc'
+    ])
+    expect(Number.isNaN(result.maxHosts ?? 0)).toBe(true)
+    expect(result.maxHostsExplicit).toBe(true)
+  })
+
+  it('parses --commit', () => {
+    const result = parseArgs([
+      'node', 'script', '--known-hosts', 'f', '--commit'
+    ])
+    expect(result.commit).toBe(true)
+  })
+
+  it('defaults commit to false', () => {
+    const result = parseArgs(['node', 'script', '--known-hosts', 'f'])
+    expect(result.commit).toBe(false)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -239,5 +286,307 @@ describe('isMainModule', () => {
     expect(
       isMainModule('file:///somewhere/else.js', '/app/scripts/host-key-seed-helper.js')
     ).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// sanitizeForDisplay
+// ---------------------------------------------------------------------------
+
+describe('sanitizeForDisplay', () => {
+  it.each([
+    ['plain ASCII passes through unchanged', 'example.com', 'example.com'],
+    [
+      'ASCII with port and dashes passes through',
+      'host-1.sub.example.com:22',
+      'host-1.sub.example.com:22'
+    ],
+    ['empty string passes through', '', ''],
+    [
+      'ESC + CSI red colour sequence is escaped',
+      '\x1b[31mred\x1b[0m',
+      '\\x1B[31mred\\x1B[0m'
+    ],
+    ['C0 NUL (0x00) is escaped', '\x00nul', '\\x00nul'],
+    ['C0 BEL (0x07) is escaped', '\x07bell', '\\x07bell'],
+    ['C0 BS (0x08) is escaped', '\x08bs', '\\x08bs'],
+    ['C0 CR (0x0D) is escaped as uppercase hex', '\rcr', '\\x0Dcr'],
+    ['C0 LF (0x0A) is escaped as uppercase hex', '\nlf', '\\x0Alf'],
+    ['DEL (0x7F) is escaped', 'a\x7Fb', 'a\\x7Fb'],
+    ['C1 0x80 is escaped', 'a\x80b', 'a\\x80b'],
+    ['C1 0x9B is escaped', 'a\x9Bb', 'a\\x9Bb'],
+    ['C1 0x9F is escaped', 'a\x9Fb', 'a\\x9Fb'],
+    [
+      'printable Unicode above 0x9F passes through',
+      'münchen.example',
+      'münchen.example'
+    ],
+    ['printable ASCII space passes through', 'host. space', 'host. space'],
+    ['bare ESC (0x1B) is escaped as uppercase hex', '\x1b', '\\x1B'],
+    ['bare LF (0x0A) is escaped as uppercase hex', '\x0a', '\\x0A']
+  ])('%s', (_label, input, expected) => {
+    expect(sanitizeForDisplay(input)).toBe(expected)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// buildDbPathAllowlist / validateDbPath
+// ---------------------------------------------------------------------------
+
+describe('buildDbPathAllowlist', () => {
+  it('always includes /data and cwd', () => {
+    const list = buildDbPathAllowlist({}, undefined, '/srv/app')
+    expect(list).toContain('/data')
+    expect(list).toContain('/srv/app')
+  })
+
+  it('adds env var dirname when WEBSSH2_SSH_HOSTKEY_DB_PATH is set', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/var/lib/webssh2/db.sqlite' },
+      undefined,
+      '/srv/app'
+    )
+    expect(list).toContain('/var/lib/webssh2')
+  })
+
+  it('ignores empty env var', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '' },
+      undefined,
+      '/srv/app'
+    )
+    expect(list).not.toContain('')
+  })
+
+  it('adds config dbPath dirname when provided', () => {
+    const list = buildDbPathAllowlist({}, '/etc/webssh2/keys.db', '/srv/app')
+    expect(list).toContain('/etc/webssh2')
+  })
+
+  it('deduplicates equal entries', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/data/keys.db' },
+      '/data/keys.db',
+      '/data'
+    )
+    const dataCount = list.filter((p) => p === '/data').length
+    expect(dataCount).toBe(1)
+  })
+
+  it('returns entries in documented priority order: /data, env, config, cwd', () => {
+    const list = buildDbPathAllowlist(
+      { WEBSSH2_SSH_HOSTKEY_DB_PATH: '/env/keys.db' },
+      '/cfg/keys.db',
+      '/srv/app'
+    )
+    expect(list).toEqual(['/data', '/env', '/cfg', '/srv/app'])
+  })
+})
+
+describe('validateDbPath', () => {
+  it('returns ok when the parent directory exists anywhere', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-validate-'))
+    try {
+      const target = join(tmp, 'keys.db')
+      const result = validateDbPath(target, ['/data'])
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.value).toBe(target)
+      }
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns ok when parent does not exist but path is under allowlist entry', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-validate-'))
+    try {
+      const target = join(tmp, 'subdir', 'keys.db')   // subdir does not exist
+      const result = validateDbPath(target, [tmp])    // tmp is in allowlist
+      expect(result.ok).toBe(true)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns error when parent does not exist and path is outside allowlist', () => {
+    const result = validateDbPath('/nonexistent/sub/dir/keys.db', ['/data'])
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('refusing to create directories')
+      expect(result.error).toContain('/data')
+    }
+  })
+
+  it('rejects /datafoo when allowlist only contains /data (no prefix collision)', () => {
+    const result = validateDbPath('/datafoo/keys.db', ['/data'])
+    expect(result.ok).toBe(false)
+  })
+
+  it('resolves relative paths against cwd', () => {
+    const result = validateDbPath('keys.db', ['/data'])
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.startsWith('/')).toBe(true)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// readConfiguredDbPath
+// ---------------------------------------------------------------------------
+
+describe('readConfiguredDbPath', () => {
+  it('returns undefined when config.json does not exist', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-missing-'))
+    const originalCwd = process.cwd()
+    try {
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBeUndefined()
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns undefined when config.json is malformed JSON', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-bad-'))
+    const originalCwd = process.cwd()
+    try {
+      writeFileSync(join(tmp, 'config.json'), '{ this is not json')
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBeUndefined()
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('returns the dbPath from a valid nested config', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-readcfg-valid-'))
+    const originalCwd = process.cwd()
+    try {
+      const cfg = {
+        ssh: {
+          hostKeyVerification: {
+            serverStore: { dbPath: '/custom/path/keys.db' }
+          }
+        }
+      }
+      writeFileSync(join(tmp, 'config.json'), JSON.stringify(cfg))
+      process.chdir(tmp)
+      expect(readConfiguredDbPath()).toBe('/custom/path/keys.db')
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// parseHostsFile / checkHostsCap
+// ---------------------------------------------------------------------------
+
+describe('parseHostsFile', () => {
+  it('parses bare hostnames with default port', () => {
+    const entries = parseHostsFile('example.com\nhost2.com\n')
+    expect(entries).toEqual([
+      { host: 'example.com', port: 22 },
+      { host: 'host2.com', port: 22 }
+    ])
+  })
+
+  it('parses host:port form', () => {
+    const entries = parseHostsFile('example.com:2222\n')
+    expect(entries).toEqual([{ host: 'example.com', port: 2222 }])
+  })
+
+  it('falls back to default port when port is not numeric', () => {
+    const entries = parseHostsFile('example.com:abc\n')
+    expect(entries).toEqual([{ host: 'example.com:abc', port: 22 }])
+  })
+
+  it('skips empty lines and comments', () => {
+    const entries = parseHostsFile('# a comment\n\nexample.com\n   \n# trailing\n')
+    expect(entries).toEqual([{ host: 'example.com', port: 22 }])
+  })
+
+  it('returns empty array for empty input', () => {
+    expect(parseHostsFile('')).toEqual([])
+  })
+})
+
+describe('checkHostsCap', () => {
+  it('returns ok when count is within cap', () => {
+    const result = checkHostsCap(500, 1000, false)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value).toBe(1000)
+    }
+  })
+
+  it('rejects when count exceeds default cap, suggesting --max-hosts', () => {
+    const result = checkHostsCap(1500, 1000, false)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('1500')
+      expect(result.error).toContain('default cap of 1000')
+      expect(result.error).toContain('--max-hosts')
+    }
+  })
+
+  it('rejects when count exceeds explicit cap, naming the cap value', () => {
+    const result = checkHostsCap(500, 200, true)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('500')
+      expect(result.error).toContain('explicit --max-hosts cap of 200')
+    }
+  })
+
+  it('rejects zero cap', () => {
+    const result = checkHostsCap(0, 0, true)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('positive integer')
+    }
+  })
+
+  it('rejects negative cap', () => {
+    expect(checkHostsCap(0, -5, true).ok).toBe(false)
+  })
+
+  it('rejects NaN cap', () => {
+    expect(checkHostsCap(0, Number.NaN, true).ok).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// formatKnownHostsPreviewRow
+// ---------------------------------------------------------------------------
+
+describe('formatKnownHostsPreviewRow', () => {
+  it('formats a plain entry with host, port, algorithm, and fingerprint', () => {
+    const row = formatKnownHostsPreviewRow({
+      host: 'example.com',
+      port: 22,
+      algorithm: 'ssh-rsa',
+      key: 'AAAA'
+    })
+    expect(row).toContain('example.com')
+    expect(row).toContain('22')
+    expect(row).toContain('ssh-rsa')
+    expect(row).toContain('SHA256:')
+  })
+
+  it('escapes control characters in the host column', () => {
+    const row = formatKnownHostsPreviewRow({
+      host: '\x1b[31mhost\x1b[0m',
+      port: 22,
+      algorithm: 'ssh-rsa',
+      key: 'AAAA'
+    })
+    expect(row).toContain('\\x1B[31mhost\\x1B[0m')
+    expect(row.includes('\x1b')).toBe(false)
   })
 })
