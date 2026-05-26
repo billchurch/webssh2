@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
@@ -118,6 +118,83 @@ describe('host-key-seed CLI (compiled artifact)', () => {
       expect(result.status).toBe(0)
       // eslint-disable-next-line security/detect-non-literal-fs-filename
       expect(existsSync(join(tmp, 'fresh-subdir'))).toBe(true)
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects --hosts file exceeding default cap of 1000', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-cap-'))
+    const dbPath = join(tmp, 'keys.db')
+    const hostsFile = join(tmp, 'hosts.txt')
+    try {
+      const lines: string[] = []
+      for (let i = 0; i < 1001; i++) {
+        lines.push(`host-${i.toString()}.example`)
+      }
+      writeFileSync(hostsFile, lines.join('\n'))
+
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--hosts', hostsFile, '--db', dbPath],
+        { encoding: 'utf8', timeout: 10_000 }
+      )
+
+      expect(result.status).not.toBe(0)
+      expect(result.stderr).toContain('exceeds default cap of 1000')
+      expect(result.stderr).toContain('--max-hosts')
+      expect(result.stdout).not.toContain('Probing')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('accepts --hosts file at default cap (1000)', { timeout: 30_000 }, () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-cap-ok-'))
+    const dbPath = join(tmp, 'keys.db')
+    const hostsFile = join(tmp, 'hosts.txt')
+    try {
+      const lines: string[] = []
+      for (let i = 0; i < 1000; i++) {
+        lines.push(`unroutable-${i.toString()}.invalid`)
+      }
+      writeFileSync(hostsFile, lines.join('\n'))
+
+      const result = spawnSync(
+        process.execPath,
+        [distScript, '--hosts', hostsFile, '--db', dbPath],
+        { encoding: 'utf8', timeout: 20_000, killSignal: 'SIGTERM' }
+      )
+
+      expect(result.stderr).not.toContain('exceeds')
+    } finally {
+      rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+  it('honors --max-hosts override above default', { timeout: 30_000 }, () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'webssh2-seed-override-'))
+    const dbPath = join(tmp, 'keys.db')
+    const hostsFile = join(tmp, 'hosts.txt')
+    try {
+      const lines: string[] = []
+      for (let i = 0; i < 1500; i++) {
+        lines.push(`unroutable-${i.toString()}.invalid`)
+      }
+      writeFileSync(hostsFile, lines.join('\n'))
+
+      const result = spawnSync(
+        process.execPath,
+        [
+          distScript,
+          '--hosts', hostsFile,
+          '--max-hosts', '1500',
+          '--db', dbPath
+        ],
+        { encoding: 'utf8', timeout: 20_000, killSignal: 'SIGTERM' }
+      )
+
+      expect(result.stderr).not.toContain('exceeds')
     } finally {
       rmSync(tmp, { recursive: true, force: true })
     }

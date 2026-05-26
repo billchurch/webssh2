@@ -24,6 +24,7 @@ import type { Result } from '../app/types/result.js'
 const DEFAULT_PORT = 22
 const PROBE_TIMEOUT_MS = 15_000
 const READY_TIMEOUT_MS = 10_000
+const DEFAULT_MAX_HOSTS = 1000
 
 const HOST_KEY_SCHEMA = `
 CREATE TABLE IF NOT EXISTS host_keys (
@@ -46,12 +47,14 @@ Usage:
 Commands:
   --host <hostname> [--port <port>]   Probe a host via SSH and store its key
   --hosts <file>                      Probe hosts from a file (host[:port] per line)
+                                      Capped at 1000 entries by default; see --max-hosts
   --known-hosts <file>                Import keys from an OpenSSH known_hosts file
   --list                              List all stored host keys
   --remove <host:port>                Remove all keys for a host:port pair
   --help                              Show this help message
 
 Options:
+  --max-hosts <N>                     Override the default --hosts cap (default 1000)
   --db <path>                         Database file path
                                       Resolution order:
                                         1. --db <path> argument
@@ -308,6 +311,73 @@ function probeHostKey(host: string, port: number): Promise<ProbeResult> {
 }
 
 // ---------------------------------------------------------------------------
+// --hosts file parsing
+// ---------------------------------------------------------------------------
+
+export interface HostsFileEntry {
+  host: string
+  port: number
+}
+
+/**
+ * Parse the `--hosts` file format: one `host` or `host:port` per line.
+ * Lines that are blank or start with `#` are skipped. When a `:port`
+ * suffix is non-numeric, the full line is treated as a hostname and the
+ * default port is used.
+ */
+export function parseHostsFile(content: string): HostsFileEntry[] {
+  const entries: HostsFileEntry[] = []
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trim()
+    if (line === '' || line.startsWith('#')) {
+      continue
+    }
+    const colonIndex = line.lastIndexOf(':')
+    if (colonIndex > 0) {
+      const port = Number.parseInt(line.slice(colonIndex + 1), 10)
+      if (!Number.isNaN(port)) {
+        entries.push({ host: line.slice(0, colonIndex), port })
+        continue
+      }
+    }
+    entries.push({ host: line, port: DEFAULT_PORT })
+  }
+  return entries
+}
+
+/**
+ * Enforce the `--hosts` entry cap. `explicit=true` means the operator
+ * passed `--max-hosts` so the error message uses different wording.
+ */
+export function checkHostsCap(
+  count: number,
+  maxHosts: number,
+  explicit: boolean
+): Result<number, string> {
+  if (!Number.isFinite(maxHosts) || maxHosts <= 0) {
+    return {
+      ok: false,
+      error: '--max-hosts requires a positive integer'
+    }
+  }
+  if (count <= maxHosts) {
+    return { ok: true, value: maxHosts }
+  }
+  if (explicit) {
+    return {
+      ok: false,
+      error: `file contains ${count} entries, exceeds explicit --max-hosts cap of ${maxHosts}`
+    }
+  }
+  return {
+    ok: false,
+    error:
+      `file contains ${count} entries, exceeds default cap of ${maxHosts}.\n` +
+      `  Use --max-hosts N to override.`
+  }
+}
+
+// ---------------------------------------------------------------------------
 // known_hosts parsing
 // ---------------------------------------------------------------------------
 
@@ -475,6 +545,9 @@ export interface CliArgs {
   file?: string | undefined
   removeTarget?: string | undefined
   dbPath?: string | undefined
+  commit: boolean
+  maxHosts?: number | undefined
+  maxHostsExplicit: boolean
 }
 
 function nextArg(args: readonly string[], index: number): string | undefined {
@@ -490,6 +563,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   let file: string | undefined
   let removeTarget: string | undefined
   let dbPath: string | undefined
+  let commit = false
+  let maxHosts: number | undefined
+  let maxHostsExplicit = false
 
   for (let i = 0; i < args.length; i++) {
     const arg = args.at(i)
@@ -523,10 +599,30 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     } else if (arg === '--db') {
       dbPath = nextArg(args, i)
       i++
+    } else if (arg === '--commit') {
+      // Consumed by handleKnownHosts in Task 4 to gate dry-run vs. write.
+      commit = true
+    } else if (arg === '--max-hosts') {
+      const maxStr = nextArg(args, i)
+      i++
+      if (maxStr !== undefined) {
+        maxHosts = Number.parseInt(maxStr, 10)
+        maxHostsExplicit = true
+      }
     }
   }
 
-  return { command, host, port, file, removeTarget, dbPath }
+  return {
+    command,
+    host,
+    port,
+    file,
+    removeTarget,
+    dbPath,
+    commit,
+    maxHosts,
+    maxHostsExplicit
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -554,40 +650,29 @@ async function handleProbeHost(
 
 async function handleProbeHosts(
   db: DatabaseType,
-  filePath: string
-): Promise<void> {
+  filePath: string,
+  maxHosts: number,
+  maxHostsExplicit: boolean
+): Promise<number> {
   if (!fs.existsSync(filePath)) {
     process.stderr.write(`File not found: ${sanitizeForDisplay(filePath)}\n`)
-    return
+    return 1
   }
 
   const content = fs.readFileSync(filePath, 'utf8')
-  const lines = content.split('\n').filter((line) => {
-    const trimmed = line.trim()
-    return trimmed !== '' && !trimmed.startsWith('#')
-  })
+  const entries = parseHostsFile(content)
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    const colonIndex = trimmed.lastIndexOf(':')
-
-    let host: string
-    let port: number
-
-    if (colonIndex > 0) {
-      host = trimmed.slice(0, colonIndex)
-      port = Number.parseInt(trimmed.slice(colonIndex + 1), 10)
-      if (Number.isNaN(port)) {
-        host = trimmed
-        port = DEFAULT_PORT
-      }
-    } else {
-      host = trimmed
-      port = DEFAULT_PORT
-    }
-
-    await handleProbeHost(db, host, port)
+  const cap = checkHostsCap(entries.length, maxHosts, maxHostsExplicit)
+  if (!cap.ok) {
+    process.stderr.write(`Error: ${cap.error}\n`)
+    return 1
   }
+
+  for (const entry of entries) {
+    await handleProbeHost(db, entry.host, entry.port)
+  }
+
+  return 0
 }
 
 function handleKnownHosts(
@@ -726,7 +811,16 @@ async function main(): Promise<number> {
           process.stderr.write('Error: --hosts requires a file path\n')
           return 1
         }
-        await handleProbeHosts(db, cli.file)
+        const effectiveMax = cli.maxHosts ?? DEFAULT_MAX_HOSTS
+        const probeExit = await handleProbeHosts(
+          db,
+          cli.file,
+          effectiveMax,
+          cli.maxHostsExplicit
+        )
+        if (probeExit !== 0) {
+          return probeExit
+        }
         break
       }
       case 'known-hosts': {

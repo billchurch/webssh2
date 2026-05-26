@@ -20,6 +20,8 @@ const {
   buildDbPathAllowlist,
   validateDbPath,
   readConfiguredDbPath,
+  parseHostsFile,
+  checkHostsCap,
 } = await import('../../../scripts/host-key-seed.js')
 
 // ---------------------------------------------------------------------------
@@ -184,6 +186,40 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'script', '--list', '--db', '/custom/path.db'])
     expect(result.command).toBe('list')
     expect(result.dbPath).toBe('/custom/path.db')
+  })
+
+  it('parses --max-hosts with a positive integer', () => {
+    const result = parseArgs([
+      'node', 'script', '--hosts', 'f.txt', '--max-hosts', '50'
+    ])
+    expect(result.maxHosts).toBe(50)
+    expect(result.maxHostsExplicit).toBe(true)
+  })
+
+  it('leaves maxHostsExplicit false when --max-hosts is not passed', () => {
+    const result = parseArgs(['node', 'script', '--hosts', 'f.txt'])
+    expect(result.maxHostsExplicit).toBe(false)
+    expect(result.maxHosts).toBeUndefined()
+  })
+
+  it('captures non-numeric --max-hosts verbatim (validation deferred)', () => {
+    const result = parseArgs([
+      'node', 'script', '--hosts', 'f.txt', '--max-hosts', 'abc'
+    ])
+    expect(Number.isNaN(result.maxHosts ?? 0)).toBe(true)
+    expect(result.maxHostsExplicit).toBe(true)
+  })
+
+  it('parses --commit', () => {
+    const result = parseArgs([
+      'node', 'script', '--known-hosts', 'f', '--commit'
+    ])
+    expect(result.commit).toBe(true)
+  })
+
+  it('defaults commit to false', () => {
+    const result = parseArgs(['node', 'script', '--known-hosts', 'f'])
+    expect(result.commit).toBe(false)
   })
 })
 
@@ -451,5 +487,83 @@ describe('readConfiguredDbPath', () => {
       process.chdir(originalCwd)
       rmSync(tmp, { recursive: true, force: true })
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// parseHostsFile / checkHostsCap
+// ---------------------------------------------------------------------------
+
+describe('parseHostsFile', () => {
+  it('parses bare hostnames with default port', () => {
+    const entries = parseHostsFile('example.com\nhost2.com\n')
+    expect(entries).toEqual([
+      { host: 'example.com', port: 22 },
+      { host: 'host2.com', port: 22 }
+    ])
+  })
+
+  it('parses host:port form', () => {
+    const entries = parseHostsFile('example.com:2222\n')
+    expect(entries).toEqual([{ host: 'example.com', port: 2222 }])
+  })
+
+  it('falls back to default port when port is not numeric', () => {
+    const entries = parseHostsFile('example.com:abc\n')
+    expect(entries).toEqual([{ host: 'example.com:abc', port: 22 }])
+  })
+
+  it('skips empty lines and comments', () => {
+    const entries = parseHostsFile('# a comment\n\nexample.com\n   \n# trailing\n')
+    expect(entries).toEqual([{ host: 'example.com', port: 22 }])
+  })
+
+  it('returns empty array for empty input', () => {
+    expect(parseHostsFile('')).toEqual([])
+  })
+})
+
+describe('checkHostsCap', () => {
+  it('returns ok when count is within cap', () => {
+    const result = checkHostsCap(500, 1000, false)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value).toBe(1000)
+    }
+  })
+
+  it('rejects when count exceeds default cap, suggesting --max-hosts', () => {
+    const result = checkHostsCap(1500, 1000, false)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('1500')
+      expect(result.error).toContain('default cap of 1000')
+      expect(result.error).toContain('--max-hosts')
+    }
+  })
+
+  it('rejects when count exceeds explicit cap, naming the cap value', () => {
+    const result = checkHostsCap(500, 200, true)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('500')
+      expect(result.error).toContain('explicit --max-hosts cap of 200')
+    }
+  })
+
+  it('rejects zero cap', () => {
+    const result = checkHostsCap(0, 0, true)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('positive integer')
+    }
+  })
+
+  it('rejects negative cap', () => {
+    expect(checkHostsCap(0, -5, true).ok).toBe(false)
+  })
+
+  it('rejects NaN cap', () => {
+    expect(checkHostsCap(0, Number.NaN, true).ok).toBe(false)
   })
 })
