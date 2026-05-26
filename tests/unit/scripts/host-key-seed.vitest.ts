@@ -294,44 +294,38 @@ describe('isMainModule', () => {
 // ---------------------------------------------------------------------------
 
 describe('sanitizeForDisplay', () => {
-  it('returns plain printable ASCII unchanged', () => {
-    expect(sanitizeForDisplay('example.com')).toBe('example.com')
-    expect(sanitizeForDisplay('host-1.sub.example.com:22')).toBe(
+  it.each([
+    ['plain ASCII passes through unchanged', 'example.com', 'example.com'],
+    [
+      'ASCII with port and dashes passes through',
+      'host-1.sub.example.com:22',
       'host-1.sub.example.com:22'
-    )
-    expect(sanitizeForDisplay('')).toBe('')
-  })
-
-  it('escapes ESC and CSI control sequences', () => {
-    expect(sanitizeForDisplay('\x1b[31mred\x1b[0m')).toBe('\\x1B[31mred\\x1B[0m')
-  })
-
-  it('escapes C0 control characters', () => {
-    expect(sanitizeForDisplay('\x00nul')).toBe('\\x00nul')
-    expect(sanitizeForDisplay('\x07bell')).toBe('\\x07bell')
-    expect(sanitizeForDisplay('\x08bs')).toBe('\\x08bs')
-    expect(sanitizeForDisplay('\rcr')).toBe('\\x0Dcr')
-    expect(sanitizeForDisplay('\nlf')).toBe('\\x0Alf')
-  })
-
-  it('escapes DEL (0x7F)', () => {
-    expect(sanitizeForDisplay('a\x7Fb')).toBe('a\\x7Fb')
-  })
-
-  it('escapes C1 control characters (0x80-0x9F)', () => {
-    expect(sanitizeForDisplay('a\x80b')).toBe('a\\x80b')
-    expect(sanitizeForDisplay('a\x9Bb')).toBe('a\\x9Bb')
-    expect(sanitizeForDisplay('a\x9Fb')).toBe('a\\x9Fb')
-  })
-
-  it('passes through printable Unicode above 0x9F', () => {
-    expect(sanitizeForDisplay('münchen.example')).toBe('münchen.example')
-    expect(sanitizeForDisplay('host. space')).toBe('host. space')
-  })
-
-  it('produces uppercase hex digits', () => {
-    expect(sanitizeForDisplay('\x1b')).toBe('\\x1B')
-    expect(sanitizeForDisplay('\x0a')).toBe('\\x0A')
+    ],
+    ['empty string passes through', '', ''],
+    [
+      'ESC + CSI red colour sequence is escaped',
+      '\x1b[31mred\x1b[0m',
+      '\\x1B[31mred\\x1B[0m'
+    ],
+    ['C0 NUL (0x00) is escaped', '\x00nul', '\\x00nul'],
+    ['C0 BEL (0x07) is escaped', '\x07bell', '\\x07bell'],
+    ['C0 BS (0x08) is escaped', '\x08bs', '\\x08bs'],
+    ['C0 CR (0x0D) is escaped as uppercase hex', '\rcr', '\\x0Dcr'],
+    ['C0 LF (0x0A) is escaped as uppercase hex', '\nlf', '\\x0Alf'],
+    ['DEL (0x7F) is escaped', 'a\x7Fb', 'a\\x7Fb'],
+    ['C1 0x80 is escaped', 'a\x80b', 'a\\x80b'],
+    ['C1 0x9B is escaped', 'a\x9Bb', 'a\\x9Bb'],
+    ['C1 0x9F is escaped', 'a\x9Fb', 'a\\x9Fb'],
+    [
+      'printable Unicode above 0x9F passes through',
+      'münchen.example',
+      'münchen.example'
+    ],
+    ['printable ASCII space passes through', 'host. space', 'host. space'],
+    ['bare ESC (0x1B) is escaped as uppercase hex', '\x1b', '\\x1B'],
+    ['bare LF (0x0A) is escaped as uppercase hex', '\x0a', '\\x0A']
+  ])('%s', (_label, input, expected) => {
+    expect(sanitizeForDisplay(input)).toBe(expected)
   })
 })
 
