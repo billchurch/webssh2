@@ -251,6 +251,31 @@ npm run hostkeys -- --host ssh.example.com
 
 The script automatically creates the database file (and parent directories) at the configured `dbPath` if it does not exist.
 
+**Bulk seeding from a hosts file (capped at 1000 entries by default):**
+
+```bash
+# Probe each line of hosts.txt; refuses files with more than 1000 entries.
+npm run hostkeys -- --hosts hosts.txt
+# Override the cap for a legitimate large rollout:
+npm run hostkeys -- --hosts hosts.txt --max-hosts 5000
+```
+
+**Importing from an OpenSSH `known_hosts` file:**
+
+The `--known-hosts` command is a **dry-run by default** — it prints a
+preview of the parsed entries and exits without touching the database.
+This is a deliberate safety gate because every entry in the trust store
+is trusted unconditionally by the server at startup. Inspect the preview,
+verify the source is what you expected, then re-run with `--commit`:
+
+```bash
+# Preview only (no writes)
+npm run hostkeys -- --known-hosts ~/.ssh/known_hosts
+
+# After verifying the preview, commit:
+npm run hostkeys -- --known-hosts ~/.ssh/known_hosts --commit
+```
+
 **Docker volume mounting:**
 
 When running in Docker, mount a volume to the directory containing your database so it persists across container restarts. The mount path must match the `dbPath` value in your configuration:
@@ -262,6 +287,20 @@ docker run --rm -p 2222:2222 \
   -e WEBSSH2_SSH_HOSTKEY_DB_PATH=/data/hostkeys.db \
   ghcr.io/billchurch/webssh2:latest
 ```
+
+**Where can the database file live?**
+
+For safety, the seeding CLI refuses to create new parent directories
+outside an allowlist:
+
+- `/data` (the documented default)
+- The directory of `WEBSSH2_SSH_HOSTKEY_DB_PATH` if set
+- The directory of `ssh.hostKeyVerification.serverStore.dbPath` in `config.json` if set
+- The current working directory
+
+Pointing `--db` at a path whose parent directory **already exists** is
+always allowed. The restriction only applies when the seeder would have
+to create new directories outside the allowlist.
 
 ### Seeding from inside the production container
 
@@ -330,16 +369,22 @@ npm run hostkeys -- --host ssh.example.com
 npm run hostkeys -- --host ssh.example.com --port 2222
 ```
 
-**Bulk import from a hosts file** (one `host[:port]` per line, `#` comments allowed):
+**Bulk import from a hosts file** (one `host[:port]` per line, `#` comments
+allowed; capped at 1000 entries by default — see `--max-hosts`):
 
 ```bash
 npm run hostkeys -- --hosts servers.txt
 ```
 
-**Import from an OpenSSH `known_hosts` file:**
+**Import from an OpenSSH `known_hosts` file** (dry-run by default — add
+`--commit` to actually write):
 
 ```bash
+# Preview only (no writes)
 npm run hostkeys -- --known-hosts ~/.ssh/known_hosts
+
+# After verifying the preview, commit:
+npm run hostkeys -- --known-hosts ~/.ssh/known_hosts --commit
 ```
 
 **List all stored keys:**
