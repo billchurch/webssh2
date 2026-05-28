@@ -1,5 +1,23 @@
 # Changelog
 
+## [5.0.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.0.0...webssh2-server-v5.0.1) (2026-05-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* scripts that invoke --known-hosts to populate the DB must add --commit. Without it the command is a dry-run preview.
+
+### Bug Fixes
+
+* **deps:** override qs to 6.15.2 for CVE-2026-8723 ([#532](https://github.com/billchurch/webssh2/issues/532)) ([9bc30e5](https://github.com/billchurch/webssh2/commit/9bc30e56adfeb90b11ad7c0a60eaac99135bfbe4))
+* harden host-key-seed CLI (closes [#528](https://github.com/billchurch/webssh2/issues/528)) ([#531](https://github.com/billchurch/webssh2/issues/531)) ([53c372d](https://github.com/billchurch/webssh2/commit/53c372d1181bde6e1722d50a47212daf6add6858))
+* **scripts:** host-key-seed entry-point guard for compiled CLI ([#527](https://github.com/billchurch/webssh2/issues/527)) ([#529](https://github.com/billchurch/webssh2/issues/529)) ([2d6d4ba](https://github.com/billchurch/webssh2/commit/2d6d4ba4421a45633b851d1963ebc234548b9dff))
+
+
+### Chores
+
+* release webssh2-server 5.0.1 ([9a21bd6](https://github.com/billchurch/webssh2/commit/9a21bd6bf341e15da965e48234d897ca7cf13490))
+
 ## [5.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v4.2.2...webssh2-server-v5.0.0) (2026-05-24)
 
 
