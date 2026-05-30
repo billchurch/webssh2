@@ -15,7 +15,11 @@ on:
         options: ['true', 'false']
 
 concurrency:
-  group: image-publish
+  # Own lane (was the shared 'image-publish' group, which cancelled the
+  # pending release-publish run during the v5.0.1 release). rebuild only
+  # runs for renovate base-image bumps and defers if a release published in
+  # the last 10 minutes, so it never genuinely races a real release publish.
+  group: image-rebuild
   cancel-in-progress: false
 
 # Workflow-level permissions are read-only. Each job overrides with the

@@ -41,7 +41,13 @@ on:
       - '.github/workflows/docker-publish.yml'
 
 concurrency:
-  group: image-publish
+  # Event-scoped so the release-publish run and the main-push run never
+  # contend for one slot. GitHub cancels a *pending* run when a newer run
+  # joins the same group (even with cancel-in-progress: false) — that
+  # starved the v5.0.1 release run, which lost its semver tags and notes.
+  # release + workflow_dispatch share the 'release' lane; push (main/sha
+  # tags) gets its own 'main' lane.
+  group: image-publish-${{ github.event_name == 'push' && 'main' || 'release' }}
   cancel-in-progress: false
 
 jobs:
