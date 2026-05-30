@@ -255,6 +255,15 @@ jobs:
           # Get current release body
           CURRENT_BODY=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
 
+          # Idempotency guard: skip if this release already has its Docker
+          # section (e.g. on a manual recovery re-run). Mirrors the
+          # rebuild-sha marker used by rebuild-release-tags.yml.
+          MARKER="<!-- docker-images:${SEMVER_FULL} -->"
+          if printf '%s' "$CURRENT_BODY" | grep -qF "$MARKER"; then
+            echo "::notice::Docker section already present for ${SEMVER_FULL}; skipping"
+            exit 0
+          fi
+
           # Create Docker images section
           DOCKER_SECTION="
 
@@ -283,6 +292,8 @@ jobs:
           **Links:**
           - [Docker Hub Repository](https://hub.docker.com/r/billchurch/webssh2)
           - [GitHub Container Registry](https://github.com/billchurch/webssh2/pkgs/container/webssh2)
+
+          ${MARKER}
           "
 
           # Append Docker section to release notes
