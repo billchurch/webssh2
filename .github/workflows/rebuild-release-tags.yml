@@ -56,10 +56,20 @@ jobs:
             echo "head_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
+      # S7631 (fork checkout in workflow_run): not exploitable here, and hardened
+      # in depth. The triggering workflow (docker-publish) has NO pull_request /
+      # pull_request_target trigger, so no fork-controlled run can reach this
+      # workflow_run. This `guard` job is unprivileged (workflow-level
+      # `contents: read`), it only READS the checked-out tree (git diff / grep /
+      # gh) and never executes it, and every event-supplied value is validated
+      # below (signature, digest-only diff, strict patterns). persist-credentials
+      # is disabled so no token is left in the worktree; all later git ops are
+      # local and `gh` uses GH_TOKEN explicitly.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ steps.ctx.outputs.head_sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify commit is signed and verified (workflow_run only)
         if: github.event_name == 'workflow_run'
@@ -207,13 +217,20 @@ jobs:
           sparse-checkout: |
             .trivyignore
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
+      # S7631: RELEASE_SHA is this repo's own published release tag (resolved in
+      # `guard` and gated to the strict `webssh2-server-vX.Y.Z` pattern), not
+      # fork-supplied code. The only fork-influenceable value applied to this
+      # tree, NEW_DIGEST, was strict-pattern validated in `guard` before being
+      # overlaid below. Credentials are not persisted into release-src.
       - name: Checkout release-tag source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ env.RELEASE_SHA }}
           path: release-src
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Overlay new BASE_IMAGE digest onto release-src Dockerfile
         working-directory: release-src
@@ -309,7 +326,6 @@ jobs:
         if: env.SIMULATE != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
           IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
           SEMVER_FULL: ${{ steps.semver.outputs.full }}
           SEMVER_MINOR: ${{ steps.semver.outputs.minor }}
@@ -320,7 +336,6 @@ jobs:
             "- Base image: ${NEW_DIGEST}" \
             "- Refreshed tags: ${SEMVER_FULL}, ${SEMVER_MINOR}, ${SEMVER_MAJOR}" \
             "- New image digest: ${IMAGE_DIGEST}" \
-            "- Triggered by: ${PR_URL}" \
             "" \
             "rebuild-sha: ${HEAD_SHA}")
           current=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
