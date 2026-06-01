@@ -188,28 +188,29 @@ jobs:
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           fi
 
-  rebuild:
-    runs-on: ubuntu-latest
+  rebuild-build:
+    runs-on: ${{ matrix.runner }}
     needs: guard
     if: needs.guard.outputs.proceed == 'true'
+    timeout-minutes: 45
     permissions:
-      contents: write       # to post release comment
+      contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
     env:
-      HEAD_SHA: ${{ needs.guard.outputs.head_sha }}
       NEW_DIGEST: ${{ needs.guard.outputs.new_digest }}
-      RELEASE_TAG: ${{ needs.guard.outputs.release_tag }}
       RELEASE_SHA: ${{ needs.guard.outputs.release_sha }}
       SIMULATE: ${{ github.event.inputs.simulate || 'false' }}
     steps:
-      - name: Snapshot existing sha-tag digest (for post-push assertion)
-        run: |
-          short="${RELEASE_SHA:0:7}"
-          before=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${short}" \
-            | jq -r '.digest' 2>/dev/null || echo "")
-          echo "SHA_TAG_SHORT=${short}"          >> "$GITHUB_ENV"
-          echo "SHA_TAG_DIGEST_BEFORE=${before}" >> "$GITHUB_ENV"
-
       # Pull only .trivyignore from main into the workspace root so the
       # Trivy step below can suppress documented bundled-npm CVEs. The
       # release tag's own source tree (older releases) may not include
@@ -223,11 +224,9 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      # S7631: RELEASE_SHA is this repo's own published release tag (resolved in
-      # `guard` and gated to the strict `webssh2-server-vX.Y.Z` pattern), not
-      # fork-supplied code. The only fork-influenceable value applied to this
-      # tree, NEW_DIGEST, was strict-pattern validated in `guard` before being
-      # overlaid below. Credentials are not persisted into release-src.
+      # S7631: RELEASE_SHA is this repo's own published release tag (resolved and
+      # strictly pattern-gated in `guard`), not fork-supplied. NEW_DIGEST was
+      # strict-pattern validated in `guard` before being overlaid below.
       - name: Checkout release-tag source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
@@ -242,15 +241,7 @@ jobs:
           sed -i "s|^ARG BASE_IMAGE=.*|ARG BASE_IMAGE=${NEW_DIGEST}|" Dockerfile
           grep -E '^ARG BASE_IMAGE=' Dockerfile
 
-      - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
-        with:
-          # Pin QEMU to known-good v8.1.5; binfmt :latest (QEMU 10.2.1) core-dumps
-          # emulated Node/arm64 (signal 4, Illegal instruction). See
-          # tonistiigi/binfmt#245. Interim until native arm64 runners land; also
-          # closes the unpinned :latest supply-chain gap.
-          image: docker.io/tonistiigi/binfmt:qemu-v8.1.5@sha256:2d2918e86e5327d0661f7083d67a95280b0f7be8f77ed79a8418f81d7d90ce6f
       - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-
       - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: docker.io
@@ -262,12 +253,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build amd64 for scan
+      - name: Build for scan
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: release-src
           load: true
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           tags: local/webssh2-rebuild:scan
 
       - name: Trivy image scan (fail closed)
@@ -275,7 +266,7 @@ jobs:
         with:
           image-ref: local/webssh2-rebuild:scan
           format: sarif
-          output: trivy-rebuild.sarif
+          output: trivy-rebuild-${{ matrix.arch }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
@@ -283,9 +274,61 @@ jobs:
           trivyignores: .trivyignore
           # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation
           # and exit-code evaluation. Without this, trivy-action unsets
-          # TRIVY_SEVERITY in sarif mode, silently disabling the gate
-          # (same bug fixed in docker-publish.yml in commit 0390fcc).
+          # TRIVY_SEVERITY in sarif mode, silently disabling the gate.
           limit-severities-for-sarif: 'true'
+
+      - name: Build and push by digest
+        id: build
+        if: env.SIMULATE != 'true'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: release-src
+          platforms: ${{ matrix.platform }}
+          outputs: |
+            type=image,"name=docker.io/billchurch/webssh2,ghcr.io/billchurch/webssh2",push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        if: env.SIMULATE != 'true'
+        run: |
+          mkdir -p digests
+          digest="${{ steps.build.outputs.digest }}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad digest: $digest"; exit 1; }
+          echo "$digest" > "digests/${{ matrix.arch }}"
+
+      - name: Upload digest
+        if: env.SIMULATE != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 5
+
+      - name: Simulate (dry-run) note
+        if: env.SIMULATE == 'true'
+        run: echo "SIMULATE=true; built + scanned ${{ matrix.platform }}; push skipped."
+
+  rebuild-merge:
+    runs-on: ubuntu-24.04
+    needs: [guard, rebuild-build]
+    if: needs.guard.outputs.proceed == 'true'
+    permissions:
+      contents: write
+      packages: write
+    env:
+      RELEASE_TAG: ${{ needs.guard.outputs.release_tag }}
+      RELEASE_SHA: ${{ needs.guard.outputs.release_sha }}
+      NEW_DIGEST: ${{ needs.guard.outputs.new_digest }}
+      HEAD_SHA: ${{ needs.guard.outputs.head_sha }}
+      SIMULATE: ${{ github.event.inputs.simulate || 'false' }}
+    steps:
+      - name: Snapshot existing sha-tag digest (for post-push assertion)
+        run: |
+          short="${RELEASE_SHA:0:7}"
+          before=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${short}" \
+            | jq -r '.digest' 2>/dev/null || echo "")
+          echo "SHA_TAG_SHORT=${short}"          >> "$GITHUB_ENV"
+          echo "SHA_TAG_DIGEST_BEFORE=${before}" >> "$GITHUB_ENV"
 
       - id: semver
         name: Derive semver tags from RELEASE_TAG
@@ -293,34 +336,58 @@ jobs:
           tag="${RELEASE_TAG#webssh2-server-v}"
           major="${tag%%.*}"
           minor="${tag%.*}"
-          echo "full=$tag"    >> "$GITHUB_OUTPUT"
-          echo "minor=$minor" >> "$GITHUB_OUTPUT"
-          echo "major=$major" >> "$GITHUB_OUTPUT"
+          {
+            echo "full=$tag"
+            echo "minor=$minor"
+            echo "major=$major"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Multi-arch build and push (semver tags only; no sha-tag)
-        id: push
+      - name: Download digests
         if: env.SIMULATE != 'true'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          context: release-src
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            docker.io/billchurch/webssh2:${{ steps.semver.outputs.full }}
-            docker.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}
-            docker.io/billchurch/webssh2:${{ steps.semver.outputs.major }}
-            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.full }}
-            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}
-            ghcr.io/billchurch/webssh2:${{ steps.semver.outputs.major }}
+          pattern: digest-*
+          merge-multiple: true
+          path: digests
 
-      - name: Simulate push (dry-run)
-        if: env.SIMULATE == 'true'
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        if: env.SIMULATE != 'true'
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        if: env.SIMULATE != 'true'
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        if: env.SIMULATE != 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and verify semver manifests (atomic, both registries)
+        if: env.SIMULATE != 'true'
+        env:
+          SEMVER_FULL: ${{ steps.semver.outputs.full }}
+          SEMVER_MINOR: ${{ steps.semver.outputs.minor }}
+          SEMVER_MAJOR: ${{ steps.semver.outputs.major }}
         run: |
-          echo "SIMULATE=true; would have pushed:"
-          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.full }}"
-          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.minor }}"
-          echo "  docker.io/billchurch/webssh2:${{ steps.semver.outputs.major }}"
-          echo "  (ghcr counterparts)"
+          set -euo pipefail
+          AMD64=$(cat digests/amd64); ARM64=$(cat digests/arm64)
+          for a in "$AMD64" "$ARM64"; do
+            [[ "$a" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad digest: $a"; exit 1; }
+          done
+          for NAME in docker.io/billchurch/webssh2 ghcr.io/billchurch/webssh2; do
+            docker buildx imagetools create \
+              --tag "${NAME}:${SEMVER_FULL}" \
+              --tag "${NAME}:${SEMVER_MINOR}" \
+              --tag "${NAME}:${SEMVER_MAJOR}" \
+              "${NAME}@${AMD64}" "${NAME}@${ARM64}"
+            plats=$(docker buildx imagetools inspect "${NAME}:${SEMVER_FULL}" \
+              --format '{{range .Manifest.Manifests}}{{.Platform.OS}}/{{.Platform.Architecture}} {{end}}')
+            case "$plats" in *linux/amd64*) ;; *) echo "::error::${NAME} missing amd64"; exit 1;; esac
+            case "$plats" in *linux/arm64*) ;; *) echo "::error::${NAME} missing arm64"; exit 1;; esac
+          done
 
       - name: Assert sha-tag digest unchanged
         if: env.SIMULATE != 'true'
@@ -336,11 +403,12 @@ jobs:
         if: env.SIMULATE != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
           SEMVER_FULL: ${{ steps.semver.outputs.full }}
           SEMVER_MINOR: ${{ steps.semver.outputs.minor }}
           SEMVER_MAJOR: ${{ steps.semver.outputs.major }}
         run: |
+          IMAGE_DIGEST=$(docker buildx imagetools inspect \
+            "docker.io/billchurch/webssh2:${SEMVER_FULL}" --format '{{.Manifest.Digest}}')
           body=$(printf '%s\n' \
             "[base-refresh] Base image refreshed (no source changes)" \
             "- Base image: ${NEW_DIGEST}" \
@@ -351,3 +419,13 @@ jobs:
           current=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
           notes=$(printf '%s\n\n%s\n' "${current}" "${body}")
           gh release edit "$RELEASE_TAG" --notes "${notes}"
+
+      - name: Simulate (dry-run) summary
+        if: env.SIMULATE == 'true'
+        env:
+          SEMVER_FULL: ${{ steps.semver.outputs.full }}
+          SEMVER_MINOR: ${{ steps.semver.outputs.minor }}
+          SEMVER_MAJOR: ${{ steps.semver.outputs.major }}
+        run: |
+          echo "SIMULATE=true; would have pushed semver manifests:"
+          echo "  billchurch/webssh2:${SEMVER_FULL} / ${SEMVER_MINOR} / ${SEMVER_MAJOR} (+ ghcr)"
