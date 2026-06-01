@@ -63,15 +63,17 @@ jobs:
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    # NOTE: only secret-free scalars are exposed as outputs. Image names and
+    # metadata tags/labels contain the owner ("billchurch"), which equals the
+    # DOCKER_USERNAME secret value — GitHub scrubs secret-containing job outputs
+    # to empty across jobs, so those are computed inside the consuming jobs
+    # (build = labels, merge = tags) instead of passed from here.
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      labels: ${{ steps.meta.outputs.labels }}
       has_release: ${{ steps.release_meta.outputs.has_release }}
       semver_full: ${{ steps.release_meta.outputs.semver_full }}
       semver_minor: ${{ steps.release_meta.outputs.semver_minor }}
       semver_major: ${{ steps.release_meta.outputs.semver_major }}
       effective_ref_name: ${{ steps.ctx.outputs.effective_ref_name }}
-      ghcr_image: ${{ steps.ghcr.outputs.image }}
     steps:
       - name: Check required secrets
         if: ${{ env.DOCKERHUB_USER == '' || env.DOCKERHUB_TOKEN == '' }}
@@ -136,28 +138,6 @@ jobs:
             echo "has_release=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Derive GHCR image name
-        id: ghcr
-        run: |
-          owner=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
-          echo "image=ghcr.io/${owner}/webssh2" >> "${GITHUB_OUTPUT}"
-
-      - id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
-        with:
-          images: |
-            docker.io/billchurch/webssh2
-            ${{ steps.ghcr.outputs.image }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
-            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
-            type=raw,value=main,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
-            type=raw,value=${{ steps.release_meta.outputs.semver_full }},priority=900,enable=${{ steps.release_meta.outputs.has_release == 'true' }}
-            type=raw,value=${{ steps.release_meta.outputs.semver_minor }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
-            type=raw,value=${{ steps.release_meta.outputs.semver_major }},enable=${{ steps.release_meta.outputs.has_release == 'true' }}
-            type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
-            type=sha
-
   build:
     needs: prepare
     runs-on: ${{ matrix.runner }}
@@ -197,6 +177,24 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Compute OCI labels locally (image names contain the owner = a secret
+      # value, so they can't be passed as job outputs from prepare).
+      - id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: |
+            docker.io/billchurch/webssh2
+            ghcr.io/billchurch/webssh2
+          tags: |
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
+            type=raw,value=main,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
+            type=raw,value=${{ needs.prepare.outputs.semver_full }},priority=900,enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=raw,value=${{ needs.prepare.outputs.semver_minor }},enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=raw,value=${{ needs.prepare.outputs.semver_major }},enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
+            type=sha
 
       # PHASE 1 (do not merge with the push build — keeps the Trivy gate
       # fail-closed: scan must pass BEFORE anything is pushed).
@@ -257,9 +255,9 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
+          labels: ${{ steps.meta.outputs.labels }}
           outputs: |
-            type=image,"name=docker.io/billchurch/webssh2,${{ needs.prepare.outputs.ghcr_image }}",push-by-digest=true,name-canonical=true,push=true
+            type=image,"name=docker.io/billchurch/webssh2,ghcr.io/billchurch/webssh2",push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=publish-${{ matrix.arch }}-${{ github.ref }}
           cache-to: type=gha,mode=max,scope=publish-${{ matrix.arch }}-${{ github.ref }}
 
@@ -284,9 +282,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-    env:
-      GHCR_IMAGE: ${{ needs.prepare.outputs.ghcr_image }}
-      PREPARE_TAGS: ${{ needs.prepare.outputs.tags }}
     steps:
       - name: Download digests
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -315,12 +310,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Compute the tag list locally (it contains the owner = a secret value, so
+      # it can't be passed as a job output from prepare). Same rules as build.
+      - id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: |
+            docker.io/billchurch/webssh2
+            ghcr.io/billchurch/webssh2
+          tags: |
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_latest == 'true' }}
+            type=raw,value=main,enable=${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
+            type=raw,value=${{ needs.prepare.outputs.semver_full }},priority=900,enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=raw,value=${{ needs.prepare.outputs.semver_minor }},enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=raw,value=${{ needs.prepare.outputs.semver_major }},enable=${{ needs.prepare.outputs.has_release == 'true' }}
+            type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
+            type=sha
+
       - name: Create and verify multi-arch manifests (atomic, both registries)
         id: manifest
+        env:
+          PREPARE_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           set -euo pipefail
           AMD64=$(cat digests/amd64); ARM64=$(cat digests/arm64)
-          for NAME in docker.io/billchurch/webssh2 "${GHCR_IMAGE}"; do
+          for NAME in docker.io/billchurch/webssh2 ghcr.io/billchurch/webssh2; do
             mapfile -t TAGS < <(printf '%s\n' "${PREPARE_TAGS}" | grep "^${NAME}:")
             if [ "${#TAGS[@]}" -eq 0 ]; then
               echo "::error::no tags resolved for ${NAME}"; exit 1
