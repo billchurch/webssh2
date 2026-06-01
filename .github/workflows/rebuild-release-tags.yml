@@ -15,7 +15,11 @@ on:
         options: ['true', 'false']
 
 concurrency:
-  group: image-publish
+  # Own lane (was the shared 'image-publish' group, which cancelled the
+  # pending release-publish run during the v5.0.1 release). rebuild only
+  # runs for renovate base-image bumps and defers if a release published in
+  # the last 10 minutes, so it never genuinely races a real release publish.
+  group: image-rebuild
   cancel-in-progress: false
 
 # Workflow-level permissions are read-only. Each job overrides with the
@@ -65,7 +69,7 @@ jobs:
       # below (signature, digest-only diff, strict patterns). persist-credentials
       # is disabled so no token is left in the worktree; all later git ops are
       # local and `gh` uses GH_TOKEN explicitly.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           ref: ${{ steps.ctx.outputs.head_sha }}
           fetch-depth: 0
@@ -212,7 +216,7 @@ jobs:
       # this file; the scan policy must track current main, not the
       # release's frozen state.
       - name: Checkout main .trivyignore for scan suppression
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           sparse-checkout: |
             .trivyignore
@@ -225,7 +229,7 @@ jobs:
       # tree, NEW_DIGEST, was strict-pattern validated in `guard` before being
       # overlaid below. Credentials are not persisted into release-src.
       - name: Checkout release-tag source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           ref: ${{ env.RELEASE_SHA }}
           path: release-src
@@ -238,22 +242,22 @@ jobs:
           sed -i "s|^ARG BASE_IMAGE=.*|ARG BASE_IMAGE=${NEW_DIGEST}|" Dockerfile
           grep -E '^ARG BASE_IMAGE=' Dockerfile
 
-      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
-      - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build amd64 for scan
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: release-src
           load: true
@@ -261,7 +265,7 @@ jobs:
           tags: local/webssh2-rebuild:scan
 
       - name: Trivy image scan (fail closed)
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: local/webssh2-rebuild:scan
           format: sarif
@@ -290,7 +294,7 @@ jobs:
       - name: Multi-arch build and push (semver tags only; no sha-tag)
         id: push
         if: env.SIMULATE != 'true'
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: release-src
           push: true
