@@ -45,30 +45,33 @@ concurrency:
   # contend for one slot. GitHub cancels a *pending* run when a newer run
   # joins the same group (even with cancel-in-progress: false) — that
   # starved the v5.0.1 release run, which lost its semver tags and notes.
-  # release + workflow_dispatch share the 'release' lane; push (main/sha
-  # tags) gets its own 'main' lane.
   group: image-publish-${{ github.event_name == 'push' && 'main' || 'release' }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    # Skip push events if this commit has a release tag (release event will handle it)
+  prepare:
+    runs-on: ubuntu-24.04
+    # Skip push events whose commit carries a release tag (the release event handles it)
     if: |
       github.event_name != 'push' ||
       !startsWith(github.event.head_commit.message, 'chore(main): release webssh2-server')
     permissions:
-      contents: write
-      packages: write
-      # Required for github/codeql-action/upload-sarif to push the
-      # Trivy image-scan SARIF into the repo's Security tab. Without
-      # this, the upload step fails with "Resource not accessible by
-      # integration" and aborts the rest of the pipeline (smoke test
-      # and multi-arch push get skipped via default success() gating).
-      security-events: write
+      contents: read
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      has_release: ${{ steps.release_meta.outputs.has_release }}
+      semver_full: ${{ steps.release_meta.outputs.semver_full }}
+      semver_minor: ${{ steps.release_meta.outputs.semver_minor }}
+      semver_major: ${{ steps.release_meta.outputs.semver_major }}
+      effective_ref_name: ${{ steps.ctx.outputs.effective_ref_name }}
+      ghcr_image: ${{ steps.ghcr.outputs.image }}
     steps:
       - name: Check required secrets
         if: ${{ env.DOCKERHUB_USER == '' || env.DOCKERHUB_TOKEN == '' }}
@@ -82,37 +85,15 @@ jobs:
           fetch-tags: true
           ref: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref }}
 
-      - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
-        with:
-          # Pin QEMU to known-good v8.1.5; binfmt :latest (QEMU 10.2.1) core-dumps
-          # emulated Node/arm64 (signal 4, Illegal instruction). See
-          # tonistiigi/binfmt#245. Interim until native arm64 runners land; also
-          # closes the unpinned :latest supply-chain gap.
-          image: docker.io/tonistiigi/binfmt:qemu-v8.1.5@sha256:2d2918e86e5327d0661f7083d67a95280b0f7be8f77ed79a8418f81d7d90ce6f
-          platforms: linux/amd64,linux/arm64
-
-      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-
-      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
-        with:
-          registry: docker.io
-          username: ${{ env.DOCKERHUB_USER }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Normalize git ref context
+        id: ctx
+        env:
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name || inputs.release_tag || '' }}
         run: |
           ref="${GITHUB_REF:-}"
           ref_name="${GITHUB_REF_NAME:-}"
           release_tag="${RELEASE_TAG_NAME:-}"
 
-          # First, check if a release tag was explicitly provided (via event or workflow input)
           if [ -n "$release_tag" ]; then
             ref="refs/tags/$release_tag"
             ref_name="$release_tag"
@@ -120,27 +101,24 @@ jobs:
             ref="refs/tags/$ref_name"
           fi
 
-          # If we're on a push event (not an explicit release or tag), check if current commit has a release tag
-          # This handles the case where release-please creates a release AND pushes to main
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [[ "$ref_name" != webssh2-server-v* ]]; then
-            echo "Push event detected, checking for release tag on current commit..."
             tag_at_head=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
             if [[ "$tag_at_head" =~ ^webssh2-server-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Found release tag at HEAD: $tag_at_head"
               ref="refs/tags/$tag_at_head"
               ref_name="$tag_at_head"
             fi
           fi
 
-          echo "EFFECTIVE_REF=$ref" >> "$GITHUB_ENV"
-          echo "EFFECTIVE_REF_NAME=$ref_name" >> "$GITHUB_ENV"
-          echo "Effective ref: $ref"
+          {
+            echo "effective_ref=$ref"
+            echo "effective_ref_name=$ref_name"
+          } >> "$GITHUB_OUTPUT"
           echo "Effective ref_name: $ref_name"
-        env:
-          RELEASE_TAG_NAME: ${{ github.event.release.tag_name || inputs.release_tag || '' }}
 
       - name: Derive release semver tags
         id: release_meta
+        env:
+          EFFECTIVE_REF_NAME: ${{ steps.ctx.outputs.effective_ref_name }}
         run: |
           ref_name="${EFFECTIVE_REF_NAME:-}"
           prefix='webssh2-server-v'
@@ -148,10 +126,12 @@ jobs:
             major="${BASH_REMATCH[1]}"
             minor="${BASH_REMATCH[2]}"
             patch="${BASH_REMATCH[3]}"
-            echo "has_release=true" >> "$GITHUB_OUTPUT"
-            echo "semver_full=${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
-            echo "semver_minor=${major}.${minor}" >> "$GITHUB_OUTPUT"
-            echo "semver_major=${major}" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_release=true"
+              echo "semver_full=${major}.${minor}.${patch}"
+              echo "semver_minor=${major}.${minor}"
+              echo "semver_major=${major}"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "has_release=false" >> "$GITHUB_OUTPUT"
           fi
@@ -178,47 +158,86 @@ jobs:
             type=ref,event=branch,enable=${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref != 'refs/heads/main' }}
             type=sha
 
-      - name: Build amd64 image (load, for scan + smoke)
+  build:
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref }}
+
+      # No setup-qemu-action: each arch builds on its native runner.
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # PHASE 1 (do not merge with the push build — keeps the Trivy gate
+      # fail-closed: scan must pass BEFORE anything is pushed).
+      - name: Build image for scan + smoke
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           file: ./Dockerfile
           load: true
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           tags: local/webssh2:scan
-          cache-from: type=gha,scope=publish-${{ github.ref }}
-          cache-to: type=gha,mode=max,scope=publish-${{ github.ref }}
+          cache-from: type=gha,scope=publish-${{ matrix.arch }}-${{ github.ref }}
+          cache-to: type=gha,mode=max,scope=publish-${{ matrix.arch }}-${{ github.ref }}
 
       - name: Trivy image scan (fail closed)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: local/webssh2:scan
           format: sarif
-          output: trivy-image.sarif
+          output: trivy-image-${{ matrix.arch }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
           cache: true
           trivyignores: .trivyignore
-          # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation
-          # and exit-code evaluation. Without this, trivy-action unsets
-          # TRIVY_SEVERITY in sarif mode (to capture all severities), which
-          # silently disables our gate and lets MEDIUM/LOW findings fail
-          # the publish.
+          # Keep --severity CRITICAL,HIGH applied to BOTH SARIF generation and
+          # exit-code evaluation; without this trivy-action unsets TRIVY_SEVERITY
+          # in sarif mode and silently disables the gate.
           limit-severities-for-sarif: 'true'
 
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
-          sarif_file: trivy-image.sarif
-          category: trivy-image
+          sarif_file: trivy-image-${{ matrix.arch }}.sarif
+          category: trivy-image-${{ matrix.arch }}
 
-      - name: Smoke-test amd64 image
+      - name: Smoke-test image
         run: |
-          CID=$(docker run -d --rm \
-            -e DEBUG=webssh2:* local/webssh2:scan)
-          for i in {1..30}; do
+          CID=$(docker run -d --rm -e DEBUG=webssh2:* local/webssh2:scan)
+          for _ in $(seq 1 30); do
             if docker logs "$CID" 2>&1 | grep -q "server started successfully"; then
               docker stop "$CID"
               exit 0
@@ -229,47 +248,118 @@ jobs:
           docker stop "$CID" || true
           exit 1
 
-      - name: Build and push docker image
+      # PHASE 2: scan/smoke passed -> push this arch by digest to BOTH registries
+      # (gha cache makes this a near-instant re-export, no recompile).
+      - name: Build and push by digest
         id: build
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
-        timeout-minutes: 60
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # BuildKit cache configuration
-          # - Use GitHub Actions cache for faster rebuilds
-          # - mode=max caches all layers (not just final stage)
-          cache-from: type=gha,scope=publish-${{ github.ref }}
-          cache-to: type=gha,mode=max,scope=publish-${{ github.ref }}
-          # BuildKit features for optimization
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
+          platforms: ${{ matrix.platform }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          outputs: |
+            type=image,"name=docker.io/billchurch/webssh2,${{ needs.prepare.outputs.ghcr_image }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=publish-${{ matrix.arch }}-${{ github.ref }}
+          cache-to: type=gha,mode=max,scope=publish-${{ matrix.arch }}-${{ github.ref }}
+
+      - name: Export digest
+        run: |
+          mkdir -p digests
+          digest="${{ steps.build.outputs.digest }}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad digest: $digest"; exit 1; }
+          echo "$digest" > "digests/${{ matrix.arch }}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 5
+
+  merge:
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GHCR_IMAGE: ${{ needs.prepare.outputs.ghcr_image }}
+      PREPARE_TAGS: ${{ needs.prepare.outputs.tags }}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          pattern: digest-*
+          merge-multiple: true
+          path: digests
+
+      - name: Validate digests
+        run: |
+          for a in amd64 arm64; do
+            d=$(cat "digests/$a")
+            [[ "$d" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad digest for $a: $d"; exit 1; }
+          done
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and verify multi-arch manifests (atomic, both registries)
+        id: manifest
+        run: |
+          set -euo pipefail
+          AMD64=$(cat digests/amd64); ARM64=$(cat digests/arm64)
+          for NAME in docker.io/billchurch/webssh2 "${GHCR_IMAGE}"; do
+            mapfile -t TAGS < <(printf '%s\n' "${PREPARE_TAGS}" | grep "^${NAME}:")
+            if [ "${#TAGS[@]}" -eq 0 ]; then
+              echo "::error::no tags resolved for ${NAME}"; exit 1
+            fi
+            TAG_ARGS=()
+            for t in "${TAGS[@]}"; do TAG_ARGS+=(--tag "$t"); done
+            docker buildx imagetools create "${TAG_ARGS[@]}" \
+              "${NAME}@${AMD64}" "${NAME}@${ARM64}"
+            # Verify the just-created manifest lists both platforms.
+            plats=$(docker buildx imagetools inspect "${TAGS[0]}" \
+              --format '{{range .Manifest.Manifests}}{{.Platform.OS}}/{{.Platform.Architecture}} {{end}}')
+            case "$plats" in
+              *linux/amd64*) ;; *) echo "::error::${NAME} missing amd64: $plats"; exit 1;; esac
+            case "$plats" in
+              *linux/arm64*) ;; *) echo "::error::${NAME} missing arm64: $plats"; exit 1;; esac
+            echo "Verified ${NAME}: $plats"
+          done
 
       - name: Update release notes with Docker images
-        if: ${{ steps.release_meta.outputs.has_release == 'true' }}
+        if: ${{ needs.prepare.outputs.has_release == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ env.EFFECTIVE_REF_NAME }}
-          SEMVER_FULL: ${{ steps.release_meta.outputs.semver_full }}
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.effective_ref_name }}
+          SEMVER_FULL: ${{ needs.prepare.outputs.semver_full }}
+          SEMVER_MINOR: ${{ needs.prepare.outputs.semver_minor }}
+          SEMVER_MAJOR: ${{ needs.prepare.outputs.semver_major }}
         run: |
-          # Get current release body
-          CURRENT_BODY=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
+          set -euo pipefail
+          IMAGE_DIGEST=$(docker buildx imagetools inspect \
+            "docker.io/billchurch/webssh2:${SEMVER_FULL}" --format '{{.Manifest.Digest}}')
+          [[ -n "$IMAGE_DIGEST" ]] || { echo "::error::empty manifest digest"; exit 1; }
 
-          # Idempotency guard: skip if this release already has its Docker
-          # section (e.g. on a manual recovery re-run). Mirrors the
-          # rebuild-sha marker used by rebuild-release-tags.yml.
+          CURRENT_BODY=$(gh release view "$RELEASE_TAG" --json body --jq '.body')
           MARKER="<!-- docker-images:${SEMVER_FULL} -->"
           if printf '%s' "$CURRENT_BODY" | grep -qF "$MARKER"; then
             echo "::notice::Docker section already present for ${SEMVER_FULL}; skipping"
             exit 0
           fi
 
-          # Create Docker images section
           DOCKER_SECTION="
 
           ## 🐳 Docker Images
@@ -280,16 +370,16 @@ jobs:
           \`\`\`bash
           docker pull billchurch/webssh2:latest
           docker pull billchurch/webssh2:${SEMVER_FULL}
-          docker pull billchurch/webssh2:${{ steps.release_meta.outputs.semver_minor }}
-          docker pull billchurch/webssh2:${{ steps.release_meta.outputs.semver_major }}
+          docker pull billchurch/webssh2:${SEMVER_MINOR}
+          docker pull billchurch/webssh2:${SEMVER_MAJOR}
           \`\`\`
 
           ### GitHub Container Registry
           \`\`\`bash
           docker pull ghcr.io/billchurch/webssh2:latest
           docker pull ghcr.io/billchurch/webssh2:${SEMVER_FULL}
-          docker pull ghcr.io/billchurch/webssh2:${{ steps.release_meta.outputs.semver_minor }}
-          docker pull ghcr.io/billchurch/webssh2:${{ steps.release_meta.outputs.semver_major }}
+          docker pull ghcr.io/billchurch/webssh2:${SEMVER_MINOR}
+          docker pull ghcr.io/billchurch/webssh2:${SEMVER_MAJOR}
           \`\`\`
 
           **Image Digest:** \`${IMAGE_DIGEST}\`
@@ -300,6 +390,4 @@ jobs:
 
           ${MARKER}
           "
-
-          # Append Docker section to release notes
           gh release edit "$RELEASE_TAG" --notes "${CURRENT_BODY}${DOCKER_SECTION}"
