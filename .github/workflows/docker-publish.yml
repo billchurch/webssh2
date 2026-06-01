@@ -84,6 +84,11 @@ jobs:
 
       - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         with:
+          # Pin QEMU to known-good v8.1.5; binfmt :latest (QEMU 10.2.1) core-dumps
+          # emulated Node/arm64 (signal 4, Illegal instruction). See
+          # tonistiigi/binfmt#245. Interim until native arm64 runners land; also
+          # closes the unpinned :latest supply-chain gap.
+          image: docker.io/tonistiigi/binfmt:qemu-v8.1.5@sha256:2d2918e86e5327d0661f7083d67a95280b0f7be8f77ed79a8418f81d7d90ce6f
           platforms: linux/amd64,linux/arm64
 
       - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
