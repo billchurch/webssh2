@@ -102,6 +102,45 @@ export function logSecurityPostureWarning(warning: SecurityPostureWarning): void
   }
 }
 
+export function logDeprecatedEnvVarWarning(oldName: string, newName: string): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'env_var_deprecated',
+    message:
+      `Environment variable ${oldName} is deprecated; rename it to ${newName}. ` +
+      'Support for the old name will be removed in a future release.',
+    context: {
+      status: 'failure',
+      reason: 'deprecated_env_var'
+    },
+    data: {
+      oldName,
+      newName
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit deprecated env var warning log:', result.error)
+  }
+}
+
+export function logGeneratedSessionSecretWarning(): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'session_secret_generated',
+    message:
+      'No session secret configured (WEBSSH2_SESSION_SECRET env var or session.secret in ' +
+      'config.json); generated a random secret. Sessions will not survive restarts and will ' +
+      'not be shared across replicas. Set WEBSSH2_SESSION_SECRET in production.',
+    context: {
+      status: 'failure',
+      reason: 'session_secret_not_configured'
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit generated session secret warning log:', result.error)
+  }
+}
+
 export function logError(message: string, error?: Error, context?: Partial<LogContext>): void {
   const structuredContext: LogContext = {
     status: 'failure',

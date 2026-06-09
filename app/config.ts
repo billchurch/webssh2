@@ -2,8 +2,13 @@
 // app/config.ts
 
 import { inspect } from 'node:util'
-import { generateSecureSecret, enhanceConfig, ok, err } from './utils/index.js'
-import { createNamespacedDebug, logThemingConfigWarning } from './logger.js'
+import { enhanceConfig, ok, err } from './utils/index.js'
+import {
+  createNamespacedDebug,
+  logThemingConfigWarning,
+  logDeprecatedEnvVarWarning,
+  logGeneratedSessionSecretWarning
+} from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
@@ -61,10 +66,28 @@ async function loadFileConfig(
   return ok(parseResult.value)
 }
 
+/**
+ * Determine whether the session secret had to be generated because no source
+ * (explicit parameter, WEBSSH2_SESSION_SECRET env var, or config file) provided one.
+ * @pure
+ */
+function isSessionSecretGenerated(
+  sessionSecret: string | undefined,
+  env: Record<string, string | undefined>,
+  fileConfig: Partial<Config> | undefined
+): boolean {
+  return (
+    sessionSecret === undefined &&
+    env['WEBSSH2_SESSION_SECRET'] === undefined &&
+    fileConfig?.session?.secret === undefined
+  )
+}
+
 export async function loadEnhancedConfig(
   resolution: ConfigFileResolution,
   sessionSecret?: string,
-  env?: Record<string, string | undefined>
+  env?: Record<string, string | undefined>,
+  onGeneratedSecret?: () => void
 ): Promise<Result<Config, ConfigValidationError[]>> {
   const loadStartTime = Date.now()
   debug('Config loading started', { timestamp: loadStartTime })
@@ -90,6 +113,13 @@ export async function loadEnhancedConfig(
 
   // Load environment config
   const resolvedEnv = env ?? process.env
+
+  // The default-config tier generated a random secret only when no source
+  // (parameter, env var, or config file) supplied one — surface that.
+  if (onGeneratedSecret !== undefined && isSessionSecretGenerated(sessionSecret, resolvedEnv, fileConfig)) {
+    onGeneratedSecret()
+  }
+
   const envConfig = mapEnvironmentVariables(resolvedEnv, {
     onThemingWarning: (warning) => {
       logThemingConfigWarning(warning)
@@ -164,13 +194,32 @@ export async function loadEnhancedConfig(
   return enhanceConfig(configWithAuthMethods)
 }
 
+/**
+ * Resolve the session secret seed from the environment.
+ * Prefers the canonical WEBSSH2_SESSION_SECRET; falls back to the deprecated
+ * pre-2.0 WEBSSH_SESSION_SECRET name (with a deprecation warning).
+ */
+function resolveSessionSecretFromEnv(): string | undefined {
+  const canonical = process.env['WEBSSH2_SESSION_SECRET']
+  const legacy = process.env['WEBSSH_SESSION_SECRET']
+  if (canonical === undefined && legacy !== undefined) {
+    logDeprecatedEnvVarWarning('WEBSSH_SESSION_SECRET', 'WEBSSH2_SESSION_SECRET')
+  }
+  return canonical ?? legacy
+}
+
 export async function loadConfigAsync(): Promise<Config> {
   debug('Using enhanced configuration implementation')
   const resolution = resolveConfigFile()
   const configPath = configLocationToPath(resolution.location)
-  const sessionSecret = process.env['WEBSSH_SESSION_SECRET'] ?? generateSecureSecret()
-  
-  const result = await loadEnhancedConfig(resolution, sessionSecret)
+  const sessionSecret = resolveSessionSecretFromEnv()
+
+  const result = await loadEnhancedConfig(
+    resolution,
+    sessionSecret,
+    undefined,
+    logGeneratedSessionSecretWarning
+  )
   
   if (result.ok) {
     // Config loaded successfully, continue
