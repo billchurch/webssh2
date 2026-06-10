@@ -1,11 +1,34 @@
 // tests/config-async.test.ts
 
-import { describe, it, beforeEach, afterEach, expect } from 'vitest'
+import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest'
 import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
+import {
+  logDeprecatedEnvVarWarning,
+  logGeneratedSessionSecretWarning
+} from '../app/logger.js'
 import { ConfigError } from '../app/errors.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-utils.js'
-import { ENV_TEST_VALUES, TEST_SECRET_LONG, TEST_IPS, TEST_CUSTOM_PORTS } from './test-constants.js'
+import {
+  ENV_TEST_VALUES,
+  MY_SESSION_SECRET,
+  TEST_SECRET_LONG,
+  TEST_SESSION_SECRET,
+  TEST_IPS,
+  TEST_CUSTOM_PORTS
+} from './test-constants.js'
+import type * as LoggerModule from '../app/logger.js'
+
+// Partial mock so the issue #535 session-secret tests can assert on the two
+// warn emitters; all other logger exports keep their real implementations.
+vi.mock('../app/logger.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>()
+  return {
+    ...actual,
+    logDeprecatedEnvVarWarning: vi.fn(),
+    logGeneratedSessionSecretWarning: vi.fn()
+  }
+})
 
 // Ensure clean state at module load
 resetConfigForTesting()
@@ -17,6 +40,14 @@ const requireConfigManager = (
     throw new Error('Expected config manager in test environment')
   }
   return env.configManager
+}
+
+const removeConfigFile = (env: ReturnType<typeof setupTestEnvironment>): void => {
+  const configManager = requireConfigManager(env)
+  if (configManager.configExists()) {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    fs.unlinkSync(configManager.configPath)
+  }
 }
 
 describe('Config Module - Async Tests', () => {
@@ -249,5 +280,111 @@ describe('Config Module - Async Tests', () => {
     expect(config1).toBe(config2)
     expect(config2).toBe(config3)
     expect(config1.listen.port).toBe(TEST_CUSTOM_PORTS.port3)
+  })
+
+  describe('session secret (issue #535)', () => {
+    const CANONICAL_ENV = 'WEBSSH2_SESSION_SECRET'
+    const LEGACY_ENV = 'WEBSSH_SESSION_SECRET'
+    const MIN_SECRET_LENGTH = 32
+    let originalLegacy: string | undefined
+
+    beforeEach(() => {
+      // setupTestEnvironment (outer beforeEach) saves/clears WEBSSH2_* vars,
+      // but the legacy WEBSSH_SESSION_SECRET name is outside that prefix —
+      // save/clear it explicitly to avoid cross-test pollution.
+      originalLegacy = process.env['WEBSSH_SESSION_SECRET']
+      delete process.env['WEBSSH_SESSION_SECRET']
+      vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+      if (originalLegacy === undefined) {
+        delete process.env['WEBSSH_SESSION_SECRET']
+      } else {
+        process.env['WEBSSH_SESSION_SECRET'] = originalLegacy
+      }
+    })
+
+    it('uses WEBSSH2_SESSION_SECRET for session.secret', async () => {
+      removeConfigFile(testEnv)
+      process.env['WEBSSH2_SESSION_SECRET'] = TEST_SESSION_SECRET
+
+      const config = await loadConfigAsync()
+
+      expect(config.session.secret).toBe(TEST_SESSION_SECRET)
+      expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+      expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
+    })
+
+    it('honors legacy WEBSSH_SESSION_SECRET and emits a deprecation warning', async () => {
+      removeConfigFile(testEnv)
+      process.env['WEBSSH_SESSION_SECRET'] = TEST_SESSION_SECRET
+
+      const config = await loadConfigAsync()
+
+      expect(config.session.secret).toBe(TEST_SESSION_SECRET)
+      expect(logDeprecatedEnvVarWarning).toHaveBeenCalledTimes(1)
+      expect(logDeprecatedEnvVarWarning).toHaveBeenCalledWith(LEGACY_ENV, CANONICAL_ENV)
+      expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
+    })
+
+    it('prefers WEBSSH2_SESSION_SECRET when both env vars are set', async () => {
+      removeConfigFile(testEnv)
+      process.env['WEBSSH2_SESSION_SECRET'] = TEST_SESSION_SECRET
+      process.env['WEBSSH_SESSION_SECRET'] = MY_SESSION_SECRET
+
+      const config = await loadConfigAsync()
+
+      expect(config.session.secret).toBe(TEST_SESSION_SECRET)
+      expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+      expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
+    })
+
+    it('generates a random secret and warns when no secret is configured', async () => {
+      removeConfigFile(testEnv)
+
+      const config = await loadConfigAsync()
+
+      expect(typeof config.session.secret).toBe('string')
+      expect(config.session.secret.length).toBeGreaterThanOrEqual(MIN_SECRET_LENGTH)
+      expect(logGeneratedSessionSecretWarning).toHaveBeenCalledTimes(1)
+      expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+    })
+
+    it('treats an empty WEBSSH2_SESSION_SECRET as unset and warns on generation', async () => {
+      removeConfigFile(testEnv)
+      process.env['WEBSSH2_SESSION_SECRET'] = ''
+
+      const config = await loadConfigAsync()
+
+      expect(typeof config.session.secret).toBe('string')
+      expect(config.session.secret.length).toBeGreaterThanOrEqual(MIN_SECRET_LENGTH)
+      expect(logGeneratedSessionSecretWarning).toHaveBeenCalledTimes(1)
+      expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+    })
+
+    it('falls back to the legacy var when WEBSSH2_SESSION_SECRET is empty', async () => {
+      removeConfigFile(testEnv)
+      process.env['WEBSSH2_SESSION_SECRET'] = ''
+      process.env['WEBSSH_SESSION_SECRET'] = TEST_SESSION_SECRET
+
+      const config = await loadConfigAsync()
+
+      expect(config.session.secret).toBe(TEST_SESSION_SECRET)
+      expect(logDeprecatedEnvVarWarning).toHaveBeenCalledTimes(1)
+      expect(logDeprecatedEnvVarWarning).toHaveBeenCalledWith(LEGACY_ENV, CANONICAL_ENV)
+      expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
+    })
+
+    it('does not warn when the secret comes from config.json', async () => {
+      const configManager = requireConfigManager(testEnv)
+      configManager.writeConfig({ session: { secret: MY_SESSION_SECRET } })
+
+      const config = await loadConfigAsync()
+
+      expect(config.session.secret).toBe(MY_SESSION_SECRET)
+      expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
+      expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+    })
   })
 })
