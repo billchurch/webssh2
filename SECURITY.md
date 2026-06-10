@@ -47,6 +47,86 @@ When deploying WebSSH2:
 - Review and follow security guidance in our [documentation](README.md)
 - Use environment variables for sensitive configuration (see [ENV_VARIABLES.md](DOCS/ENV_VARIABLES.md))
 
+## Default security posture
+
+Two defaults ship intentionally permissive and are kept that way for
+backward compatibility. Both are audited when the server starts and emit
+warn-level structured logs (`event: security_posture`) until you harden
+them. Review this section before exposing any deployment beyond a trusted
+network.
+
+### Host key verification is disabled by default
+
+| Config key | Default | Exposure |
+| --- | --- | --- |
+| `ssh.hostKeyVerification.enabled` | `false` | The gateway accepts ANY SSH host key, so an attacker positioned between the gateway and the target can silently man-in-the-middle sessions and capture credentials |
+
+To harden, enable verification (the `prompt` action gives users a
+TOFU-style accept/reject decision for unknown keys):
+
+```json
+{
+  "ssh": {
+    "hostKeyVerification": {
+      "enabled": true,
+      "unknownKeyAction": "prompt"
+    }
+  }
+}
+```
+
+Or via environment variables:
+
+```bash
+WEBSSH2_SSH_HOSTKEY_ENABLED=true
+WEBSSH2_SSH_HOSTKEY_UNKNOWN_ACTION=prompt
+```
+
+Additional notes:
+
+- Pre-seed the server-side key store with `npm run hostkeys` so known
+  hosts are pinned before first use
+- Enabling verification covers socket-based SSH connections; some
+  non-socket connection paths skip the verifier even when it is enabled,
+  so do not treat it as covering every code path
+- Full option reference:
+  [Host Key Verification](DOCS/configuration/CONFIG-JSON.md#host-key-verification)
+
+### No target-host restrictions by default
+
+| Config key | Default | Exposure |
+| --- | --- | --- |
+| `ssh.allowedSubnets` | `[]` (allow all) | Any authenticated client can ask the gateway to open an SSH connection to ANY reachable host/port — an open SSH proxy and SSRF pivot into internal networks and cloud metadata endpoints |
+| `telnet.allowedSubnets` | `[]` (allow all) | Same exposure for telnet targets when `telnet.enabled` is `true` (telnet is disabled by default) |
+
+To harden, restrict destinations to the CIDR ranges you actually serve:
+
+```json
+{
+  "ssh": {
+    "allowedSubnets": ["10.0.0.0/8", "192.168.1.0/24"]
+  },
+  "telnet": {
+    "allowedSubnets": ["10.0.0.0/8"]
+  }
+}
+```
+
+Or via environment variables:
+
+```bash
+WEBSSH2_SSH_ALLOWED_SUBNETS="10.0.0.0/8,192.168.1.0/24"
+WEBSSH2_TELNET_ALLOWED_SUBNETS="10.0.0.0/8"
+```
+
+Additional notes:
+
+- Validation happens at connect time using DNS resolution of the
+  requested host; there is no DNS-rebinding pinning between validation
+  and connection (tracked separately)
+- Prefer the narrowest CIDR ranges possible and pair them with
+  network-level egress controls
+
 ## Security Disclosure Policy
 
 - **Private Disclosure**: We request that you give us reasonable time to address the issue before public disclosure
@@ -304,6 +384,6 @@ For reference, the following IOCs were published by Snyk:
 
 ---
 
-**Last updated:** 2026-05-03
+**Last updated:** 2026-06-10
 
 **Next review:** 2026-06-01
