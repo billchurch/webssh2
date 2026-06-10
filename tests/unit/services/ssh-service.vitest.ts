@@ -2,7 +2,7 @@
  * Unit tests for SSHService
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest'
 import { SSHServiceImpl } from '../../../app/services/ssh/ssh-service.js'
 import type { SSHConfig, ShellOptions, SSHConnection } from '../../../app/services/interfaces.js'
 import { createSessionId, createConnectionId } from '../../../app/types/branded.js'
@@ -79,6 +79,18 @@ const createShellCallback =
     callback(error ?? undefined, stream)
   }
 
+// Reaches into the service's private pool to assert abandoned connections
+// are never retained after a settled connect (issue #536 race tests)
+const getPooledConnections = (
+  service: SSHServiceImpl,
+  sessionId: SSHConfig['sessionId'],
+): SSHConnection[] => {
+  const internal = service as unknown as {
+    pool: { getBySession: (id: SSHConfig['sessionId']) => SSHConnection[] }
+  }
+  return internal.pool.getBySession(sessionId)
+}
+
 const createExecCallback =
   (mockStream: unknown, error?: Error) =>
   (_cmd: string, callback: (...args: unknown[]) => void): void => {
@@ -147,6 +159,66 @@ describe('SSHService', () => {
     ;(SSH2Client as unknown as Mock).mockImplementation(function() { return mockClient })
 
     sshService = new SSHServiceImpl(mockDeps, mockStore)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  describe('connect race conditions', () => {
+    it('should ignore a late ready event after the connect timeout settled', async () => {
+      vi.useFakeTimers()
+      const config = createTestSSHConfig()
+
+      const resultPromise = sshService.connect(config)
+      // The service timer is armed with deps.config.ssh.readyTimeout
+      await vi.advanceTimersByTimeAsync(mockDeps.config.ssh.readyTimeout + 1)
+      triggerClientEvent(mockClient, 'ready')
+      const result = await resultPromise
+
+      expect(result.ok).toBe(false)
+      if (result.ok === false) {
+        expect(result.error.message).toBe('Connection timeout')
+      }
+      expect((mockClient as { end: Mock }).end).toHaveBeenCalled()
+      expect(mockStore.dispatch).not.toHaveBeenCalledWith(
+        config.sessionId,
+        expect.objectContaining({ type: 'CONNECTION_ESTABLISHED' }),
+      )
+      expect(getPooledConnections(sshService, config.sessionId)).toHaveLength(0)
+    })
+
+    it('should keep the timeout result when a late error event fires', async () => {
+      vi.useFakeTimers()
+      const config = createTestSSHConfig()
+
+      const resultPromise = sshService.connect(config)
+      await vi.advanceTimersByTimeAsync(mockDeps.config.ssh.readyTimeout + 1)
+      triggerClientEvent(mockClient, 'error', new Error('late handshake failure'))
+      const result = await resultPromise
+
+      expect(result.ok).toBe(false)
+      if (result.ok === false) {
+        expect(result.error.message).toBe('Connection timeout')
+      }
+      expect(getPooledConnections(sshService, config.sessionId)).toHaveLength(0)
+    })
+
+    it('should clear the connect timer when client.connect throws synchronously', async () => {
+      vi.useFakeTimers()
+      const config = createTestSSHConfig()
+      ;(mockClient as { connect: Mock }).connect.mockImplementation(() => {
+        throw new Error('synchronous connect failure')
+      })
+
+      const result = await sshService.connect(config)
+
+      expect(result.ok).toBe(false)
+      if (result.ok === false) {
+        expect(result.error.message).toBe('synchronous connect failure')
+      }
+      expect(vi.getTimerCount()).toBe(0)
+    })
   })
 
   describe('connect', () => {
