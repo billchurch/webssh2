@@ -159,6 +159,8 @@ async function sendClient(
   try {
     const data = await readClientTemplate()
     debug('Transforming HTML with config')
+    // The generated HTML embeds per-request config; never cache it.
+    res.setHeader('Cache-Control', 'no-store')
     const themingCfg = loadedTheming
     if (themingCfg !== null && themingCfg.enabled === true) {
       const htmlWithAssetPaths = transformAssetPaths(data, basePath)
