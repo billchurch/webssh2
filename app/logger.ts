@@ -13,6 +13,7 @@ import { createLevelFilteredTransport } from './logging/transport-filters.js'
 import { createSyslogTransport } from './logging/syslog-transport.js'
 import type { LogContext } from './logging/log-context.js'
 import type { Config, LoggingConfig } from './types/config.js'
+import type { SecurityPostureWarning } from './security-posture.js'
 
 let defaultStructuredLogger = createStructuredLogger({
   namespace: 'webssh2:app',
@@ -79,6 +80,25 @@ export function logThemingConfigWarning(warning: ThemingConfigWarning): void {
 
   if (!result.ok) {
     console.warn('Failed to emit theming config warning log:', result.error)
+  }
+}
+
+export function logSecurityPostureWarning(warning: SecurityPostureWarning): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'security_posture',
+    message: warning.message,
+    context: {
+      status: 'failure',
+      reason: warning.check
+    },
+    data: {
+      configKey: warning.configKey,
+      remediation: warning.remediation
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit security posture warning log:', result.error)
   }
 }
 
