@@ -61,7 +61,7 @@ const TELNET_SUBNETS_WARNING: SecurityPostureWarning = {
 }
 
 function isSubnetListEmpty(subnets: readonly string[] | undefined): boolean {
-  return subnets === undefined || subnets.length === 0
+  return subnets === undefined || subnets.filter((s) => s.trim().length > 0).length === 0
 }
 
 export function auditSecurityPosture(config: Config): SecurityPostureWarning[] {

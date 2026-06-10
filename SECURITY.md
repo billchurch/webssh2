@@ -386,4 +386,4 @@ For reference, the following IOCs were published by Snyk:
 
 **Last updated:** 2026-06-10
 
-**Next review:** 2026-06-01
+**Next review:** 2026-09-10

@@ -62,6 +62,38 @@ describe('auditSecurityPosture', () => {
     expect(findWarning(warnings, 'telnet_allowed_subnets_empty')).toBeUndefined()
   })
 
+  it('treats whitespace-only subnet entries as empty', () => {
+    const config = createDefaultConfig()
+    config.ssh.allowedSubnets = [' ']
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(findWarning(warnings, 'ssh_allowed_subnets_empty')).toBeDefined()
+  })
+
+  it('treats blank-string subnet entries as empty', () => {
+    const config = createDefaultConfig()
+    config.ssh.allowedSubnets = ['']
+    if (config.telnet !== undefined) {
+      config.telnet.enabled = true
+      config.telnet.allowedSubnets = ['', ' ']
+    }
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(findWarning(warnings, 'ssh_allowed_subnets_empty')).toBeDefined()
+    expect(findWarning(warnings, 'telnet_allowed_subnets_empty')).toBeDefined()
+  })
+
+  it('does not treat a real subnet alongside a blank entry as empty', () => {
+    const config = createDefaultConfig()
+    config.ssh.allowedSubnets = ['', TEST_SUBNETS.PRIVATE_10]
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(findWarning(warnings, 'ssh_allowed_subnets_empty')).toBeUndefined()
+  })
+
   it('returns zero warnings for a fully hardened config', () => {
     const warnings = auditSecurityPosture(createHardenedConfig())
 
