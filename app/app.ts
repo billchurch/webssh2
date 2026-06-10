@@ -24,8 +24,20 @@ import { TOKENS } from './services/container.js'
 import type { Services } from './services/interfaces.js'
 import { setHandlerThemingConfig } from './connectionHandler.js'
 import { setLoadedThemingForInjection } from './services/theming/index.js'
+import { cacheControlForAsset } from './utils/static-cache.js'
 
 const debug = createNamespacedDebug('app')
+
+// Shared options for both static asset mounts. setHeaders runs after
+// serve-static writes its default Cache-Control, so the explicit setHeader
+// below wins; do not also pass maxAge/immutable here (one mechanism only).
+const STATIC_OPTIONS: Parameters<typeof express.static>[1] = {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath): void => {
+    res.setHeader('Cache-Control', cacheControlForAsset(filePath))
+  },
+}
 
 export function createAppAsync(appConfig: Config): {
   app: Application
@@ -39,12 +51,12 @@ export function createAppAsync(appConfig: Config): {
       sessionMiddleware: RequestHandler
     }
     const sshRoutes = createRoutes(appConfig)
-    app.use('/ssh/assets', express.static(clientPath))
+    app.use('/ssh/assets', express.static(clientPath, STATIC_OPTIONS))
     app.use('/ssh', sshRoutes)
 
     if (appConfig.telnet?.enabled === true) {
       const telnetRoutes = createTelnetRoutes(appConfig)
-      app.use('/telnet/assets', express.static(clientPath))
+      app.use('/telnet/assets', express.static(clientPath, STATIC_OPTIONS))
       app.use('/telnet', telnetRoutes)
     }
 
