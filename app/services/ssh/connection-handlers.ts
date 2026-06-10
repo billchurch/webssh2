@@ -28,7 +28,12 @@ export interface RegisterConnectionHandlersInput {
   readonly client: Client
   readonly connection: SSHConnection
   readonly config: SSHConfig
-  readonly timeout: ReturnType<typeof setTimeout>
+  /**
+   * Returns true once the connect promise has settled (timeout, error or
+   * ready). A late 'ready' after settlement must not pool the abandoned
+   * connection or dispatch CONNECTION_ESTABLISHED (issue #536).
+   */
+  readonly isSettled: () => boolean
   readonly onReady: () => void
   readonly onError: (error: Error) => void
 }
@@ -47,7 +52,14 @@ function createReadyHandler(
   input: RegisterConnectionHandlersInput
 ): () => void {
   return () => {
-    clearTimeout(input.timeout)
+    if (input.isSettled()) {
+      // The connect promise already settled (e.g. service timeout fired and
+      // client.end() was called); ignore the late ready event so the
+      // abandoned connection is never pooled. The close handler completes
+      // the cleanup.
+      deps.debug('SSH ready event after connect already settled - ignoring')
+      return
+    }
     deps.debug('SSH connection ready')
 
     input.connection.status = 'connected'
@@ -79,8 +91,13 @@ function createErrorHandler(
   deps: ConnectionHandlerDependencies,
   input: RegisterConnectionHandlersInput
 ): (error: Error & { level?: string }) => void {
+  // Deliberately NOT gated on isSettled(): error/close listeners live for the
+  // connection's whole lifetime, so post-ready runtime failures must keep
+  // dispatching CONNECTION_ERROR. After a connect timeout, client.end() makes
+  // ssh2 emit 'error', dispatching CONNECTION_ERROR post-settle — harmless,
+  // as the connect promise is settle-guarded and no CONNECTION_ESTABLISHED
+  // preceded it.
   return (error) => {
-    clearTimeout(input.timeout)
     const errorMessage = normalizeSSHErrorMessage(error)
     deps.debug('SSH connection error:', errorMessage)
     deps.debug('SSH error details:', {

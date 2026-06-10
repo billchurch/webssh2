@@ -246,6 +246,20 @@ export class SSHServiceImpl implements SSHService {
     }
 
     return new Promise((resolve) => {
+      // Shared settled guard: the connect timeout and the ready/error
+      // handlers race (ssh2's internal readyTimeout matches the service
+      // timer), so the first settler wins and later events become no-ops.
+      let settled = false
+      let timeout: ReturnType<typeof setTimeout> | undefined
+      const settle = (result: Result<SSHConnection>): void => {
+        if (settled) {
+          return
+        }
+        settled = true
+        clearTimeout(timeout)
+        resolve(result)
+      }
+
       try {
         logger('Connecting to SSH server:', config.host, config.port)
 
@@ -264,14 +278,20 @@ export class SSHServiceImpl implements SSHService {
           username: config.username
         }
 
-        const timeout = setTimeout(() => {
+        timeout = setTimeout(() => {
+          if (settled) {
+            return
+          }
           client.end()
+          // Defense-in-depth: a racing ready handler must never leave an
+          // abandoned connection in the pool (usually a no-op).
+          this.pool.remove(connectionId)
           this.connectionLogger.log(baseInfo, 'warn', 'error', 'SSH connection timed out', {
             connectionId,
             status: 'failure',
             reason: 'Connection timeout'
           })
-          resolve(err(new Error('Connection timeout')))
+          settle(err(new Error('Connection timeout')))
         }, this.connectionTimeout)
 
         // Create host key verifier if service is available and socket is provided
@@ -305,9 +325,9 @@ export class SSHServiceImpl implements SSHService {
             client,
             connection,
             config,
-            timeout,
-            onReady: () => resolve(ok(connection)),
-            onError: (error) => resolve(err(error))
+            isSettled: () => settled,
+            onReady: () => settle(ok(connection)),
+            onError: (error) => settle(err(error))
           }
         )
 
@@ -334,7 +354,9 @@ export class SSHServiceImpl implements SSHService {
           status: 'failure',
           reason: failure.message
         })
-        resolve(err(failure))
+        // settle() clears the timer: a synchronous client.connect() throw
+        // previously left it dangling, firing a spurious timeout later.
+        settle(err(failure))
       }
     })
   }

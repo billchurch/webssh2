@@ -140,6 +140,9 @@ export class TelnetServiceImpl implements ProtocolService {
       })
 
       socket.connect({ host: config.host, port: config.port }, () => {
+        if (settled) {
+          return
+        }
         logger('TCP connection established to %s:%d', config.host, config.port)
 
         // Pause the socket so data is buffered until shell() attaches listeners
