@@ -11,7 +11,7 @@ WebSSH2 supports multiple configuration methods with a clear priority order, fol
 Configuration is loaded with the following priority (highest to lowest):
 
 1. **Environment Variables** (highest priority)
-2. **config.json file** 
+2. **config.json file**
 3. **Built-in defaults** (lowest priority)
 
 This means environment variables always override config.json settings, which in turn override defaults.
@@ -69,6 +69,7 @@ WEBSSH2_<SECTION>_<SUBSECTION>_<SETTING>
 ```
 
 Examples:
+
 - `WEBSSH2_LISTEN_PORT` → `listen.port`
 - `WEBSSH2_SSH_ALGORITHMS_KEX` → `ssh.algorithms.kex`
 - `WEBSSH2_SESSION_COOKIE_SECRET` → `session.cookie.secret`
@@ -115,6 +116,7 @@ data:
 ### 1. Server Configuration
 
 Controls how the WebSSH2 server runs:
+
 - Listen address and port
 - SSL/TLS settings
 - Logging configuration
@@ -124,6 +126,7 @@ Controls how the WebSSH2 server runs:
 ### 2. SSH Configuration
 
 SSH connection defaults and algorithms:
+
 - Default host and port
 - Algorithm presets (modern, legacy, default)
 - Authentication methods
@@ -134,6 +137,7 @@ SSH connection defaults and algorithms:
 ### 3. Session Configuration
 
 Web session management:
+
 - Session secret
 - Cookie settings
 - Timeout values
@@ -143,6 +147,7 @@ Web session management:
 ### 4. UI Configuration
 
 User interface customization:
+
 - Header text and styling
 - Terminal defaults
 - Theme settings
@@ -152,9 +157,11 @@ User interface customization:
 ### 5. Security Configuration
 
 Security-related settings:
+
 - CORS origins
 - SSO integration
 - HTTPS enforcement
+- Host key verification and target-host restrictions (permissive by default — see [Default security posture](../../SECURITY.md#default-security-posture))
 
 [Learn more →](./ENVIRONMENT-VARIABLES.md#security-configuration)
 
@@ -221,6 +228,7 @@ WEBSSH2_HTTP_ORIGINS=https://yourdomain.com
 ### From config.json to Environment Variables
 
 **Old (config.json):**
+
 ```json
 {
   "listen": {
@@ -234,6 +242,7 @@ WEBSSH2_HTTP_ORIGINS=https://yourdomain.com
 ```
 
 **New (Environment Variables):**
+
 ```bash
 export WEBSSH2_LISTEN_PORT=3000
 export WEBSSH2_SSH_HOST=ssh.example.com
@@ -266,6 +275,7 @@ Invalid configuration will prevent startup with clear error messages.
 ### Precedence Issues
 
 Remember the priority order:
+
 1. URL parameters (for applicable settings)
 2. Environment variables
 3. config.json
@@ -274,6 +284,7 @@ Remember the priority order:
 ### Type Conversion
 
 Environment variables are strings. WebSSH2 automatically converts:
+
 - `"true"`/`"false"` → boolean
 - `"123"` → number
 - `'["a","b"]'` → array
@@ -281,6 +292,7 @@ Environment variables are strings. WebSSH2 automatically converts:
 
 ## Related Documentation
 
+- [Security Policy — Default security posture](../../SECURITY.md#default-security-posture)
 - [Environment Variables Reference](./ENVIRONMENT-VARIABLES.md)
 - [config.json Schema](./CONFIG-JSON.md)
 - [URL Parameters](./URL-PARAMETERS.md)

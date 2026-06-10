@@ -34,7 +34,8 @@ export const LOG_EVENT_NAMES = [
   'prompt_timeout',
   'prompt_error',
   // Configuration / theming
-  'theming_config_invalid'
+  'theming_config_invalid',
+  'security_posture'
 ] as const
 
 export type LogEventName = typeof LOG_EVENT_NAMES[number]
