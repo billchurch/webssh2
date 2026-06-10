@@ -9,7 +9,12 @@ import { applyMiddleware } from './middleware.js'
 import { createServer, startServer } from './server.js'
 import { configureSocketIO, configureTelnetNamespace } from './io.js'
 import { handleError, ConfigError } from './errors.js'
-import { createNamespacedDebug, applyLoggingConfiguration } from './logger.js'
+import {
+  createNamespacedDebug,
+  applyLoggingConfiguration,
+  logSecurityPostureWarning
+} from './logger.js'
+import { auditSecurityPosture } from './security-posture.js'
 import { MESSAGES } from './constants/index.js'
 import { getClientPublicPath } from './client-path.js'
 import type { Config } from './types/config.js'
@@ -62,6 +67,10 @@ export async function initializeServerAsync(): Promise<{
     debug('Configuration loaded asynchronously')
 
     applyLoggingConfiguration(appConfig.logging)
+
+    for (const warning of auditSecurityPosture(appConfig)) {
+      logSecurityPostureWarning(warning)
+    }
 
     // Pre-warm the theming injection cache and wire the resolved theming
     // config into the connection handler. When theming is disabled (or

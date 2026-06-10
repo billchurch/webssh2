@@ -475,6 +475,8 @@ See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details on enviro
 
 SSH host key verification provides TOFU (Trust On First Use) protection against man-in-the-middle attacks. It supports three modes of operation: server-only (SQLite store), client-only (browser localStorage), and hybrid (server-first with client fallback).
 
+> **Security:** Host key verification is disabled by default and the server logs a startup warning until it is enabled. See [Default security posture](../../SECURITY.md#default-security-posture).
+
 #### Configuration Options
 
 - `ssh.hostKeyVerification.enabled` (boolean, default: `false`): Enable or disable host key verification. When disabled (the default), all host keys are accepted without verification.
@@ -665,6 +667,8 @@ WebSSH2 includes optional telnet support for connecting to legacy devices and sy
 - `telnet.auth.expectTimeout` (number, default: `10000`): Maximum time in milliseconds to wait for prompt pattern matches during authentication. If no prompt is detected within this time, the authenticator falls back to pass-through mode, forwarding raw data to the terminal.
 
 - `telnet.allowedSubnets` (string[], default: `[]`): Restrict which hosts can be connected to via telnet. Uses the same CIDR notation format as `ssh.allowedSubnets`. When empty, all hosts are allowed.
+
+> **Security:** Empty `ssh.allowedSubnets` / `telnet.allowedSubnets` lists allow connections to ANY host (open proxy / SSRF exposure) and the server logs a startup warning until they are restricted. See [Default security posture](../../SECURITY.md#default-security-posture).
 
 #### Default Telnet Configuration
 
