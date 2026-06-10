@@ -13,6 +13,7 @@ import { createLevelFilteredTransport } from './logging/transport-filters.js'
 import { createSyslogTransport } from './logging/syslog-transport.js'
 import type { LogContext } from './logging/log-context.js'
 import type { Config, LoggingConfig } from './types/config.js'
+import type { SecurityPostureWarning } from './security-posture.js'
 
 let defaultStructuredLogger = createStructuredLogger({
   namespace: 'webssh2:app',
@@ -79,6 +80,64 @@ export function logThemingConfigWarning(warning: ThemingConfigWarning): void {
 
   if (!result.ok) {
     console.warn('Failed to emit theming config warning log:', result.error)
+  }
+}
+
+export function logSecurityPostureWarning(warning: SecurityPostureWarning): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'security_posture',
+    message: warning.message,
+    context: {
+      status: 'failure',
+      reason: warning.check
+    },
+    data: {
+      configKey: warning.configKey,
+      remediation: warning.remediation
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit security posture warning log:', result.error)
+  }
+}
+
+export function logDeprecatedEnvVarWarning(oldName: string, newName: string): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'env_var_deprecated',
+    message:
+      `Environment variable ${oldName} is deprecated; rename it to ${newName}. ` +
+      'Support for the old name will be removed in a future release.',
+    context: {
+      status: 'failure',
+      reason: 'deprecated_env_var'
+    },
+    data: {
+      oldName,
+      newName
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit deprecated env var warning log:', result.error)
+  }
+}
+
+export function logGeneratedSessionSecretWarning(): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'session_secret_generated',
+    message:
+      'No session secret configured (WEBSSH2_SESSION_SECRET env var or session.secret in ' +
+      'config.json); generated a random secret. Sessions will not survive restarts and will ' +
+      'not be shared across replicas. Set WEBSSH2_SESSION_SECRET in production.',
+    context: {
+      status: 'failure',
+      reason: 'session_secret_not_configured'
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit generated session secret warning log:', result.error)
   }
 }
 

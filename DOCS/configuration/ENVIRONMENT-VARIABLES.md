@@ -690,6 +690,20 @@ WEBSSH2_THEMING_DEFAULT_THEME="Acme Corp"
 | `WEBSSH2_SESSION_SECRET` | string | auto-generated | Session encryption secret |
 | `WEBSSH2_SESSION_NAME` | string | `webssh2.sid` | Session cookie name |
 
+> **Deprecated alias:** `WEBSSH_SESSION_SECRET` (without the `2`) is the
+> legacy pre-2.0 name for `WEBSSH2_SESSION_SECRET`. It is still honored
+> when `WEBSSH2_SESSION_SECRET` is not set, but logs an
+> `env_var_deprecated` warning at startup. Rename it to
+> `WEBSSH2_SESSION_SECRET`; support for the old name will be removed in
+> a future release.
+>
+> **Note:** If no session secret is configured (neither
+> `WEBSSH2_SESSION_SECRET` nor `session.secret` in `config.json`), a
+> random secret is generated at startup and a
+> `session_secret_generated` warning is logged. Sessions will not
+> survive restarts and will not be shared across replicas. Always set
+> `WEBSSH2_SESSION_SECRET` in production.
+
 ### SSO Configuration (Single Sign-On)
 
 | Variable | Type | Default | Description |
@@ -879,7 +893,10 @@ Once satisfied with environment variable configuration, you can remove `config.j
 ## Security Best Practices
 
 1. **Never commit secrets** to version control
-2. **Use secure secret management** for `WEBSSH2_SESSION_SECRET`
+2. **Use secure secret management** for `WEBSSH2_SESSION_SECRET` - always set
+   it explicitly; relying on the auto-generated secret breaks session
+   persistence across restarts and replicas (and logs a
+   `session_secret_generated` warning)
 3. **Restrict algorithm presets** - use `strict` for high-security environments
 4. **Validate origins** - don't use wildcard origins (`*:*`) in production
 5. **Use HTTPS** in production environments
