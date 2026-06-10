@@ -67,8 +67,49 @@ async function loadFileConfig(
 }
 
 /**
+ * Treat empty-string secrets as unset: the env-mapper's parseEnvValue('', 'string')
+ * yields null, so an empty env value never supplies a usable secret.
+ * @pure
+ */
+function normalizeSessionSecret(value: string | undefined): string | undefined {
+  return value === '' ? undefined : value
+}
+
+/**
+ * Drop a null session.secret produced by mapping an empty WEBSSH2_SESSION_SECRET
+ * (parseEnvValue('', 'string') yields null) so the env tier treats it as unset
+ * instead of overriding lower tiers and failing schema validation.
+ * @pure
+ */
+function withoutNullSessionSecret(envConfig: Record<string, unknown>): Record<string, unknown> {
+  const session = envConfig['session']
+  if (typeof session !== 'object' || session === null) {
+    return envConfig
+  }
+  const sessionRecord = session as Record<string, unknown>
+  if (sessionRecord['secret'] !== null) {
+    return envConfig
+  }
+  const restSession = Object.fromEntries(
+    Object.entries(sessionRecord).filter(([key]) => key !== 'secret')
+  )
+  const result: Record<string, unknown> = { ...envConfig }
+  if (Object.keys(restSession).length === 0) {
+    delete result['session']
+  } else {
+    result['session'] = restSession
+  }
+  return result
+}
+
+/**
  * Determine whether the session secret had to be generated because no source
  * (explicit parameter, WEBSSH2_SESSION_SECRET env var, or config file) provided one.
+ *
+ * The legacy WEBSSH_SESSION_SECRET env var is intentionally NOT consulted here:
+ * it only takes effect via loadConfigAsync's explicit `sessionSecret` seed, which
+ * the first clause already covers. The env-mapper never maps the legacy name, so
+ * for a direct caller passing it in `env` the secret really is generated.
  * @pure
  */
 function isSessionSecretGenerated(
@@ -78,7 +119,7 @@ function isSessionSecretGenerated(
 ): boolean {
   return (
     sessionSecret === undefined &&
-    env['WEBSSH2_SESSION_SECRET'] === undefined &&
+    normalizeSessionSecret(env['WEBSSH2_SESSION_SECRET']) === undefined &&
     fileConfig?.session?.secret === undefined
   )
 }
@@ -92,8 +133,9 @@ export async function loadEnhancedConfig(
   const loadStartTime = Date.now()
   debug('Config loading started', { timestamp: loadStartTime })
 
-  // Start with default config
-  const defaultConfig = createDefaultConfig(sessionSecret)
+  // Start with default config (empty-string secrets are treated as unset)
+  const effectiveSessionSecret = normalizeSessionSecret(sessionSecret)
+  const defaultConfig = createDefaultConfig(effectiveSessionSecret)
   debug('Default config loaded', {
     algorithms: {
       kex: defaultConfig.ssh.algorithms.kex,
@@ -116,15 +158,20 @@ export async function loadEnhancedConfig(
 
   // The default-config tier generated a random secret only when no source
   // (parameter, env var, or config file) supplied one — surface that.
-  if (onGeneratedSecret !== undefined && isSessionSecretGenerated(sessionSecret, resolvedEnv, fileConfig)) {
+  if (
+    onGeneratedSecret !== undefined &&
+    isSessionSecretGenerated(effectiveSessionSecret, resolvedEnv, fileConfig)
+  ) {
     onGeneratedSecret()
   }
 
-  const envConfig = mapEnvironmentVariables(resolvedEnv, {
-    onThemingWarning: (warning) => {
-      logThemingConfigWarning(warning)
-    }
-  })
+  const envConfig = withoutNullSessionSecret(
+    mapEnvironmentVariables(resolvedEnv, {
+      onThemingWarning: (warning) => {
+        logThemingConfigWarning(warning)
+      }
+    })
+  )
 
   // Log environment variables for algorithm debugging
   debug('Environment variables mapped', {
@@ -198,10 +245,11 @@ export async function loadEnhancedConfig(
  * Resolve the session secret seed from the environment.
  * Prefers the canonical WEBSSH2_SESSION_SECRET; falls back to the deprecated
  * pre-2.0 WEBSSH_SESSION_SECRET name (with a deprecation warning).
+ * Empty-string values are treated as unset.
  */
 function resolveSessionSecretFromEnv(): string | undefined {
-  const canonical = process.env['WEBSSH2_SESSION_SECRET']
-  const legacy = process.env['WEBSSH_SESSION_SECRET']
+  const canonical = normalizeSessionSecret(process.env['WEBSSH2_SESSION_SECRET'])
+  const legacy = normalizeSessionSecret(process.env['WEBSSH_SESSION_SECRET'])
   if (canonical === undefined && legacy !== undefined) {
     logDeprecatedEnvVarWarning('WEBSSH_SESSION_SECRET', 'WEBSSH2_SESSION_SECRET')
   }
