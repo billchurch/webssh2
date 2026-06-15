@@ -76,7 +76,6 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_OPTIONS_ALLOW_RECONNECT: { path: 'options.allowReconnect', type: 'boolean' },
   WEBSSH2_OPTIONS_ALLOW_REPLAY: { path: 'options.allowReplay', type: 'boolean' },
   WEBSSH2_OPTIONS_REPLAY_CRLF: { path: 'options.replayCRLF', type: 'boolean' },
-  WEBSSH2_OPTIONS_TRANSPORT: { path: 'options.transport', type: 'string' },
   WEBSSH2_SESSION_SECRET: { path: 'session.secret', type: 'string' },
   WEBSSH2_SESSION_NAME: { path: 'session.name', type: 'string' },
   WEBSSH2_SSO_ENABLED: { path: 'sso.enabled', type: 'boolean' },
