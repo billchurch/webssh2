@@ -1,4 +1,6 @@
 import express, { type Application, type RequestHandler } from 'express'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Server as HttpServer } from 'node:http'
 import type { Server as IOServer } from 'socket.io'
 import { getConfig } from './config.js'
@@ -28,6 +30,19 @@ import { cacheControlForAsset } from './utils/static-cache.js'
 
 const debug = createNamespacedDebug('app')
 
+// The shipped client bundle hardcodes its Socket.IO transports as
+// ["websocket","polling"] and ignores the list the server injects into
+// window.webssh2Config. We rewrite that array as the bundle is served so
+// WEBSSH2_OPTIONS_TRANSPORT / ?transport= take effect, and so a failed
+// WebSocket upgrade falls back to long-polling instead of erroring.
+const CLIENT_BUNDLE_FILENAME = 'webssh2.bundle.js'
+const HARDCODED_TRANSPORTS = /transports:\s*\[\s*"websocket"\s*,\s*"polling"\s*\]/
+const TRANSPORTS_REPLACEMENT =
+  'transports:(window.webssh2Config&&window.webssh2Config.socket&&' +
+  'Array.isArray(window.webssh2Config.socket.transports)&&' +
+  'window.webssh2Config.socket.transports.length>0?' +
+  'window.webssh2Config.socket.transports:["polling","websocket"])'
+
 // Shared options for both static asset mounts. setHeaders runs after
 // serve-static writes its default Cache-Control, so the explicit setHeader
 // below wins; do not also pass maxAge/immutable here (one mechanism only).
@@ -51,11 +66,26 @@ export function createAppAsync(appConfig: Config): {
       sessionMiddleware: RequestHandler
     }
     const sshRoutes = createRoutes(appConfig)
+    // Read and patch the client bundle once at startup (it is stable-named and
+    // only changes on a dependency upgrade, which restarts the server). The
+    // .replace is a no-op if a future client version already reads the config.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- trusted install dir + constant filename
+    const patchedBundle = readFileSync(path.join(clientPath, CLIENT_BUNDLE_FILENAME), 'utf8')
+      .replace(HARDCODED_TRANSPORTS, TRANSPORTS_REPLACEMENT)
+    // Serve the patched bundle ahead of the static handler. res.send adds an
+    // ETag and answers conditional requests with 304 for us.
+    const serveBundle: RequestHandler = (_req, res): void => {
+      res.type('application/javascript')
+      res.setHeader('Cache-Control', cacheControlForAsset(CLIENT_BUNDLE_FILENAME))
+      res.send(patchedBundle)
+    }
+    app.get(`/ssh/assets/${CLIENT_BUNDLE_FILENAME}`, serveBundle)
     app.use('/ssh/assets', express.static(clientPath, STATIC_OPTIONS))
     app.use('/ssh', sshRoutes)
 
     if (appConfig.telnet?.enabled === true) {
       const telnetRoutes = createTelnetRoutes(appConfig)
+      app.get(`/telnet/assets/${CLIENT_BUNDLE_FILENAME}`, serveBundle)
       app.use('/telnet/assets', express.static(clientPath, STATIC_OPTIONS))
       app.use('/telnet', telnetRoutes)
     }
