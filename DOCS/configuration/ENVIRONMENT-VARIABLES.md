@@ -581,6 +581,7 @@ docker run --name webssh2 --rm -it \
 | `WEBSSH2_OPTIONS_ALLOW_RECONNECT` | boolean | `true` | Allow reconnection |
 | `WEBSSH2_OPTIONS_ALLOW_REPLAY` | boolean | `true` | Allow session replay |
 | `WEBSSH2_OPTIONS_REPLAY_CRLF` | boolean | `false` | Send CRLF for credential replay (default is CR) |
+| `WEBSSH2_OPTIONS_TRANSPORT` | string | - | Force the Socket.IO transport: `websocket`, `polling`, or `both`. Use `polling` when WebSocket upgrades fail behind restrictive proxies. A `transport` URL parameter overrides this. |
 
 ### Terminal Theming (`options.theming`)
 

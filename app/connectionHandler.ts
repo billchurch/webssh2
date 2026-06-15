@@ -50,11 +50,72 @@ function hasSessionCredentials(session: Sess): boolean {
   )
 }
 
+/**
+ * Map a transport selector to a Socket.IO client `transports` list. Lets a
+ * deployment force HTTP long-polling when WebSocket upgrades are known to fail
+ * (restrictive proxies, some corporate networks).
+ *
+ * Accepted values (case-insensitive):
+ *   - `websocket` -> `['websocket']`  (WebSocket only, no polling fallback)
+ *   - `polling`   -> `['polling']`    (HTTP long-polling only, no upgrade)
+ *   - `both`      -> `['polling', 'websocket']` (poll first, then upgrade)
+ *
+ * Returns `undefined` for any non-string or unrecognized value.
+ */
+function mapTransportValue(value: unknown): string[] | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+  switch (value.toLowerCase()) {
+    case 'websocket':
+      return ['websocket']
+    case 'polling':
+      return ['polling']
+    case 'both':
+      return ['polling', 'websocket']
+    default:
+      return undefined
+  }
+}
+
+/**
+ * Resolve the Socket.IO client `transports` list. The `transport` URL query
+ * parameter takes precedence (per-request override); otherwise the server-wide
+ * `options.transport` config value (settable via `WEBSSH2_OPTIONS_TRANSPORT`)
+ * is used. Returns `undefined` when neither yields a recognized value so the
+ * client keeps its own default transport behavior.
+ */
+function resolveTransports(
+  query: unknown,
+  configTransport: unknown,
+): { transports: string[]; source: 'URL parameter' | 'server config' } | undefined {
+  const raw = (query as Record<string, unknown> | undefined)?.['transport']
+  const fromQuery = mapTransportValue(Array.isArray(raw) ? raw[0] : raw)
+  if (fromQuery !== undefined) {
+    return { transports: fromQuery, source: 'URL parameter' }
+  }
+  const fromConfig = mapTransportValue(configTransport)
+  if (fromConfig !== undefined) {
+    return { transports: fromConfig, source: 'server config' }
+  }
+  return undefined
+}
+
 function buildSocketConfig(
   req: Request,
   isTelnet: boolean,
+  cfg?: Config,
 ): Record<string, unknown> {
   const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
+  const socket: Record<string, unknown> = {
+    url: `${req.protocol}://${req.get('host')}`,
+    path: socketPath,
+  }
+  const resolved = resolveTransports(req.query, cfg?.options.transport)
+  if (resolved !== undefined) {
+    socket['transports'] = resolved.transports
+    debug(`Socket transports forced via ${resolved.source}:`, resolved.transports)
+  }
   const result: Record<string, unknown> = {
     socket: {
       url: `${req.protocol}://${req.get('host')}`,
@@ -234,7 +295,7 @@ export function buildTempConfig(
   opts?: ConnectionOptions,
 ): Partial<Config> {
   const isTelnet = opts?.protocol === 'telnet'
-  const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet)
+  const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet, cfg)
   Object.assign(tempConfig, buildConnectionMode(opts))
   Object.assign(tempConfig, buildSshCredentials(req.session, req))
   Object.assign(tempConfig, buildHeaderConfig(cfg, req.session))

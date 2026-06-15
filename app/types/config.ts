@@ -171,6 +171,11 @@ export interface OptionsConfig {
   allowReconnect: boolean
   allowReplay: boolean
   replayCRLF?: boolean
+  /**
+   * Force the Socket.IO client transport. Useful when WebSocket upgrades fail
+   * behind restrictive proxies. A `transport` URL parameter overrides this.
+   */
+  transport?: 'websocket' | 'polling' | 'both'
   theming?: ThemingConfig
 }
 

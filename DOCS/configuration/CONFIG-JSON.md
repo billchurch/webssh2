@@ -257,6 +257,14 @@ You can choose whether credential replay sends a carriage return (CR) or carriag
 
 This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.
 
+### Socket.IO Transport
+
+You can force the Socket.IO transport used between the browser and the server. This is useful when WebSocket upgrades are known to fail behind a restrictive proxy or load balancer and you want to fall back to HTTP long-polling.
+
+- `options.transport` (string, optional): One of `websocket` (WebSocket only), `polling` (HTTP long-polling only), or `both` (poll first, then upgrade). When unset, the client keeps its default behavior.
+
+This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_TRANSPORT`. A per-request [`transport` URL parameter](./URL-PARAMETERS.md#transport) overrides this server-wide setting.
+
 ### SSH Environment Variable Allowlist
 
 Control which environment variable names are forwarded to the SSH session. If unset or empty, WebSSH2 applies format/value filtering but does not restrict by name beyond that.

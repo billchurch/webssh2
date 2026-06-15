@@ -124,6 +124,42 @@ These parameters were non-functional in shipped releases prior to
 so this change has no behavior impact on production deployments
 that already relied on what was rendered.
 
+### Transport
+
+Forces the Socket.IO transport used between the browser and the server. Useful
+when you already know that WebSocket upgrades will fail (for example behind a
+restrictive corporate proxy or a load balancer that does not support WebSocket)
+and you want to fall back to HTTP long-polling without waiting for a failed
+upgrade attempt.
+
+| Value | Behavior |
+|-------|----------|
+| `websocket` | WebSocket only, no polling fallback |
+| `polling` | HTTP long-polling only, no upgrade attempt |
+| `both` | Start with polling, then upgrade to WebSocket (Socket.IO default) |
+
+```
+?transport=polling
+?transport=websocket
+?transport=both
+```
+
+The value is case-insensitive. Any missing or unrecognized value falls back to
+the server-wide `options.transport` config setting (or the
+`WEBSSH2_OPTIONS_TRANSPORT` environment variable); if that is also unset, the
+client keeps its default transport behavior. When resolved, the value is
+injected into the client `socket.transports` option (passed through to
+Socket.IO's `io()` call). The URL parameter, when valid, always takes
+precedence over the server-wide setting.
+
+To force a transport for every connection (instead of per-request), set the
+`WEBSSH2_OPTIONS_TRANSPORT` environment variable or `options.transport` in the
+config file to `websocket`, `polling`, or `both`.
+
+**Note:** `websocket` disables the polling fallback entirely, so the connection
+will fail if WebSocket is blocked. Use `polling` when you need a guaranteed
+working transport on restrictive networks.
+
 ### Environment Variables
 
 Pass environment variables to the SSH session:
