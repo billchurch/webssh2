@@ -5,7 +5,7 @@
 # (see .github/renovate.json). Docker resolves the pull via the digest;
 # the tag is documentation + Renovate metadata. The Sonar rule
 # docker:S8431 is suppressed for this file in sonar-project.properties.
-ARG BASE_IMAGE=node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
+ARG BASE_IMAGE=node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd
 
 # =============================================================================
 # Stage 1: Dependencies
