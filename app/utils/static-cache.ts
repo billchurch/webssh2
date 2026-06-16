@@ -1,13 +1,15 @@
 // app/utils/static-cache.ts
 // Pure Cache-Control policy for statically served client assets
 //
-// The bundled client (node_modules/webssh2_client/client/public) currently
-// ships only stable-named files (webssh2.bundle.js, webssh2.css, ...), whose
-// content changes between releases while the filename does not. Those must
-// NOT be marked immutable; they get a short public max-age with ETag
-// revalidation. Content-hashed filenames (Vite's `[name]-[hash].ext`) are
-// safe to cache for a year as immutable. HTML entry points are never cached
-// without revalidation.
+// The bundled client (node_modules/webssh2_client/client/public) may ship
+// either content-hashed filenames (Vite's `[name]-[hash].ext`, e.g.
+// `webssh2-<hash>.js`, current in 5.1.0+) or stable names (webssh2.bundle.js,
+// webssh2.css, ... in older builds). This policy handles each: content-hashed
+// files are safe to cache for a year as immutable, since a content change
+// yields a new filename. Stable-named files, whose content changes between
+// releases while the filename does not, must NOT be marked immutable; they get
+// a short public max-age with ETag revalidation. HTML entry points are never
+// cached without revalidation.
 
 const ONE_HOUR_SECONDS = 3600
 const ONE_YEAR_SECONDS = 31_536_000

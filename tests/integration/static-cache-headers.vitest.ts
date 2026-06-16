@@ -4,8 +4,7 @@
 // Depends on node_modules/webssh2_client/client/public existing, which is
 // guaranteed by `npm install` (webssh2_client is a runtime dependency).
 
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import fs from 'node:fs'
 import { describe, it, expect, beforeAll } from 'vitest'
 import request from 'supertest'
 import type { Application } from 'express'
@@ -15,10 +14,25 @@ import { createDefaultConfig } from '../../app/config/config-processor.js'
 import { TELNET_DEFAULTS } from '../../app/constants/index.js'
 import { TEST_SESSION_SECRET_VALID } from '@tests/test-constants.js'
 import {
+  cacheControlForAsset,
   CACHE_CONTROL_HTML,
-  CACHE_CONTROL_STABLE,
 } from '../../app/utils/static-cache.js'
 import type { Config } from '../../app/types/config.js'
+
+// The bundled client may ship either content-hashed filenames (Vite's
+// `webssh2-<hash>.js`, current in 5.1.0+) or stable names (`webssh2.bundle.js`,
+// older builds). Discover the actual names at runtime so the test stays correct
+// regardless of which the installed client produces, and derive each name's
+// expected Cache-Control from the same policy the server applies.
+const JS_BUNDLE_PATTERN = /^webssh2-.*\.js$/
+const CSS_PATTERN = /^webssh2-.*\.css$/
+
+function findAsset(pattern: RegExp, fallback: string): string {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- app-resolved public dir
+  const files: string[] = fs.readdirSync(getClientPublicPath())
+  const match = files.find((file) => pattern.test(file))
+  return match ?? fallback
+}
 
 function createTestConfig(): Config {
   const secret: string = TEST_SESSION_SECRET_VALID
@@ -41,32 +55,31 @@ function createTestConfig(): Config {
 
 describe('static asset cache headers', () => {
   let app: Application
+  let bundleName: string
+  let cssName: string
+  let bundleCacheControl: string
+  let cssCacheControl: string
 
   beforeAll(() => {
-    const bundlePath = join(getClientPublicPath(), 'webssh2.bundle.js')
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- test prerequisite check on app-resolved path
-    if (!existsSync(bundlePath)) {
-      throw new Error(
-        `Client bundle not found at ${bundlePath}. ` +
-          'These tests require the webssh2_client public assets ' +
-          '(run `npm install`, or build the client if using npm link).'
-      )
-    }
+    bundleName = findAsset(JS_BUNDLE_PATTERN, 'webssh2.bundle.js')
+    cssName = findAsset(CSS_PATTERN, 'webssh2.css')
+    bundleCacheControl = cacheControlForAsset(bundleName)
+    cssCacheControl = cacheControlForAsset(cssName)
     const config = createTestConfig()
     app = createAppAsync(config).app
   })
 
-  it('serves the bundle with short public caching and an ETag', async () => {
-    const res = await request(app).get('/ssh/assets/webssh2.bundle.js')
+  it('serves the bundle with the policy cache header and an ETag', async () => {
+    const res = await request(app).get(`/ssh/assets/${bundleName}`)
     expect(res.status).toBe(200)
-    expect(res.headers['cache-control']).toBe(CACHE_CONTROL_STABLE)
+    expect(res.headers['cache-control']).toBe(bundleCacheControl)
     expect(res.headers['etag']).toBeDefined()
   })
 
-  it('serves stylesheets with short public caching', async () => {
-    const res = await request(app).get('/ssh/assets/webssh2.css')
+  it('serves stylesheets with the policy cache header', async () => {
+    const res = await request(app).get(`/ssh/assets/${cssName}`)
     expect(res.status).toBe(200)
-    expect(res.headers['cache-control']).toBe(CACHE_CONTROL_STABLE)
+    expect(res.headers['cache-control']).toBe(cssCacheControl)
   })
 
   it('serves raw client.htm with no-cache', async () => {
@@ -76,9 +89,9 @@ describe('static asset cache headers', () => {
   })
 
   it('applies the same policy on the telnet assets mount', async () => {
-    const res = await request(app).get('/telnet/assets/webssh2.bundle.js')
+    const res = await request(app).get(`/telnet/assets/${bundleName}`)
     expect(res.status).toBe(200)
-    expect(res.headers['cache-control']).toBe(CACHE_CONTROL_STABLE)
+    expect(res.headers['cache-control']).toBe(bundleCacheControl)
     expect(res.headers['etag']).toBeDefined()
   })
 
@@ -89,12 +102,12 @@ describe('static asset cache headers', () => {
   })
 
   it('answers conditional requests with 304 when the ETag matches', async () => {
-    const first = await request(app).get('/ssh/assets/webssh2.bundle.js')
+    const first = await request(app).get(`/ssh/assets/${bundleName}`)
     const etag = first.headers['etag']
     expect(etag).toBeDefined()
 
     const second = await request(app)
-      .get('/ssh/assets/webssh2.bundle.js')
+      .get(`/ssh/assets/${bundleName}`)
       .set('If-None-Match', etag as string)
     expect(second.status).toBe(304)
   })
