@@ -92,6 +92,44 @@ Additional notes:
 - Full option reference:
   [Host Key Verification](DOCS/configuration/CONFIG-JSON.md#host-key-verification)
 
+### Content-Security-Policy is report-only by default
+
+| Config key | Default | Exposure |
+| --- | --- | --- |
+| `csp.mode` | `report-only` | The CSP header is sent as `Content-Security-Policy-Report-Only` — browsers report violations but do **not** enforce the policy. A `security_posture` warning is logged at startup when mode is not `enforce` |
+
+The CSP is configured through the `csp` block in `config.json` (or the `WEBSSH2_CSP_*` environment variables). Full reference: [CONFIG-JSON.md](DOCS/configuration/CONFIG-JSON.md#content-security-policy-csp) and [ENVIRONMENT-VARIABLES.md](DOCS/configuration/ENVIRONMENT-VARIABLES.md#content-security-policy).
+
+**The three modes:**
+
+- `off` — no CSP header is sent (not recommended)
+- `report-only` (default) — `Content-Security-Policy-Report-Only` header collects violations without blocking anything; safe for rollout
+- `enforce` — `Content-Security-Policy` header actively blocks violations
+
+**Recommended rollout:**
+
+1. Deploy with the default `report-only` mode
+2. Monitor the structured `csp_violation` log events at `/ssh/csp-report`
+3. Confirm only the expected legacy-inline-script violation appears (see below)
+4. Set `csp.mode` to `enforce` (or `WEBSSH2_CSP_MODE=enforce`)
+
+**`connect-src` derivation and the wildcard `http.origins` caveat:**
+
+The CSP `connect-src` directive is built from `'self'`, concrete entries in `http.origins`, and the `csp.connectSrc` allowlist. The default `http.origins` value is `["*:*"]` — wildcards are not valid CSP source expressions and are dropped. With the default configuration, `connect-src` is therefore `'self'` only. For split client/gateway deployments (browser origin differs from the gateway origin), either:
+
+- Set a concrete `http.origins` list: `["https://gw.example:8443"]`, or
+- Add explicit socket URLs via `csp.connectSrc`: `["wss://gw.example:8443"]`
+
+A `security_posture` warning is also logged when `enforce` mode is combined with wildcard `http.origins`.
+
+**Violation reporting endpoint:**
+
+`POST /ssh/csp-report` receives violation reports from browsers. It is intentionally unauthenticated so browsers can reach it without session cookies. The endpoint is per-IP rate-limited (default 60/min), body-capped at 8 KB, logs a structured `csp_violation` event, and always returns `204`. Operators should additionally rate-limit `POST /ssh/csp-report` at the reverse proxy or load balancer.
+
+**Expected legacy-inline-script violation:**
+
+During the current deprecation window, the client HTML contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies the configuration), but it generates **one `csp_violation` report per page load**. This report is demoted to `debug` log level — it is not a regression and does not indicate an attack. It will be removed in a future major release.
+
 ### No target-host restrictions by default
 
 | Config key | Default | Exposure |
