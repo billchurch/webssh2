@@ -11,3 +11,10 @@ describe('csp defaults', () => {
     })
   })
 })
+
+describe('logging defaults', () => {
+  it('rate-limits csp_violation logs by default', () => {
+    const rules = DEFAULT_CONFIG_BASE.logging?.controls?.rateLimit?.rules ?? []
+    expect(rules).toContainEqual({ target: 'csp_violation', limit: 60, intervalMs: 60000 })
+  })
+})

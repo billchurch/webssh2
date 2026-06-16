@@ -46,4 +46,14 @@ describe('csp config schema', () => {
       expect(result.value.csp.reportUri).toBe('/ssh/csp-report')
     }
   })
+
+  it('default config with csp_violation rate-limit survives validation', () => {
+    const cfg = createDefaultConfig(TEST_SECRET_123)
+    const result = validateConfigSchema(cfg)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      const rules = result.value.logging?.controls?.rateLimit?.rules ?? []
+      expect(rules.some((r) => r.target === 'csp_violation' && r.limit === 60)).toBe(true)
+    }
+  })
 })

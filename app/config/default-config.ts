@@ -163,6 +163,11 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     minimumLevel: 'info',
     stdout: {
       enabled: true
+    },
+    controls: {
+      rateLimit: {
+        rules: [{ target: 'csp_violation', limit: 60, intervalMs: 60000 }]
+      }
     }
   },
   telnet: {

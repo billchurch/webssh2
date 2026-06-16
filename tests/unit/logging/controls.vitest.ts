@@ -119,6 +119,21 @@ describe('evaluateLoggingControls', () => {
     expect(afterCooldown.updatedState.metrics.published).toBe(3)
   })
 
+  it('drops csp_violation beyond the configured limit within the interval', () => {
+    const config: LoggingControlsConfig = {
+      rateLimit: { rules: [{ target: 'csp_violation', limit: 2, intervalMs: 60000 }] }
+    }
+    let state = createLoggingControlState()
+    const run = (): boolean => {
+      const d = evaluateLoggingControls({ event: 'csp_violation', nowMs: 1000, config, state })
+      state = d.updatedState
+      return d.allow
+    }
+    expect(run()).toBe(true)
+    expect(run()).toBe(true)
+    expect(run()).toBe(false) // 3rd within interval dropped
+  })
+
   it('treats rate limit rules independently per event when specified', () => {
     const config: LoggingControlsConfig = {
       rateLimit: {
