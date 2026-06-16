@@ -102,6 +102,8 @@ export const TERMINAL_LIMITS = {
 
 export const HEADERS = {
   CONTENT_SECURITY_POLICY: 'Content-Security-Policy',
+  CONTENT_SECURITY_POLICY_REPORT_ONLY: 'Content-Security-Policy-Report-Only',
+  REPORTING_ENDPOINTS: 'Reporting-Endpoints',
   X_CONTENT_TYPE_OPTIONS: 'X-Content-Type-Options',
   X_FRAME_OPTIONS: 'X-Frame-Options',
   X_XSS_PROTECTION: 'X-XSS-Protection',
