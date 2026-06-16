@@ -408,3 +408,18 @@ describe('mapEnvironmentVariables', () => {
     })
   })
 })
+
+describe('csp env mapping', () => {
+  it('maps WEBSSH2_CSP_* to the csp config path', () => {
+    const result = mapEnvironmentVariables({
+      WEBSSH2_CSP_MODE: 'enforce',
+      WEBSSH2_CSP_REPORT_URI: '/ssh/csp-report',
+      WEBSSH2_CSP_CONNECT_SRC: 'https://a.example:443,wss://a.example:443',
+      WEBSSH2_CSP_FRAME_ANCESTORS: 'self'
+    })
+    expect(result.csp?.mode).toBe('enforce')
+    expect(result.csp?.reportUri).toBe('/ssh/csp-report')
+    expect(result.csp?.connectSrc).toEqual(['https://a.example:443', 'wss://a.example:443'])
+    expect(result.csp?.frameAncestors).toEqual(['self'])
+  })
+})
