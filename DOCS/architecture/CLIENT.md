@@ -32,30 +32,43 @@ The client module provides:
 The server integrates with the client module by:
 
 1. **Serving static files** from `/client/public`
-2. **Injecting configuration** into the client via `window.webssh2Config`
+2. **Injecting configuration** via an inert JSON `<script type="application/json">` block (with legacy `window.webssh2Config` fallback)
 3. **Managing WebSocket connections** for terminal I/O
 4. **Handling authentication** and session management
 
 ### Configuration Injection
 
-The server passes configuration to the client through a global object:
+The server passes runtime configuration to the client by injecting an inert JSON
+data block into the served HTML page. This is the **primary mechanism** and is
+fully CSP-compatible — it survives a strict `script-src 'self'` policy because
+the element is not an executable script:
 
-```javascript
-window.webssh2Config = {
-  socket: {
-    path: '/ssh/socket.io'
-  },
-  ssh: {
-    host: 'example.com',
-    port: 22,
-    username: 'user'
-  },
-  header: {
-    text: 'WebSSH2',
-    background: 'green'
-  }
+```html
+<script type="application/json" id="webssh2-config">
+{
+  "socket": { "path": "/ssh/socket.io" },
+  "ssh": { "host": "example.com", "port": 22, "username": "user" },
+  "header": { "text": "WebSSH2", "background": "green" }
 }
+</script>
 ```
+
+The client reads this block at startup via `readInjectedConfig()` by looking up
+`document.getElementById('webssh2-config')` and parsing its text content.
+
+For backward compatibility, the gateway also injects the same configuration
+values into a conventional executable script block immediately after:
+
+```html
+<script>window.webssh2Config = { /* same config */ };</script>
+```
+
+> **Deprecated:** The `window.webssh2Config` inline-script method is deprecated
+> and will be removed in a future major release. Integrators who currently set
+> `window.webssh2Config` from their own inline scripts should migrate to reading
+> the JSON data block (`<script type="application/json" id="webssh2-config">`).
+> See [billchurch/webssh2_client#125](https://github.com/billchurch/webssh2_client/issues/125)
+> for migration details.
 
 ### WebSocket Protocol
 
