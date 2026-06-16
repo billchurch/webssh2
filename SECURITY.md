@@ -124,7 +124,7 @@ A `security_posture` warning is also logged when `enforce` mode is combined with
 
 **Violation reporting endpoint:**
 
-`POST /ssh/csp-report` receives violation reports from browsers. It is intentionally unauthenticated so browsers can reach it without session cookies. The endpoint is per-IP rate-limited (default 60/min), body-capped at 8 KB, logs a structured `csp_violation` event, and always returns `204`. Operators should additionally rate-limit `POST /ssh/csp-report` at the reverse proxy or load balancer.
+`POST /ssh/csp-report` receives violation reports from browsers. It is intentionally unauthenticated so browsers can reach it without session cookies. The endpoint is per-IP intake rate-limited (default burst 10, steady-state ~10 requests/minute, throttled before the body is parsed), body-capped at 8 KB, and always returns `204`. It logs a structured `csp_violation` event, which is itself additionally rate-limited to 60 events/minute by the default logging controls. Operators should additionally rate-limit `POST /ssh/csp-report` at the reverse proxy or load balancer.
 
 **Expected legacy-inline-script violation:**
 
