@@ -10,6 +10,7 @@ export interface SecurityPostureWarning {
     | 'ssh_allowed_subnets_empty'
     | 'telnet_allowed_subnets_empty'
     | 'csp_not_enforced'
+    | 'csp_disabled'
     | 'csp_connect_src_wildcard'
   readonly configKey: string
   readonly message: string
@@ -68,11 +69,23 @@ const CSP_NOT_ENFORCED_WARNING: SecurityPostureWarning = {
   check: 'csp_not_enforced',
   configKey: 'csp.mode',
   message:
-    'SECURITY WARNING: Content-Security-Policy is not enforced (csp.mode != enforce). ' +
-    'The tightened policy is advertised but NOT blocking - inline scripts and injected ' +
-    'content still execute.',
+    'SECURITY WARNING: Content-Security-Policy is in report-only mode (csp.mode=report-only). ' +
+    'The tightened policy is advertised and violations are reported, but NOT blocked - ' +
+    'inline scripts and injected content still execute.',
   remediation:
     "Set csp.mode=enforce (WEBSSH2_CSP_MODE=enforce) after a clean report-only bake. " +
+    "See SECURITY.md 'Content-Security-Policy'."
+}
+
+const CSP_DISABLED_WARNING: SecurityPostureWarning = {
+  check: 'csp_disabled',
+  configKey: 'csp.mode',
+  message:
+    'SECURITY WARNING: Content-Security-Policy is disabled (csp.mode=off). ' +
+    'No CSP header is sent, so the browser applies no script/connect/frame restrictions ' +
+    'to the served terminal page.',
+  remediation:
+    "Set csp.mode=report-only to begin a rollout, then enforce (WEBSSH2_CSP_MODE). " +
     "See SECURITY.md 'Content-Security-Policy'."
 }
 
@@ -107,7 +120,9 @@ export function auditSecurityPosture(config: Config): SecurityPostureWarning[] {
     warnings.push(TELNET_SUBNETS_WARNING)
   }
 
-  if (view.csp?.mode !== undefined && view.csp.mode !== 'enforce') {
+  if (view.csp?.mode === 'off') {
+    warnings.push(CSP_DISABLED_WARNING)
+  } else if (view.csp?.mode === 'report-only') {
     warnings.push(CSP_NOT_ENFORCED_WARNING)
   }
 

@@ -47,6 +47,23 @@ describe('csp config schema', () => {
     }
   })
 
+  it('falls back to the canonical path when reportUri is empty/whitespace', () => {
+    const cfg = {
+      ...createDefaultConfig(TEST_SECRET_123),
+      csp: {
+        mode: 'report-only',
+        reportUri: '   ',
+        connectSrc: [],
+        frameAncestors: ['none'],
+      },
+    }
+    const result = validateConfigSchema(cfg)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.csp.reportUri).toBe('/ssh/csp-report')
+    }
+  })
+
   it('default config with csp_violation rate-limit survives validation', () => {
     const cfg = createDefaultConfig(TEST_SECRET_123)
     const result = validateConfigSchema(cfg)

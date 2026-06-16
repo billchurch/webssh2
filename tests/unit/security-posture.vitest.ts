@@ -205,7 +205,7 @@ describe('csp posture warnings', () => {
     expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(false)
   })
 
-  it('warns csp_not_enforced when mode is off', () => {
+  it('warns csp_disabled (not csp_not_enforced) when mode is off', () => {
     const config = createDefaultConfig()
     config.ssh.hostKeyVerification.enabled = true
     config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
@@ -213,7 +213,8 @@ describe('csp posture warnings', () => {
 
     const warnings = auditSecurityPosture(config)
 
-    expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(true)
+    expect(warnings.some((w) => w.check === 'csp_disabled')).toBe(true)
+    expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(false)
   })
 
   it('does not warn csp_connect_src_wildcard when mode is report-only (even with wildcard origins)', () => {

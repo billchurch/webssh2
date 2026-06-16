@@ -242,6 +242,9 @@ const CspSchema = z.object({
     .string()
     .transform((uri) => {
       const trimmed = uri.trim()
+      if (trimmed === '') {
+        return '/ssh/csp-report'
+      }
       return trimmed.length > 1 && trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
     }),
   connectSrc: z.array(z.string()),
