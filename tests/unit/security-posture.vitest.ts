@@ -21,16 +21,19 @@ function createHardenedConfig(): Config {
   if (config.telnet !== undefined) {
     config.telnet.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
   }
+  config.csp.mode = 'enforce'
+  config.http.origins = ['gw.example:443']
   return config
 }
 
 describe('auditSecurityPosture', () => {
-  it('flags host key verification and ssh subnets on the default config', () => {
+  it('flags host key verification, ssh subnets, and non-enforced CSP on the default config', () => {
     const warnings = auditSecurityPosture(createDefaultConfig())
 
-    expect(warnings).toHaveLength(2)
+    expect(warnings).toHaveLength(3)
     expect(findWarning(warnings, 'host_key_verification_disabled')).toBeDefined()
     expect(findWarning(warnings, 'ssh_allowed_subnets_empty')).toBeDefined()
+    expect(findWarning(warnings, 'csp_not_enforced')).toBeDefined()
   })
 
   it('does not flag telnet subnets when telnet is disabled (default)', () => {
@@ -151,5 +154,77 @@ describe('auditSecurityPosture', () => {
     expect(telnetSubnets?.configKey).toBe('telnet.allowedSubnets')
     expect(telnetSubnets?.message).toContain('telnet.allowedSubnets')
     expect(telnetSubnets?.remediation).toContain('telnet.allowedSubnets')
+  })
+})
+
+describe('csp posture warnings', () => {
+  it('warns when csp.mode is not enforce (report-only default is non-enforcing)', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    // leave csp.mode at default 'report-only'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(true)
+  })
+
+  it('warns when enforce is combined with wildcard http.origins', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    config.http.origins = ['*:*']
+    config.csp.mode = 'enforce'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check === 'csp_connect_src_wildcard')).toBe(true)
+  })
+
+  it('no csp warnings when enforce + concrete origins', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    config.http.origins = ['gw.example:443']
+    config.csp.mode = 'enforce'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check.startsWith('csp_'))).toBe(false)
+  })
+
+  it('does not warn csp_not_enforced when mode is enforce', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    config.http.origins = ['gw.example:443']
+    config.csp.mode = 'enforce'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(false)
+  })
+
+  it('warns csp_not_enforced when mode is off', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    config.csp.mode = 'off'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check === 'csp_not_enforced')).toBe(true)
+  })
+
+  it('does not warn csp_connect_src_wildcard when mode is report-only (even with wildcard origins)', () => {
+    const config = createDefaultConfig()
+    config.ssh.hostKeyVerification.enabled = true
+    config.ssh.allowedSubnets = [TEST_SUBNETS.PRIVATE_10]
+    config.http.origins = ['*:*']
+    config.csp.mode = 'report-only'
+
+    const warnings = auditSecurityPosture(config)
+
+    expect(warnings.some((w) => w.check === 'csp_connect_src_wildcard')).toBe(false)
   })
 })
