@@ -66,7 +66,8 @@ export {
 export {
   transformHtml,
   transformAssetPaths,
-  injectConfig
+  injectConfig,
+  serializeConfig
 } from './html-transformer.js'
 
 // ============================================================================

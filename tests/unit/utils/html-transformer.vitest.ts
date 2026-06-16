@@ -159,3 +159,58 @@ describe('injectConfigWithThemingString', () => {
     expect(html).toBe('<script>console.log("noop")</script>')
   })
 })
+
+describe('JSON config block injection', () => {
+  const NEW_CLIENT_HTML =
+    '<script type="application/json" id="webssh2-config">null</script>\n' +
+    '<script>window.webssh2Config = null;</script>'
+
+  it('injects config into the JSON block as a parseable object', () => {
+    const result = injectConfig(NEW_CLIENT_HTML, { a: 1, nested: { b: 'x' } })
+    const match =
+      /<script type="application\/json" id="webssh2-config">(.*?)<\/script>/s.exec(result)
+    expect(match).not.toBeNull()
+    expect(JSON.parse(match![1])).toEqual({ a: 1, nested: { b: 'x' } })
+  })
+
+  it('also replaces the legacy window placeholder on a new-client template', () => {
+    const result = injectConfig(NEW_CLIENT_HTML, { a: 1 })
+    expect(result).toContain('window.webssh2Config = {"a":1};')
+    expect(result).not.toContain('window.webssh2Config = null;')
+  })
+
+  it('is a no-op for the JSON block on an old-client template (legacy still replaced)', () => {
+    const oldClient = '<script>window.webssh2Config = null;</script>'
+    const result = injectConfig(oldClient, { a: 1 })
+    expect(result).toBe('<script>window.webssh2Config = {"a":1};</script>')
+  })
+
+  it('hard XSS gate: attacker header.text cannot break out of the JSON block', () => {
+    const evil = { header: { text: '</script><img src=x onerror=alert(1)>' } }
+    const result = injectConfig(NEW_CLIENT_HTML, evil)
+    expect(result.toLowerCase()).not.toContain('</script><img')
+    const match =
+      /<script type="application\/json" id="webssh2-config">(.*?)<\/script>/s.exec(result)
+    expect(JSON.parse(match![1])).toEqual(evil)
+  })
+
+  it('escapes U+2028 / U+2029 inside the JSON block', () => {
+    const result = injectConfig(NEW_CLIENT_HTML, { s: '\u2028\u2029' })
+    const match =
+      /<script type="application\/json" id="webssh2-config">(.*?)<\/script>/s.exec(result)
+    expect(match![1]).toContain('\\u2028')
+    expect(match![1]).toContain('\\u2029')
+    expect(JSON.parse(match![1])).toEqual({ s: '\u2028\u2029' })
+  })
+
+  it('merges theming into the JSON block too', () => {
+    const result = injectConfigWithThemingString(
+      NEW_CLIENT_HTML,
+      { a: 1 },
+      '{"enabled":false}'
+    )
+    const match =
+      /<script type="application\/json" id="webssh2-config">(.*?)<\/script>/s.exec(result)
+    expect(JSON.parse(match![1])).toEqual({ a: 1, theming: { enabled: false } })
+  })
+})
