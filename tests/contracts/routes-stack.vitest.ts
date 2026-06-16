@@ -76,6 +76,10 @@ it('router registers expected paths and methods', () => {
   // POST endpoints
   assertRoute('/', 'post')
 
+  // CSP violation report endpoint — registered when csp.mode != 'off'.
+  // Guards against accidental removal of the gated registration in routes-v2.
+  assertRoute('/csp-report', 'post')
+
   // Utility endpoints
   assertRoute('/clear-credentials', 'get')
   assertRoute('/force-reconnect', 'get')
