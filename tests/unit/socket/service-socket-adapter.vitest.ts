@@ -172,6 +172,12 @@ const createConfig = (): Config => ({
       password: SSO_PASSWORD_HEADER,
       session: 'x-session'
     }
+  },
+  csp: {
+    mode: 'report-only',
+    reportUri: '/ssh/csp-report',
+    connectSrc: [],
+    frameAncestors: ['none']
   }
 })
 

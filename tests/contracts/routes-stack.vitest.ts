@@ -17,6 +17,7 @@ const minimalConfig = {
   session: { secret: TEST_SECRET, name: 'y' },
   sso: { enabled: false, csrfProtection: false, trustedProxies: [], headerMapping: {} },
   options: { challengeButton: true, autoLog: false, allowReplay: true, allowReconnect: true, allowReauth: true },
+  csp: { mode: 'report-only', reportUri: '/ssh/csp-report', connectSrc: [], frameAncestors: ['none'] },
 }
 
 interface RouterLayer {

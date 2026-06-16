@@ -152,6 +152,12 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
       session: DEFAULTS.SSO_HEADERS.SESSION,
     },
   },
+  csp: {
+    mode: 'report-only',
+    reportUri: '/ssh/csp-report',
+    connectSrc: [],
+    frameAncestors: ['none'],
+  },
   logging: {
     namespace: 'webssh2:app',
     minimumLevel: 'info',
@@ -244,6 +250,11 @@ export function createCompleteDefaultConfig(sessionSecret?: string): Config {
       ...DEFAULT_CONFIG_BASE.sso,
       trustedProxies: [...DEFAULT_CONFIG_BASE.sso.trustedProxies],
       headerMapping: { ...DEFAULT_CONFIG_BASE.sso.headerMapping },
+    },
+    csp: {
+      ...DEFAULT_CONFIG_BASE.csp,
+      connectSrc: [...DEFAULT_CONFIG_BASE.csp.connectSrc],
+      frameAncestors: [...DEFAULT_CONFIG_BASE.csp.frameAncestors],
     },
     ...(loggingConfig === undefined ? {} : { logging: loggingConfig }),
     ...(telnetConfig === undefined ? {} : { telnet: telnetConfig }),
