@@ -11,12 +11,12 @@ WebSSH2 supports passing environment variables through URL parameters, allowing 
 Both routes are supported:
 
 ### Without Auto-connect (Login Form)
-```
+```text
 /ssh?env=FOO:bar,BAR:baz
 ```
 
 ### With Auto-connect (Host in URL)
-```
+```text
 /ssh/host/localhost?port=2244&env=FOO:bar,BAR:baz
 ```
 
@@ -55,17 +55,17 @@ sudo service sshd restart
 Pass environment variables using the `env` query parameter:
 
 ### Single Environment Variable
-```
+```text
 http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt
 ```
 
 ### Multiple Environment Variables
-```
+```text
 http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt,CUSTOM_ENV:test
 ```
 
 ### With Login Form
-```
+```text
 http://localhost:2222/ssh?env=VIM_FILE:config.txt,CUSTOM_ENV:test
 ```
 
@@ -141,7 +141,7 @@ sudo systemctl restart sshd
 
 ### Step 2: Create URL with Environment Variables
 
-```
+```text
 http://localhost:2222/ssh/host/example.com?env=VIM_FILE:settings.conf,CUSTOM_ENV:production
 ```
 
@@ -212,22 +212,22 @@ Test with a simple variable first:
 ## Use Cases
 
 ### 1. Development Environment Setup
-```
+```text
 /ssh/host/dev-server?env=NODE_ENV:development,DEBUG:true
 ```
 
 ### 2. Automatic File Editing
-```
+```text
 /ssh/host/server?env=VIM_FILE:config.yaml,VIM_LINE:42
 ```
 
 ### 3. Project Context
-```
+```text
 /ssh/host/build-server?env=PROJECT:website,BRANCH:feature-123
 ```
 
 ### 4. Locale Settings
-```
+```text
 /ssh/host/server?env=LANG:en_US.UTF-8,LC_ALL:en_US.UTF-8
 ```
 

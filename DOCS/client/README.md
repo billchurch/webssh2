@@ -54,7 +54,7 @@ The WebSSH2 client is built with:
 
 ### Key Components
 
-```
+```text
 webssh2_client/client/src/
 ├── app.tsx                          # Main application
 ├── components/                      # UI components

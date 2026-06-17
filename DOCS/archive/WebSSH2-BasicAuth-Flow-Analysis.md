@@ -91,12 +91,12 @@ sequenceDiagram
 ## Basic Auth URL Patterns
 
 ### Standard Basic Auth URL
-```
+```text
 http://username:password@host:port/ssh/host/target?port=sshport
 ```
 
 ### With Additional Parameters
-```
+```text
 http://username:password@host:port/ssh/host/target?port=sshport&sshterm=xterm-256color&rows=50&cols=120
 ```
 

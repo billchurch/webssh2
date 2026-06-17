@@ -54,7 +54,7 @@ The Keyboard Capture feature provides three levels of control:
 **Use Case**: Essential for tmux users and anyone using vim, emacs, or other editors that rely on Escape.
 
 **Example**:
-```
+```text
 When enabled:
 - Pressing ESC in vim → exits insert mode (✓)
 - Pressing ESC in search → goes to terminal (not search close)
@@ -72,7 +72,7 @@ When enabled:
 **Use Case**: Critical for tmux users (default prefix key) and tmux workflows.
 
 **Example**:
-```
+```text
 When enabled:
 - Ctrl+B → sent to tmux as prefix key (✓)
 - Browser bookmarks can be accessed via browser menu or Alt+D → Ctrl+B
@@ -85,7 +85,7 @@ When enabled:
 **Format**: Comma-separated list of key combinations.
 
 **Examples**:
-```
+```text
 F11                    → Full-screen toggle
 Ctrl+T                 → Browser new tab
 Alt+D                  → Browser address bar
@@ -116,7 +116,7 @@ The keyboard capture system operates at the event handler level:
 
 Implementation files in `webssh2_client`:
 
-```
+```text
 client/src/
 ├── types/config.d.ts                          # KeyboardCaptureSettings interface
 ├── utils/keyboard-capture.ts                  # Core capture logic
@@ -226,7 +226,7 @@ Settings are **browser-specific** and stored in localStorage. If you use WebSSH2
 **Scenario**: Developer using multiple conflicting shortcuts.
 
 **Configuration**:
-```
+```text
 Capture Escape: Enabled
 Capture Ctrl+B: Enabled
 Custom Keys: F11, Ctrl+T, Ctrl+Shift+N, Alt+D
@@ -337,7 +337,7 @@ localStorage.debug = 'webssh2-client:keyboard-capture'
 
 ### Debug Output Examples
 
-```
+```text
 webssh2-client:keyboard-capture Capturing Escape key for terminal +0ms
 webssh2-client:keyboard-capture Capturing Ctrl+B for terminal +150ms
 webssh2-client:keyboard-capture Capturing custom key "F11" for terminal +300ms

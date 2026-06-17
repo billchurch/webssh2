@@ -152,7 +152,7 @@ You can pass environment variables to exec commands in two ways:
    ```
 
 2. **Via URL query parameters:**
-   ```
+   ```text
    http://localhost:2222/ssh?env=MY_VAR:value,OTHER_VAR:value2
    ```
 

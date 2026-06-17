@@ -185,7 +185,7 @@ WebSSH2 provides built-in presets for common use cases:
 
 Balanced security and compatibility for contemporary systems.
 
-```
+```text
 Ciphers: aes256-gcm@openssh.com, aes128-gcm@openssh.com, aes256-ctr, aes128-ctr
 KEX: ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521
 HMAC: hmac-sha2-256, hmac-sha2-512
@@ -196,7 +196,7 @@ Host Keys: ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521, ssh-rs
 
 For connecting to older SSH servers.
 
-```
+```text
 Ciphers: aes256-cbc, aes192-cbc, aes128-cbc, 3des-cbc
 KEX: diffie-hellman-group14-sha1, diffie-hellman-group1-sha1
 HMAC: hmac-sha1, hmac-md5
@@ -207,7 +207,7 @@ Host Keys: ssh-rsa, ssh-dss
 
 Maximum security, minimal compatibility.
 
-```
+```text
 Ciphers: aes256-gcm@openssh.com
 KEX: ecdh-sha2-nistp256
 HMAC: hmac-sha2-256

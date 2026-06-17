@@ -20,25 +20,25 @@ WebSSH2 supports configuration through URL query parameters, allowing you to cus
 
 ### Basic Connection
 
-```
+```text
 http://localhost:2222/ssh/host/example.com
 ```
 
 ### Custom Port
 
-```
+```text
 http://localhost:2222/ssh/host/example.com?port=2244
 ```
 
 ### Multiple Parameters
 
-```
+```text
 http://localhost:2222/ssh/host/example.com?port=2244&sshterm=xterm-256color
 ```
 
 ### With Interactive Login
 
-```
+```text
 http://localhost:2222/ssh?port=22&header=Production%20Server
 ```
 
@@ -48,7 +48,7 @@ http://localhost:2222/ssh?port=22&header=Production%20Server
 
 Specifies the SSH port on the target server.
 
-```
+```text
 ?port=2222
 ?port=8022
 ```
@@ -69,7 +69,7 @@ Common values:
 - `screen`
 - `screen-256color`
 
-```
+```text
 ?sshterm=xterm-256color
 ```
 
@@ -128,7 +128,7 @@ that already relied on what was rendered.
 
 Pass environment variables to the SSH session:
 
-```
+```text
 ?env=DEBUG:true
 ?env=NODE_ENV:production,DEBUG:true
 ?env=FOO:bar,BAR:baz,QUX:123
@@ -147,7 +147,7 @@ Format: `KEY:value,KEY2:value2`
 
 ### Development Environment
 
-```
+```text
 http://localhost:2222/ssh/host/dev-server?port=22&sshterm=xterm-256color&header=DEV&headerBackground=orange&env=NODE_ENV:development,DEBUG:*
 ```
 
@@ -159,7 +159,7 @@ http://localhost:2222/ssh/host/prod-server?header=PRODUCTION&headerBackground=%2
 
 ### Testing Environment with Debugging
 
-```
+```text
 http://localhost:2222/ssh?port=2244&env=DEBUG:webssh2:*,LOG_LEVEL:debug&header=TEST%20SERVER&headerBackground=%23FFA500
 ```
 
