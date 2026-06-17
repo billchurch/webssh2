@@ -165,6 +165,63 @@ Additional notes:
 - Prefer the narrowest CIDR ranges possible and pair them with
   network-level egress controls
 
+## Client bundle integrity verification
+
+This gateway serves a pre-built browser bundle from the `webssh2_client` npm
+package (`node_modules/webssh2_client/client/public`). To ensure the bytes we
+ship match the bytes the client project built and published, CI verifies the
+bundle's integrity **and provenance** before it can reach operators.
+
+The verification (`npm run security:verify-bundle`, implemented in
+`scripts/verify-client-bundle.ts`) does the following:
+
+1. Resolves the pinned `webssh2_client` version from `package-lock.json`
+   (exact-pinned, lockfile-anchored) and rejects anything below `5.1.0` — the
+   first release carrying both `checksums.txt` and a sigstore attestation.
+2. Downloads `checksums.txt` from the matching `v<version>` GitHub release over
+   HTTPS, fail-closed and size-capped.
+3. Verifies the file's sigstore attestation with `gh attestation verify`,
+   pinned via `--cert-identity` to the client's release workflow on its signing
+   ref:
+   `https://github.com/billchurch/webssh2_client/.github/workflows/release.yml@refs/heads/main`.
+   Pinning the certificate identity (not just `--repo`) is what proves the file
+   was produced by the expected workflow — a bare `--repo` check would pass for
+   any attestation from the repository, including one minted by a malicious
+   workflow.
+4. Verifies the installed `public/` files against the attested checksums with
+   `sha256sum -c`.
+5. Runs `npm audit signatures` for registry-side signature verification across
+   the dependency tree (fails on invalid signatures, not on absent provenance).
+
+### Where it runs
+
+- **CI (`ci.yml`)**: a dedicated `verify-client-bundle` job runs the full check.
+  It is skipped on fork and dependabot pull requests (read-only token / withheld
+  secrets); the same-repo and main-branch runs are the gate of record. A
+  negative-control step asserts that a deliberately wrong signer identity is
+  rejected, so a `gh` behavior change cannot silently weaken the pin.
+- **Image publish (`docker-publish.yml`)**: the bundle is extracted from the
+  built image and verified pre-push, so the exact bytes shipped in the Docker
+  image — not just the CI runner's `node_modules` — are gated. This runs once
+  (the bundle is architecture-independent).
+
+### Failure policy and overrides
+
+Tamper-class failures (attestation mismatch, checksum mismatch, missing asset on
+a `>= 5.1.0` release, invalid registry signature) always fail closed.
+
+Network downloads are retried with bounded exponential backoff. If the GitHub
+release CDN, the Attestations API, or the Rekor transparency log is genuinely
+unreachable after retries, the failure is classified as an **outage** rather
+than tamper. An outage — and only an outage — may be bypassed by a maintainer
+re-running the workflow with the `bundle_verify_outage_override` input set,
+which exposes `WEBSSH2_BUNDLE_VERIFY_OUTAGE_OVERRIDE=true` to the script. The
+bypass is recorded in the run's logs and actor; tamper failures are never
+bypassable.
+
+The script also honors `WEBSSH2_CLIENT_DIR` to point verification at a bundle
+extracted from elsewhere (used for the Docker image check).
+
 ## Security Disclosure Policy
 
 - **Private Disclosure**: We request that you give us reasonable time to address the issue before public disclosure
