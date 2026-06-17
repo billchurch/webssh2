@@ -303,7 +303,7 @@ describe('mapEnvironmentVariables', () => {
       const env = {
         WEBSSH2_SSO_ENABLED: 'true',
         WEBSSH2_SSO_HEADER_USERNAME: 'X-Remote-User',
-        WEBSSH2_SSO_HEADER_PASSWORD: 'X-Remote-Password'
+        WEBSSH2_SSO_HEADER_PASSWORD: 'X-Remote-Password' // NOSONAR - HTTP header name, not a credential
       }
 
       const result = mapEnvironmentVariables(env)
@@ -313,7 +313,7 @@ describe('mapEnvironmentVariables', () => {
           enabled: true,
           headerMapping: {
             username: 'X-Remote-User',
-            password: 'X-Remote-Password'
+            password: 'X-Remote-Password' // NOSONAR - HTTP header name, not a credential
           }
         }
       })

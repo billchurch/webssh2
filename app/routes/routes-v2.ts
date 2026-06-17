@@ -169,11 +169,7 @@ async function handleSshGetRoute(
         connectionMode: 'full' as const
       }
 
-  await handleConnection(
-    expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
-    res,
-    connectionOptions
-  )
+  await handleConnection(expressReq, res, connectionOptions)
 }
 
 /**
@@ -249,11 +245,9 @@ async function handlePostAuthRoute(
   processAuthParameters(source, expressReq.session)
 
   // Serve the client page
-  await handleConnection(
-    expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
-    res,
-    { host: authResult.value.connection.host }
-  )
+  await handleConnection(expressReq, res, {
+    host: authResult.value.connection.host
+  })
 }
 
 /**
@@ -287,7 +281,7 @@ export function createRoutesV2(config: Config): Router {
     debug('GET / - Root route accessed')
     
     processAuthParameters(expressReq.query, expressReq.session)
-    await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res)
+    await handleConnection(expressReq, res)
   }))
 
   /**

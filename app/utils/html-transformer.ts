@@ -32,9 +32,9 @@ const JSON_BLOCK_PLACEHOLDER =
  */
 function escapeForScript(json: string): string {
   return json
-    .replaceAll('<', '\\u003c')
-    .replaceAll('\u2028', '\\u2028')
-    .replaceAll('\u2029', '\\u2029')
+    .replaceAll('<', String.raw`\u003c`)
+    .replaceAll('\u2028', String.raw`\u2028`)
+    .replaceAll('\u2029', String.raw`\u2029`)
 }
 
 /** Serialize a config object to a script-safe JSON string. */

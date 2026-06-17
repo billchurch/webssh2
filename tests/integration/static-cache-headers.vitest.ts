@@ -108,7 +108,7 @@ describe('static asset cache headers', () => {
 
     const second = await request(app)
       .get(`/ssh/assets/${bundleName}`)
-      .set('If-None-Match', etag as string)
+      .set('If-None-Match', etag)
     expect(second.status).toBe(304)
   })
 })

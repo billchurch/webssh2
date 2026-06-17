@@ -118,8 +118,8 @@ export const TELNET_DEFAULTS = {
   TERM: 'vt100',
   EXPECT_TIMEOUT_MS: 10_000,
   IO_PATH: '/telnet/socket.io',
-  LOGIN_PROMPT: 'login:\\s*$',
-  PASSWORD_PROMPT: '[Pp]assword:\\s*$',
+  LOGIN_PROMPT: String.raw`login:\s*$`,
+  PASSWORD_PROMPT: String.raw`[Pp]assword:\s*$`,
   FAILURE_PATTERN: 'Login incorrect|Access denied|Login failed',
 } as const
 

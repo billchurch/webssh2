@@ -18,9 +18,11 @@ interface CapturedViolation {
   meta: { isLegacy: boolean; clientIp?: string; userAgent?: string }
 }
 
+const DEFAULT_RATE_LIMIT = { capacity: 5, refillPerSec: 0, maxKeys: 100 }
+
 const makeApp = (
   captured: CapturedViolation[],
-  rl = { capacity: 5, refillPerSec: 0, maxKeys: 100 }
+  rl = DEFAULT_RATE_LIMIT
 ): express.Application => {
   const app = express()
   const router = express.Router()
