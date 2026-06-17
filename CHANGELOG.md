@@ -1,5 +1,22 @@
 # Changelog
 
+## [5.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.0.1...webssh2-server-v5.1.0) (2026-06-17)
+
+
+### Features
+
+* **http:** cache headers for static assets, no-store for dynamic HTML ([#545](https://github.com/billchurch/webssh2/issues/545)) ([ffe55c3](https://github.com/billchurch/webssh2/commit/ffe55c3ec82fef8208f79f100443e1543c6b8b83)), closes [#537](https://github.com/billchurch/webssh2/issues/537)
+* **security:** JSON config-block injection + tightened CSP ([#546](https://github.com/billchurch/webssh2/issues/546)) ([#551](https://github.com/billchurch/webssh2/issues/551)) ([33201a0](https://github.com/billchurch/webssh2/commit/33201a0288072b61dc4800f5b3d5b58d832ae406))
+* **security:** verify webssh2_client bundle integrity + provenance ([#547](https://github.com/billchurch/webssh2/issues/547)) ([#553](https://github.com/billchurch/webssh2/issues/553)) ([b4c918e](https://github.com/billchurch/webssh2/commit/b4c918ef8bcdb11350c557c1b487fc32cfdf81df))
+* **security:** warn loudly at startup on permissive security defaults ([#542](https://github.com/billchurch/webssh2/issues/542)) ([29f7ba4](https://github.com/billchurch/webssh2/commit/29f7ba40ffbd1f0108eeae9924384c113ea8bf5a))
+
+
+### Bug Fixes
+
+* **config:** honor WEBSSH2_SESSION_SECRET in fallback, warn on generated secret ([#541](https://github.com/billchurch/webssh2/issues/541)) ([59e34aa](https://github.com/billchurch/webssh2/commit/59e34aa82f2eb0136e7973c55209612aacd555eb))
+* **deps:** bump brace-expansion to patched versions ([#540](https://github.com/billchurch/webssh2/issues/540)) ([1868a6d](https://github.com/billchurch/webssh2/commit/1868a6df727f133258391a22841322c4f82b911c)), closes [#538](https://github.com/billchurch/webssh2/issues/538)
+* **ssh:** add shared settled guard to connect timeout/ready/error race ([#544](https://github.com/billchurch/webssh2/issues/544)) ([89a5590](https://github.com/billchurch/webssh2/commit/89a55908357416a32ec7c6957349b98ff29fb13c)), closes [#536](https://github.com/billchurch/webssh2/issues/536)
+
 ## [5.0.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.0.0...webssh2-server-v5.0.1) (2026-05-28)
 
 
