@@ -33,7 +33,7 @@ WebSSH2 will start on port 2222 by default.
 
 Open your browser and navigate to:
 
-```
+```text
 http://localhost:2222/ssh
 ```
 
@@ -86,7 +86,7 @@ npm start
 
 Skip the login form by using the host endpoint:
 
-```
+```text
 http://localhost:2222/ssh/host/my-server.com
 ```
 
@@ -119,7 +119,7 @@ npm start
 
 ### 4. With Custom Header
 
-```
+```text
 http://localhost:2222/ssh?header=Development%20Server
 ```
 

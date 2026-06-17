@@ -56,7 +56,7 @@ npm start
 
 ### Using URL Parameters
 
-```
+```text
 http://localhost:2222/ssh?port=22&header=Development
 ```
 
@@ -64,7 +64,7 @@ http://localhost:2222/ssh?port=22&header=Development
 
 All WebSSH2 environment variables follow a consistent naming pattern:
 
-```
+```text
 WEBSSH2_<SECTION>_<SUBSECTION>_<SETTING>
 ```
 

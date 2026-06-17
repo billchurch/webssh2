@@ -1,0 +1,23 @@
+{
+  // Repo markdownlint config. Scoped to the rules worth enforcing on the
+  // existing docs so the VS Code extension, the CLI, and the global
+  // pre-commit hook (markdownlint-cli2 --fix) all agree.
+  //
+  // "default": false keeps the existing docs from being flagged en masse for
+  // rules they were never authored against. Notable rules left OFF:
+  //   - MD013 (line length): prose/tables are not hard-wrapped here.
+  //   - MD060 (table column style): the docs use aligned/padded tables and
+  //     MD060 has no auto-fixer in this version, so enforcing it would mean
+  //     hand-reformatting every table. Re-enable + reformat as a separate
+  //     pass if compact tables are wanted.
+  "config": {
+    "default": false,
+    // Allow repeated headings as long as they live under different parents
+    // (e.g. per-CVE "Exposure assessment" / "References" sections).
+    "MD024": { "siblings_only": true },
+    // Fenced code blocks must declare a language.
+    "MD040": true
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules", "dist", "coverage", "CHANGELOG.md", ".private-docs"]
+}

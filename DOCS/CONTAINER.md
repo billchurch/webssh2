@@ -7,7 +7,7 @@ Examples include the nginx-webssh2 project or custom container images.
 
 After downloading and extracting `webssh2-<version>.tar.gz`, the release root contains:
 
-```
+```text
 ./dist/
 ./manifest.json
 ./package.json

@@ -18,21 +18,21 @@ Control which keyboard events are sent to the terminal vs. handled by the web UI
 ### Common Configurations
 
 **General terminal Users**:
-```
+```text
 ☑ Capture Escape: Enabled
 ☐ Capture Ctrl+B: Disabled
 Custom Keys: (leave empty)
 ```
 
 **For tmux Users**:
-```
+```text
 ☐ Capture Escape: Disabled
 ☑ Capture Ctrl+B: Enabled
 Custom Keys: (leave empty)
 ```
 
 **For Power Users**:
-```
+```text
 ☑ Capture Escape: Enabled
 ☑ Capture Ctrl+B: Enabled
 Custom Keys: F11, Ctrl+T, Alt+D
@@ -54,7 +54,7 @@ Custom Keys: F11, Ctrl+T, Alt+D
 
 ## Examples
 
-```
+```text
 F11                    → Capture F11 key
 Ctrl+T                 → Capture Ctrl+T (new tab)
 Alt+D                  → Capture Alt+D (address bar)

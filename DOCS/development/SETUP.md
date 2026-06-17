@@ -94,7 +94,7 @@ webssh2Config: {
 ### Accessing the Development Environment
 
 1. Open your web browser and navigate to:
-```
+```text
 http://localhost:3000
 ```
 
