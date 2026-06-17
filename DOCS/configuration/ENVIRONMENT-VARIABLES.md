@@ -52,16 +52,34 @@ WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com,api.test.com"
 WEBSSH2_HTTP_ORIGINS='["localhost:3000","*.example.com","api.test.com"]'
 ```
 
-### Security Headers & CSP
+### Content Security Policy
 
-The server applies security headers and a Content Security Policy (CSP) by default.
+| Variable | Type | Default | Description |
+| --- | --- | --- | --- |
+| `WEBSSH2_CSP_MODE` | string | `report-only` | CSP enforcement mode: `off` (no header), `report-only` (collect violations, enforce nothing), or `enforce` (block violations) |
+| `WEBSSH2_CSP_REPORT_URI` | string | `/ssh/csp-report` | URI advertised in the CSP `report-uri` / `report-to` directives where browsers POST violation reports |
+| `WEBSSH2_CSP_CONNECT_SRC` | array | `[]` | Extra origins added to `connect-src` (comma-separated). Use for explicit socket gateway URLs in split client/gateway deployments |
+| `WEBSSH2_CSP_FRAME_ANCESTORS` | array | `["none"]` | Origins that may embed WebSSH2 in an iframe (comma-separated). `none` → `DENY`, `self` → `SAMEORIGIN`, explicit origins → omits `X-Frame-Options` |
 
-- Configuration: Defined in code at `app/security-headers.js` and applied by `app/middleware.js`.
-- Environment variables: There are currently no `WEBSSH2_` environment variables to toggle or customize CSP/headers.
-- Customization options:
-  - Edit `CSP_CONFIG` and `SECURITY_HEADERS` in `app/security-headers.js` for global changes.
-  - Use `createCSPMiddleware(customCSP)` for route-specific CSP overrides.
-  - HSTS (`Strict-Transport-Security`) is only added on HTTPS requests.
+#### CSP Array Format Examples
+
+```bash
+# Extra WebSocket origins for split deployments
+WEBSSH2_CSP_CONNECT_SRC="wss://gw.example:8443,https://gw.example:8443"
+
+# Allow same-origin embedding only
+WEBSSH2_CSP_FRAME_ANCESTORS="self"
+
+# Allow specific origin to embed
+WEBSSH2_CSP_FRAME_ANCESTORS="https://dashboard.example.com"
+```
+
+#### CSP Mode Notes
+
+- `report-only` is the default and does **not** enforce the policy — browsers send reports but are not blocked. A `security_posture` warning is logged at startup when mode is not `enforce`.
+- `enforce` activates blocking. Combine with a concrete `http.origins` allowlist rather than the default wildcard `*:*`; a `security_posture` warning is logged when `enforce` is used with wildcard origins.
+- `off` suppresses the CSP header entirely (not recommended for production).
+- See [CONFIG-JSON.md](./CONFIG-JSON.md#content-security-policy-csp) for the full `csp` config block and rollout guidance.
 
 ### User Defaults
 

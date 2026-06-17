@@ -290,6 +290,14 @@ Environment variables are strings. WebSSH2 automatically converts:
 - `'["a","b"]'` → array
 - `'{"a":"b"}'` → object
 
+## Runtime Config Injection (Client)
+
+Server-side configuration is also delivered to the browser at page-load time via
+an inert `<script type="application/json" id="webssh2-config">` block (CSP-safe).
+The legacy `window.webssh2Config` inline-script method is deprecated. See
+[Client Architecture — Configuration Injection](../architecture/CLIENT.md#configuration-injection)
+for the full contract.
+
 ## Related Documentation
 
 - [Security Policy — Default security posture](../../SECURITY.md#default-security-posture)

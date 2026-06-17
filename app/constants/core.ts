@@ -102,6 +102,8 @@ export const TERMINAL_LIMITS = {
 
 export const HEADERS = {
   CONTENT_SECURITY_POLICY: 'Content-Security-Policy',
+  CONTENT_SECURITY_POLICY_REPORT_ONLY: 'Content-Security-Policy-Report-Only',
+  REPORTING_ENDPOINTS: 'Reporting-Endpoints',
   X_CONTENT_TYPE_OPTIONS: 'X-Content-Type-Options',
   X_FRAME_OPTIONS: 'X-Frame-Options',
   X_XSS_PROTECTION: 'X-XSS-Protection',
@@ -116,8 +118,8 @@ export const TELNET_DEFAULTS = {
   TERM: 'vt100',
   EXPECT_TIMEOUT_MS: 10_000,
   IO_PATH: '/telnet/socket.io',
-  LOGIN_PROMPT: 'login:\\s*$',
-  PASSWORD_PROMPT: '[Pp]assword:\\s*$',
+  LOGIN_PROMPT: String.raw`login:\s*$`,
+  PASSWORD_PROMPT: String.raw`[Pp]assword:\s*$`,
   FAILURE_PATTERN: 'Login incorrect|Access denied|Login failed',
 } as const
 

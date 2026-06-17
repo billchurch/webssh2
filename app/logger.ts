@@ -14,6 +14,7 @@ import { createSyslogTransport } from './logging/syslog-transport.js'
 import type { LogContext } from './logging/log-context.js'
 import type { Config, LoggingConfig } from './types/config.js'
 import type { SecurityPostureWarning } from './security-posture.js'
+import type { ExtractedCspReport } from './security/csp-report.js'
 
 let defaultStructuredLogger = createStructuredLogger({
   namespace: 'webssh2:app',
@@ -99,6 +100,34 @@ export function logSecurityPostureWarning(warning: SecurityPostureWarning): void
 
   if (!result.ok) {
     console.warn('Failed to emit security posture warning log:', result.error)
+  }
+}
+
+export interface CspViolationMeta {
+  readonly clientIp?: string
+  readonly userAgent?: string
+  readonly isLegacy: boolean
+}
+
+export function logCspViolation(report: ExtractedCspReport, meta: CspViolationMeta): void {
+  const message = `CSP violation: ${report.directive ?? 'unknown'} blocked ${report.blockedUri ?? 'unknown'}`
+  const context: LogContext = {
+    subsystem: 'security',
+    ...(meta.clientIp === undefined ? {} : { clientIp: meta.clientIp }),
+    ...(meta.userAgent === undefined ? {} : { userAgent: meta.userAgent }),
+    ...(report.directive === undefined ? {} : { reason: report.directive })
+  }
+  const entry = {
+    event: 'csp_violation' as const,
+    message,
+    context,
+    data: { ...report } as Record<string, unknown>
+  }
+  const result = meta.isLegacy
+    ? defaultStructuredLogger.debug(entry)
+    : defaultStructuredLogger.warn(entry)
+  if (!result.ok) {
+    console.warn('Failed to emit csp_violation log:', result.error)
   }
 }
 

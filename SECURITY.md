@@ -92,6 +92,44 @@ Additional notes:
 - Full option reference:
   [Host Key Verification](DOCS/configuration/CONFIG-JSON.md#host-key-verification)
 
+### Content-Security-Policy is report-only by default
+
+| Config key | Default | Exposure |
+| --- | --- | --- |
+| `csp.mode` | `report-only` | The CSP header is sent as `Content-Security-Policy-Report-Only` — browsers report violations but do **not** enforce the policy. A `security_posture` warning is logged at startup when mode is not `enforce` |
+
+The CSP is configured through the `csp` block in `config.json` (or the `WEBSSH2_CSP_*` environment variables). Full reference: [CONFIG-JSON.md](DOCS/configuration/CONFIG-JSON.md#content-security-policy-csp) and [ENVIRONMENT-VARIABLES.md](DOCS/configuration/ENVIRONMENT-VARIABLES.md#content-security-policy).
+
+**The three modes:**
+
+- `off` — no CSP header is sent (not recommended)
+- `report-only` (default) — `Content-Security-Policy-Report-Only` header collects violations without blocking anything; safe for rollout
+- `enforce` — `Content-Security-Policy` header actively blocks violations
+
+**Recommended rollout:**
+
+1. Deploy with the default `report-only` mode
+2. Monitor the structured `csp_violation` log events at `/ssh/csp-report`
+3. Confirm only the expected legacy-inline-script violation appears (see below)
+4. Set `csp.mode` to `enforce` (or `WEBSSH2_CSP_MODE=enforce`)
+
+**`connect-src` derivation and the wildcard `http.origins` caveat:**
+
+The CSP `connect-src` directive is built from `'self'`, concrete entries in `http.origins`, and the `csp.connectSrc` allowlist. The default `http.origins` value is `["*:*"]` — wildcards are not valid CSP source expressions and are dropped. With the default configuration, `connect-src` is therefore `'self'` only. For split client/gateway deployments (browser origin differs from the gateway origin), either:
+
+- Set a concrete `http.origins` list: `["https://gw.example:8443"]`, or
+- Add explicit socket URLs via `csp.connectSrc`: `["wss://gw.example:8443"]`
+
+A `security_posture` warning is also logged when `enforce` mode is combined with wildcard `http.origins`.
+
+**Violation reporting endpoint:**
+
+`POST /ssh/csp-report` receives violation reports from browsers. It is intentionally unauthenticated so browsers can reach it without session cookies. The endpoint is per-IP intake rate-limited (default burst 10, steady-state ~10 requests/minute, throttled before the body is parsed), body-capped at 8 KB, and always returns `204`. It logs a structured `csp_violation` event, which is itself additionally rate-limited to 60 events/minute by the default logging controls. Operators should additionally rate-limit `POST /ssh/csp-report` at the reverse proxy or load balancer.
+
+**Expected legacy-inline-script violation:**
+
+During the current deprecation window, the client HTML contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies the configuration), but it generates **one `csp_violation` report per page load**. This report is demoted to `debug` log level — it is not a regression and does not indicate an attack. It will be removed in a future major release.
+
 ### No target-host restrictions by default
 
 | Config key | Default | Exposure |
@@ -384,6 +422,56 @@ For reference, the following IOCs were published by Snyk:
 
 ---
 
-**Last updated:** 2026-06-10
+## esbuild RCE via Deno module (GHSA-gv7w-rqvm-qjhr)
 
-**Next review:** 2026-09-10
+As of 2026-06-16, we evaluated GHSA-gv7w-rqvm-qjhr, a remote code execution
+flaw in esbuild's Deno module (`lib/deno/mod.ts`) that downloads native
+binaries and writes them to disk with executable permissions without integrity
+verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
+
+### Exposure assessment
+
+| Aspect | Status |
+| --- | --- |
+| Affected versions | esbuild 0.17.0 - < 0.28.1 |
+| Severity | HIGH (CVSS 8.1) |
+| Our version | esbuild@0.28.1 (was 0.27.2) |
+| Dependency path | dev-only: `vitest` / `tsx` → `vite` → esbuild |
+| Status | **Patched** - pinned to 0.28.1 via `overrides` |
+
+### Exposure context
+
+- esbuild is a **dev-only** dependency. webssh2 builds with `tsc`, dev-runs
+  with `tsx`, and tests with Vitest; esbuild never ships in a production
+  artifact. There is no `vite.config` and no `import 'vite'` in source — Vite
+  is present only as Vitest's internal engine.
+- The vulnerable code is in esbuild's **Deno** module. webssh2 runs under
+  **Node.js** (its install path uses npm `optionalDependencies` with integrity
+  hashes), and there is no Deno usage anywhere in the repo, so the affected
+  code path was never reachable. We were therefore not exploitable even before
+  the patch.
+
+### Action taken
+
+- Added `overrides.esbuild: "^0.28.1"` (resolves esbuild 0.28.1, the fixed
+  release) and bumped the `vite` override 7.3.2 → 7.3.5,
+  `vitest` / `@vitest/coverage-v8` 4.1.4 → 4.1.9, and `tsx` → `^4.22.4`.
+- The same bump also resolves the related esbuild dev-server advisory
+  GHSA-g7r4-m6w7-qqqr.
+- After the dependency bump, `npm audit --audit-level=high` reports 0
+  vulnerabilities; the patch commit (`40b8a7c`) landed with its full test run
+  passing.
+- esbuild 0.28.1 was published 2026-06-11, within the 14-day quarantine window;
+  the quarantine exception for HIGH-severity advisories was applied.
+
+### Follow-up
+
+- [#550](https://github.com/billchurch/webssh2/issues/550) tracks the optional
+  cleanup of moving Vitest to Vite 8, which drops esbuild from the tree
+  entirely and lets the override be removed.
+
+---
+
+**Last updated:** 2026-06-16
+
+**Next review:** 2026-09-16

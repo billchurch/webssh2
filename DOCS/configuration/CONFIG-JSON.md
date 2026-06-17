@@ -108,13 +108,13 @@ Renamed and expanded options:
 
 ### 2a. Security Headers (New Default)
 
-- The server now applies a secure set of HTTP response headers by default via `app/security-headers.js`.
-- A Content Security Policy (CSP) is included and tuned for xterm.js and terminal styling. It purposely allows `'unsafe-inline'` for scripts/styles required by the client-side terminal rendering.
-- These headers are applied before session middleware in `app/middleware.js`.
+- The server now applies a secure set of HTTP response headers by default via `app/security-headers.ts`.
+- A Content Security Policy (CSP) is included and tightened for xterm.js. `script-src` no longer allows `'unsafe-inline'` (removed in Phase 2 via JSON config-block injection); `style-src` retains `'unsafe-inline'` for xterm.js inline styles.
+- These headers are applied before session middleware in `app/middleware.ts`.
 
 Notes:
 
-- There is no config.json or environment toggle for CSP or headers at this time. To customize, adjust `app/security-headers.js` (or add a route-specific CSP using `createCSPMiddleware`).
+- The CSP mode and key directives are controlled via the `csp` config block and `WEBSSH2_CSP_*` environment variables — see [Security Headers & CSP](#security-headers--csp-reference).
 - HSTS (`Strict-Transport-Security`) is set only when the request is HTTPS (`req.secure`).
 
 ### 3. Terminal Configuration
@@ -229,17 +229,94 @@ These settings are now managed client-side.
 
 ## Security Headers & CSP (Reference)
 
-The default CSP and headers are defined in `app/security-headers.ts`. Header names and common defaults are centralized in `app/constants.ts` (`HEADERS`, `DEFAULTS`).
+The security-headers middleware applies a set of standard headers on every response. Header names and common defaults are centralized in `app/constants.ts` (`HEADERS`, `DEFAULTS`).
 
-- `Content-Security-Policy`: restricts sources; allows WebSocket (`ws:`/`wss:`) connections and inline script/style needed by the terminal.
 - `X-Content-Type-Options`: `nosniff`
-- `X-Frame-Options`: `DENY`
 - `X-XSS-Protection`: `1; mode=block`
 - `Referrer-Policy`: `strict-origin-when-cross-origin`
 - `Permissions-Policy`: disables geolocation, microphone, camera
 - `Strict-Transport-Security`: 1 year (HTTPS requests only); max-age is `DEFAULTS.HSTS_MAX_AGE_SECONDS`.
+- `X-Frame-Options`: derived from `csp.frameAncestors` — see below.
+- `Content-Security-Policy` / `Content-Security-Policy-Report-Only`: controlled by the `csp` config block — see below.
 
-To customize globally, edit `CSP_CONFIG` or `SECURITY_HEADERS` in `app/security-headers.ts`. For per-route CSP, use `createCSPMiddleware(customCSP)` in your route setup.
+### Content Security Policy (CSP)
+
+The CSP is config-toggled and tightened. The `csp` block in `config.json` controls the mode, reporting endpoint, and the two operator-adjustable directive values:
+
+```json
+"csp": {
+  "mode": "report-only",
+  "reportUri": "/ssh/csp-report",
+  "connectSrc": [],
+  "frameAncestors": ["none"]
+}
+```
+
+#### `csp.mode`
+
+| Value | Behaviour |
+| --- | --- |
+| `off` | No CSP header is sent |
+| `report-only` | `Content-Security-Policy-Report-Only` header — browsers report violations but are **not** blocked. A `security_posture` warn is logged at startup |
+| `enforce` | `Content-Security-Policy` header — browsers block policy violations. A `security_posture` warn is logged when combined with wildcard `http.origins` |
+
+`report-only` is the default. It is the recommended starting posture: deploy, collect `csp_violation` events, verify the policy is clean, then switch to `enforce`.
+
+#### Tightened directive set
+
+The policy shipped in Phase 2 removes `'unsafe-inline'` from `script-src` (made possible by the JSON config-block injection, which eliminated the legacy inline script):
+
+- `script-src 'self'` — no inline scripts permitted
+- `style-src 'self' 'unsafe-inline'` — inline styles required by xterm.js
+- `object-src 'none'`
+- `base-uri 'none'`
+- `connect-src` — derived (see below)
+- `frame-ancestors` — derived from `csp.frameAncestors` (see below)
+- `report-uri` + `Reporting-Endpoints` / `report-to` — the value of `csp.reportUri`
+
+#### `csp.connectSrc` and `connect-src` derivation
+
+`connect-src` is built from three sources, merged at startup:
+
+1. `'self'` (always included)
+2. Entries from `http.origins` that are **not** wildcards — concrete origins such as `https://gw.example:8443` are safe CSP sources and are added automatically
+3. Entries from `csp.connectSrc` — the operator allowlist
+
+**Wildcard caveat**: The default `http.origins` value is `["*:*"]`. Wildcard patterns are not valid CSP source expressions and are silently dropped. With the default wildcard CORS setting, `connect-src` is therefore just `'self'`. For split client/gateway deployments where the browser connects to a different origin than the page origin, either add explicit socket gateway URLs to `csp.connectSrc` or replace `http.origins` with a concrete allowlist.
+
+```json
+{
+  "http": { "origins": ["https://gw.example:8443"] },
+  "csp": {
+    "mode": "enforce",
+    "connectSrc": ["wss://gw.example:8443"]
+  }
+}
+```
+
+#### `csp.frameAncestors` and `X-Frame-Options`
+
+`csp.frameAncestors` is an array of origins that may embed WebSSH2 in an `<iframe>`. It drives both the CSP `frame-ancestors` directive and the legacy `X-Frame-Options` header:
+
+| `frameAncestors` value | `frame-ancestors` directive | `X-Frame-Options` |
+| --- | --- | --- |
+| `["none"]` (default) | `frame-ancestors 'none'` | `DENY` |
+| `["self"]` | `frame-ancestors 'self'` | `SAMEORIGIN` |
+| explicit origin list | `frame-ancestors <origins>` | omitted (CSP alone) |
+
+#### CSP violation reporting
+
+`POST /ssh/csp-report` is an unauthenticated endpoint that receives browser violation reports. Key properties:
+
+- Per-IP rate-limited (default 60 reports/min) and body-capped at 8 KB
+- Logs a structured `csp_violation` event (see [logging.md](../logging.md))
+- Always returns `204 No Content`
+- The CSP header advertises the endpoint via `report-uri` and `report-to` / `Reporting-Endpoints`
+- Operators should also apply an upstream/reverse-proxy rate limit on `POST /ssh/csp-report`
+
+#### Legacy inline-script transition note
+
+During the deprecation window, the client HTML still contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies configuration instead), but it produces **one expected `csp_violation` report per page load**. This report is demoted to `debug` log level so operators do not mistake it for a regression. It will be removed in a future major release.
 
 ### Centralized Constants
 

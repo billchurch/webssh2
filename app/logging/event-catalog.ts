@@ -13,6 +13,7 @@ export const LOG_EVENT_NAMES = [
   'pty_resize',
   'idle_timeout',
   'policy_block',
+  'csp_violation',
   'error',
   'credential_replay',
   // SFTP events
