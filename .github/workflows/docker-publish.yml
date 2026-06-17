@@ -265,7 +265,9 @@ jobs:
 
       - name: Install dependencies for bundle verification
         if: matrix.arch == 'amd64'
-        run: npm ci
+        # Only tsx + the pre-built webssh2_client package are needed; skip
+        # lifecycle scripts (no native builds required for verification).
+        run: npm ci --ignore-scripts
 
       - name: Extract client bundle from built image
         if: matrix.arch == 'amd64'

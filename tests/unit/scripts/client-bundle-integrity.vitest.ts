@@ -43,29 +43,14 @@ describe('validateClientVersion', () => {
     expect(MINIMUM_CLIENT_VERSION).toBe('5.1.0')
   })
 
-  it('rejects a version below the floor (no checksums/attestation)', () => {
-    const result = validateClientVersion('5.0.0')
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects a prerelease/build-metadata version as non-strict', () => {
-    const result = validateClientVersion('5.1.0-beta.1')
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects a version carrying shell metacharacters', () => {
-    const result = validateClientVersion('5.1.0; rm -rf /')
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects a version attempting path traversal', () => {
-    const result = validateClientVersion('5.1.0/../../other-repo')
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects an empty string', () => {
-    const result = validateClientVersion('')
-    expect(result.ok).toBe(false)
+  it.each([
+    ['below the floor (no checksums/attestation)', '5.0.0'],
+    ['a prerelease/build-metadata version as non-strict', '5.1.0-beta.1'],
+    ['a version carrying shell metacharacters', '5.1.0; rm -rf /'],
+    ['a version attempting path traversal', '5.1.0/../../other-repo'],
+    ['an empty string', '']
+  ])('rejects %s', (_label, input) => {
+    expect(validateClientVersion(input).ok).toBe(false)
   })
 })
 
@@ -160,38 +145,23 @@ describe('extractPublicChecksumLines', () => {
 })
 
 describe('classifyFailure', () => {
-  it('treats a failed attestation verification as tamper (fail closed)', () => {
-    expect(classifyFailure('attestation-verification-failed')).toBe('tamper')
-  })
-
-  it('treats a checksum mismatch as tamper', () => {
-    expect(classifyFailure('checksum-mismatch')).toBe('tamper')
-  })
-
-  it('treats a missing asset on a >=5.1.0 release as tamper', () => {
-    expect(classifyFailure('asset-missing')).toBe('tamper')
-  })
-
-  it('treats an invalid registry signature as tamper', () => {
-    expect(classifyFailure('signature-invalid')).toBe('tamper')
-  })
-
-  it('treats an unreachable network as an outage (override path)', () => {
-    expect(classifyFailure('network-unreachable')).toBe('outage')
-  })
-
-  it('treats rate limiting as an outage', () => {
-    expect(classifyFailure('rate-limited')).toBe('outage')
-  })
-
-  it('treats an upstream 5xx as an outage', () => {
-    expect(classifyFailure('server-error')).toBe('outage')
+  // Tamper reasons must fail closed; outage reasons route to the override path.
+  it.each([
+    ['attestation-verification-failed', 'tamper'],
+    ['checksum-mismatch', 'tamper'],
+    ['asset-missing', 'tamper'],
+    ['signature-invalid', 'tamper'],
+    ['network-unreachable', 'outage'],
+    ['rate-limited', 'outage'],
+    ['server-error', 'outage']
+  ] as const)('classifies %s as %s', (reason, expected) => {
+    expect(classifyFailure(reason)).toBe(expected)
   })
 })
 
-describe('withRetry', () => {
-  const noSleep = (): Promise<void> => Promise.resolve()
+const noSleep = (): Promise<void> => Promise.resolve()
 
+describe('withRetry', () => {
   it('returns the value on first success without sleeping', async () => {
     const sleeps: number[] = []
     const value = await withRetry(() => Promise.resolve('ok'), {

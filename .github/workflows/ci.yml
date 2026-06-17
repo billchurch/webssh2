@@ -109,7 +109,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.trust.outputs.run == 'true'
-        run: npm ci
+        # Bundle verification only needs tsx + the (pre-built) webssh2_client
+        # package, so skip lifecycle scripts — no native builds required here.
+        run: npm ci --ignore-scripts
 
       - name: Assert gh CLI supports pinned attestation verification
         if: steps.trust.outputs.run == 'true'
