@@ -48,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.35",
-    "webssh2_client": "^5.1.0",
+    "webssh2_client": "5.1.0",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -75,6 +75,7 @@
     "build": "tsc -p tsconfig.build.json",
     "ci": "npm run test",
     "security:audit": "npm audit",
+    "security:verify-bundle": "tsx scripts/verify-client-bundle.ts",
     "hostkeys": "tsx scripts/host-key-seed.ts",
     "hostkeys:prod": "node dist/scripts/host-key-seed.js"
   },
