@@ -1,16 +1,15 @@
 /**
  * Theming injection helpers — build the client-facing theming payload from a
  * server `ThemingConfig`, then serialize it to a script-safe JSON string for
- * inline `<script>` injection. Mirrors the escape strategy used by
- * `injectConfig` in `app/utils/html-transformer.ts`:
- *   - `<` -> `\u003c`  (prevents `</script>` and `<!--` escapes)
- *   - U+2028 (line separator) -> `\u2028`
- *   - U+2029 (paragraph separator) -> `\u2029`
+ * inline `<script>` injection. Script-safe escaping is delegated to the
+ * canonical `serializeConfig` helper in `app/utils/html-transformer.ts`, which
+ * is the single XSS trust boundary for injected config.
  *
  * Pure functions; no I/O, no side effects.
  */
 
 import type { ThemeColors, ThemingConfig } from '../../types/config.js'
+import { serializeConfig } from '../../utils/html-transformer.js'
 
 export type ClientThemingPayload =
   | { readonly enabled: false }
@@ -58,8 +57,5 @@ export function buildClientThemingPayload(cfg: ThemingConfig): ClientThemingPayl
  * injection into an HTML `<script>` block. See module header for escape rules.
  */
 export function serializeThemingForInjection(cfg: ThemingConfig): string {
-  return JSON.stringify(buildClientThemingPayload(cfg))
-    .replaceAll('<', '\\u003c')
-    .replaceAll('\u2028', '\\u2028')
-    .replaceAll('\u2029', '\\u2029')
+  return serializeConfig(buildClientThemingPayload(cfg))
 }

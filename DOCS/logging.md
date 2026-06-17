@@ -88,6 +88,7 @@ The `connection_failure` event includes an `errorType` field with one of:
 | Event | Description |
 | --- | --- |
 | `policy_block` | Action denied by security policy |
+| `csp_violation` | Content-Security-Policy violation report received at `/ssh/csp-report` (report-only or enforce mode); rate-limited; the expected legacy-inline-script violation is demoted to debug during the deprecation window |
 | `error` | Unexpected system failure (include `error_code` and `reason`) |
 
 #### SFTP Events

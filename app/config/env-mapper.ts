@@ -196,6 +196,11 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   // Terminal theming configuration
   WEBSSH2_THEMING_ENABLED: { path: 'options.theming.enabled', type: 'boolean' },
   WEBSSH2_THEMING_ALLOW_CUSTOM: { path: 'options.theming.allowCustom', type: 'boolean' },
+  // Content Security Policy configuration
+  WEBSSH2_CSP_MODE: { path: 'csp.mode', type: 'string' },
+  WEBSSH2_CSP_REPORT_URI: { path: 'csp.reportUri', type: 'string' },
+  WEBSSH2_CSP_CONNECT_SRC: { path: 'csp.connectSrc', type: 'array' },
+  WEBSSH2_CSP_FRAME_ANCESTORS: { path: 'csp.frameAncestors', type: 'array' },
 }
 
 /** Built-in theme names used to block collisions when loading additional themes */

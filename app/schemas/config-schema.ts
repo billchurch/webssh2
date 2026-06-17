@@ -234,6 +234,24 @@ const SsoSchema = z.object({
 })
 
 /**
+ * CSP (Content-Security-Policy) configuration schema
+ */
+const CspSchema = z.object({
+  mode: z.enum(['off', 'report-only', 'enforce']),
+  reportUri: z
+    .string()
+    .transform((uri) => {
+      const trimmed = uri.trim()
+      if (trimmed === '') {
+        return '/ssh/csp-report'
+      }
+      return trimmed.length > 1 && trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+    }),
+  connectSrc: z.array(z.string()),
+  frameAncestors: z.array(z.string()),
+})
+
+/**
  * Terminal configuration schema (optional)
  */
 const TerminalSchema = z.object({
@@ -372,6 +390,7 @@ export const ConfigSchema = z.object({
   options: OptionsSchema,
   session: SessionSchema,
   sso: SsoSchema,
+  csp: CspSchema,
   telnet: TelnetSchema,
   terminal: TerminalSchema,
   logging: LoggingSchema,

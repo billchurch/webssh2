@@ -299,6 +299,19 @@ export interface TelnetAuthConfig {
   expectTimeout: number
 }
 
+export type CspMode = 'off' | 'report-only' | 'enforce'
+
+export interface CspConfig {
+  /** Delivery mode for the Content-Security-Policy. */
+  mode: CspMode
+  /** Path/URL the violation-report directive points at. */
+  reportUri: string
+  /** Extra connect-src sources appended to the derived defaults. */
+  connectSrc: string[]
+  /** frame-ancestors policy: ['none'] | ['self'] | explicit origin list. */
+  frameAncestors: string[]
+}
+
 /**
  * Telnet protocol configuration
  */
@@ -328,6 +341,7 @@ export interface Config {
   options: OptionsConfig
   session: SessionConfig
   sso: SsoConfig
+  csp: CspConfig
   telnet?: TelnetConfig
   terminal?: TerminalConfig
   logging?: LoggingConfig

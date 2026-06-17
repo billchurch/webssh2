@@ -17,6 +17,7 @@ const minimalConfig = {
   session: { secret: TEST_SECRET, name: 'y' },
   sso: { enabled: false, csrfProtection: false, trustedProxies: [], headerMapping: {} },
   options: { challengeButton: true, autoLog: false, allowReplay: true, allowReconnect: true, allowReauth: true },
+  csp: { mode: 'report-only', reportUri: '/ssh/csp-report', connectSrc: [], frameAncestors: ['none'] },
 }
 
 interface RouterLayer {
@@ -74,6 +75,10 @@ it('router registers expected paths and methods', () => {
 
   // POST endpoints
   assertRoute('/', 'post')
+
+  // CSP violation report endpoint — registered when csp.mode != 'off'.
+  // Guards against accidental removal of the gated registration in routes-v2.
+  assertRoute('/csp-report', 'post')
 
   // Utility endpoints
   assertRoute('/clear-credentials', 'get')

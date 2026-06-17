@@ -3,7 +3,7 @@
 
 import express, { type Router, type Request, type Response } from 'express'
 import handleConnection from '../connectionHandler.js'
-import { createNamespacedDebug } from '../logger.js'
+import { createNamespacedDebug, logCspViolation } from '../logger.js'
 import { createAuthMiddleware } from '../middleware.js'
 import { processAuthParameters, type AuthSession } from '../auth/auth-utils.js'
 import { HTTP } from '../constants/index.js'
@@ -23,6 +23,7 @@ import {
   type SshConnectionParams
 } from './handlers/ssh-handler.js'
 import { createSshConfigResponse } from './handlers/ssh-config-handler.js'
+import { registerCspReportRoute } from './handlers/csp-report-handler.js'
 
 // Import adapters
 import {
@@ -168,11 +169,7 @@ async function handleSshGetRoute(
         connectionMode: 'full' as const
       }
 
-  await handleConnection(
-    expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
-    res,
-    connectionOptions
-  )
+  await handleConnection(expressReq, res, connectionOptions)
 }
 
 /**
@@ -248,11 +245,9 @@ async function handlePostAuthRoute(
   processAuthParameters(source, expressReq.session)
 
   // Serve the client page
-  await handleConnection(
-    expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
-    res,
-    { host: authResult.value.connection.host }
-  )
+  await handleConnection(expressReq, res, {
+    host: authResult.value.connection.host
+  })
 }
 
 /**
@@ -266,6 +261,19 @@ export function createRoutesV2(config: Config): Router {
   router.use(createErrorHandler())
 
   /**
+   * CSP violation report endpoint — unauthenticated, rate-limited, 8 kb cap.
+   * Registered only when CSP is active (mode != 'off').
+   * Always at the canonical path /csp-report regardless of config.csp.reportUri
+   * (A3: only the emitted directive follows reportUri; the handler is fixed).
+   */
+  if (config.csp.mode !== 'off') {
+    registerCspReportRoute(router, {
+      rateLimit: { capacity: 10, refillPerSec: 10 / 60, maxKeys: 5000 },
+      onViolation: (report, meta) => { logCspViolation(report, meta) }
+    })
+  }
+
+  /**
    * Root route - uses default config
    */
   router.get('/', asyncRouteHandler(async (req: Request, res: Response) => {
@@ -273,7 +281,7 @@ export function createRoutesV2(config: Config): Router {
     debug('GET / - Root route accessed')
     
     processAuthParameters(expressReq.query, expressReq.session)
-    await handleConnection(expressReq as unknown as Request & { session?: AuthSession; sessionID?: string }, res)
+    await handleConnection(expressReq, res)
   }))
 
   /**

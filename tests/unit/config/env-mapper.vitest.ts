@@ -303,7 +303,7 @@ describe('mapEnvironmentVariables', () => {
       const env = {
         WEBSSH2_SSO_ENABLED: 'true',
         WEBSSH2_SSO_HEADER_USERNAME: 'X-Remote-User',
-        WEBSSH2_SSO_HEADER_PASSWORD: 'X-Remote-Password'
+        WEBSSH2_SSO_HEADER_PASSWORD: 'X-Remote-Password' // NOSONAR - HTTP header name, not a credential
       }
 
       const result = mapEnvironmentVariables(env)
@@ -313,7 +313,7 @@ describe('mapEnvironmentVariables', () => {
           enabled: true,
           headerMapping: {
             username: 'X-Remote-User',
-            password: 'X-Remote-Password'
+            password: 'X-Remote-Password' // NOSONAR - HTTP header name, not a credential
           }
         }
       })
@@ -406,5 +406,20 @@ describe('mapEnvironmentVariables', () => {
       expect(algoObj.cipher).toEqual(['aes256-gcm@openssh.com'])
       expect(algoObj.hmac).toEqual(['hmac-sha2-256'])
     })
+  })
+})
+
+describe('csp env mapping', () => {
+  it('maps WEBSSH2_CSP_* to the csp config path', () => {
+    const result = mapEnvironmentVariables({
+      WEBSSH2_CSP_MODE: 'enforce',
+      WEBSSH2_CSP_REPORT_URI: '/ssh/csp-report',
+      WEBSSH2_CSP_CONNECT_SRC: 'https://a.example:443,wss://a.example:443',
+      WEBSSH2_CSP_FRAME_ANCESTORS: 'self'
+    })
+    expect(result.csp?.mode).toBe('enforce')
+    expect(result.csp?.reportUri).toBe('/ssh/csp-report')
+    expect(result.csp?.connectSrc).toEqual(['https://a.example:443', 'wss://a.example:443'])
+    expect(result.csp?.frameAncestors).toEqual(['self'])
   })
 })
