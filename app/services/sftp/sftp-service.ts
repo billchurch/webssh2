@@ -748,6 +748,37 @@ export class SftpService implements FileService {
       const downloadState = { cancelled: false }
       this.downloadStreams.set(transferId, { stream: null, cancelled: false })
 
+      // Emit progress to callbacks.onProgress at most once per progressInterval
+      const emitProgressIfDue = (now: number): void => {
+        if (now - lastProgressTime < progressInterval) {
+          return
+        }
+        lastProgressTime = now
+        const progressResult = this.getProgress(transferId)
+        if (progressResult.ok) {
+          callbacks.onProgress(progressResult.value)
+        }
+      }
+
+      // Log the transfer rate every 100 chunks
+      const logChunkRateIfDue = (chunkIndex: number, now: number): void => {
+        if (chunkIndex === 0 || chunkIndex % 100 !== 0) {
+          return
+        }
+        const currentRate = bytesTransferred / ((now - startTime) / 1000)
+        logger('Download chunk #%d: rate=%s KB/s', chunkIndex, (currentRate / 1024).toFixed(2))
+      }
+
+      // All chunks emitted - complete the transfer
+      const completeDownload = (): void => {
+        cleanup()
+        const completeResult = this.transferManager.completeTransfer(transferId)
+        if (completeResult.ok) {
+          callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
+        }
+        logger('Download completed:', transferId)
+      }
+
       let isEmitting = false
       const emitBufferedChunks = async (): Promise<void> => {
         if (isEmitting) {
@@ -773,32 +804,14 @@ export class SftpService implements FileService {
               isLast
             })
 
-            // Emit progress periodically
             const now = Date.now()
-            if (now - lastProgressTime >= progressInterval) {
-              lastProgressTime = now
-              const progressResult = this.getProgress(transferId)
-              if (progressResult.ok) {
-                callbacks.onProgress(progressResult.value)
-              }
-            }
-
-            // Log timing every 100 chunks
-            if (nextChunkToEmit > 0 && nextChunkToEmit % 100 === 0) {
-              const currentRate = bytesTransferred / ((now - startTime) / 1000)
-              logger('Download chunk #%d: rate=%s KB/s', nextChunkToEmit, (currentRate / 1024).toFixed(2))
-            }
+            emitProgressIfDue(now)
+            logChunkRateIfDue(nextChunkToEmit, now)
 
             nextChunkToEmit++
 
             if (isLast) {
-              // All chunks emitted - complete the transfer
-              cleanup()
-              const completeResult = this.transferManager.completeTransfer(transferId)
-              if (completeResult.ok) {
-                callbacks.onComplete(buildCompleteResponse(transferId, 'download', completeResult.value))
-              }
-              logger('Download completed:', transferId)
+              completeDownload()
               resolve()
               return
             }

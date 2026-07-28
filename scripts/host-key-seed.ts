@@ -559,74 +559,76 @@ function nextArg(args: readonly string[], index: number): string | undefined {
   return next < args.length ? args.at(next) : undefined
 }
 
+function parseOptionalInt(value: string | undefined): number | undefined {
+  return value === undefined ? undefined : Number.parseInt(value, 10)
+}
+
+interface ParsedFlag {
+  patch: Partial<CliArgs>
+  // Number of extra argv entries this flag consumed beyond itself.
+  consumed: number
+}
+
+// Interprets a single CLI flag, returning the CliArgs fields it sets and how
+// many additional argv entries (e.g. a flag's value) it consumed.
+function parseFlag(arg: string, args: readonly string[], index: number): ParsedFlag {
+  switch (arg) {
+    case '--help':
+    case '-h':
+      return { patch: { command: 'help' }, consumed: 0 }
+    case '--host':
+      return { patch: { command: 'host', host: nextArg(args, index) }, consumed: 1 }
+    case '--port':
+      return { patch: { port: parseOptionalInt(nextArg(args, index)) }, consumed: 1 }
+    case '--hosts':
+      return { patch: { command: 'hosts', file: nextArg(args, index) }, consumed: 1 }
+    case '--known-hosts':
+      return { patch: { command: 'known-hosts', file: nextArg(args, index) }, consumed: 1 }
+    case '--list':
+      return { patch: { command: 'list' }, consumed: 0 }
+    case '--remove':
+      return { patch: { command: 'remove', removeTarget: nextArg(args, index) }, consumed: 1 }
+    case '--db':
+      return { patch: { dbPath: nextArg(args, index) }, consumed: 1 }
+    case '--commit':
+      // Consumed by handleKnownHosts in Task 4 to gate dry-run vs. write.
+      return { patch: { commit: true }, consumed: 0 }
+    case '--max-hosts': {
+      const maxHosts = parseOptionalInt(nextArg(args, index))
+      const patch: Partial<CliArgs> =
+        maxHosts === undefined ? {} : { maxHosts, maxHostsExplicit: true }
+      return { patch, consumed: 1 }
+    }
+    default:
+      return { patch: {}, consumed: 0 }
+  }
+}
+
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args = argv.slice(2) // skip node and script path
-  let command: CliArgs['command'] = 'help'
-  let host: string | undefined
-  let port: number | undefined
-  let file: string | undefined
-  let removeTarget: string | undefined
-  let dbPath: string | undefined
-  let commit = false
-  let maxHosts: number | undefined
-  let maxHostsExplicit = false
+  let result: CliArgs = {
+    command: 'help',
+    host: undefined,
+    port: undefined,
+    file: undefined,
+    removeTarget: undefined,
+    dbPath: undefined,
+    commit: false,
+    maxHosts: undefined,
+    maxHostsExplicit: false
+  }
 
   for (let i = 0; i < args.length; i++) {
     const arg = args.at(i)
-
-    if (arg === '--help' || arg === '-h') {
-      command = 'help'
-    } else if (arg === '--host') {
-      command = 'host'
-      host = nextArg(args, i)
-      i++
-    } else if (arg === '--port') {
-      const portStr = nextArg(args, i)
-      i++
-      if (portStr !== undefined) {
-        port = Number.parseInt(portStr, 10)
-      }
-    } else if (arg === '--hosts') {
-      command = 'hosts'
-      file = nextArg(args, i)
-      i++
-    } else if (arg === '--known-hosts') {
-      command = 'known-hosts'
-      file = nextArg(args, i)
-      i++
-    } else if (arg === '--list') {
-      command = 'list'
-    } else if (arg === '--remove') {
-      command = 'remove'
-      removeTarget = nextArg(args, i)
-      i++
-    } else if (arg === '--db') {
-      dbPath = nextArg(args, i)
-      i++
-    } else if (arg === '--commit') {
-      // Consumed by handleKnownHosts in Task 4 to gate dry-run vs. write.
-      commit = true
-    } else if (arg === '--max-hosts') {
-      const maxStr = nextArg(args, i)
-      i++
-      if (maxStr !== undefined) {
-        maxHosts = Number.parseInt(maxStr, 10)
-        maxHostsExplicit = true
-      }
+    if (arg === undefined) {
+      continue
     }
+    const { patch, consumed } = parseFlag(arg, args, i)
+    result = { ...result, ...patch }
+    i += consumed
   }
 
-  return {
-    command,
-    host,
-    port,
-    file,
-    removeTarget,
-    dbPath,
-    commit,
-    maxHosts,
-    maxHostsExplicit
-  }
+  return result
 }
 
 // ---------------------------------------------------------------------------
