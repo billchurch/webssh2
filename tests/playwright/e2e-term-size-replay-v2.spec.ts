@@ -51,19 +51,31 @@ async function waitForV2Prompt(page: Page, timeout = TIMEOUTS.PROMPT_WAIT): Prom
 async function executeV2Command(page: Page, command: string): Promise<void> {
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
-  // Snapshot right after typing (and before Enter) so the wait below reacts
-  // to the round trip triggered by Enter, not to the per-keystroke echo of
-  // typing the command itself.
+  // page.keyboard.type() resolves once key events are dispatched, not once
+  // the remote echo round-trips back. Wait for the typed command's echo to
+  // fully land before snapshotting below, so the change-detection reacts
+  // to Enter's round trip specifically, not to the tail of the command's
+  // own echo arriving late.
+  await page.waitForFunction(
+    (typedCommand) => {
+      const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+      const content = rows.map((row) => row.textContent ?? '').join('\n')
+      return content.includes(typedCommand)
+    },
+    command,
+    { timeout: TIMEOUTS.CONNECTION },
+  )
   const beforeEnter = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
     return rows.map((row) => row.textContent ?? '').join('\n')
   })
   await page.keyboard.press('Enter')
   // Wait for the terminal to reflect the round trip for Enter (echoed
-  // newline / command output). This intentionally does not wait for a
-  // return to the shell prompt, since some commands (e.g. interactive
-  // `read` prompts used by the credential-replay test) leave the terminal
-  // in a different state on purpose.
+  // newline / command output), now that the command's own echo has
+  // already fully landed. This intentionally does not wait for a return
+  // to the shell prompt, since some commands (e.g. interactive `read`
+  // prompts used by the credential-replay test) leave the terminal in a
+  // different state on purpose.
   await page.waitForFunction(
     (previousContent) => {
       const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
