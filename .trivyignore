@@ -1,10 +1,14 @@
 # Trivy ignore rules — every entry MUST link to a SECURITY.md assessment.
 # Format: one CVE per line; trailing comment optional but encouraged.
 
-# CVE-2026-33671 — picomatch 4.0.3 ReDoS bundled inside the global npm shipped
-# in node:22-alpine. Not exploitable in our runtime image: the container
-# entrypoint is `node dist/index.js`; the bundled npm is never invoked.
-# See SECURITY.md → "CVE-2026-33671 (picomatch ReDoS in bundled npm)".
-# Re-evaluate when upstream node:22-alpine ships an npm release that pulls
-# picomatch >= 4.0.4; remove this entry then.
-CVE-2026-33671
+# CVE-2026-14257 — brace-expansion 5.0.7 DoS (unbounded expansion length)
+# vendored inside the global npm@11.18.0 installed by the Dockerfile runtime
+# stage. Fixed only in brace-expansion 5.0.8 (published 2026-07-23), which no
+# npm release vendors yet. Not exploitable in our runtime image: the bundled
+# npm is only invoked by operators running `npm run hostkeys:prod` against
+# first-party package.json scripts — no attacker-controlled glob patterns
+# reach it. See SECURITY.md → "CVE-2026-14257 (brace-expansion DoS in bundled
+# npm)". Re-evaluate on each npm release: bump the pinned npm version in the
+# Dockerfile once a release vendors brace-expansion >= 5.0.8, then remove
+# this entry.
+CVE-2026-14257

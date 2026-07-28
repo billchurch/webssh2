@@ -56,8 +56,16 @@ RUN npm run build
 FROM ${BASE_IMAGE} AS runtime
 WORKDIR /srv/webssh2
 
-# Install tini for proper signal handling and zombie process reaping
-RUN apk add --no-cache tini
+# Install tini for proper signal handling and zombie process reaping, and
+# upgrade the bundled npm CLI. node:22-alpine ships npm 10.x whose vendored
+# tar/sigstore/brace-expansion carry CVEs (incl. CVE-2026-59873, CRITICAL)
+# that are only fixed in npm >= 11.18.0 and will never be backported to 10.x,
+# so waiting on base-image digest bumps cannot clear them. npm must remain in
+# the runtime image for the operator host-key CLI (npm run hostkeys:prod).
+# Pinned exact per supply-chain policy; bump deliberately.
+RUN apk add --no-cache tini \
+  && npm install -g --ignore-scripts npm@11.18.0 \
+  && npm cache clean --force
 
 ENV NODE_ENV=production \
     PORT=2222 \
