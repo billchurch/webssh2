@@ -119,7 +119,7 @@ async function deleteEntry(page: Page, entryName: string): Promise<void> {
   // File entries are listitems with accessible name like "File: filename.txt, 55 B" or "Folder: foldername"
   const escapedName = entryName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-  const row = page.getByRole('listitem', { name: new RegExp(String.raw`(File|Folder): ${escapedName}`) })
+  const row = page.getByRole('listitem', { name: new RegExp(`(File|Folder): ${escapedName}`) })
 
   // Hover to show action buttons
   await row.hover()
@@ -167,7 +167,7 @@ async function downloadFile(page: Page, fileName: string): Promise<void> {
   // File entries are listitems with accessible name like "File: filename.txt, 55 B"
   const escapedName = fileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
   // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-  const row = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
+  const row = page.getByRole('listitem', { name: new RegExp(`File: ${escapedName}`) })
 
   await row.hover()
 
@@ -417,7 +417,7 @@ test.describe('SFTP E2E Tests', () => {
     // File browser entries are listitems with accessible name like "File: filename.txt, 55 B"
     const escapedName = blockedFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-    const fileInBrowserList = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
+    const fileInBrowserList = page.getByRole('listitem', { name: new RegExp(`File: ${escapedName}`) })
     await expect(fileInBrowserList).toBeHidden({ timeout: TIMEOUTS.SHORT_WAIT })
   })
 
@@ -494,7 +494,7 @@ test.describe('SFTP E2E Tests', () => {
     // File browser entries are listitems with accessible name like "File: filename.txt, 97.7 KB"
     const escapedName = testFileName.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     // eslint-disable-next-line security/detect-non-literal-regexp -- Intentional dynamic matching of test file names
-    const fileEntry = page.getByRole('listitem', { name: new RegExp(String.raw`File: ${escapedName}`) })
+    const fileEntry = page.getByRole('listitem', { name: new RegExp(`File: ${escapedName}`) })
     await expect(fileEntry).toBeVisible({ timeout: TIMEOUTS.ACTION })
 
     // Cleanup
