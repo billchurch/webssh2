@@ -308,7 +308,7 @@ describe('Keyboard-Interactive Authentication', () => {
         'Test',
         'en',
         [{ prompt: 'Password: ', echo: false }],
-        'not-a-function' as unknown
+        'not-a-function'
       )
     }).not.toThrow()
   })

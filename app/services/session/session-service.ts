@@ -60,7 +60,11 @@ export class SessionServiceImpl implements SessionService {
         })
         
         // Get updated state
-        state = this.store.getState(sessionId) as SessionState
+        const updated = this.store.getState(sessionId)
+        if (updated === undefined) {
+          return err(new Error('Session state missing after metadata update'))
+        }
+        state = updated
       }
 
       const session: Session = {

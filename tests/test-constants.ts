@@ -170,7 +170,7 @@ export const TEST_SSH: TestSSHConstants = {
     PORT_TOO_HIGH: 70000,
     COLS_TOO_HIGH: 10000,
     ROWS_TOO_LOW: 0,
-    STRING_PORT: 'invalid' as unknown
+    STRING_PORT: 'invalid'
   }
 } as const
 

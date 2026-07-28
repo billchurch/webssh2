@@ -106,7 +106,7 @@ describe('buildTempConfig - tempConfig.header', () => {
     // field through anyway so this assertion continues to catch a
     // future maintainer who reintroduces style consumption inside
     // buildHeaderConfig (e.g. by re-adding the field to the type).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const req = reqWithOverride({
       text: 'Test',
       background: 'green',

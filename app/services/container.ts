@@ -39,7 +39,7 @@ export class Container {
   register<T>(token: Token<T> | string, factory: Factory<T>): void {
     const key = typeof token === 'string' ? token : String(token)
     logger('Registering factory:', key)
-    this.factories.set(key, factory as Factory<unknown>)
+    this.factories.set(key, factory)
   }
 
   /**
@@ -48,7 +48,7 @@ export class Container {
   registerAsync<T>(token: Token<T> | string, factory: AsyncFactory<T>): void {
     const key = typeof token === 'string' ? token : String(token)
     logger('Registering async factory:', key)
-    this.asyncFactories.set(key, factory as AsyncFactory<unknown>)
+    this.asyncFactories.set(key, factory)
   }
 
   /**
@@ -235,7 +235,7 @@ export class Container {
  * Create typed tokens for dependency injection
  */
 export function createToken<T>(name: string): Token<T> {
-  return name as Token<T>
+  return name
 }
 
 /**

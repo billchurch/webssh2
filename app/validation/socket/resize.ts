@@ -8,7 +8,7 @@ import { safeGet } from '../../utils/safe-property-access.js'
 export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
   const recordResult = ensureRecord(data, 'Resize data must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<ResizeParams>
+    return recordResult
   }
 
   const size = recordResult.value
@@ -29,7 +29,7 @@ export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
     ROWS_FIELD.label
   )
   if (!rowsResult.ok) {
-    return rowsResult as Result<ResizeParams>
+    return rowsResult
   }
 
   const colsResult = parseIntInRange(
@@ -39,7 +39,7 @@ export const validateResizeMessage = (data: unknown): Result<ResizeParams> => {
     COLS_FIELD.label
   )
   if (!colsResult.ok) {
-    return colsResult as Result<ResizeParams>
+    return colsResult
   }
 
   return {

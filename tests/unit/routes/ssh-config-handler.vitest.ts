@@ -4,10 +4,9 @@ import { createDefaultConfig } from '../../../app/config/config-processor.js'
 import { AUTH_METHOD_TOKENS } from '../../../app/constants/index.js'
 import { createAuthMethod } from '../../../app/types/branded.js'
 import type { SshRouteRequest } from '../../../app/routes/handlers/ssh-handler.js'
-import type { AuthSession } from '../../../app/auth/auth-utils.js'
 
 const createRequest = (): SshRouteRequest => ({
-  session: {} as AuthSession,
+  session: {},
   query: {},
   params: {},
   headers: {},

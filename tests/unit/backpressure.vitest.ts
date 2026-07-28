@@ -19,8 +19,8 @@ function makeMockSocket(
       },
       once: vi.fn(),
       removeListener: vi.fn()
-    } as never
-  } as BackpressureSocket
+    }
+  }
 }
 
 describe('computeBackpressureAction', () => {

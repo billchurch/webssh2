@@ -123,11 +123,11 @@ export class UnifiedAuthPipeline {
    * Set credentials for manual auth and force switch to manual provider
    */
   setManualCredentials(creds: Record<string, unknown>): boolean {
-    if (isValidCredentials(creds as Credentials)) {
+    if (isValidCredentials(creds)) {
       // Force switch to manual auth provider
       debug('Switching to manual auth provider for new credentials')
       const manualProvider = new ManualAuthProvider()
-      manualProvider.setCredentials(creds as Credentials)
+      manualProvider.setCredentials(creds)
       this.provider = manualProvider
       debug('Manual credentials set: %O', maskSensitive(creds))
       return true

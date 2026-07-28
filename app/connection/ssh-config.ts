@@ -69,7 +69,7 @@ const createBaseConfig = (
   host: creds.host ?? '',
   port: creds.port ?? DEFAULTS.SSH_PORT,
   tryKeyboard,
-  algorithms: config.ssh.algorithms as unknown,
+  algorithms: config.ssh.algorithms,
   readyTimeout: config.ssh.readyTimeout,
   keepaliveInterval: config.ssh.keepaliveInterval,
   keepaliveCountMax: config.ssh.keepaliveCountMax,

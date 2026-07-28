@@ -35,7 +35,7 @@ export function createTelnetRoutes(config: Config): Router {
 
     processAuthParameters(expressReq.query, expressReq.session)
     await handleConnection(
-      expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
+      expressReq,
       res,
       { connectionMode: 'full', protocol: 'telnet' }
     )
@@ -73,7 +73,7 @@ export function createTelnetRoutes(config: Config): Router {
     const lockedPort = Number.isFinite(parsedPort) ? parsedPort : TELNET_DEFAULTS.PORT
 
     await handleConnection(
-      expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
+      expressReq,
       res,
       {
         protocol: 'telnet',
@@ -96,7 +96,7 @@ export function createTelnetRoutes(config: Config): Router {
 
     processAuthParameters(expressReq.query, expressReq.session)
     await handleConnection(
-      expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
+      expressReq,
       res,
       {
         protocol: 'telnet',
@@ -117,7 +117,7 @@ export function createTelnetRoutes(config: Config): Router {
 
     processAuthParameters(expressReq.query, expressReq.session)
     await handleConnection(
-      expressReq as unknown as Request & { session?: AuthSession; sessionID?: string },
+      expressReq,
       res,
       {
         protocol: 'telnet',
