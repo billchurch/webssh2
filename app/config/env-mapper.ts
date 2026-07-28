@@ -212,6 +212,186 @@ const BUILTIN_THEME_NAMES: readonly string[] = [
 /** Valid values for the headerBackground theming option */
 const VALID_HEADER_BACKGROUND = new Set(['independent', 'followTerminal', 'locked'])
 
+const ADDITIONAL_THEMES_ENV = 'WEBSSH2_THEMING_ADDITIONAL_THEMES'
+const ADDITIONAL_THEMES_PATH = 'options.theming.additionalThemes'
+
+/** A resolved assignment: the config path to write and the value to write there */
+type ConfigEntry = readonly [path: string, value: unknown]
+
+/** Theming assignments plus the warnings raised while resolving them */
+interface ThemingResolution {
+  readonly entries: readonly ConfigEntry[]
+  readonly warnings: readonly ThemeValidationWarning[]
+}
+
+/**
+ * Read an environment variable as a string, treating absent and non-string
+ * values alike as unset.
+ * @pure
+ */
+function readEnvString(
+  env: Record<string, string | undefined>,
+  name: string
+): string | undefined {
+  const value = safeGet(env, createSafeKey(name))
+  return typeof value === 'string' ? value : undefined
+}
+
+/**
+ * Resolve the algorithm preset into a base `ssh.algorithms` assignment.
+ * Yields nothing when the preset is unset or unrecognized.
+ * @pure
+ */
+function collectPresetEntries(env: Record<string, string | undefined>): readonly ConfigEntry[] {
+  const presetVar = ALGORITHM_ENV_VARS.PRESET
+  const presetName = readEnvString(env, presetVar)
+  if (presetName === undefined) {
+    return []
+  }
+
+  const preset = getAlgorithmPreset(presetName)
+  if (preset === undefined) {
+    return []
+  }
+
+  const presetMapping = safeGet(ENV_VAR_MAPPING, createSafeKey(presetVar)) as EnvVarMap | undefined
+  if (presetMapping === undefined) {
+    return []
+  }
+
+  // Clone the preset to avoid mutating the global ALGORITHM_PRESETS object
+  const presetClone = {
+    cipher: [...preset.cipher],
+    kex: [...preset.kex],
+    hmac: [...preset.hmac],
+    compress: [...preset.compress],
+    serverHostKey: [...preset.serverHostKey]
+  }
+  return [[presetMapping.path, presetClone]]
+}
+
+/**
+ * Resolve every non-preset variable in ENV_VAR_MAPPING that is set in `env`.
+ * Preset is skipped here because it is applied first, so these individual
+ * assignments overwrite the preset values.
+ * @pure
+ */
+function collectMappedEntries(env: Record<string, string | undefined>): readonly ConfigEntry[] {
+  const entries: ConfigEntry[] = []
+  for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
+    if (mapping.type === 'preset') {
+      continue
+    }
+
+    // Access restricted to known keys from ENV_VAR_MAPPING
+    const envValue = readEnvString(env, envVar)
+    if (envValue !== undefined) {
+      entries.push([mapping.path, parseEnvValue(envValue, mapping.type)])
+    }
+  }
+  return entries
+}
+
+/**
+ * Resolve the themes allowlist, dropping names that fail THEME_NAME_REGEX.
+ * @pure
+ */
+function collectThemeNamesEntries(env: Record<string, string | undefined>): readonly ConfigEntry[] {
+  const raw = readEnvString(env, 'WEBSSH2_THEMING_THEMES')
+  if (raw === undefined) {
+    return []
+  }
+
+  const valid = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => THEME_NAME_REGEX.test(s))
+  return [['options.theming.themes', valid]]
+}
+
+/**
+ * Resolve the default theme, falling back to 'Default' when malformed.
+ * @pure
+ */
+function collectDefaultThemeEntries(env: Record<string, string | undefined>): readonly ConfigEntry[] {
+  const raw = readEnvString(env, 'WEBSSH2_THEMING_DEFAULT_THEME')
+  if (raw === undefined) {
+    return []
+  }
+
+  const trimmed = raw.trim()
+  const resolved = THEME_NAME_REGEX.test(trimmed) ? trimmed : 'Default'
+  return [['options.theming.defaultTheme', resolved]]
+}
+
+/**
+ * Resolve the header background mode, leaving it unset when not recognized.
+ * @pure
+ */
+function collectHeaderBackgroundEntries(
+  env: Record<string, string | undefined>
+): readonly ConfigEntry[] {
+  const raw = readEnvString(env, 'WEBSSH2_THEMING_HEADER_BACKGROUND')
+  if (raw === undefined || !VALID_HEADER_BACKGROUND.has(raw)) {
+    return []
+  }
+
+  return [['options.theming.headerBackground', raw]]
+}
+
+/**
+ * Resolve the base64 JSON additional-themes payload. A payload that fails to
+ * decode yields an empty theme list plus a single warning describing why.
+ * @pure
+ */
+function resolveAdditionalThemes(env: Record<string, string | undefined>): ThemingResolution {
+  const raw = readEnvString(env, ADDITIONAL_THEMES_ENV)
+  if (raw === undefined) {
+    return { entries: [], warnings: [] }
+  }
+
+  const parsed = parseBase64JsonArrayEnv(raw)
+  if (parsed.ok) {
+    const loaded = loadAdditionalThemes(parsed.value, {
+      source: ADDITIONAL_THEMES_ENV,
+      builtinNames: BUILTIN_THEME_NAMES,
+    })
+    return {
+      entries: [[ADDITIONAL_THEMES_PATH, loaded.valid]],
+      warnings: loaded.warnings
+    }
+  }
+
+  return {
+    entries: [[ADDITIONAL_THEMES_PATH, []]],
+    warnings: [
+      {
+        source: ADDITIONAL_THEMES_ENV,
+        path: '',
+        reason: parsed.detail === undefined ? parsed.reason : `${parsed.reason}: ${parsed.detail}`
+      }
+    ]
+  }
+}
+
+/**
+ * Resolve the theming env vars that require bespoke validation beyond the
+ * generic ENV_VAR_MAPPING parsing.
+ * @pure
+ */
+function resolveThemingEnv(env: Record<string, string | undefined>): ThemingResolution {
+  const additional = resolveAdditionalThemes(env)
+  return {
+    entries: [
+      ...collectThemeNamesEntries(env),
+      ...collectDefaultThemeEntries(env),
+      ...collectHeaderBackgroundEntries(env),
+      ...additional.entries
+    ],
+    warnings: additional.warnings
+  }
+}
+
 /**
  * Map environment variables to configuration object
  * Individual algorithm settings take precedence over preset values
@@ -224,94 +404,22 @@ export function mapEnvironmentVariables(
   env: Record<string, string | undefined>,
   hooks?: EnvMapperHooks
 ): Record<string, unknown> {
+  const theming = resolveThemingEnv(env)
+  // Order matters: the preset supplies base algorithm values, and the
+  // individual variables applied after it overwrite the ones they name.
+  const entries = [
+    ...collectPresetEntries(env),
+    ...collectMappedEntries(env),
+    ...theming.entries
+  ]
+
   const config: Record<string, unknown> = {}
-
-  // First pass: process preset if it exists (provides base algorithm values)
-  const presetVar = ALGORITHM_ENV_VARS.PRESET
-  const presetValue = safeGet(env, createSafeKey(presetVar))
-  if (presetValue !== undefined && typeof presetValue === 'string') {
-    const preset = getAlgorithmPreset(presetValue)
-    if (preset != null) {
-      const presetMapping = safeGet(ENV_VAR_MAPPING, createSafeKey(presetVar)) as EnvVarMap | undefined
-      if (presetMapping !== undefined) {
-        // Clone the preset to avoid mutating the global ALGORITHM_PRESETS object
-        const presetClone = {
-          cipher: [...preset.cipher],
-          kex: [...preset.kex],
-          hmac: [...preset.hmac],
-          compress: [...preset.compress],
-          serverHostKey: [...preset.serverHostKey]
-        }
-        setNestedProperty(config, presetMapping.path, presetClone)
-      }
-    }
+  for (const [path, value] of entries) {
+    setNestedProperty(config, path, value)
   }
 
-  // Second pass: process all non-preset variables (individual overrides take precedence)
-  for (const [envVar, mapping] of Object.entries(ENV_VAR_MAPPING)) {
-    // Skip preset since it was already processed
-    if (mapping.type === 'preset') {
-      continue
-    }
-
-    // Access restricted to known keys from ENV_VAR_MAPPING
-    const envValue = safeGet(env, createSafeKey(envVar))
-    if (envValue !== undefined && typeof envValue === 'string') {
-      const parsedValue = parseEnvValue(envValue, mapping.type)
-      setNestedProperty(config, mapping.path, parsedValue)
-    }
-  }
-
-  // Third pass: complex theming env vars that require bespoke validation.
-  // Structured WARN logging for dropped/invalid entries is wired in Task 10.
-
-  const themesRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_THEMES'))
-  if (themesRaw !== undefined && typeof themesRaw === 'string') {
-    const valid = themesRaw
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => THEME_NAME_REGEX.test(s))
-    setNestedProperty(config, 'options.theming.themes', valid)
-  }
-
-  const defaultThemeRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_DEFAULT_THEME'))
-  if (defaultThemeRaw !== undefined && typeof defaultThemeRaw === 'string') {
-    const trimmed = defaultThemeRaw.trim()
-    const resolved = THEME_NAME_REGEX.test(trimmed) ? trimmed : 'Default'
-    setNestedProperty(config, 'options.theming.defaultTheme', resolved)
-  }
-
-  const headerBgRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_HEADER_BACKGROUND'))
-  if (headerBgRaw !== undefined && typeof headerBgRaw === 'string') {
-    if (VALID_HEADER_BACKGROUND.has(headerBgRaw)) {
-      setNestedProperty(config, 'options.theming.headerBackground', headerBgRaw)
-    }
-  }
-
-  const additionalRaw = safeGet(env, createSafeKey('WEBSSH2_THEMING_ADDITIONAL_THEMES'))
-  if (additionalRaw !== undefined && typeof additionalRaw === 'string') {
-    const parsed = parseBase64JsonArrayEnv(additionalRaw)
-    if (parsed.ok) {
-      const loaded = loadAdditionalThemes(parsed.value, {
-        source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
-        builtinNames: BUILTIN_THEME_NAMES,
-      })
-      setNestedProperty(config, 'options.theming.additionalThemes', loaded.valid)
-      if (hooks?.onThemingWarning !== undefined) {
-        for (const warning of loaded.warnings) {
-          hooks.onThemingWarning(warning)
-        }
-      }
-    } else {
-      setNestedProperty(config, 'options.theming.additionalThemes', [])
-      if (hooks?.onThemingWarning !== undefined) {
-        hooks.onThemingWarning({
-          source: 'WEBSSH2_THEMING_ADDITIONAL_THEMES',
-          path: '',
-          reason: parsed.detail === undefined ? parsed.reason : `${parsed.reason}: ${parsed.detail}`
-        })
-      }
-    }
+  for (const warning of theming.warnings) {
+    hooks?.onThemingWarning?.(warning)
   }
 
   return config
