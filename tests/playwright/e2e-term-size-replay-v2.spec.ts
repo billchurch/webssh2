@@ -97,6 +97,7 @@ async function openV2WithBasicAuth(browser: Browser, baseURL: string | undefined
 }
 
 test.describe('V2 E2E: TERM, size, and replay credentials', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run these tests')
 
   test('sets TERM from sshterm (V2)', async ({ browser, baseURL }) => {

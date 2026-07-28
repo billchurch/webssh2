@@ -235,6 +235,7 @@ async function waitForSftpAvailable(page: Page): Promise<void> {
 // =============================================================================
 
 test.describe('SFTP E2E Tests', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run these tests')
 
   test.beforeEach(async ({ browser, baseURL }) => {

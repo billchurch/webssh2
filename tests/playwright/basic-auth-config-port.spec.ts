@@ -5,6 +5,7 @@ import { connectWithBasicAuth, waitForV2Prompt, executeAndVerifyCommand } from '
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 test.describe('Config SSH port fallback', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run this test')
 
   test('uses configured ssh.port when Basic Auth URL omits port parameter', async ({ page }) => {
