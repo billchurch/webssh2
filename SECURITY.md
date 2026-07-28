@@ -286,11 +286,67 @@ This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in clien
 
 **Mitigation status:**
 
-- The `.trivyignore` file at the repo root suppresses this single CVE for the
-  Trivy image scan gate so unrelated image regressions still fail the build.
-- Tracking upstream: re-evaluate when `node:22-alpine` ships a bundled
-  `npm` whose `picomatch` is `>= 4.0.4`. At that point Renovate's auto-merged
-  digest bump will land the fix and the `.trivyignore` entry should be removed.
+- **Resolved 2026-07-28**: the Dockerfile runtime stage now upgrades the
+  bundled npm to a pinned `npm@11.18.0`, which vendors picomatch 4.0.4
+  (patched). The `.trivyignore` entry has been removed.
+
+### CVE-2026-14257 (brace-expansion DoS in bundled npm)
+
+| Aspect             | Status                                                                         |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Vulnerability type | Denial of Service via unbounded expansion length (out-of-memory crash)         |
+| Affected versions  | brace-expansion <= 5.0.7 (fixed in 5.0.8, published 2026-07-23)                |
+| Our exposure       | brace-expansion 5.0.7 vendored inside the pinned global `npm@11.18.0`          |
+| Path on disk       | `/usr/local/lib/node_modules/npm/node_modules/brace-expansion` (runtime image) |
+| Status             | **Not exploitable** — bundled `npm` never processes attacker-controlled globs  |
+
+**Why we are not affected:**
+
+- The container's `ENTRYPOINT` is `tini` and `CMD` is `node dist/index.js`;
+  the application never invokes `npm` or loads code from the global npm
+  install.
+- The only supported use of `npm` inside the container is the operator-run
+  `npm run hostkeys:prod` host-key CLI, which executes first-party
+  package.json scripts. No attacker-controlled glob patterns reach npm's
+  brace-expansion.
+- As of 2026-07-28 no published npm release vendors brace-expansion 5.0.8
+  (the fix postdates every npm release), so no upgrade path exists yet.
+
+**Mitigation status:**
+
+- The Dockerfile runtime stage pins `npm@11.18.0`, which already remediates
+  the more severe bundled-npm findings (tar CVE-2026-59873 CRITICAL /
+  CVE-2026-59874 HIGH, sigstore CVE-2026-48815 HIGH).
+- The `.trivyignore` file suppresses this single CVE for the Trivy image
+  scan gate so unrelated image regressions still fail the build.
+- Re-evaluate on each npm release: bump the pinned npm version in the
+  Dockerfile once a release vendors brace-expansion >= 5.0.8, then remove
+  the `.trivyignore` entry.
+
+### GHSA-mh99-v99m-4gvg (brace-expansion 1.x in dev toolchain, npm audit)
+
+| Aspect             | Status                                                                        |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Vulnerability type | Denial of Service via unbounded expansion length (same root as CVE-2026-14257)|
+| Affected versions  | advisory range <= 5.0.7; only 5.0.8 listed as patched as of 2026-07-28        |
+| Our exposure       | brace-expansion 1.1.16 via `minimatch@3` inside the eslint dev toolchain      |
+| Status             | **Not exploitable** — devDependencies only; never shipped or run in production|
+
+**Why we are not affected:**
+
+- The vulnerable copy exists only under `@eslint/config-array`,
+  `@eslint/eslintrc`, and `eslint-plugin-node` — all devDependencies. It is
+  absent from the production install (`npm ci --omit=dev`) and the Docker
+  image.
+- Lint glob patterns are first-party (eslint config), not attacker input.
+- No patched 1.x release of brace-expansion exists, and overriding the 1.x
+  copy with 2.x/5.x breaks minimatch@3 at runtime (the CommonJS default
+  export was replaced by a named `expand` export). Upstream backports for the
+  2.x/3.x lines landed 2026-07-27/28; a 1.x backport and updated advisory
+  ranges are expected shortly.
+- Re-evaluate when brace-expansion publishes a patched 1.x release (then
+  `npm audit fix` clears it) or when the GitHub advisory adds per-line
+  patched ranges.
 
 ---
 
