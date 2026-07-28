@@ -325,7 +325,7 @@ jobs:
       - name: Snapshot existing sha-tag digest (for post-push assertion)
         run: |
           short="${RELEASE_SHA:0:7}"
-          before=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${short}" \
+          before=$(curl -fsSL --proto '=https' --proto-redir '=https' "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${short}" \
             | jq -r '.digest' 2>/dev/null || echo "")
           echo "SHA_TAG_SHORT=${short}"          >> "$GITHUB_ENV"
           echo "SHA_TAG_DIGEST_BEFORE=${before}" >> "$GITHUB_ENV"
@@ -392,7 +392,7 @@ jobs:
       - name: Assert sha-tag digest unchanged
         if: env.SIMULATE != 'true'
         run: |
-          after=$(curl -fsSL "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${SHA_TAG_SHORT}" \
+          after=$(curl -fsSL --proto '=https' --proto-redir '=https' "https://hub.docker.com/v2/repositories/billchurch/webssh2/tags/sha-${SHA_TAG_SHORT}" \
             | jq -r '.digest')
           if [ "$after" != "${SHA_TAG_DIGEST_BEFORE}" ]; then
             echo "::error::sha-${SHA_TAG_SHORT} digest changed from ${SHA_TAG_DIGEST_BEFORE} to ${after}"
