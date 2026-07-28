@@ -4,7 +4,7 @@
 import type { Config } from '../types/config.js'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/index.js'
-import escape from 'validator/lib/escape'
+import escape from 'validator/lib/escape.js'
 
 /**
  * SSH Credentials structure

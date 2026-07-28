@@ -1,10 +1,10 @@
 // app/validation/ssh.ts
 // Pure validation functions for SSH-related inputs
 
-import isIP from 'validator/lib/isIP'
-import escape from 'validator/lib/escape'
-import isLength from 'validator/lib/isLength'
-import matches from 'validator/lib/matches'
+import isIP from 'validator/lib/isIP.js'
+import escape from 'validator/lib/escape.js'
+import isLength from 'validator/lib/isLength.js'
+import matches from 'validator/lib/matches.js'
 import { DEFAULTS } from '../constants/index.js'
 
 /**

@@ -1,6 +1,6 @@
 import type { Result } from '../../types/result.js'
-import isInt from 'validator/lib/isInt'
-import isPort from 'validator/lib/isPort'
+import isInt from 'validator/lib/isInt.js'
+import isPort from 'validator/lib/isPort.js'
 import { ENV_LIMITS, VALIDATION_LIMITS } from '../../constants/index.js'
 import { safeGet, isRecord } from '../../utils/safe-property-access.js'
 import {
