@@ -151,6 +151,15 @@ function buildHeaderConfig(
   return { header }
 }
 
+function buildTerminalConfig(cfg: Config): Record<string, unknown> {
+  // Only injected when enabled — keeps the config payload byte-identical
+  // for deployments that have not opted in (billchurch/webssh2#497).
+  if (cfg.options.terminal?.shiftEnterNewline !== true) {
+    return {}
+  }
+  return { terminal: { shiftEnterNewline: true } }
+}
+
 async function sendClient(
   config: Record<string, unknown>,
   res: Response,
@@ -238,6 +247,7 @@ export function buildTempConfig(
   Object.assign(tempConfig, buildConnectionMode(opts))
   Object.assign(tempConfig, buildSshCredentials(req.session, req))
   Object.assign(tempConfig, buildHeaderConfig(cfg, req.session))
+  Object.assign(tempConfig, buildTerminalConfig(cfg))
   return tempConfig
 }
 
