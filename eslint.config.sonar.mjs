@@ -58,7 +58,9 @@ export default [
       },
     },
     rules: {
-      'sonarjs/cognitive-complexity': 'warn',
+      // All known cognitive-complexity offenders were refactored below the
+      // threshold; enforce the rule so new violations fail the build.
+      'sonarjs/cognitive-complexity': 'error',
       'sonarjs/function-return-type': 'warn',
     },
   },

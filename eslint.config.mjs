@@ -99,10 +99,9 @@ export default [
       // S7776 parity: use a Set for repeated membership checks
       'unicorn/prefer-set-has': 'error',
       'unicorn/consistent-function-scoping': 'warn',
-      // sonarjs downgrades: existing functions exceed the threshold; refactors
-      // are tracked separately (see SonarCloud project for canonical findings).
-      // Keeping these visible as warnings so new violations are surfaced.
-      'sonarjs/cognitive-complexity': 'warn',
+      // All known cognitive-complexity offenders were refactored below the
+      // threshold; enforce the rule so new violations fail the build.
+      'sonarjs/cognitive-complexity': 'error',
       // The codebase uses `Result<T, E>` and discriminated-union returns by
       // design — this rule misreads those as inconsistent return types.
       'sonarjs/function-return-type': 'warn',
