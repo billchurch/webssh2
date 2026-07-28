@@ -189,7 +189,7 @@ export async function loadEnhancedConfig(
   const processResult = processConfigPure(
     defaultConfig,
     fileConfig,
-    envConfig as Partial<Config>
+    envConfig
   )
   
   if (!processResult.ok) {

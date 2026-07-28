@@ -149,7 +149,7 @@ export const validateEnvironmentVars = (value: unknown): Record<string, string> 
     return undefined
   }
 
-  return Object.fromEntries(entries) as Record<string, string>
+  return Object.fromEntries(entries)
 }
 
 export const validateOptionalTerm = (value: unknown): string | undefined => {

@@ -242,7 +242,7 @@ describe('Terminal Handler', () => {
       const emptyConfig = {
         ...mockConfig,
         ssh: { ...mockConfig.ssh, term: '' },
-      } as Config
+      }
       
       const result = createTerminalState(config, emptyConfig)
       

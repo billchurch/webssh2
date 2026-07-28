@@ -207,7 +207,7 @@ export class ServiceSocketTerminal {
 
       const shellResult = await telnetService.shell(connectionId, shellOptions)
       if (shellResult.ok) {
-        return shellResult.value as SSH2Stream
+        return shellResult.value
       }
 
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, shellResult.error.message)

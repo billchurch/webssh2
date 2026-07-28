@@ -143,7 +143,7 @@ function readOptionalFile(
 
   const fileUrl = pathToFileURL(resolved)
   const data = fs.readFileSync(fileUrl)
-  return { [key]: data } as Partial<TlsCredentials>
+  return { [key]: data }
 }
 /* eslint-enable security/detect-non-literal-fs-filename */
 

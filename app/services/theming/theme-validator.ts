@@ -54,7 +54,7 @@ function rebuildColors(
   const out: Partial<Record<keyof ThemeColors, string>> = {}
   if (!isPlainObject(input)) {
     errors.push({ path: pathPrefix, reason: 'colors must be an object' })
-    return out as ThemeColors
+    return out
   }
   for (const key of Object.keys(input)) {
     if (FORBIDDEN_PROTOTYPE_KEYS.includes(key)) {
@@ -85,7 +85,7 @@ function rebuildColors(
     // eslint-disable-next-line security/detect-object-injection -- key is from THEME_COLOR_KEYS allowlist, not user input
     out[key] = value
   }
-  return out as ThemeColors
+  return out
 }
 
 export function validateTheme(

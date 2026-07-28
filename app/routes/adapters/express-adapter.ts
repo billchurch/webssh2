@@ -46,10 +46,10 @@ const normalizeParams = (params: Record<string, string | string[] | undefined>):
 export const extractRouteRequest = (req: ExpressRequest): SshRouteRequest => {
   return {
     session: req.session,
-    query: req.query as Record<string, unknown>,
+    query: req.query,
     params: normalizeParams(req.params),
     body: req.body as Record<string, unknown>,
-    headers: req.headers as Record<string, unknown>
+    headers: req.headers
   }
 }
 

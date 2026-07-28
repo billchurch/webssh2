@@ -244,19 +244,19 @@ const validateTransferId = (
 export const validateSftpListRequest = (data: unknown): Result<SftpListRequest> => {
   const recordResult = ensureRecord(data, 'List request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpListRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const pathResult = validateRequiredString(obj, PATH_KEY, 'path')
   if (!pathResult.ok) {
-    return pathResult as Result<SftpListRequest>
+    return pathResult
   }
 
   const showHiddenResult = validateOptionalBoolean(obj, SHOW_HIDDEN_KEY)
   if (!showHiddenResult.ok) {
-    return showHiddenResult as Result<SftpListRequest>
+    return showHiddenResult
   }
 
   const result: SftpListRequest = {
@@ -276,14 +276,14 @@ export const validateSftpListRequest = (data: unknown): Result<SftpListRequest> 
 export const validateSftpStatRequest = (data: unknown): Result<SftpStatRequest> => {
   const recordResult = ensureRecord(data, 'Stat request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpStatRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const pathResult = validateRequiredString(obj, PATH_KEY, 'path')
   if (!pathResult.ok) {
-    return pathResult as Result<SftpStatRequest>
+    return pathResult
   }
 
   return { ok: true, value: { path: pathResult.value } }
@@ -295,19 +295,19 @@ export const validateSftpStatRequest = (data: unknown): Result<SftpStatRequest> 
 export const validateSftpMkdirRequest = (data: unknown): Result<SftpMkdirRequest> => {
   const recordResult = ensureRecord(data, 'Mkdir request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpMkdirRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const pathResult = validateRequiredString(obj, PATH_KEY, 'path')
   if (!pathResult.ok) {
-    return pathResult as Result<SftpMkdirRequest>
+    return pathResult
   }
 
   const modeResult = validateOptionalInt(obj, MODE_KEY, 'mode', { min: 0, max: 0o777 })
   if (!modeResult.ok) {
-    return modeResult as Result<SftpMkdirRequest>
+    return modeResult
   }
 
   const result: SftpMkdirRequest = {
@@ -327,19 +327,19 @@ export const validateSftpMkdirRequest = (data: unknown): Result<SftpMkdirRequest
 export const validateSftpDeleteRequest = (data: unknown): Result<SftpDeleteRequest> => {
   const recordResult = ensureRecord(data, 'Delete request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpDeleteRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const pathResult = validateRequiredString(obj, PATH_KEY, 'path')
   if (!pathResult.ok) {
-    return pathResult as Result<SftpDeleteRequest>
+    return pathResult
   }
 
   const recursiveResult = validateOptionalBoolean(obj, RECURSIVE_KEY)
   if (!recursiveResult.ok) {
-    return recursiveResult as Result<SftpDeleteRequest>
+    return recursiveResult
   }
 
   const result: SftpDeleteRequest = {
@@ -373,7 +373,7 @@ export const validateSftpUploadStartRequest = (
 ): Result<SftpUploadStartRequest> => {
   const recordResult = ensureRecord(data, 'Upload start request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpUploadStartRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
@@ -382,14 +382,14 @@ export const validateSftpUploadStartRequest = (
 
   const remotePathResult = validateRequiredString(obj, REMOTE_PATH_KEY, 'remotePath')
   if (!remotePathResult.ok) {
-    return remotePathResult as Result<SftpUploadStartRequest>
+    return remotePathResult
   }
 
   const fileNameResult = validateRequiredString(obj, FILE_NAME_KEY, 'fileName', {
     maxLength: 255
   })
   if (!fileNameResult.ok) {
-    return fileNameResult as Result<SftpUploadStartRequest>
+    return fileNameResult
   }
 
   const maxFileSize = options?.maxFileSize ?? SFTP_DEFAULTS.MAX_FILE_SIZE
@@ -398,19 +398,19 @@ export const validateSftpUploadStartRequest = (
     max: maxFileSize
   })
   if (!fileSizeResult.ok) {
-    return fileSizeResult as Result<SftpUploadStartRequest>
+    return fileSizeResult
   }
 
   const mimeTypeResult = validateOptionalString(obj, MIME_TYPE_KEY, 'mimeType', {
     maxLength: 128
   })
   if (!mimeTypeResult.ok) {
-    return mimeTypeResult as Result<SftpUploadStartRequest>
+    return mimeTypeResult
   }
 
   const overwriteResult = validateOptionalBoolean(obj, OVERWRITE_KEY)
   if (!overwriteResult.ok) {
-    return overwriteResult as Result<SftpUploadStartRequest>
+    return overwriteResult
   }
 
   // Build object directly - spread undefined optionals are dropped
@@ -471,14 +471,14 @@ export const validateSftpUploadStartRequest = (
 export const validateSftpUploadChunkRequest = (data: unknown): Result<SftpUploadChunkRequest> => {
   const recordResult = ensureRecord(data, 'Upload chunk request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpUploadChunkRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const transferIdResult = validateTransferId(obj)
   if (!transferIdResult.ok) {
-    return transferIdResult as Result<SftpUploadChunkRequest>
+    return transferIdResult
   }
 
   const chunkIndexResult = validateRequiredInt(obj, CHUNK_INDEX_KEY, 'chunkIndex', {
@@ -486,7 +486,7 @@ export const validateSftpUploadChunkRequest = (data: unknown): Result<SftpUpload
     max: 1_000_000 // Reasonable upper limit for chunk count
   })
   if (!chunkIndexResult.ok) {
-    return chunkIndexResult as Result<SftpUploadChunkRequest>
+    return chunkIndexResult
   }
 
   // Data is base64 encoded, max size is ~1.33x the binary chunk size
@@ -496,12 +496,12 @@ export const validateSftpUploadChunkRequest = (data: unknown): Result<SftpUpload
     minLength: 0
   })
   if (!dataResult.ok) {
-    return dataResult as Result<SftpUploadChunkRequest>
+    return dataResult
   }
 
   const isLastResult = validateRequiredBoolean(obj, IS_LAST_KEY, 'isLast')
   if (!isLastResult.ok) {
-    return isLastResult as Result<SftpUploadChunkRequest>
+    return isLastResult
   }
 
   return {
@@ -523,14 +523,14 @@ export const validateSftpUploadCancelRequest = (
 ): Result<SftpUploadCancelRequest> => {
   const recordResult = ensureRecord(data, 'Upload cancel request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpUploadCancelRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const transferIdResult = validateTransferId(obj)
   if (!transferIdResult.ok) {
-    return transferIdResult as Result<SftpUploadCancelRequest>
+    return transferIdResult
   }
 
   return { ok: true, value: { transferId: transferIdResult.value } }
@@ -547,7 +547,7 @@ export const validateSftpDownloadStartRequest = (
 ): Result<SftpDownloadStartRequest> => {
   const recordResult = ensureRecord(data, 'Download start request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpDownloadStartRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
@@ -556,7 +556,7 @@ export const validateSftpDownloadStartRequest = (
 
   const remotePathResult = validateRequiredString(obj, REMOTE_PATH_KEY, 'remotePath')
   if (!remotePathResult.ok) {
-    return remotePathResult as Result<SftpDownloadStartRequest>
+    return remotePathResult
   }
 
   return {
@@ -575,14 +575,14 @@ export const validateSftpDownloadCancelRequest = (
 ): Result<SftpDownloadCancelRequest> => {
   const recordResult = ensureRecord(data, 'Download cancel request must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<SftpDownloadCancelRequest>
+    return recordResult
   }
 
   const obj = recordResult.value
 
   const transferIdResult = validateTransferId(obj)
   if (!transferIdResult.ok) {
-    return transferIdResult as Result<SftpDownloadCancelRequest>
+    return transferIdResult
   }
 
   return { ok: true, value: { transferId: transferIdResult.value } }

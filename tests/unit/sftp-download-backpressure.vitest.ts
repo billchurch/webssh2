@@ -31,7 +31,7 @@ describe('SFTP Download Backpressure', () => {
           listeners.set(event, cb)
         }),
         removeListener: vi.fn()
-      } as never
+      }
     } as BackpressureSocket
 
     const controller = createBackpressureController(socket, 16384)
@@ -77,6 +77,6 @@ function makeMockSocket(bufferedAmount: number): BackpressureSocket {
       },
       once: vi.fn(),
       removeListener: vi.fn()
-    } as never
-  } as BackpressureSocket
+    }
+  }
 }

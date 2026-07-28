@@ -1,5 +1,5 @@
 import eslint from '@eslint/js'
-import nodePlugin from 'eslint-plugin-node'
+import nPlugin from 'eslint-plugin-n'
 import securityPlugin from 'eslint-plugin-security'
 import prettierConfig from 'eslint-config-prettier'
 import tsParser from '@typescript-eslint/parser'
@@ -33,12 +33,12 @@ export default [
         },
       },
       globals: {
-        ...nodePlugin.configs.recommended.globals,
+        ...nPlugin.configs['flat/recommended'].languageOptions.globals,
         structuredClone: 'readonly',
       },
     },
     plugins: {
-      node: nodePlugin,
+      n: nPlugin,
       security: securityPlugin,
       unicorn: unicornPlugin,
     },
@@ -50,7 +50,7 @@ export default [
       'prefer-template': 'error',
       'no-duplicate-imports': 'error',
       'template-curly-spacing': ['error', 'never'],
-      'node/file-extension-in-import': ['error', 'always'],
+      'n/file-extension-in-import': ['error', 'always'],
       'no-new': 'error',
       'security/detect-buffer-noassert': 'error',
       'security/detect-child-process': 'warn',
@@ -77,7 +77,7 @@ export default [
       'no-nested-ternary': 'error',
       'no-template-curly-in-string': 'error',
       'unicorn/no-negated-condition': 'error',
-      'unicorn/no-array-for-each': 'error',
+      'unicorn/no-for-each': 'error',
       'unicorn/prefer-includes': 'error',
       'unicorn/prefer-string-slice': 'error',
       'unicorn/explicit-length-check': 'error',
@@ -100,8 +100,8 @@ export default [
   {
     files: ['**/*.test.js', '**/*.spec.js'],
     rules: {
-      'node/no-unpublished-require': 'off',
-      'node/no-missing-require': 'off',
+      'n/no-unpublished-require': 'off',
+      'n/no-missing-require': 'off',
     },
   },
   {

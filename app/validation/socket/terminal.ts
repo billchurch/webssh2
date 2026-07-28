@@ -43,18 +43,18 @@ const resolveTerminalDimensions = (
 export const validateTerminalMessage = (data: unknown): Result<TerminalConfig> => {
   const recordResult = ensureRecord(data, 'Terminal data must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<TerminalConfig>
+    return recordResult
   }
 
   const config = recordResult.value
   const dimensionsResult = resolveTerminalDimensions(config)
   if (!dimensionsResult.ok) {
-    return dimensionsResult as Result<TerminalConfig>
+    return dimensionsResult
   }
 
   const termResult = validateStringField(config, TERM_FIELD)
   if (!termResult.ok) {
-    return termResult as Result<TerminalConfig>
+    return termResult
   }
 
   const validated: TerminalConfig = {
