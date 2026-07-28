@@ -12,7 +12,7 @@
  * No SSH connection is required — the smokes assert on the rendered page's
  * `window.webssh2Config` object and the header `<div>`'s styling.
  */
-/* global window, fetch */
+/* global window */
 import { test, expect, type Page } from '@playwright/test'
 import { BASE_URL } from './constants.js'
 

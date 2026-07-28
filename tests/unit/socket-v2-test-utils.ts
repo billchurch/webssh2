@@ -120,8 +120,8 @@ export const createMockSocket = (id = 'test-socket-id'): MockSocket => {
   }
   mockSocket.emit = vi.fn()
   mockSocket.disconnect = vi.fn()
-  mockSocket.onAny = vi.fn() as unknown as MockSocket['onAny']
-  mockSocket.offAny = vi.fn() as unknown as MockSocket['offAny']
+  mockSocket.onAny = vi.fn()
+  mockSocket.offAny = vi.fn()
   return mockSocket
 }
 

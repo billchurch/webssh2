@@ -330,7 +330,7 @@ This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in clien
 | Vulnerability type | Denial of Service via unbounded expansion length (same root as CVE-2026-14257)|
 | Affected versions  | advisory range <= 5.0.7; only 5.0.8 listed as patched as of 2026-07-28        |
 | Our exposure       | brace-expansion 1.1.16 via `minimatch@3` inside the eslint dev toolchain      |
-| Status             | **Not exploitable** — devDependencies only; never shipped or run in production|
+| Status             | **Remediated 2026-07-28** — eslint toolchain upgraded; vulnerable copy removed|
 
 **Why we are not affected:**
 
@@ -342,11 +342,17 @@ This vulnerability affects the `fromJSON` and `fromCrossJSON` functions in clien
 - No patched 1.x release of brace-expansion exists, and overriding the 1.x
   copy with 2.x/5.x breaks minimatch@3 at runtime (the CommonJS default
   export was replaced by a named `expand` export). Upstream backports for the
-  2.x/3.x lines landed 2026-07-27/28; a 1.x backport and updated advisory
-  ranges are expected shortly.
-- Re-evaluate when brace-expansion publishes a patched 1.x release (then
-  `npm audit fix` clears it) or when the GitHub advisory adds per-line
-  patched ranges.
+  2.x/3.x lines landed 2026-07-27/28, but the advisory range remained a
+  blanket `<= 5.0.7`, so npm audit would flag them regardless.
+
+**Remediation (2026-07-28):** upgraded the lint toolchain to `eslint@10.7.0`
+(with `@eslint/js@10.0.1`, `@typescript-eslint/*@8.64.0`,
+`eslint-plugin-unicorn@71.1.0`) and replaced the unmaintained
+`eslint-plugin-node` with `eslint-plugin-n@18.2.2`. eslint 10 drops
+`@eslint/eslintrc` and uses `minimatch@^10.2.5` → `brace-expansion@5.0.8`
+throughout, removing every vulnerable copy from the tree; `npm audit` reports
+0 vulnerabilities. Versions were chosen to also satisfy the 14-day
+new-release quarantine (all published on or before 2026-07-14).
 
 ---
 

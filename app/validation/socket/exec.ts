@@ -64,19 +64,19 @@ const resolveDimensions = (
 export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
   const recordResult = ensureRecord(data, 'Exec data must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<ExecCommand>
+    return recordResult
   }
 
   const exec = recordResult.value
 
   const commandResult = validateCommand(exec)
   if (!commandResult.ok) {
-    return commandResult as Result<ExecCommand>
+    return commandResult
   }
 
   const dimensionsResult = resolveDimensions(exec)
   if (!dimensionsResult.ok) {
-    return dimensionsResult as Result<ExecCommand>
+    return dimensionsResult
   }
 
   const ptySource = safeGet(exec, PTY_FIELD.key)

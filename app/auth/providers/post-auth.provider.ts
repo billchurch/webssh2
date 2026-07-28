@@ -28,7 +28,7 @@ export class PostAuthProvider implements AuthProvider {
       return null
     }
 
-    return convertToAuthCredentials(session.sshCredentials as Record<string, unknown>)
+    return convertToAuthCredentials(session.sshCredentials)
   }
 
   getAuthMethod(): AuthMethod {

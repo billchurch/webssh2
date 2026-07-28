@@ -37,12 +37,11 @@ export function filterEnvironmentVariables(
           return false
         }
         // Only process string, number, or boolean values
-        const valueType = typeof v
-        if (valueType !== 'string' && valueType !== 'number' && valueType !== 'boolean') {
+        if (typeof v !== 'string' && typeof v !== 'number' && typeof v !== 'boolean') {
           return false
         }
         // At this point v is string, number, or boolean - safe to convert
-        const strValue = String(v as string | number | boolean)
+        const strValue = String(v)
         return isValidEnvValue(strValue) && strValue.length <= ENV_LIMITS.MAX_VALUE_LENGTH
       }
     )
@@ -50,7 +49,7 @@ export function filterEnvironmentVariables(
     .map(([k, v]) => {
       // At this point, v is guaranteed to be string, number, or boolean by the filter above
       // TypeScript doesn't narrow the type through the filter, so we cast
-      return [k, String(v as string | number | boolean)]
+      return [k, String(v)]
     })
   
   return Object.fromEntries(entries) as Record<string, string>

@@ -396,7 +396,7 @@ describe('Auth Handler', () => {
           ...mockConfig.ssh,
           allowedAuthMethods: [createAuthMethod(AUTH_METHOD_TOKENS.PUBLIC_KEY)]
         }
-      } as Config
+      }
 
       expect(requiresInteractiveAuth(sessionState, config)).toBe(false)
     })

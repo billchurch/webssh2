@@ -10,14 +10,14 @@
 
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
-import nodePlugin from 'eslint-plugin-node'
+import nPlugin from 'eslint-plugin-n'
 import securityPlugin from 'eslint-plugin-security'
 import unicornPlugin from 'eslint-plugin-unicorn'
 import sonarjsPlugin from 'eslint-plugin-sonarjs'
 
 const sharedPlugins = {
   '@typescript-eslint': tsPlugin,
-  node: nodePlugin,
+  n: nPlugin,
   security: securityPlugin,
   unicorn: unicornPlugin,
 }

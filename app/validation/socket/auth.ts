@@ -99,24 +99,24 @@ const buildAuthCredentials = (
 export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
   const recordResult = ensureRecord(data, 'Authentication data must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<AuthCredentials>
+    return recordResult
   }
 
   const creds = recordResult.value
 
   const requiredResult = validateRequiredAuthFields(creds)
   if (!requiredResult.ok) {
-    return requiredResult as Result<AuthCredentials>
+    return requiredResult
   }
 
   const portResult = resolveAuthPort(creds)
   if (!portResult.ok) {
-    return portResult as Result<AuthCredentials>
+    return portResult
   }
 
   const optionalStringsResult = collectOptionalStrings(creds, AUTH_OPTIONAL_FIELDS)
   if (!optionalStringsResult.ok) {
-    return optionalStringsResult as Result<AuthCredentials>
+    return optionalStringsResult
   }
 
   const optionalDimensionsResult = collectOptionalDimensions(
@@ -128,7 +128,7 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
     }
   )
   if (!optionalDimensionsResult.ok) {
-    return optionalDimensionsResult as Result<AuthCredentials>
+    return optionalDimensionsResult
   }
 
   const credentials = buildAuthCredentials(

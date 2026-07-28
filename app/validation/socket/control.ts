@@ -8,7 +8,7 @@ import { ACTION_FIELD, VALID_CONTROL_ACTIONS } from './fields.js'
 export const validateControlMessage = (data: unknown): Result<{ action: string }> => {
   const recordResult = ensureRecord(data, 'Control data must be an object')
   if (!recordResult.ok) {
-    return recordResult as Result<{ action: string }>
+    return recordResult
   }
 
   const control = recordResult.value
@@ -18,7 +18,7 @@ export const validateControlMessage = (data: unknown): Result<{ action: string }
     trim: true
   })
   if (!actionResult.ok) {
-    return actionResult as Result<{ action: string }>
+    return actionResult
   }
 
   const action = (actionResult.value as string).toLowerCase()

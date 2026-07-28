@@ -47,9 +47,7 @@ export function createAppAsync(appConfig: Config): {
   app.disable('x-powered-by')
   try {
     const clientPath = getClientPublicPath()
-    const { sessionMiddleware } = applyMiddleware(app, appConfig) as unknown as {
-      sessionMiddleware: RequestHandler
-    }
+    const { sessionMiddleware } = applyMiddleware(app, appConfig)
     const sshRoutes = createRoutes(appConfig)
     app.use('/ssh/assets', express.static(clientPath, STATIC_OPTIONS))
     app.use('/ssh', sshRoutes)

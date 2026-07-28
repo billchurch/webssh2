@@ -51,7 +51,7 @@ export function buildSocketLogContext(
   populateStatusContext(context, options)
   populateMetricContext(context, options)
 
-  return context as LogContext
+  return context
 }
 
 function buildLogEntry(
