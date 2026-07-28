@@ -334,6 +334,15 @@ You can choose whether credential replay sends a carriage return (CR) or carriag
 
 This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.
 
+- `options.terminal.shiftEnterNewline` (boolean, default `false`): When
+  `true`, the client remaps Shift+Enter to send `ESC`+`CR` (`\x1b\r`)
+  instead of `CR`, letting TUIs like Claude Code distinguish "insert
+  newline" from "submit"
+  ([#497](https://github.com/billchurch/webssh2/issues/497)). Users can
+  override this per browser in the client's Terminal Settings. Interim
+  shim until xterm.js ships Kitty keyboard protocol support in a stable
+  release.
+
 ### SSH Environment Variable Allowlist
 
 Control which environment variable names are forwarded to the SSH session. If unset or empty, WebSSH2 applies format/value filtering but does not restrict by name beyond that.

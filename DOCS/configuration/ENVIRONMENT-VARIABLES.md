@@ -599,6 +599,7 @@ docker run --name webssh2 --rm -it \
 | `WEBSSH2_OPTIONS_ALLOW_RECONNECT` | boolean | `true` | Allow reconnection |
 | `WEBSSH2_OPTIONS_ALLOW_REPLAY` | boolean | `true` | Allow session replay |
 | `WEBSSH2_OPTIONS_REPLAY_CRLF` | boolean | `false` | Send CRLF for credential replay (default is CR) |
+| `WEBSSH2_TERMINAL_SHIFT_ENTER_NEWLINE` | boolean | `false` | Remap Shift+Enter to ESC+CR (newline in Claude Code-style TUIs) |
 
 ### Terminal Theming (`options.theming`)
 
