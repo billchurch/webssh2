@@ -137,6 +137,7 @@ export const DEFAULT_CONFIG_BASE: Omit<Config, 'session'> & { session: Omit<Conf
     allowReconnect: true,
     allowReplay: true,
     replayCRLF: false,
+    terminal: { shiftEnterNewline: false },
     theming: DEFAULT_THEMING_CONFIG,
   },
   session: {
