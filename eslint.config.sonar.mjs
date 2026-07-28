@@ -14,12 +14,14 @@ import nPlugin from 'eslint-plugin-n'
 import securityPlugin from 'eslint-plugin-security'
 import unicornPlugin from 'eslint-plugin-unicorn'
 import sonarjsPlugin from 'eslint-plugin-sonarjs'
+import playwrightPlugin from 'eslint-plugin-playwright'
 
 const sharedPlugins = {
   '@typescript-eslint': tsPlugin,
   n: nPlugin,
   security: securityPlugin,
   unicorn: unicornPlugin,
+  playwright: playwrightPlugin,
 }
 
 export default [

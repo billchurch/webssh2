@@ -100,6 +100,16 @@ export async function executeCommand(page: Page, command: string): Promise<void>
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
   await page.keyboard.press('Enter')
+  // This is a generic "run an arbitrary command" helper shared by several
+  // specs (see task-6 report), so there's no single output pattern to wait
+  // on here; callers layer their own condition-based wait afterward for the
+  // outcome they actually care about. Task 4's own port of this same idea to
+  // a per-spec local helper needed two rounds of live Docker verification to
+  // get an echo-based condition right without racing or over-fitting to a
+  // shell-prompt return, so porting it here blind (this helper is used by
+  // other spec files this task didn't touch/verify against a live SSH
+  // server) is left as follow-up work rather than done speculatively.
+  // eslint-disable-next-line playwright/no-wait-for-timeout
   await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 }
 

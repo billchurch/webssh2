@@ -119,6 +119,18 @@ export async function executeV2Command(page: Page, command: string): Promise<voi
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
   await page.keyboard.press('Enter')
+  // Generic "run an arbitrary command" helper shared across multiple specs
+  // (see task-6 report) — there's no single output pattern to condition on
+  // here, so callers layer their own waitForFunction for the outcome they
+  // care about. e2e-term-size-replay-v2.spec.ts has a local, differently-
+  // named copy of this same helper that Task 4 converted to an echo-based
+  // waitForFunction, but that took two rounds of live Docker verification to
+  // get right (an initial version resolved instantly, and a second attempt
+  // over-fit to "returns to a shell prompt," which broke the credential-
+  // replay test's `read -s -p` prompt). Porting that fix to this shared
+  // helper without equivalent live verification against every current
+  // caller is left as follow-up work rather than done speculatively.
+  // eslint-disable-next-line playwright/no-wait-for-timeout
   await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 }
 

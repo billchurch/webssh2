@@ -6,6 +6,7 @@ import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import unicornPlugin from 'eslint-plugin-unicorn'
 import sonarjsPlugin from 'eslint-plugin-sonarjs'
+import playwrightPlugin from 'eslint-plugin-playwright'
 
 export default [
   eslint.configs.recommended,
@@ -274,6 +275,16 @@ export default [
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    files: ['tests/playwright/**'],
+    plugins: { playwright: playwrightPlugin },
+    rules: {
+      // S2925 parity: fixed waits are flaky; prefer condition-based waits.
+      'playwright/no-wait-for-timeout': 'error',
+      // S1607 parity: conditional skips with reason strings remain allowed.
+      'playwright/no-skipped-test': ['error', { allowConditional: true }],
     },
   },
 

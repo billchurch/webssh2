@@ -259,9 +259,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     // client-visible DOM signal for "server applied the new PTY size". This
     // settle time genuinely has no observable condition to synchronize on
     // (see task-4 report), so a short fixed wait is kept intentionally.
-    // NOTE: once eslint-plugin-playwright is enabled (task 6), add
-    // `// eslint-disable-next-line playwright/no-wait-for-timeout` above
-    // this line with the same justification.
+    // eslint-disable-next-line playwright/no-wait-for-timeout
     await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Check size again (don't clear to preserve history)
