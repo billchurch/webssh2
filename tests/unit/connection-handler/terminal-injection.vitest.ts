@@ -57,7 +57,7 @@ describe('buildTempConfig - terminal slice', () => {
   it('omits the terminal key when options.terminal is absent', () => {
     // eslint-disable-next-line @typescript-eslint/naming-convention, sonarjs/no-unused-vars -- intentional discard destructure
     const { terminal: _terminal, ...optionsWithout } = defaultConfig.options
-    const cfg = { ...defaultConfig, options: optionsWithout } as Config
+    const cfg = { ...defaultConfig, options: optionsWithout }
     const tempConfig = buildTempConfig(makeReq(), cfg)
     expect('terminal' in tempConfig).toBe(false)
   })

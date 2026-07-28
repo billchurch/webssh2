@@ -31,7 +31,7 @@ describe('options.terminal.shiftEnterNewline', () => {
       ...cfg,
       options: { ...cfg.options, terminal: { shiftEnterNewline: 'yes' } }
     }
-    const result = validateConfigSchema(bad as never)
+    const result = validateConfigSchema(bad)
     expect(result.ok).toBe(false)
   })
 
