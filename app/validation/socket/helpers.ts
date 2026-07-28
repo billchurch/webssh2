@@ -1,5 +1,6 @@
 import type { Result } from '../../types/result.js'
-import validator from 'validator'
+import isInt from 'validator/lib/isInt'
+import isPort from 'validator/lib/isPort'
 import { ENV_LIMITS, VALIDATION_LIMITS } from '../../constants/index.js'
 import { safeGet, isRecord } from '../../utils/safe-property-access.js'
 import {
@@ -40,7 +41,7 @@ export const parseIntInRange = (
   fieldName: string
 ): Result<number> => {
   const str = toValidationString(value)
-  if (!validator.isInt(str, { min, max })) {
+  if (!isInt(str, { min, max })) {
     return {
       ok: false,
       error: new Error(`${fieldName} must be an integer between ${min} and ${max}`)
@@ -55,7 +56,7 @@ export const parseIntInRange = (
 
 export const validatePort = (value: unknown): Result<number> => {
   const str = toValidationString(value)
-  if (!validator.isPort(str)) {
+  if (!isPort(str)) {
     return {
       ok: false,
       error: new Error(`Invalid port: ${str}`)

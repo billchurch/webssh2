@@ -4,7 +4,7 @@
 import type { Config } from '../types/config.js'
 import type { Result } from '../types/result.js'
 import { ok, err } from '../utils/index.js'
-import validator from 'validator'
+import escape from 'validator/lib/escape'
 
 /**
  * SSH Credentials structure
@@ -90,7 +90,7 @@ export function processBasicAuthCredentials(
   credentials: BasicAuthCredentials
 ): SshCredentials {
   return {
-    username: validator.escape(credentials.name ?? ''),
+    username: escape(credentials.name ?? ''),
     password: credentials.pass ?? ''
   }
 }

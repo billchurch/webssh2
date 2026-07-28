@@ -9,7 +9,8 @@
     "*.config.mjs",
     "tests/**/*.ts",
     "eslint.config.mjs",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

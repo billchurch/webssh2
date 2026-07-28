@@ -1,7 +1,10 @@
 // app/validation/ssh.ts
 // Pure validation functions for SSH-related inputs
 
-import validator from 'validator'
+import isIP from 'validator/lib/isIP'
+import escape from 'validator/lib/escape'
+import isLength from 'validator/lib/isLength'
+import matches from 'validator/lib/matches'
 import { DEFAULTS } from '../constants/index.js'
 
 /**
@@ -11,10 +14,10 @@ import { DEFAULTS } from '../constants/index.js'
  * @pure
  */
 export function validateHost(host: string): string {
-  if (validator.isIP(host)) {
+  if (isIP(host)) {
     return host
   }
-  return validator.escape(host)
+  return escape(host)
 }
 
 /**
@@ -40,8 +43,7 @@ export function validateTerm(term?: string): string | null {
   if (term == null || term === '') {
     return null
   }
-  const isValid =
-    validator.isLength(term, { min: 1, max: 30 }) && validator.matches(term, /^[a-zA-Z0-9.-]+$/)
+  const isValid = isLength(term, { min: 1, max: 30 }) && matches(term, /^[a-zA-Z0-9.-]+$/)
   return isValid ? term : null
 }
 
