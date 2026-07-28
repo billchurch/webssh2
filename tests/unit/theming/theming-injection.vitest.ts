@@ -78,7 +78,7 @@ describe('serializeThemingForInjection', () => {
       headerBackground: 'independent'
     })
     expect(json).not.toContain('<')
-    expect(json).toContain('\\u003c')
+    expect(json).toContain(String.raw`\u003c`)
   })
 
   it('escapes U+2028 and U+2029 line terminators', () => {
@@ -98,7 +98,7 @@ describe('serializeThemingForInjection', () => {
     })
     expect(json).not.toContain('\u2028')
     expect(json).not.toContain('\u2029')
-    expect(json).toContain('\\u2028')
-    expect(json).toContain('\\u2029')
+    expect(json).toContain(String.raw`\u2028`)
+    expect(json).toContain(String.raw`\u2029`)
   })
 })

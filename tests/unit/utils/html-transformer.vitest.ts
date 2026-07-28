@@ -91,7 +91,7 @@ describe('injectConfig — script-safe escaping', () => {
     const config = { name: '</script><script>alert(1)</script>' }
     const html = injectConfig(HOST, config)
     expect(html).not.toContain('</script><script>alert(1)')
-    expect(html).toContain('\\u003c')
+    expect(html).toContain(String.raw`\u003c`)
   })
 
   it('escapes </Script> case-insensitively', () => {
@@ -109,8 +109,8 @@ describe('injectConfig — script-safe escaping', () => {
     const html = injectConfig(HOST, config)
     expect(html).not.toContain('\u2028')
     expect(html).not.toContain('\u2029')
-    expect(html).toContain('\\u2028')
-    expect(html).toContain('\\u2029')
+    expect(html).toContain(String.raw`\u2028`)
+    expect(html).toContain(String.raw`\u2029`)
   })
 })
 
@@ -145,9 +145,9 @@ describe('injectConfigWithThemingString', () => {
     expect(html).not.toContain('</script>a')
     expect(html).not.toContain('\u2028')
     expect(html).not.toContain('\u2029')
-    expect(html).toContain('\\u003c')
-    expect(html).toContain('\\u2028')
-    expect(html).toContain('\\u2029')
+    expect(html).toContain(String.raw`\u003c`)
+    expect(html).toContain(String.raw`\u2028`)
+    expect(html).toContain(String.raw`\u2029`)
   })
 
   it('does not modify HTML without the placeholder', () => {
@@ -198,8 +198,8 @@ describe('JSON config block injection', () => {
     const result = injectConfig(NEW_CLIENT_HTML, { s: '\u2028\u2029' })
     const match =
       /<script type="application\/json" id="webssh2-config">(.*?)<\/script>/s.exec(result)
-    expect(match![1]).toContain('\\u2028')
-    expect(match![1]).toContain('\\u2029')
+    expect(match![1]).toContain(String.raw`\u2028`)
+    expect(match![1]).toContain(String.raw`\u2029`)
     expect(JSON.parse(match![1])).toEqual({ s: '\u2028\u2029' })
   })
 

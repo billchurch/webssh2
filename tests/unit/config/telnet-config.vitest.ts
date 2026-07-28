@@ -16,8 +16,8 @@ describe('telnet default config', () => {
 
   it('should have auth config with regex patterns', () => {
     const config = createCompleteDefaultConfig('test-secret')
-    expect(config.telnet?.auth.loginPrompt).toBe('login:\\s*$')
-    expect(config.telnet?.auth.passwordPrompt).toBe('[Pp]assword:\\s*$')
+    expect(config.telnet?.auth.loginPrompt).toBe(String.raw`login:\s*$`)
+    expect(config.telnet?.auth.passwordPrompt).toBe(String.raw`[Pp]assword:\s*$`)
     expect(config.telnet?.auth.failurePattern).toBe('Login incorrect|Access denied|Login failed')
     expect(config.telnet?.auth.expectTimeout).toBe(10_000)
   })

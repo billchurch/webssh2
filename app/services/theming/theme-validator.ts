@@ -24,7 +24,7 @@ export const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 
 const LICENSE_REGEX = /^[\w .,\-()@/+:]{0,256}$/u
 const MAX_THEME_BYTES = 4 * 1024
-const FORBIDDEN_PROTOTYPE_KEYS = ['__proto__', 'constructor', 'prototype']
+const FORBIDDEN_PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 const SCRIPT_BAIT = /<\/?(?:script)|<!--/i
 
 export type ThemeValidationContext = 'builtin' | 'additional' | 'custom'
@@ -57,7 +57,7 @@ function rebuildColors(
     return out as ThemeColors
   }
   for (const key of Object.keys(input)) {
-    if (FORBIDDEN_PROTOTYPE_KEYS.includes(key)) {
+    if (FORBIDDEN_PROTOTYPE_KEYS.has(key)) {
       errors.push({
         path: `${pathPrefix}.${key}`,
         reason: 'forbidden prototype-pollution key'

@@ -69,7 +69,7 @@ export function createTelnetRoutes(config: Config): Router {
     const portParam = expressReq.query['port']
     const parsedPort = typeof portParam === 'string' && portParam !== ''
       ? Number(portParam)
-      : NaN
+      : Number.NaN
     const lockedPort = Number.isFinite(parsedPort) ? parsedPort : TELNET_DEFAULTS.PORT
 
     await handleConnection(

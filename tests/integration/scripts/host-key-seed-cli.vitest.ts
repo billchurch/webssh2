@@ -98,7 +98,7 @@ describe('host-key-seed CLI (compiled artifact)', () => {
       const result = runCli(['--list', '--db', dbPath])
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain('\\x1B[31mevil.example\\x1B[0m')
+      expect(result.stdout).toContain(String.raw`\x1B[31mevil.example\x1B[0m`)
       expect(result.stdout.includes('\x1b')).toBe(false)
     })
   })
@@ -221,7 +221,7 @@ describe('host-key-seed CLI (compiled artifact)', () => {
       const result = runCli(['--known-hosts', khFile, '--db', dbPath])
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain('\\x1B[31mevil\\x1B[0m')
+      expect(result.stdout).toContain(String.raw`\x1B[31mevil\x1B[0m`)
       expect(result.stdout.includes('\x1b')).toBe(false)
     })
   })
