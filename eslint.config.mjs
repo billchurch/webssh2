@@ -217,14 +217,16 @@ export default [
         },
       ],
       '@typescript-eslint/prefer-optional-chain': 'error',
-      'no-restricted-imports': [
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': [
         'error',
         {
           paths: [
             {
               name: 'validator',
               message:
-                "Import only the functions you need via subpath, e.g. import isEmail from 'validator/lib/isEmail' — importing the whole 'validator' package pulls in every validator.",
+                "Import only the functions you need via subpath, e.g. import isEmail from 'validator/lib/isEmail.js' — importing the whole 'validator' package pulls in every validator.",
+              allowTypeImports: true,
             },
           ],
         },

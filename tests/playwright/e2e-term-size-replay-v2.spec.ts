@@ -138,6 +138,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       () => {
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const text = rows.map((row) => row.textContent ?? '').join('\n')
+        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
         return /\d+\s+\d+/.test(text)
       },
       { timeout: TIMEOUTS.CONNECTION },
@@ -151,6 +152,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Look for any digit pair that looks like terminal dimensions (rows cols)
     // The output might be on a new line after the command
+    // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
     const dimensionMatches = out.matchAll(/(\d+)\s+(\d+)/g) //NOSONAR
     const matches = Array.from(dimensionMatches)
 
@@ -203,6 +205,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       () => {
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const text = rows.map((row) => row.textContent ?? '').join('\n')
+        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
         return /\d+\s+\d+/.test(text)
       },
       { timeout: TIMEOUTS.CONNECTION },

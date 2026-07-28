@@ -578,8 +578,11 @@ function parseFlag(arg: string, args: readonly string[], index: number): ParsedF
       return { patch: { command: 'help' }, consumed: 0 }
     case '--host':
       return { patch: { command: 'host', host: nextArg(args, index) }, consumed: 1 }
-    case '--port':
-      return { patch: { port: parseOptionalInt(nextArg(args, index)) }, consumed: 1 }
+    case '--port': {
+      const port = parseOptionalInt(nextArg(args, index))
+      const patch: Partial<CliArgs> = port === undefined ? {} : { port }
+      return { patch, consumed: 1 }
+    }
     case '--hosts':
       return { patch: { command: 'hosts', file: nextArg(args, index) }, consumed: 1 }
     case '--known-hosts':

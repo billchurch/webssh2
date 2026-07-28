@@ -161,6 +161,13 @@ describe('parseArgs', () => {
     expect(result.port).toBe(2222)
   })
 
+  it('preserves a previously parsed --port when a later --port has no value', () => {
+    const result = parseArgs([
+      'node', 'script', '--host', 'example.com', '--port', '2222', '--port'
+    ])
+    expect(result.port).toBe(2222)
+  })
+
   it('parses --list', () => {
     const result = parseArgs(['node', 'script', '--list'])
     expect(result.command).toBe('list')
