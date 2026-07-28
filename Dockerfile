@@ -20,8 +20,16 @@ WORKDIR /srv/webssh2
 COPY package.json package-lock.json ./
 COPY scripts ./scripts
 
+# Lifecycle scripts are skipped so a compromised dependency cannot execute
+# arbitrary code during the build. better-sqlite3 is the only runtime-critical
+# native module (host-key store), so its install script is re-run explicitly
+# via npm rebuild. The repo's own postinstall (prepare:runtime) only fetches a
+# rollup native binary for bundlers; the build here is plain tsc, and anything
+# it installs --no-save is dropped by the runtime stage's npm prune, so it is
+# deliberately not run.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=optional --audit=false --fund=false
+    npm ci --omit=optional --audit=false --fund=false --ignore-scripts \
+  && npm rebuild better-sqlite3
 
 
 # =============================================================================

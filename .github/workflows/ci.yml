@@ -34,7 +34,18 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # Skip lifecycle scripts so a compromised dependency cannot execute
+        # arbitrary code in CI; the scripts this pipeline actually needs are
+        # re-run explicitly in the next step.
+        run: npm ci --ignore-scripts
+
+      - name: Restore native/runtime dependencies
+        # better-sqlite3 is the only runtime-critical native module (host-key
+        # store); its prebuilt binding is fetched by its install script.
+        # prepare:runtime is this repo's own postinstall, run explicitly.
+        run: |
+          npm rebuild better-sqlite3
+          npm run prepare:runtime
 
       - name: Lint
         run: npm run lint
