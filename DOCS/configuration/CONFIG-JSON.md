@@ -334,6 +334,8 @@ You can choose whether credential replay sends a carriage return (CR) or carriag
 
 This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.
 
+### Terminal Options
+
 - `options.terminal.shiftEnterNewline` (boolean, default `false`): When
   `true`, the client remaps Shift+Enter to send `ESC`+`CR` (`\x1b\r`)
   instead of `CR`, letting TUIs like Claude Code distinguish "insert
