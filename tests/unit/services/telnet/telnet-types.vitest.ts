@@ -11,8 +11,8 @@ describe('telnet types and constants', () => {
   })
 
   it('should have telnet auth defaults', () => {
-    expect(TELNET_DEFAULTS.LOGIN_PROMPT).toBe('login:\\s*$')
-    expect(TELNET_DEFAULTS.PASSWORD_PROMPT).toBe('[Pp]assword:\\s*$')
+    expect(TELNET_DEFAULTS.LOGIN_PROMPT).toBe(String.raw`login:\s*$`)
+    expect(TELNET_DEFAULTS.PASSWORD_PROMPT).toBe(String.raw`[Pp]assword:\s*$`)
     expect(TELNET_DEFAULTS.FAILURE_PATTERN).toBe('Login incorrect|Access denied|Login failed')
     expect(TELNET_DEFAULTS.EXPECT_TIMEOUT_MS).toBe(10_000)
   })

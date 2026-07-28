@@ -305,25 +305,25 @@ describe('sanitizeForDisplay', () => {
     [
       'ESC + CSI red colour sequence is escaped',
       '\x1b[31mred\x1b[0m',
-      '\\x1B[31mred\\x1B[0m'
+      String.raw`\x1B[31mred\x1B[0m`
     ],
-    ['C0 NUL (0x00) is escaped', '\x00nul', '\\x00nul'],
-    ['C0 BEL (0x07) is escaped', '\x07bell', '\\x07bell'],
-    ['C0 BS (0x08) is escaped', '\x08bs', '\\x08bs'],
-    ['C0 CR (0x0D) is escaped as uppercase hex', '\rcr', '\\x0Dcr'],
-    ['C0 LF (0x0A) is escaped as uppercase hex', '\nlf', '\\x0Alf'],
-    ['DEL (0x7F) is escaped', 'a\x7Fb', 'a\\x7Fb'],
-    ['C1 0x80 is escaped', 'a\x80b', 'a\\x80b'],
-    ['C1 0x9B is escaped', 'a\x9Bb', 'a\\x9Bb'],
-    ['C1 0x9F is escaped', 'a\x9Fb', 'a\\x9Fb'],
+    ['C0 NUL (0x00) is escaped', '\x00nul', String.raw`\x00nul`],
+    ['C0 BEL (0x07) is escaped', '\x07bell', String.raw`\x07bell`],
+    ['C0 BS (0x08) is escaped', '\x08bs', String.raw`\x08bs`],
+    ['C0 CR (0x0D) is escaped as uppercase hex', '\rcr', String.raw`\x0Dcr`],
+    ['C0 LF (0x0A) is escaped as uppercase hex', '\nlf', String.raw`\x0Alf`],
+    ['DEL (0x7F) is escaped', 'a\x7Fb', String.raw`a\x7Fb`],
+    ['C1 0x80 is escaped', 'a\x80b', String.raw`a\x80b`],
+    ['C1 0x9B is escaped', 'a\x9Bb', String.raw`a\x9Bb`],
+    ['C1 0x9F is escaped', 'a\x9Fb', String.raw`a\x9Fb`],
     [
       'printable Unicode above 0x9F passes through',
       'münchen.example',
       'münchen.example'
     ],
     ['printable ASCII space passes through', 'host. space', 'host. space'],
-    ['bare ESC (0x1B) is escaped as uppercase hex', '\x1b', '\\x1B'],
-    ['bare LF (0x0A) is escaped as uppercase hex', '\x0a', '\\x0A']
+    ['bare ESC (0x1B) is escaped as uppercase hex', '\x1b', String.raw`\x1B`],
+    ['bare LF (0x0A) is escaped as uppercase hex', '\x0a', String.raw`\x0A`]
   ])('%s', (_label, input, expected) => {
     expect(sanitizeForDisplay(input)).toBe(expected)
   })
@@ -586,7 +586,7 @@ describe('formatKnownHostsPreviewRow', () => {
       algorithm: 'ssh-rsa',
       key: 'AAAA'
     })
-    expect(row).toContain('\\x1B[31mhost\\x1B[0m')
+    expect(row).toContain(String.raw`\x1B[31mhost\x1B[0m`)
     expect(row.includes('\x1b')).toBe(false)
   })
 })

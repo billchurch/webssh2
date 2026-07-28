@@ -87,6 +87,16 @@ export default [
       'unicorn/prefer-modern-dom-apis': 'error',
       // S7744 parity: prevent useless fallback objects in spreads
       'unicorn/no-useless-fallback-in-spread': 'error',
+      // S7780 parity: use String.raw to avoid escaping backslashes
+      'unicorn/prefer-string-raw': 'error',
+      // S7746 parity: return values directly instead of Promise.resolve/reject
+      'unicorn/no-useless-promise-resolve-reject': 'error',
+      // S7758 parity: codePointAt over charCodeAt
+      'unicorn/prefer-code-point': 'error',
+      // S7773 parity: Number.NaN, Number.parseInt, etc. over globals
+      'unicorn/prefer-number-properties': 'error',
+      // S7776 parity: use a Set for repeated membership checks
+      'unicorn/prefer-set-has': 'error',
       'unicorn/consistent-function-scoping': 'warn',
       // sonarjs downgrades: existing functions exceed the threshold; refactors
       // are tracked separately (see SonarCloud project for canonical findings).

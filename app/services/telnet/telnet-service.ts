@@ -178,7 +178,7 @@ export class TelnetServiceImpl implements ProtocolService {
    *   write() (client -> server): forwards data to net.Socket
    *   data event (server -> client): IAC-stripped, auth-processed data
    */
-  async shell(
+  shell(
     connectionId: ConnectionId,
     options: ShellOptions,
   ): Promise<Result<Duplex>> {

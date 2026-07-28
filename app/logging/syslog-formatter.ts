@@ -31,8 +31,8 @@ const STRUCTURED_FIELDS = [
 
 const STRUCTURED_VALUE_ESCAPES: ReadonlyArray<readonly [string, string]> = [
   [String.raw`\\`, String.raw`\\\\`],
-  [String.raw`]`, String.raw`\]`],
-  [String.raw`"`, String.raw`\"`]
+  [']', String.raw`\]`],
+  ['"', String.raw`\"`]
 ] as const
 
 type StructuredField = typeof STRUCTURED_FIELDS[number]

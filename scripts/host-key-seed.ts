@@ -90,8 +90,8 @@ Examples:
 export function sanitizeForDisplay(input: string): string {
   // eslint-disable-next-line no-control-regex
   return input.replace(/[\x00-\x1F\x7F-\x9F]/g, (ch) => {
-    const code = ch.charCodeAt(0)
-    return `\\x${code.toString(16).padStart(2, '0').toUpperCase()}`
+    const code = ch.codePointAt(0) ?? 0
+    return String.raw`\x${code.toString(16).padStart(2, '0').toUpperCase()}`
   })
 }
 

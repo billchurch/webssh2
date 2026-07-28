@@ -27,7 +27,7 @@ const DEFAULT_HEADER: HeaderConfig = { background: 'green' }
 
 // The header bar and the footer/status bar both use `z-[99] h-6`. They differ
 // on border direction: header has border-b (below), footer has border-t (above).
-const HEADER_BAR_SELECTOR = 'div.z-\\[99\\].border-b'
+const HEADER_BAR_SELECTOR = String.raw`div.z-\[99\].border-b`
 
 interface HeaderConfig {
   text?: string
