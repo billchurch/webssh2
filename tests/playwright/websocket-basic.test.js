@@ -72,10 +72,23 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Type exit command
     await executeCommand(page, 'exit')
-    
-    // Wait a moment for disconnection to process
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-    
+
+    // Wait for a disconnection marker: terminal shows logout/exit, or the
+    // status element updates (matches the assertion below)
+    await page.waitForFunction(() => {
+      // eslint-disable-next-line no-undef
+      const terminalText = document.querySelector('.xterm-screen')?.textContent || ''
+      // eslint-disable-next-line no-undef
+      const status = document.querySelector('#status')
+      const statusText = status ? status.textContent || '' : ''
+      return (
+        terminalText.includes('logout') ||
+        terminalText.includes('exit') ||
+        statusText.includes('Disconnected') ||
+        statusText === ''
+      )
+    }, { timeout: TIMEOUTS.CONNECTION })
+
     // Check if the connection status changed or if we see logout/exit message
     // eslint-disable-next-line no-undef
     const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')

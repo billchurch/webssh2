@@ -116,11 +116,34 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
     // Get initial terminal size
     await executeV2Command(page, 'stty size')
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    // Wait for the stty output (a "<rows> <cols>" digit pair) to appear
+    await page.waitForFunction(
+      () => {
+        // eslint-disable-next-line no-undef
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent || '').join('\n')
+        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
+        return /\d+\s+\d+/.test(text)
+      },
+      { timeout: TIMEOUTS.CONNECTION }
+    )
 
     // Resize viewport and test async resize handling
+    const screenWidthBeforeResize = await page.evaluate(
+      // eslint-disable-next-line no-undef
+      () => document.querySelector('.xterm-screen')?.clientWidth || 0
+    )
     await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+    // Wait for xterm to actually re-fit to the new viewport dimensions
+    await page.waitForFunction(
+      (previousWidth) => {
+        // eslint-disable-next-line no-undef
+        const width = document.querySelector('.xterm-screen')?.clientWidth || 0
+        return width !== previousWidth
+      },
+      screenWidthBeforeResize,
+      { timeout: TIMEOUTS.MEDIUM_WAIT }
+    )
 
     // Test that terminal still works after resize
     await executeV2Command(page, 'echo "resize test"')

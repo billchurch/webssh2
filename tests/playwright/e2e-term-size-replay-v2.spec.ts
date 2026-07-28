@@ -51,8 +51,28 @@ async function waitForV2Prompt(page: Page, timeout = TIMEOUTS.PROMPT_WAIT): Prom
 async function executeV2Command(page: Page, command: string): Promise<void> {
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
+  // Snapshot right after typing (and before Enter) so the wait below reacts
+  // to the round trip triggered by Enter, not to the per-keystroke echo of
+  // typing the command itself.
+  const beforeEnter = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+    return rows.map((row) => row.textContent ?? '').join('\n')
+  })
   await page.keyboard.press('Enter')
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+  // Wait for the terminal to reflect the round trip for Enter (echoed
+  // newline / command output). This intentionally does not wait for a
+  // return to the shell prompt, since some commands (e.g. interactive
+  // `read` prompts used by the credential-replay test) leave the terminal
+  // in a different state on purpose.
+  await page.waitForFunction(
+    (previousContent) => {
+      const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+      const content = rows.map((row) => row.textContent ?? '').join('\n')
+      return content !== previousContent
+    },
+    beforeEnter,
+    { timeout: TIMEOUTS.CONNECTION },
+  )
 }
 
 async function openV2WithBasicAuth(browser: Browser, baseURL: string | undefined, params: string): Promise<{ page: Page; context: BrowserContext }> {
@@ -100,8 +120,15 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     await executeV2Command(page, 'stty size')
 
-    // Wait for command output to appear
-    await page.waitForTimeout(2000)
+    // Wait for the stty output (a "<rows> <cols>" digit pair) to appear
+    await page.waitForFunction(
+      () => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        return /\d+\s+\d+/.test(text)
+      },
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     const out = await page.evaluate(() => {
       // Get all text from terminal rows, not CSS
@@ -158,8 +185,15 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     // Get initial size
     await executeV2Command(page, 'stty size')
 
-    // Wait for output and check initial size
-    await page.waitForTimeout(1000)
+    // Wait for the stty output (a "<rows> <cols>" digit pair) to appear
+    await page.waitForFunction(
+      () => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        return /\d+\s+\d+/.test(text)
+      },
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     // Try to get text content from the terminal rows instead
     const getTerminalText = async (): Promise<string> => {
@@ -194,14 +228,44 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     const initialSize: string = initialSizeMatch[0]
 
     // Resize browser window (this should trigger terminal resize in V2)
+    const screenWidthBeforeResize = await page.evaluate(
+      () => document.querySelector('.xterm-screen')?.clientWidth ?? 0,
+    )
     await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
+    // Wait for xterm to actually re-fit to the new viewport dimensions
+    await page.waitForFunction(
+      (previousWidth) => {
+        const width = document.querySelector('.xterm-screen')?.clientWidth ?? 0
+        return width !== previousWidth
+      },
+      screenWidthBeforeResize,
+      { timeout: TIMEOUTS.MEDIUM_WAIT },
+    )
+    // The client debounces the resize socket emission (RESIZE_DEBOUNCE_DELAY,
+    // 150ms in webssh2_client) before notifying the server, and there is no
+    // client-visible DOM signal for "server applied the new PTY size". This
+    // settle time genuinely has no observable condition to synchronize on
+    // (see task-4 report), so a short fixed wait is kept intentionally.
+    // NOTE: once eslint-plugin-playwright is enabled (task 6), add
+    // `// eslint-disable-next-line playwright/no-wait-for-timeout` above
+    // this line with the same justification.
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Check size again (don't clear to preserve history)
     await executeV2Command(page, 'stty size')
 
-    // Wait for command output
-    await page.waitForTimeout(1500)
+    // Wait for the post-resize stty output to differ from the initial size
+    await page.waitForFunction(
+      (previousSize) => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        const matches = [...text.matchAll(/\b(\d+)\s+(\d+)\b/g)]
+        const last = matches.at(-1)
+        return last !== undefined && last[0] !== previousSize
+      },
+      initialSize,
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     // Get the new content after resize
     const newOut: string = await getTerminalText()
@@ -285,9 +349,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     for (let i = 0; i < 3; i++) {
       await executeV2Command(page, 'printenv TERM')
 
-      // Wait for command output
-      await page.waitForTimeout(1000)
-
+      // Wait for the TERM value to actually appear in the terminal output
       await page.waitForFunction(
         () => {
           const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
@@ -298,8 +360,17 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       )
 
       // Execute some other command between checks
-      await executeV2Command(page, `echo "Check ${i + 1}"`)
-      await page.waitForTimeout(500)
+      const checkLabel = `Check ${i + 1}`
+      await executeV2Command(page, `echo "${checkLabel}"`)
+      await page.waitForFunction(
+        (label) => {
+          const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+          const content = rows.map((row) => row.textContent || '').join('\n')
+          return content.includes(label)
+        },
+        checkLabel,
+        { timeout: TIMEOUTS.CONNECTION },
+      )
     }
 
     const finalContent = await page.evaluate(() => {

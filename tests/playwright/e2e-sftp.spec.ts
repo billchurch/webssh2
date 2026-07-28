@@ -80,6 +80,7 @@ async function navigateToPath(page: Page, targetPath: string): Promise<void> {
   // Click on the path bar to make it editable (it has title="Click to edit path")
   // This is a div that switches to an input when clicked
   const pathElement = page.locator('[title="Click to edit path"]')
+  const previousPathText = (await pathElement.textContent()) ?? ''
   await pathElement.click()
 
   // Wait for the input to appear (the div is replaced by an input with border-blue-500)
@@ -90,8 +91,17 @@ async function navigateToPath(page: Page, targetPath: string): Promise<void> {
   await pathInput.fill(targetPath)
   await page.keyboard.press('Enter')
 
-  // Wait for navigation to complete
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+  // Wait for navigation to settle: the path bar reflects a new path, or an
+  // error banner appears (e.g. path forbidden/restricted)
+  await page.waitForFunction(
+    (previous) => {
+      const currentText = document.querySelector('[title="Click to edit path"]')?.textContent ?? ''
+      const hasError = document.querySelector('[role="alert"]') !== null
+      return currentText !== previous || hasError
+    },
+    previousPathText,
+    { timeout: TIMEOUTS.CONNECTION },
+  )
 }
 
 /**
@@ -204,9 +214,6 @@ async function getErrorMessage(page: Page): Promise<string | null> {
  * Waits for SFTP to be available (sftp-status event received with enabled=true)
  */
 async function waitForSftpAvailable(page: Page): Promise<void> {
-  // Wait a moment for sftp-status event to be processed
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-
   // Hover over the Menu button to open dropdown (menu opens on mouseEnter)
   const menuButton = page.getByRole('button', { name: 'Menu' })
   await expect(menuButton).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
@@ -261,9 +268,6 @@ test.describe('SFTP E2E Tests', () => {
   test('should show File Browser menu when SFTP is enabled', async () => {
     // @ts-expect-error - accessing attached page
     const page = test.info().page as Page
-
-    // Wait for sftp-status event to be processed
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Hover over the Menu button to open dropdown (menu opens on mouseEnter)
     const menuButton = page.getByRole('button', { name: 'Menu' })
@@ -434,10 +438,9 @@ test.describe('SFTP E2E Tests', () => {
 
     // Try to navigate to a system path that might be restricted
     // This tests the path validation in the SFTP service
+    // navigateToPath() already waits for navigation to settle (path change
+    // or error banner), so no additional wait is needed here.
     await navigateToPath(page, '/etc')
-
-    // Wait for response
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Take screenshot
     const shotPath = test.info().outputPath('sftp-path-navigation.png')
@@ -481,9 +484,10 @@ test.describe('SFTP E2E Tests', () => {
       buffer: Buffer.from(largeContent),
     })
 
-    // Try to catch transfer progress UI
-    // The TransferProgress component shows during active transfers
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT / 2)
+    // Wait for the transfer entry (with its progress bar) to mount. The
+    // entry persists in the transfer list even after completion, so this
+    // reliably captures the transfer UI regardless of upload speed.
+    await expect(page.getByRole('progressbar').first()).toBeVisible({ timeout: TIMEOUTS.ACTION })
 
     // Take screenshot during upload (might catch progress bar)
     const shotPath = test.info().outputPath('sftp-upload-progress.png')
