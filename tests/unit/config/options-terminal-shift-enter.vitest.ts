@@ -37,6 +37,7 @@ describe('options.terminal.shiftEnterNewline', () => {
 
   it('stays valid when the terminal block is absent (older config.json)', () => {
     const cfg = createDefaultConfig(TEST_SECRET_123)
+    // eslint-disable-next-line @typescript-eslint/naming-convention, sonarjs/no-unused-vars -- intentional discard destructure
     const { terminal: _terminal, ...optionsWithout } = cfg.options
     const result = validateConfigSchema({ ...cfg, options: optionsWithout })
     expect(result.ok).toBe(true)
