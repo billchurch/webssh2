@@ -48,6 +48,8 @@ export const ALGORITHM_PRESETS: Record<string, Algorithms> = {
  * @pure
  */
 export function getAlgorithmPreset(presetName: string): Algorithms | undefined {
-  return ALGORITHM_PRESETS[presetName.toLowerCase()]
+  const key = presetName.toLowerCase()
+  // eslint-disable-next-line security/detect-object-injection -- own-key membership verified via Object.hasOwn
+  return Object.hasOwn(ALGORITHM_PRESETS, key) ? ALGORITHM_PRESETS[key] : undefined
 }
 
