@@ -180,6 +180,19 @@ describe('mapEnvironmentVariables', () => {
       expect(result).toEqual({})
     })
 
+    it.each(['constructor', 'toString', 'hasOwnProperty'])(
+      'ignores prototype-member preset name %s without throwing',
+      (name) => {
+        const env = {
+          WEBSSH2_SSH_ALGORITHMS_PRESET: name
+        }
+
+        const result = mapEnvironmentVariables(env)
+
+        expect(result).toEqual({})
+      }
+    )
+
     it('case-insensitive preset names', () => {
       const env = {
         WEBSSH2_SSH_ALGORITHMS_PRESET: 'MODERN'
