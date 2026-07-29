@@ -334,6 +334,58 @@ You can choose whether credential replay sends a carriage return (CR) or carriag
 
 This option can also be controlled via the environment variable `WEBSSH2_OPTIONS_REPLAY_CRLF`.
 
+### WebSocket Transport Configuration (`options.transport`)
+
+Control which Socket.IO transports are available to the client for connecting to the server.
+
+- `options.transport` (string or array, default: `['websocket', 'polling']`): Specifies the order of transport protocols. Can be a string (`"websocket"` or `"polling"`) or an array (`["websocket", "polling"]`). Order is significant — the first available transport is preferred. Invalid values are logged with a warning and the default is used.
+
+- Env var: `WEBSSH2_OPTIONS_TRANSPORT` (comma-separated string, e.g., `websocket,polling`)
+
+#### Use Cases
+
+**WebSocket-blocking proxies (polling-first):**
+
+```json
+{
+  "options": {
+    "transport": ["polling", "websocket"]
+  }
+}
+```
+
+When WebSocket is blocked by a proxy or load balancer, polling-first ensures a working connection before attempting WebSocket upgrade.
+
+**Polling only (restrictive networks):**
+
+```json
+{
+  "options": {
+    "transport": "polling"
+  }
+}
+```
+
+**WebSocket only (low-latency environments):**
+
+```json
+{
+  "options": {
+    "transport": "websocket"
+  }
+}
+```
+
+#### Client Requirement
+
+This option requires **webssh2_client ≥ 5.3.0**. The setting is delivered to the client via the JSON config block (`<script type="application/json" id="webssh2-config">`) as `socket.transports`. Earlier client versions ignore this setting.
+
+#### Environment Variables
+
+Set via: `WEBSSH2_OPTIONS_TRANSPORT`
+
+See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
+
 ### Terminal Options
 
 - `options.terminal.shiftEnterNewline` (boolean, default `false`): When
