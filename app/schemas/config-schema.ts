@@ -188,6 +188,15 @@ const ThemingSchema = z.object({
 }).optional()
 
 /**
+ * Terminal configuration schema
+ */
+const OptionsTerminalSchema = z
+  .object({
+    shiftEnterNewline: z.boolean()
+  })
+  .optional()
+
+/**
  * Options configuration schema
  */
 const OptionsSchema = z.object({
@@ -197,6 +206,7 @@ const OptionsSchema = z.object({
   allowReconnect: z.boolean(),
   allowReplay: z.boolean(),
   replayCRLF: z.boolean().optional(),
+  terminal: OptionsTerminalSchema,
   theming: ThemingSchema
 })
 

@@ -415,3 +415,14 @@ Main function that determines if a key should be captured by the terminal.
   - Added capture Ctrl+B setting
   - Added custom capture keys
   - Updated Terminal Settings UI with collapsible sections
+
+## Shift+Enter Newline
+
+By default Shift+Enter is indistinguishable from Enter (both send `CR`,
+a VT100 limitation). With `options.terminal.shiftEnterNewline` enabled
+(or the "Shift+Enter Newline" toggle in Terminal Settings), the client
+sends `ESC`+`CR` instead, which Claude Code and most readline-style
+TUIs treat as "insert newline". See
+[#497](https://github.com/billchurch/webssh2/issues/497). This is an
+interim shim until a stable xterm.js release supports the Kitty
+keyboard protocol.

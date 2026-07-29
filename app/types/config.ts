@@ -161,6 +161,11 @@ export interface ThemingConfig {
   readonly headerBackground: ThemingHeaderBackground
 }
 
+/** Opt-in client terminal behavior toggles delivered via config injection */
+export interface OptionsTerminalConfig {
+  readonly shiftEnterNewline: boolean
+}
+
 /**
  * Options configuration
  */
@@ -171,6 +176,7 @@ export interface OptionsConfig {
   allowReconnect: boolean
   allowReplay: boolean
   replayCRLF?: boolean
+  terminal?: OptionsTerminalConfig
   theming?: ThemingConfig
 }
 
