@@ -176,6 +176,8 @@ export interface OptionsConfig {
   allowReconnect: boolean
   allowReplay: boolean
   replayCRLF?: boolean
+  /** Normalized Socket.IO transport order forced by the operator (#549) */
+  transport?: string[]
   terminal?: OptionsTerminalConfig
   theming?: ThemingConfig
 }
