@@ -47,6 +47,5 @@ export function createMaskingOptions(options?: MaskingOptions): MaskingOptions {
  */
 export function maskSensitive(data: unknown, options?: MaskingOptions): unknown {
   const maskingOptions = createMaskingOptions(options)
-  const masker = maskObject as unknown as (o: unknown, opts: unknown) => unknown
-  return masker(data, maskingOptions)
+  return maskObject(data, maskingOptions)
 }

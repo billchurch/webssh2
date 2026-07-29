@@ -6,6 +6,7 @@ import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import unicornPlugin from 'eslint-plugin-unicorn'
 import sonarjsPlugin from 'eslint-plugin-sonarjs'
+import playwrightPlugin from 'eslint-plugin-playwright'
 
 export default [
   eslint.configs.recommended,
@@ -98,10 +99,9 @@ export default [
       // S7776 parity: use a Set for repeated membership checks
       'unicorn/prefer-set-has': 'error',
       'unicorn/consistent-function-scoping': 'warn',
-      // sonarjs downgrades: existing functions exceed the threshold; refactors
-      // are tracked separately (see SonarCloud project for canonical findings).
-      // Keeping these visible as warnings so new violations are surfaced.
-      'sonarjs/cognitive-complexity': 'warn',
+      // All known cognitive-complexity offenders were refactored below the
+      // threshold; enforce the rule so new violations fail the build.
+      'sonarjs/cognitive-complexity': 'error',
       // The codebase uses `Result<T, E>` and discriminated-union returns by
       // design — this rule misreads those as inconsistent return types.
       'sonarjs/function-return-type': 'warn',
@@ -217,6 +217,20 @@ export default [
         },
       ],
       '@typescript-eslint/prefer-optional-chain': 'error',
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'validator',
+              message:
+                "Import only the functions you need via subpath, e.g. import isEmail from 'validator/lib/isEmail.js' — importing the whole 'validator' package pulls in every validator.",
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
     },
   },
   {
@@ -262,6 +276,16 @@ export default [
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    files: ['tests/playwright/**'],
+    plugins: { playwright: playwrightPlugin },
+    rules: {
+      // S2925 parity: fixed waits are flaky; prefer condition-based waits.
+      'playwright/no-wait-for-timeout': 'error',
+      // S1607 parity: conditional skips with reason strings remain allowed.
+      'playwright/no-skipped-test': ['error', { allowConditional: true }],
     },
   },
 

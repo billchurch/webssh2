@@ -72,10 +72,26 @@ test.describe('WebSocket Basic Tests', () => {
     
     // Type exit command
     await executeCommand(page, 'exit')
-    
-    // Wait a moment for disconnection to process
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-    
+
+    // Wait for a real post-disconnect signal: terminal shows a logout
+    // message, or the status element reports Disconnected. (Deliberately
+    // excludes terminalText.includes('exit') and statusText === '' here —
+    // both are already true the moment 'exit' is echoed back or before the
+    // status element has any text, i.e. before disconnection has actually
+    // happened; they remain valid in the assertion below, which checks the
+    // final state rather than gating the wait.)
+    await page.waitForFunction(() => {
+      // eslint-disable-next-line no-undef
+      const terminalText = document.querySelector('.xterm-screen')?.textContent || ''
+      // eslint-disable-next-line no-undef
+      const status = document.querySelector('#status')
+      const statusText = status ? status.textContent || '' : ''
+      return (
+        terminalText.includes('logout') ||
+        statusText.includes('Disconnected')
+      )
+    }, { timeout: TIMEOUTS.CONNECTION })
+
     // Check if the connection status changed or if we see logout/exit message
     // eslint-disable-next-line no-undef
     const terminalContent = await page.evaluate(() => document.querySelector('.xterm-screen')?.textContent || '')

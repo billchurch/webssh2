@@ -51,8 +51,40 @@ async function waitForV2Prompt(page: Page, timeout = TIMEOUTS.PROMPT_WAIT): Prom
 async function executeV2Command(page: Page, command: string): Promise<void> {
   await page.locator('.xterm-helper-textarea').click()
   await page.keyboard.type(command)
+  // page.keyboard.type() resolves once key events are dispatched, not once
+  // the remote echo round-trips back. Wait for the typed command's echo to
+  // fully land before snapshotting below, so the change-detection reacts
+  // to Enter's round trip specifically, not to the tail of the command's
+  // own echo arriving late.
+  await page.waitForFunction(
+    (typedCommand) => {
+      const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+      const content = rows.map((row) => row.textContent ?? '').join('\n')
+      return content.includes(typedCommand)
+    },
+    command,
+    { timeout: TIMEOUTS.CONNECTION },
+  )
+  const beforeEnter = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+    return rows.map((row) => row.textContent ?? '').join('\n')
+  })
   await page.keyboard.press('Enter')
-  await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
+  // Wait for the terminal to reflect the round trip for Enter (echoed
+  // newline / command output), now that the command's own echo has
+  // already fully landed. This intentionally does not wait for a return
+  // to the shell prompt, since some commands (e.g. interactive `read`
+  // prompts used by the credential-replay test) leave the terminal in a
+  // different state on purpose.
+  await page.waitForFunction(
+    (previousContent) => {
+      const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+      const content = rows.map((row) => row.textContent ?? '').join('\n')
+      return content !== previousContent
+    },
+    beforeEnter,
+    { timeout: TIMEOUTS.CONNECTION },
+  )
 }
 
 async function openV2WithBasicAuth(browser: Browser, baseURL: string | undefined, params: string): Promise<{ page: Page; context: BrowserContext }> {
@@ -65,6 +97,7 @@ async function openV2WithBasicAuth(browser: Browser, baseURL: string | undefined
 }
 
 test.describe('V2 E2E: TERM, size, and replay credentials', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run these tests')
 
   test('sets TERM from sshterm (V2)', async ({ browser, baseURL }) => {
@@ -100,8 +133,16 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     await executeV2Command(page, 'stty size')
 
-    // Wait for command output to appear
-    await page.waitForTimeout(2000)
+    // Wait for the stty output (a "<rows> <cols>" digit pair) to appear
+    await page.waitForFunction(
+      () => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
+        return /\d+\s+\d+/.test(text)
+      },
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     const out = await page.evaluate(() => {
       // Get all text from terminal rows, not CSS
@@ -111,6 +152,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Look for any digit pair that looks like terminal dimensions (rows cols)
     // The output might be on a new line after the command
+    // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
     const dimensionMatches = out.matchAll(/(\d+)\s+(\d+)/g) //NOSONAR
     const matches = Array.from(dimensionMatches)
 
@@ -158,8 +200,16 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     // Get initial size
     await executeV2Command(page, 'stty size')
 
-    // Wait for output and check initial size
-    await page.waitForTimeout(1000)
+    // Wait for the stty output (a "<rows> <cols>" digit pair) to appear
+    await page.waitForFunction(
+      () => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
+        return /\d+\s+\d+/.test(text)
+      },
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     // Try to get text content from the terminal rows instead
     const getTerminalText = async (): Promise<string> => {
@@ -194,14 +244,42 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     const initialSize: string = initialSizeMatch[0]
 
     // Resize browser window (this should trigger terminal resize in V2)
+    const screenWidthBeforeResize = await page.evaluate(
+      () => document.querySelector('.xterm-screen')?.clientWidth ?? 0,
+    )
     await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(TIMEOUTS.MEDIUM_WAIT)
+    // Wait for xterm to actually re-fit to the new viewport dimensions
+    await page.waitForFunction(
+      (previousWidth) => {
+        const width = document.querySelector('.xterm-screen')?.clientWidth ?? 0
+        return width !== previousWidth
+      },
+      screenWidthBeforeResize,
+      { timeout: TIMEOUTS.MEDIUM_WAIT },
+    )
+    // The client debounces the resize socket emission (RESIZE_DEBOUNCE_DELAY,
+    // 150ms in webssh2_client) before notifying the server, and there is no
+    // client-visible DOM signal for "server applied the new PTY size". This
+    // settle time genuinely has no observable condition to synchronize on
+    // (see task-4 report), so a short fixed wait is kept intentionally.
+    // eslint-disable-next-line playwright/no-wait-for-timeout
+    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
 
     // Check size again (don't clear to preserve history)
     await executeV2Command(page, 'stty size')
 
-    // Wait for command output
-    await page.waitForTimeout(1500)
+    // Wait for the post-resize stty output to differ from the initial size
+    await page.waitForFunction(
+      (previousSize) => {
+        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+        const text = rows.map((row) => row.textContent ?? '').join('\n')
+        const matches = [...text.matchAll(/\b(\d+)\s+(\d+)\b/g)]
+        const last = matches.at(-1)
+        return last !== undefined && last[0] !== previousSize
+      },
+      initialSize,
+      { timeout: TIMEOUTS.CONNECTION },
+    )
 
     // Get the new content after resize
     const newOut: string = await getTerminalText()
@@ -285,9 +363,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     for (let i = 0; i < 3; i++) {
       await executeV2Command(page, 'printenv TERM')
 
-      // Wait for command output
-      await page.waitForTimeout(1000)
-
+      // Wait for the TERM value to actually appear in the terminal output
       await page.waitForFunction(
         () => {
           const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
@@ -298,8 +374,17 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       )
 
       // Execute some other command between checks
-      await executeV2Command(page, `echo "Check ${i + 1}"`)
-      await page.waitForTimeout(500)
+      const checkLabel = `Check ${i + 1}`
+      await executeV2Command(page, `echo "${checkLabel}"`)
+      await page.waitForFunction(
+        (label) => {
+          const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
+          const content = rows.map((row) => row.textContent || '').join('\n')
+          return content.includes(label)
+        },
+        checkLabel,
+        { timeout: TIMEOUTS.CONNECTION },
+      )
     }
 
     const finalContent = await page.evaluate(() => {

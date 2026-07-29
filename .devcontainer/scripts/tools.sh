@@ -40,7 +40,14 @@ chmod 644 ~/.ssh/allowed_signers
 
 echo "allowed_signers file created successfully."
 
-npm install
+# Skip dependency lifecycle scripts (supply-chain hardening), then run the
+# ones this workspace needs explicitly: the better-sqlite3 native binding used
+# by the host-key store, and this repo's own postinstall.
+npm install --ignore-scripts
+
+npm rebuild better-sqlite3
+
+npm run prepare:runtime
 
 npm cache clean --force
 sudo apt-get clean

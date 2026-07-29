@@ -5,6 +5,7 @@ import { waitForV2Terminal, waitForV2Connection, waitForV2Prompt, executeV2Comma
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 test.describe('V2 E2E: AcceptEnv via containerized SSHD', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run this test')
 
   test('forwards FOO=bar to SSH session (V2)', async ({ browser, baseURL }) => {

@@ -41,6 +41,7 @@ import {
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
 test.describe('CSP enforcement — terminal boots from JSON config block (#546)', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run this test')
 
   test(

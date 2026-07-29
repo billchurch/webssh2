@@ -16,7 +16,11 @@ COPY package*.json index.js ./
 
 # Install production dependencies using npm ci for reproducible builds
 # Note: Using npm ci requires package-lock.json to be present
-RUN npm ci --audit=false --fund=false --omit=dev
+# --ignore-scripts blocks dependency lifecycle scripts (supply-chain hardening);
+# better-sqlite3 is the only native runtime dependency, so its install script is
+# re-run explicitly.
+RUN npm ci --audit=false --fund=false --omit=dev --ignore-scripts \
+  && npm rebuild better-sqlite3
 
 COPY app/ ./app/
 

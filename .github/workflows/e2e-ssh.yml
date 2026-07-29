@@ -37,7 +37,7 @@ jobs:
       - name: Run E2E tests with containerized sshd
         env:
           ENABLE_E2E_SSH: '1'
-        run: npx playwright test -c playwright.config.ts tests/playwright/e2e-ssh-acceptenv.spec.ts
+        run: npx --no-install playwright test -c playwright.config.ts tests/playwright/e2e-ssh-acceptenv-v2.spec.ts
 
       - name: Upload Playwright report (if present)
         if: always()

@@ -24,6 +24,7 @@ export const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 
 const LICENSE_REGEX = /^[\w .,\-()@/+:]{0,256}$/u
 const MAX_THEME_BYTES = 4 * 1024
+const MAX_SOURCE_LENGTH = 256
 const FORBIDDEN_PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 const SCRIPT_BAIT = /<\/?(?:script)|<!--/i
 
@@ -42,20 +43,38 @@ export interface ValidateThemeOptions {
   readonly builtinNames: readonly string[]
 }
 
+/** A single field's sanitized value plus the errors it accumulated. */
+interface FieldResult<T> {
+  readonly value: T
+  readonly errors: readonly ThemeValidationError[]
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function rebuildColors(
-  input: unknown,
-  errors: ThemeValidationError[],
-  pathPrefix: string
-): ThemeColors {
-  const out: Partial<Record<keyof ThemeColors, string>> = {}
-  if (!isPlainObject(input)) {
-    errors.push({ path: pathPrefix, reason: 'colors must be an object' })
-    return out
+/** Rejects __proto__ / constructor / prototype declared directly on the entry. */
+function collectForbiddenEntryKeyErrors(
+  input: Record<string, unknown>
+): ThemeValidationError[] {
+  const errors: ThemeValidationError[] = []
+  for (const key of FORBIDDEN_PROTOTYPE_KEYS) {
+    if (Object.hasOwn(input, key)) {
+      errors.push({
+        path: key,
+        reason: 'forbidden prototype-pollution key on entry'
+      })
+    }
   }
+  return errors
+}
+
+/** Flags every input color key that is polluting or outside the allowlist. */
+function collectColorKeyErrors(
+  input: Record<string, unknown>,
+  pathPrefix: string
+): ThemeValidationError[] {
+  const errors: ThemeValidationError[] = []
   for (const key of Object.keys(input)) {
     if (FORBIDDEN_PROTOTYPE_KEYS.has(key)) {
       errors.push({
@@ -69,6 +88,18 @@ function rebuildColors(
       })
     }
   }
+  return errors
+}
+
+function rebuildColors(input: unknown, pathPrefix: string): FieldResult<ThemeColors> {
+  if (!isPlainObject(input)) {
+    return {
+      value: {},
+      errors: [{ path: pathPrefix, reason: 'colors must be an object' }]
+    }
+  }
+  const errors = collectColorKeyErrors(input, pathPrefix)
+  const out: Partial<Record<keyof ThemeColors, string>> = {}
   for (const key of THEME_COLOR_KEYS) {
     if (!Object.hasOwn(input, key)) {
       continue
@@ -85,7 +116,130 @@ function rebuildColors(
     // eslint-disable-next-line security/detect-object-injection -- key is from THEME_COLOR_KEYS allowlist, not user input
     out[key] = value
   }
-  return out
+  return { value: out, errors }
+}
+
+function collidesWithBuiltin(
+  canonical: string,
+  builtinNames: readonly string[]
+): boolean {
+  const lower = canonicalizeThemeName(canonical)
+  return builtinNames.some((builtin) => canonicalizeThemeName(builtin) === lower)
+}
+
+/** Extra name rules that only apply to admin-supplied additional themes. */
+function collectAdditionalNameErrors(
+  canonical: string,
+  builtinNames: readonly string[]
+): ThemeValidationError[] {
+  if (isReservedThemeName(canonical)) {
+    return [{ path: 'name', reason: 'name is reserved' }]
+  }
+  if (collidesWithBuiltin(canonical, builtinNames)) {
+    return [
+      {
+        path: 'name',
+        reason: 'name collides with built-in (case-insensitive)'
+      }
+    ]
+  }
+  return []
+}
+
+function validateName(
+  rawName: unknown,
+  context: ThemeValidationContext,
+  options: ValidateThemeOptions
+): FieldResult<string> {
+  if (typeof rawName !== 'string') {
+    return { value: '', errors: [{ path: 'name', reason: 'name must be a string' }] }
+  }
+  const canonical = rawName.normalize('NFKC').trim().replace(/\s+/g, ' ')
+  if (!THEME_NAME_REGEX.test(canonical)) {
+    return {
+      value: canonical,
+      errors: [{ path: 'name', reason: 'name fails name regex' }]
+    }
+  }
+  if (context !== 'additional') {
+    return { value: canonical, errors: [] }
+  }
+  return {
+    value: canonical,
+    errors: collectAdditionalNameErrors(canonical, options.builtinNames)
+  }
+}
+
+function validateLicense(input: Record<string, unknown>): FieldResult<string | undefined> {
+  if (!Object.hasOwn(input, 'license')) {
+    return { value: undefined, errors: [] }
+  }
+  const license = input['license']
+  if (typeof license !== 'string') {
+    return {
+      value: undefined,
+      errors: [{ path: 'license', reason: 'license must be a string' }]
+    }
+  }
+  if (!LICENSE_REGEX.test(license)) {
+    return {
+      value: undefined,
+      errors: [{ path: 'license', reason: 'license contains disallowed characters' }]
+    }
+  }
+  if (SCRIPT_BAIT.test(license)) {
+    return {
+      value: undefined,
+      errors: [{ path: 'license', reason: 'license contains script bait' }]
+    }
+  }
+  return { value: license, errors: [] }
+}
+
+/** Parses the source URL and keeps only https origins, storing the normalized href. */
+function validateSourceUrl(source: string): FieldResult<string | undefined> {
+  let url: URL
+  try {
+    url = new URL(source)
+  } catch {
+    return {
+      value: undefined,
+      errors: [{ path: 'source', reason: 'source must be a valid URL' }]
+    }
+  }
+  if (url.protocol === 'https:') {
+    return { value: url.href, errors: [] }
+  }
+  return {
+    value: undefined,
+    errors: [{ path: 'source', reason: 'source must be https' }]
+  }
+}
+
+function validateSource(input: Record<string, unknown>): FieldResult<string | undefined> {
+  if (!Object.hasOwn(input, 'source')) {
+    return { value: undefined, errors: [] }
+  }
+  const source = input['source']
+  if (typeof source !== 'string') {
+    return {
+      value: undefined,
+      errors: [{ path: 'source', reason: 'source must be a string' }]
+    }
+  }
+  if (source.length > MAX_SOURCE_LENGTH) {
+    return {
+      value: undefined,
+      errors: [{ path: 'source', reason: 'source exceeds 256 chars' }]
+    }
+  }
+  if (SCRIPT_BAIT.test(source)) {
+    return {
+      value: undefined,
+      errors: [{ path: 'source', reason: 'source contains script bait' }]
+    }
+  }
+  return validateSourceUrl(source)
 }
 
 export function validateTheme(
@@ -93,99 +247,32 @@ export function validateTheme(
   context: ThemeValidationContext,
   options: ValidateThemeOptions
 ): ThemeValidationResult {
-  const errors: ThemeValidationError[] = []
-
   if (!isPlainObject(input)) {
     return { ok: false, errors: [{ path: '', reason: 'must be an object' }] }
   }
 
-  for (const key of FORBIDDEN_PROTOTYPE_KEYS) {
-    if (Object.hasOwn(input, key)) {
-      errors.push({
-        path: key,
-        reason: 'forbidden prototype-pollution key on entry'
-      })
-    }
-  }
+  const name = validateName(input['name'], context, options)
+  const colors = rebuildColors(input['colors'], 'colors')
+  const license = validateLicense(input)
+  const source = validateSource(input)
 
-  const rawName = input['name']
-  let canonicalName = ''
-  if (typeof rawName === 'string') {
-    const canonical = rawName.normalize('NFKC').trim().replace(/\s+/g, ' ')
-    if (!THEME_NAME_REGEX.test(canonical)) {
-      errors.push({ path: 'name', reason: 'name fails name regex' })
-    } else if (context === 'additional') {
-      if (isReservedThemeName(canonical)) {
-        errors.push({ path: 'name', reason: 'name is reserved' })
-      } else {
-        const lower = canonicalizeThemeName(canonical)
-        for (const builtin of options.builtinNames) {
-          if (canonicalizeThemeName(builtin) === lower) {
-            errors.push({
-              path: 'name',
-              reason: 'name collides with built-in (case-insensitive)'
-            })
-            break
-          }
-        }
-      }
-    }
-    canonicalName = canonical
-  } else {
-    errors.push({ path: 'name', reason: 'name must be a string' })
-  }
-
-  const colors = rebuildColors(input['colors'], errors, 'colors')
-
-  let licenseOut: string | undefined
-  if (Object.hasOwn(input, 'license')) {
-    const license = input['license']
-    if (typeof license !== 'string') {
-      errors.push({ path: 'license', reason: 'license must be a string' })
-    } else if (!LICENSE_REGEX.test(license)) {
-      errors.push({
-        path: 'license',
-        reason: 'license contains disallowed characters'
-      })
-    } else if (SCRIPT_BAIT.test(license)) {
-      errors.push({ path: 'license', reason: 'license contains script bait' })
-    } else {
-      licenseOut = license
-    }
-  }
-
-  let sourceOut: string | undefined
-  if (Object.hasOwn(input, 'source')) {
-    const source = input['source']
-    if (typeof source !== 'string') {
-      errors.push({ path: 'source', reason: 'source must be a string' })
-    } else if (source.length > 256) {
-      errors.push({ path: 'source', reason: 'source exceeds 256 chars' })
-    } else if (SCRIPT_BAIT.test(source)) {
-      errors.push({ path: 'source', reason: 'source contains script bait' })
-    } else {
-      try {
-        const url = new URL(source)
-        if (url.protocol === 'https:') {
-          sourceOut = url.href
-        } else {
-          errors.push({ path: 'source', reason: 'source must be https' })
-        }
-      } catch {
-        errors.push({ path: 'source', reason: 'source must be a valid URL' })
-      }
-    }
-  }
+  const errors: ThemeValidationError[] = [
+    ...collectForbiddenEntryKeyErrors(input),
+    ...name.errors,
+    ...colors.errors,
+    ...license.errors,
+    ...source.errors
+  ]
 
   if (errors.length > 0) {
     return { ok: false, errors }
   }
 
   const safe: AdditionalTheme = {
-    name: canonicalName,
-    colors,
-    ...(licenseOut === undefined ? {} : { license: licenseOut }),
-    ...(sourceOut === undefined ? {} : { source: sourceOut })
+    name: name.value,
+    colors: colors.value,
+    ...(license.value === undefined ? {} : { license: license.value }),
+    ...(source.value === undefined ? {} : { source: source.value })
   }
 
   const serialized = JSON.stringify(safe)

@@ -29,6 +29,7 @@ const DRACULA_BG = 'rgb(40, 42, 54)'
 const TRANSPARENT_BG = 'rgba(0, 0, 0, 0)'
 
 test.describe('Terminal Theming', () => {
+  // Reason: requires a live Docker SSH test server; opt-in only via ENABLE_E2E_SSH=1.
   test.skip(!E2E_ENABLED, 'Set ENABLE_E2E_SSH=1 to run this test')
 
   test('smoke: select Dracula theme → persists across reload', async ({

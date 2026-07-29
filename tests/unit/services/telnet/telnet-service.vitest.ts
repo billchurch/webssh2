@@ -25,6 +25,45 @@ const createTestConfig = (
 })
 
 /**
+ * Find the end of a subnegotiation sequence (IAC SB ... IAC SE) starting at
+ * `start`, returning the index just past it (or data.length if unterminated).
+ */
+const skipSubnegotiation = (data: Buffer, start: number): number => {
+  let i = start
+  while (i < data.length) {
+    if (data[i] === IAC && i + 1 < data.length && data[i + 1] === SE) {
+      return i + 2
+    }
+    i++
+  }
+  return i
+}
+
+/**
+ * Filter IAC (telnet command) sequences out of raw socket data, leaving only
+ * the plain data bytes that a real telnet peer would echo back.
+ */
+const filterIacSequences = (data: Buffer): number[] => {
+  const bytes: number[] = []
+  let i = 0
+  while (i < data.length) {
+    if (data[i] === IAC && i + 1 < data.length) {
+      if (data[i + 1] === SB) {
+        // Skip subnegotiation: IAC SB ... IAC SE
+        i = skipSubnegotiation(data, i + 2)
+        continue
+      }
+      // Skip 3-byte commands: IAC WILL/WONT/DO/DONT <option>
+      i += 3
+      continue
+    }
+    bytes.push(data[i])
+    i++
+  }
+  return bytes
+}
+
+/**
  * Wait for a condition with timeout
  */
 const waitFor = (
@@ -62,30 +101,7 @@ describe('TelnetServiceImpl', () => {
     server = net.createServer((socket) => {
       socket.on('data', (data) => {
         // Filter out IAC sequences before echoing
-        const bytes: number[] = []
-        let i = 0
-        while (i < data.length) {
-          if (data[i] === IAC && i + 1 < data.length) {
-            // Skip IAC sequences
-            if (data[i + 1] === SB) {
-              // Skip subnegotiation: IAC SB ... IAC SE
-              i += 2
-              while (i < data.length) {
-                if (data[i] === IAC && i + 1 < data.length && data[i + 1] === SE) {
-                  i += 2
-                  break
-                }
-                i++
-              }
-              continue
-            }
-            // Skip 3-byte commands: IAC WILL/WONT/DO/DONT <option>
-            i += 3
-            continue
-          }
-          bytes.push(data[i])
-          i++
-        }
+        const bytes = filterIacSequences(data)
         if (bytes.length > 0) {
           socket.write(Buffer.from(bytes))
         }
