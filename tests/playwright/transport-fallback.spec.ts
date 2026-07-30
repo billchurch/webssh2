@@ -13,6 +13,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { test, expect, type Page } from '@playwright/test'
 import { TEST_CONFIG } from './constants.js'
 import { connectWithBasicAuth } from './v2-helpers.js'
+import { TEST_SESSION_SECRET_VALID } from '../test-constants.js'
 
 const E2E_ENABLED = process.env.ENABLE_E2E_SSH === '1'
 
@@ -32,12 +33,18 @@ interface Gateway {
 }
 
 async function startGateway(port: number, env: Record<string, string>): Promise<Gateway> {
+  // Strip any ambient WEBSSH2_OPTIONS_TRANSPORT before applying per-scenario
+  // overrides, so a scenario that omits it (testing the "unset" default) is
+  // hermetic regardless of what the enclosing shell/CI happens to export.
+  const baseEnv = { ...process.env }
+  delete baseEnv.WEBSSH2_OPTIONS_TRANSPORT
+
   const proc = spawn(process.execPath, ['dist/index.js'], {
     stdio: 'pipe',
     env: {
-      ...process.env,
+      ...baseEnv,
       WEBSSH2_LISTEN_PORT: String(port),
-      WEBSSH2_SESSION_SECRET: 'e2e-transport-fallback-test-secret-32chars',
+      WEBSSH2_SESSION_SECRET: TEST_SESSION_SECRET_VALID,
       ...env,
     },
   })
