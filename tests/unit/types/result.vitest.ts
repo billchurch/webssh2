@@ -154,7 +154,7 @@ describe('Result type', () => {
     
     it('returns null on error', () => {
       const result = err('error')
-      expect(toNullable(result)).toBe(null)
+      expect(toNullable(result)).toBeNull()
     })
   })
   

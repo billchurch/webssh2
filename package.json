@@ -48,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.35",
-    "webssh2_client": "5.4.1",
+    "webssh2_client": "5.4.2",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -101,7 +101,7 @@
     "eslint-plugin-n": "^18.2.2",
     "eslint-plugin-playwright": "2.10.5",
     "eslint-plugin-security": "^4.0.0",
-    "eslint-plugin-sonarjs": "4.0.3",
+    "eslint-plugin-sonarjs": "4.2.0",
     "eslint-plugin-unicorn": "^71.1.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",

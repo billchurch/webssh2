@@ -470,7 +470,7 @@ describe('Socket Message Validation', () => {
 
       expect(result.ok).toBe(true)
       if (result.ok && result.value.env !== undefined) {
-        expect(Object.keys(result.value.env).length).toBe(50)
+        expect(Object.keys(result.value.env)).toHaveLength(50)
       }
     })
 

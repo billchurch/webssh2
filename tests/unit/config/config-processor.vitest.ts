@@ -23,7 +23,7 @@ describe('createDefaultConfig', () => {
     expect(config.ssh.term).toBe('xterm-256color')
     // Should auto-generate a secure secret (64 hex chars = 32 bytes)
     expect(config.session.secret).toBeDefined()
-    expect(config.session.secret.length).toBe(64)
+    expect(config.session.secret).toHaveLength(64)
     expect(config.session.name).toBe('webssh2.sid')
     expect(config.logging?.minimumLevel).toBe('info')
     expect(config.logging?.stdout?.enabled).toBe(true)

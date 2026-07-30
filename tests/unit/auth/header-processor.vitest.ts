@@ -47,11 +47,11 @@ describe('validateHeaderValue', () => {
   })
   
   it('should return null for invalid values', () => {
-    expect(validateHeaderValue(null)).toBe(null)
-    expect(validateHeaderValue(undefined)).toBe(null)
-    expect(validateHeaderValue('')).toBe(null)
-    expect(validateHeaderValue(123)).toBe(null)
-    expect(validateHeaderValue({})).toBe(null)
+    expect(validateHeaderValue(null)).toBeNull()
+    expect(validateHeaderValue(undefined)).toBeNull()
+    expect(validateHeaderValue('')).toBeNull()
+    expect(validateHeaderValue(123)).toBeNull()
+    expect(validateHeaderValue({})).toBeNull()
   })
   
   it('should remove control characters', () => {
@@ -126,7 +126,7 @@ describe('createHeaderOverride', () => {
 
     const result = createHeaderOverride(values, SourceType.POST)
 
-    expect(result).toBe(null)
+    expect(result).toBeNull()
   })
 
   it('should include only valid fields', () => {
@@ -199,9 +199,9 @@ describe('processHeaderParams', () => {
   })
   
   it('should return null for no valid params', () => {
-    expect(processHeaderParams(undefined)).toBe(null)
-    expect(processHeaderParams({})).toBe(null)
-    expect(processHeaderParams({ other: 'value' })).toBe(null)
+    expect(processHeaderParams(undefined)).toBeNull()
+    expect(processHeaderParams({})).toBeNull()
+    expect(processHeaderParams({ other: 'value' })).toBeNull()
   })
   
   it('should process POST parameters (no color extraction)', () => {
@@ -219,11 +219,11 @@ describe('processHeaderParams', () => {
   })
 
   it('returns null for legacy-only sources', () => {
-    expect(processHeaderParams({ headerStyle: 'bold' })).toBe(null)
-    expect(processHeaderParams({ 'header.color': 'red' })).toBe(null)
+    expect(processHeaderParams({ headerStyle: 'bold' })).toBeNull()
+    expect(processHeaderParams({ 'header.color': 'red' })).toBeNull()
     expect(
       processHeaderParams({ headerStyle: 'bold', 'header.color': 'red' })
-    ).toBe(null)
+    ).toBeNull()
   })
 })
 

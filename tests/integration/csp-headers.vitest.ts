@@ -54,7 +54,7 @@ describe('CSP headers', () => {
       )
     )
     const defined = headers.filter((h): h is string => h !== undefined)
-    expect(defined.length).toBe(paths.length)  // every app-handled route carries it
+    expect(defined).toHaveLength(paths.length)  // every app-handled route carries it
     expect(new Set(defined).size).toBe(1)       // value is identical across routes
     expect(scriptSrcOf(defined[0])).toBe("script-src 'self'")
     expect(defined[0]).toContain("base-uri 'none'")

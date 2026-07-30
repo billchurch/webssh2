@@ -66,12 +66,12 @@ describe('SSH Validation Functions', () => {
     })
 
     it('should reject invalid terminal types', () => {
-      expect(validateTerm('')).toBe(null)
-      expect(validateTerm()).toBe(null)
-      expect(validateTerm('xterm; rm -rf /')).toBe(null)
-      expect(validateTerm('a'.repeat(31))).toBe(null) // Too long
-      expect(validateTerm('xterm$')).toBe(null) // Invalid char
-      expect(validateTerm('xterm&')).toBe(null) // Invalid char
+      expect(validateTerm('')).toBeNull()
+      expect(validateTerm()).toBeNull()
+      expect(validateTerm('xterm; rm -rf /')).toBeNull()
+      expect(validateTerm('a'.repeat(31))).toBeNull() // Too long
+      expect(validateTerm('xterm$')).toBeNull() // Invalid char
+      expect(validateTerm('xterm&')).toBeNull() // Invalid char
     })
   })
 

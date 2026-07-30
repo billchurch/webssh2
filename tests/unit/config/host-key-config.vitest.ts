@@ -27,29 +27,20 @@ function buildHostKeyConfig(
 }
 
 describe('resolveHostKeyMode', () => {
-  it('should set serverStore=true, clientStore=false for mode "server"', () => {
-    const config = buildHostKeyConfig({ mode: 'server' })
-    const result = resolveHostKeyMode(config)
+  it.each([
+    { mode: 'server', expectedServer: true, expectedClient: false },
+    { mode: 'client', expectedServer: false, expectedClient: true },
+    { mode: 'hybrid', expectedServer: true, expectedClient: true }
+  ] as const)(
+    'should set serverStore=$expectedServer, clientStore=$expectedClient for mode $mode',
+    ({ mode, expectedServer, expectedClient }) => {
+      const config = buildHostKeyConfig({ mode })
+      const result = resolveHostKeyMode(config)
 
-    expect(result.serverStore.enabled).toBe(true)
-    expect(result.clientStore.enabled).toBe(false)
-  })
-
-  it('should set serverStore=false, clientStore=true for mode "client"', () => {
-    const config = buildHostKeyConfig({ mode: 'client' })
-    const result = resolveHostKeyMode(config)
-
-    expect(result.serverStore.enabled).toBe(false)
-    expect(result.clientStore.enabled).toBe(true)
-  })
-
-  it('should set both stores true for mode "hybrid"', () => {
-    const config = buildHostKeyConfig({ mode: 'hybrid' })
-    const result = resolveHostKeyMode(config)
-
-    expect(result.serverStore.enabled).toBe(true)
-    expect(result.clientStore.enabled).toBe(true)
-  })
+      expect(result.serverStore.enabled).toBe(expectedServer)
+      expect(result.clientStore.enabled).toBe(expectedClient)
+    }
+  )
 
   it('should allow explicit flags to override mode defaults', () => {
     // mode=server normally sets clientStore=false, but explicit flag overrides

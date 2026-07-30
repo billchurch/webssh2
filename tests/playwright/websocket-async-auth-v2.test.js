@@ -62,6 +62,11 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
 
     // Verify terminal functionality with async operations
     await verifyV2TerminalFunctionality(page, TEST_CONFIG.validUsername)
+
+    // The helper runs `whoami` and an echo; assert both landed in the session
+    const content = await getTerminalContent(page)
+    expect(content).toContain(TEST_CONFIG.validUsername)
+    expect(content).toContain('V2 test successful')
   })
 
   test('should handle async authentication error properly (V2)', async ({ page }) => {
@@ -122,8 +127,7 @@ test.describe('V2 Async/Await Modal Login Authentication', () => {
         // eslint-disable-next-line no-undef
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const text = rows.map((row) => row.textContent || '').join('\n')
-        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
-        return /\d+\s+\d+/.test(text)
+        return /\b\d+\s+\d+\b/.test(text)
       },
       { timeout: TIMEOUTS.CONNECTION }
     )
@@ -181,6 +185,11 @@ test.describe('V2 Async/Await HTTP Basic Authentication', () => {
 
     // Verify terminal functionality
     await verifyV2TerminalFunctionality(page, TEST_CONFIG.validUsername)
+
+    // The helper runs `whoami` and an echo; assert both landed in the session
+    const content = await getTerminalContent(page)
+    expect(content).toContain(TEST_CONFIG.validUsername)
+    expect(content).toContain('V2 test successful')
   })
 
   test('should show async auth error modal with invalid Basic Auth (V2)', async ({ page }) => {
