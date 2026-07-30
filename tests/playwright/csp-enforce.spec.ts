@@ -74,11 +74,19 @@ test.describe('CSP enforcement — terminal boots from JSON config block (#546)'
       await expect(page.locator('.xterm-screen')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
 
       // Assert no app-breaking CSP violations.
-      // The one benign/expected violation is the blocked legacy
-      // `window.webssh2Config = null;` inline script — filter it out so we
-      // only fail on genuine regressions in app-controlled code.
-      const appViolations = cspMessages.filter((m) => !/webssh2Config/i.test(m))
-      expect(appViolations).toEqual([])
+      // The one benign/expected violation is the blocked legacy inline
+      // `window.webssh2Config = ...` script. Chromium's violation message
+      // never includes script source (only a per-content sha256), so the
+      // legacy script can't be matched by name: instead allow at most ONE
+      // blocked-inline-script violation and require zero of any other kind.
+      const inlineScriptViolations = cspMessages.filter((m) =>
+        /Executing inline script/i.test(m)
+      )
+      const otherViolations = cspMessages.filter(
+        (m) => !/Executing inline script/i.test(m)
+      )
+      expect(otherViolations).toEqual([])
+      expect(inlineScriptViolations.length).toBeLessThanOrEqual(1)
 
       // Strong assertion: evaluate in-page that the JSON config block exists
       // and contains a non-null parsed object.  This is the authoritative proof
