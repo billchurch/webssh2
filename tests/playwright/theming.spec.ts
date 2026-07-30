@@ -102,30 +102,29 @@ test.describe('Terminal Theming', () => {
     })
     const page = await context.newPage()
 
-    // Override window.webssh2Config before the inline script runs so that the
-    // client sees theming as disabled regardless of the server config.
-    await page.addInitScript(() => {
-      let _cfg: unknown = null
-      Object.defineProperty(window, 'webssh2Config', {
-        configurable: true,
-        get() {
-          return _cfg
-        },
-        set(v) {
-          _cfg = {
-            ...(v as Record<string, unknown>),
-            theming: { enabled: false },
-          }
-        },
-      })
-    })
-
     // Pre-seed stale localStorage with a Dracula theming entry
     await page.addInitScript(() => {
       localStorage.setItem(
         'webssh2.theming',
         JSON.stringify({ themeName: 'Dracula' })
       )
+    })
+
+    // Rewrite the served HTML's JSON config block (the source the client
+    // actually boots from under enforced CSP, #546) so theming is disabled
+    // regardless of server config.
+    await page.route('**/ssh/host/**', async (route) => {
+      const response = await route.fetch()
+      const body = await response.text()
+      const patched = body.replace(
+        /<script type="application\/json" id="webssh2-config">(.+?)<\/script>/s,
+        (_m, json: string) => {
+          const cfg = JSON.parse(json) as Record<string, unknown>
+          cfg['theming'] = { enabled: false }
+          return `<script type="application/json" id="webssh2-config">${JSON.stringify(cfg)}</script>`
+        }
+      )
+      await route.fulfill({ response, body: patched })
     })
 
     await page.goto(
