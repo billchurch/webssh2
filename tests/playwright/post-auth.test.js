@@ -43,7 +43,9 @@ test.describe('HTTP POST Authentication', () => {
     // Verify response contains client HTML
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
-    expect(body).toContain('webssh2.bundle.js')
+    // Since the #109 contract the client bundle is content-hashed
+    // (webssh2-<hash>.js); never assert a specific hash.
+    expect(body).toMatch(/webssh2-[0-9a-f]+\.js/)
   })
 
   test('should connect with all parameters in body', async ({ request }) => {
@@ -62,7 +64,9 @@ test.describe('HTTP POST Authentication', () => {
     // Verify response contains client HTML
     const body = await response.text()
     expect(body).toContain('<!DOCTYPE html>')
-    expect(body).toContain('webssh2.bundle.js')
+    // Since the #109 contract the client bundle is content-hashed
+    // (webssh2-<hash>.js); never assert a specific hash.
+    expect(body).toMatch(/webssh2-[0-9a-f]+\.js/)
   })
 
   test('should connect with hostname alias in query params', async ({ request }) => {
