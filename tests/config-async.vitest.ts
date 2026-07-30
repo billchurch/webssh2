@@ -5,7 +5,8 @@ import fs from 'node:fs'
 import { getConfig, loadConfigAsync, resetConfigForTesting } from '../app/config.js'
 import {
   logDeprecatedEnvVarWarning,
-  logGeneratedSessionSecretWarning
+  logGeneratedSessionSecretWarning,
+  logTransportConfigWarning
 } from '../app/logger.js'
 import { ConfigError } from '../app/errors.js'
 import { setupTestEnvironment, type ConfigFileManager } from './test-utils.js'
@@ -19,14 +20,16 @@ import {
 } from './test-constants.js'
 import type * as LoggerModule from '../app/logger.js'
 
-// Partial mock so the issue #535 session-secret tests can assert on the two
-// warn emitters; all other logger exports keep their real implementations.
+// Partial mock so the issue #535 session-secret tests (and the issue #549
+// transport tests) can assert on the warn emitters; all other logger
+// exports keep their real implementations.
 vi.mock('../app/logger.js', async (importOriginal) => {
   const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     logDeprecatedEnvVarWarning: vi.fn(),
-    logGeneratedSessionSecretWarning: vi.fn()
+    logGeneratedSessionSecretWarning: vi.fn(),
+    logTransportConfigWarning: vi.fn()
   }
 })
 
@@ -385,6 +388,58 @@ describe('Config Module - Async Tests', () => {
       expect(config.session.secret).toBe(MY_SESSION_SECRET)
       expect(logGeneratedSessionSecretWarning).not.toHaveBeenCalled()
       expect(logDeprecatedEnvVarWarning).not.toHaveBeenCalled()
+    })
+  })
+
+  // Shares this suite's config.json fixture (createConfigFileManager hard-codes
+  // a single path.join(process.cwd(), 'config.json') + backup) rather than its
+  // own test file, to avoid racing another file over that fixture (issue #549).
+  describe('options.transport (config.json) (issue #549)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('normalizes a string form to a single-entry array', async () => {
+      const configManager = requireConfigManager(testEnv)
+      configManager.writeConfig({ options: { transport: 'polling' } })
+
+      const config = await loadConfigAsync()
+
+      expect(config.options.transport).toEqual(['polling'])
+      expect(logTransportConfigWarning).not.toHaveBeenCalled()
+    })
+
+    it('normalizes an array form, preserving order', async () => {
+      const configManager = requireConfigManager(testEnv)
+      configManager.writeConfig({ options: { transport: ['polling', 'websocket'] } })
+
+      const config = await loadConfigAsync()
+
+      expect(config.options.transport).toEqual(['polling', 'websocket'])
+      expect(logTransportConfigWarning).not.toHaveBeenCalled()
+    })
+
+    it('drops an invalid value and warns with source config.json', async () => {
+      const configManager = requireConfigManager(testEnv)
+      configManager.writeConfig({ options: { transport: 'smtp,gopher' } })
+
+      const config = await loadConfigAsync()
+
+      expect(config.options.transport).toBeUndefined()
+      expect(logTransportConfigWarning).toHaveBeenCalledTimes(1)
+      expect(logTransportConfigWarning).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'config.json' })
+      )
+    })
+
+    it('leaves options.transport undefined when absent from config.json', async () => {
+      const configManager = requireConfigManager(testEnv)
+      configManager.writeConfig({})
+
+      const config = await loadConfigAsync()
+
+      expect(config.options.transport).toBeUndefined()
+      expect(logTransportConfigWarning).not.toHaveBeenCalled()
     })
   })
 })
