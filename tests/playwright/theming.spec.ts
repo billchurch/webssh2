@@ -110,21 +110,36 @@ test.describe('Terminal Theming', () => {
       )
     })
 
-    // Rewrite the served HTML's JSON config block (the source the client
-    // actually boots from under enforced CSP, #546) so theming is disabled
-    // regardless of server config.
-    await page.route('**/ssh/host/**', async (route) => {
-      const response = await route.fetch()
-      const body = await response.text()
-      const patched = body.replace(
-        /<script type="application\/json" id="webssh2-config">(.+?)<\/script>/s,
-        (_m, json: string) => {
-          const cfg = JSON.parse(json) as Record<string, unknown>
-          cfg['theming'] = { enabled: false }
-          return `<script type="application/json" id="webssh2-config">${JSON.stringify(cfg)}</script>`
+    // Patch the served JSON config block (the source the client boots from
+    // under enforced CSP, #546) so theming is disabled regardless of server
+    // config. Route interception is NOT usable here: a route.fulfill()'d
+    // document loses its local address-space attribution and Chromium's
+    // Local Network Access checks then block the ws://localhost socket.
+    // Instead, rewrite the inert block's text before the (deferred) module
+    // script executes — init scripts run ahead of all page scripts.
+    await page.addInitScript(() => {
+      /* global document, MutationObserver */
+      const observer = new MutationObserver(() => {
+        const el = document.getElementById('webssh2-config')
+        // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+        if (el === null || el.textContent === null || el.textContent === '') {
+          return
         }
-      )
-      await route.fulfill({ response, body: patched })
+        try {
+          const cfg = JSON.parse(el.textContent) as Record<string, unknown>
+          cfg['theming'] = { enabled: false }
+          el.textContent = JSON.stringify(cfg)
+          observer.disconnect()
+        } catch {
+          // JSON text still streaming in — keep observing until it parses
+        }
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      observer.observe(document.documentElement ?? document, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      })
     })
 
     await page.goto(
