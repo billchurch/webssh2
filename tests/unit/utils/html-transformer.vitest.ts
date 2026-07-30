@@ -74,12 +74,13 @@ describe('transformHtml', () => {
   it('should be pure - not mutate inputs', () => {
     const html = '<link href="styles.css">'
     const config = { test: 'value' }
-    const originalHtml = html
     const originalConfig = { ...config }
 
-    transformHtml(html, config)
+    const result = transformHtml(html, config)
 
-    expect(html).toBe(originalHtml)
+    // Strings are immutable, so purity here means a new value is returned and
+    // the caller's config object is left untouched
+    expect(result).toBe('<link href="/ssh/assets/styles.css">')
     expect(config).toEqual(originalConfig)
   })
 })

@@ -188,6 +188,6 @@ describe('telnet route handler protocol injection', () => {
     const routePaths = extractRoutes(router)
 
     // Should have: GET /, GET /config, GET /host/:host, POST /, POST /host/:host
-    expect(routePaths.length).toBe(5)
+    expect(routePaths).toHaveLength(5)
   })
 })

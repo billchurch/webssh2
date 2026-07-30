@@ -58,7 +58,7 @@ describe('Socket V2 Terminal and Control', () => {
 
     // V2 should silently ignore invalid resize values without emitting errors
     const errorEvents = filterEventsByType(emittedEvents, 'ssherror')
-    expect(errorEvents.length).toBe(0)
+    expect(errorEvents).toHaveLength(0)
   })
 
   it('control: silently ignores invalid control commands (V2 improvement)', async () => {

@@ -50,10 +50,10 @@ describe('extractPostCredentials', () => {
   })
   
   it('should return null for missing credentials', () => {
-    expect(extractPostCredentials({})).toBe(null)
-    expect(extractPostCredentials({ username: 'user' })).toBe(null)
-    expect(extractPostCredentials({ password: TEST_PASSWORDS.basic })).toBe(null)
-    expect(extractPostCredentials({ username: '', password: TEST_PASSWORDS.basic })).toBe(null)
+    expect(extractPostCredentials({})).toBeNull()
+    expect(extractPostCredentials({ username: 'user' })).toBeNull()
+    expect(extractPostCredentials({ password: TEST_PASSWORDS.basic })).toBeNull()
+    expect(extractPostCredentials({ username: '', password: TEST_PASSWORDS.basic })).toBeNull()
   })
   
   it('should convert string port to number', () => {
@@ -77,7 +77,7 @@ describe('extractPostCredentials', () => {
     
     const result = extractPostCredentials(body)
     
-    expect(result?.term).toBe(null)
+    expect(result?.term).toBeNull()
   })
 })
 
@@ -236,9 +236,9 @@ describe('extractReadyTimeout', () => {
   })
   
   it('should return null for invalid values', () => {
-    expect(extractReadyTimeout({})).toBe(null)
-    expect(extractReadyTimeout({ readyTimeout: 'invalid' })).toBe(null)
-    expect(extractReadyTimeout({ readyTimeout: -1000 })).toBe(null)
-    expect(extractReadyTimeout({ readyTimeout: 0 })).toBe(null)
+    expect(extractReadyTimeout({})).toBeNull()
+    expect(extractReadyTimeout({ readyTimeout: 'invalid' })).toBeNull()
+    expect(extractReadyTimeout({ readyTimeout: -1000 })).toBeNull()
+    expect(extractReadyTimeout({ readyTimeout: 0 })).toBeNull()
   })
 })

@@ -91,7 +91,7 @@ test.describe('CSP enforcement — terminal boots from JSON config block (#546)'
       // that CSP enforcement is actually on — zero would mean enforcement
       // silently broke and this spec was passing vacuously. If the legacy
       // inline script is ever removed server-side, update this deliberately.
-      expect(inlineScriptViolations.length).toBe(1)
+      expect(inlineScriptViolations).toHaveLength(1)
 
       // Strong assertion: evaluate in-page that the JSON config block exists
       // and contains a non-null parsed object.  This is the authoritative proof

@@ -345,9 +345,9 @@ describe('Enhanced Config - Validation Functions', () => {
     it('should validate SSH hosts correctly', () => {
       expect(validateSshHost('example.com')).toBe('example.com')
       expect(validateSshHost(TEST_IPS.PRIVATE_192)).toBe(TEST_IPS.PRIVATE_192)
-      expect(validateSshHost(null)).toBe(null)
-      expect(validateSshHost(undefined)).toBe(null)
-      expect(validateSshHost('')).toBe(null)
+      expect(validateSshHost(null)).toBeNull()
+      expect(validateSshHost(undefined)).toBeNull()
+      expect(validateSshHost('')).toBeNull()
       expect(() => validateSshHost('invalid host')).toThrow('contains spaces')
     })
   })

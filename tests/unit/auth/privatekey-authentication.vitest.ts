@@ -91,7 +91,7 @@ describe('Private Key Authentication - Issue #441', () => {
       // This is what BasicAuthProvider.getCredentials() does
       const credentials = convertToAuthCredentials(sshCreds)
 
-      expect(credentials).not.toBe(null)
+      expect(credentials).not.toBeNull()
       expect(credentials?.username).toBe(TEST_USERNAME)
       expect(credentials?.host).toBe(TEST_SSH.HOST)
       expect(credentials?.port).toBe(TEST_SSH.PORT)
@@ -107,7 +107,7 @@ describe('Private Key Authentication - Issue #441', () => {
       }
 
       const credentials = convertToAuthCredentials(sessionCreds)
-      expect(credentials).toBe(null)
+      expect(credentials).toBeNull()
     })
 
     it('should default to port 22 when port is missing from session credentials', () => {
@@ -119,7 +119,7 @@ describe('Private Key Authentication - Issue #441', () => {
       }
 
       const credentials = convertToAuthCredentials(sessionCreds)
-      expect(credentials).not.toBe(null)
+      expect(credentials).not.toBeNull()
       expect(credentials?.port).toBe(22)
     })
   })
@@ -129,7 +129,7 @@ describe('Private Key Authentication - Issue #441', () => {
       const config = createTestConfig()
       const extracted = extractConfigCredentials(config)
 
-      expect(extracted).not.toBe(null)
+      expect(extracted).not.toBeNull()
       expect(extracted?.username).toBe(TEST_USERNAME)
       expect(extracted?.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
     })
@@ -138,7 +138,7 @@ describe('Private Key Authentication - Issue #441', () => {
       const config = createTestConfig({ passphrase: TEST_PASSPHRASE })
       const extracted = extractConfigCredentials(config)
 
-      expect(extracted).not.toBe(null)
+      expect(extracted).not.toBeNull()
       expect(extracted?.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
       expect(extracted?.passphrase).toBe(TEST_PASSPHRASE)
     })
@@ -181,7 +181,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       // Step 4: Convert credentials (simulates BasicAuthProvider)
       const credentials = convertToAuthCredentials(sshCreds)
-      expect(credentials).not.toBe(null)
+      expect(credentials).not.toBeNull()
       expect(credentials?.privateKey).toBe(TEST_SSH_PRIVATE_KEY_VALID)
     })
 
@@ -228,7 +228,7 @@ describe('Private Key Authentication - Issue #441', () => {
       }
 
       const credentials = convertToAuthCredentials(sessionCreds)
-      expect(credentials).toBe(null)
+      expect(credentials).toBeNull()
     })
 
     it('should handle custom SSH port with privateKey', () => {
@@ -259,7 +259,7 @@ describe('Private Key Authentication - Issue #441', () => {
 
       // Bug was: credentials === null
       // Fix: credentials should be valid
-      expect(credentials).not.toBe(null)
+      expect(credentials).not.toBeNull()
       expect(credentials?.username).toBe('keyuser')
       expect(credentials?.privateKey).toBeTruthy()
     })

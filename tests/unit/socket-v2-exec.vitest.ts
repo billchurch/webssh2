@@ -65,7 +65,7 @@ describe('Socket V2 Exec Handler', () => {
 
     // With services, exec is processed without emitting errors
     const errorEvents = mockSocket.emit.mock.calls.filter((c: unknown[]) => c[0] === 'ssherror')
-    expect(errorEvents.length).toBe(0)
+    expect(errorEvents).toHaveLength(0)
   })
 
   it('should emit error when exec payload is invalid', () => {

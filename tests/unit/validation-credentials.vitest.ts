@@ -80,7 +80,7 @@ describe('Credential Validation Functions', () => {
         password: TEST_PASSWORDS.secret
       })
       expect(result.valid).toBe(true)
-      expect(result.errors.length).toBe(0)
+      expect(result.errors).toHaveLength(0)
     })
 
     it('should detect missing username', () => {
@@ -159,7 +159,7 @@ describe('Credential Validation Functions', () => {
         privateKey: 'key'
       })
       expect(result.valid).toBe(true)
-      expect(result.errors.length).toBe(0)
+      expect(result.errors).toHaveLength(0)
     })
   })
 })
