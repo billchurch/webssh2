@@ -599,7 +599,7 @@ docker run --name webssh2 --rm -it \
 | `WEBSSH2_OPTIONS_ALLOW_RECONNECT` | boolean | `true` | Allow reconnection |
 | `WEBSSH2_OPTIONS_ALLOW_REPLAY` | boolean | `true` | Allow session replay |
 | `WEBSSH2_OPTIONS_REPLAY_CRLF` | boolean | `false` | Send CRLF for credential replay (default is CR) |
-| `WEBSSH2_OPTIONS_TRANSPORT` | string | `websocket,polling` | Socket.IO transports in order of preference as comma-separated string (e.g., `websocket,polling` or `polling,websocket`). Valid values: `websocket`, `polling`. Order is significant. Invalid values logged with warning, defaults to `['websocket', 'polling']`. Requires webssh2_client ≥ 5.3.0. Use for WebSocket-blocking proxies/load balancers |
+| `WEBSSH2_OPTIONS_TRANSPORT` | string | (unset) | Socket.IO transports in order of preference as comma-separated string (e.g., `websocket,polling` or `polling,websocket`). Valid values: `websocket`, `polling`. Order is significant. Unrecognized values are ignored; if none remain valid, a warning is logged and the setting stays unset — client defaults to websocket-first when unset. Requires webssh2_client ≥ 5.3.0. Use for WebSocket-blocking proxies/load balancers |
 | `WEBSSH2_TERMINAL_SHIFT_ENTER_NEWLINE` | boolean | `false` | Remap Shift+Enter to ESC+CR (newline in Claude Code-style TUIs) |
 
 ### Terminal Theming (`options.theming`)

@@ -338,7 +338,7 @@ This option can also be controlled via the environment variable `WEBSSH2_OPTIONS
 
 Control which Socket.IO transports are available to the client for connecting to the server.
 
-- `options.transport` (string or array, default: `['websocket', 'polling']`): Specifies the order of transport protocols. Can be a string (`"websocket"` or `"polling"`) or an array (`["websocket", "polling"]`). Order is significant — the first available transport is preferred. Invalid values are logged with a warning and the default is used.
+- `options.transport` (string or array, default: unset — the client's own transport order applies): Specifies the order of transport protocols. Can be a string (`"websocket"` or `"polling"`) or an array (`["websocket", "polling"]`). Order is significant — the first available transport is preferred. Unrecognized values are ignored; if no valid values remain, a warning is logged and the setting is left unset.
 
 - Env var: `WEBSSH2_OPTIONS_TRANSPORT` (comma-separated string, e.g., `websocket,polling`)
 
