@@ -101,7 +101,7 @@
     "eslint-plugin-n": "^18.2.2",
     "eslint-plugin-playwright": "^2.10.5",
     "eslint-plugin-security": "^4.0.0",
-    "eslint-plugin-sonarjs": "^4.0.3",
+    "eslint-plugin-sonarjs": "4.0.3",
     "eslint-plugin-unicorn": "^71.1.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",
