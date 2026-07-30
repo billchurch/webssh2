@@ -2,36 +2,9 @@
 // buildTempConfig socket.transports slice (billchurch/webssh2#549)
 
 import { describe, it, expect } from 'vitest'
-import type { Request } from 'express'
 import { buildTempConfig } from '../../../app/connectionHandler.js'
-import { createDefaultConfig } from '../../../app/config/config-processor.js'
-import type { AuthSession } from '../../../app/auth/auth-utils.js'
 import type { Config } from '../../../app/types/config.js'
-import { TEST_SSH } from '../../test-constants.js'
-
-type TestReq = Request & { session?: AuthSession; sessionID?: string }
-
-function makeReq(): TestReq {
-  return {
-    path: '/host/',
-    protocol: 'https',
-    get: ((key: string) =>
-      key === 'host' ? TEST_SSH.HOST : undefined) as unknown as Request['get'],
-    session: {
-      sshCredentials: {
-        host: TEST_SSH.HOST,
-        port: TEST_SSH.PORT,
-        term: 'xterm'
-      },
-      usedBasicAuth: false,
-      authMethod: 'password',
-      headerOverride: undefined
-    },
-    sessionID: 'test-session-id'
-  } as TestReq
-}
-
-const defaultConfig = createDefaultConfig()
+import { makeReq, defaultConfig } from './injection-test-helpers.js'
 
 function cfgWithTransport(transport?: string[]): Config {
   return {
