@@ -48,7 +48,7 @@
     "socket.io": "^4.8.1",
     "ssh2": "1.17",
     "validator": "^13.15.35",
-    "webssh2_client": "5.2.0",
+    "webssh2_client": "5.4.0",
     "zod": "^4.1.12"
   },
   "scripts": {
@@ -81,7 +81,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "1.61.1",
     "@types/basic-auth": "^1.1.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/debug": "4.1.13",
@@ -99,9 +99,9 @@
     "eslint": "10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.2.2",
-    "eslint-plugin-playwright": "^2.10.5",
+    "eslint-plugin-playwright": "2.10.5",
     "eslint-plugin-security": "^4.0.0",
-    "eslint-plugin-sonarjs": "^4.0.3",
+    "eslint-plugin-sonarjs": "4.0.3",
     "eslint-plugin-unicorn": "^71.1.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",
@@ -126,11 +126,8 @@
     "flatted": "3.4.2",
     "picomatch": "4.0.4",
     "path-to-regexp": "8.4.0",
-    "vite": "7.3.5",
-    "esbuild": "^0.28.1",
+    "vite": "8.1.4",
+    "lightningcss": "1.32.0",
     "qs": "6.15.2"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.60.2"
   }
 }
