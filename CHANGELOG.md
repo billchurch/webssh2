@@ -1,5 +1,22 @@
 # Changelog
 
+## [5.2.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.1.0...webssh2-server-v5.2.0) (2026-07-30)
+
+
+### Features
+
+* **config:** shiftEnterNewline option + client config injection ([#558](https://github.com/billchurch/webssh2/issues/558)) ([93cf88d](https://github.com/billchurch/webssh2/commit/93cf88d95347a4a2ba35f42d13b0af725de5cdd8))
+* honor operator-configured Socket.IO transport ([#549](https://github.com/billchurch/webssh2/issues/549)) ([#563](https://github.com/billchurch/webssh2/issues/563)) ([4a2747c](https://github.com/billchurch/webssh2/commit/4a2747cae1a95f73976b7d38d0d88a779dcd735b))
+
+
+### Bug Fixes
+
+* **config:** ignore prototype-member algorithm preset names ([#562](https://github.com/billchurch/webssh2/issues/562)) ([b1df44d](https://github.com/billchurch/webssh2/commit/b1df44d4b28ef4a0306d1643e56fd7f5e10950e4))
+* **deps:** upgrade eslint toolchain to clear brace-expansion HIGH advisory ([#559](https://github.com/billchurch/webssh2/issues/559)) ([f883e1d](https://github.com/billchurch/webssh2/commit/f883e1d65138a1be86cbd75ad1de244fc5688e98))
+* **docker:** upgrade bundled npm to 11.18.0 to clear npm-CLI CVEs ([#555](https://github.com/billchurch/webssh2/issues/555)) ([b51dda3](https://github.com/billchurch/webssh2/commit/b51dda38c5a5a380e3781f8c9e81be6e158e4e5a))
+* **lint:** enable modern-JS unicorn rules and resolve SonarCloud findings ([#557](https://github.com/billchurch/webssh2/issues/557)) ([31a37f8](https://github.com/billchurch/webssh2/commit/31a37f836d94c232724741d8ea29473d2a4ce2e5))
+* resolve remaining 37 SonarCloud findings (phases 2-4) ([#560](https://github.com/billchurch/webssh2/issues/560)) ([9a9dbdd](https://github.com/billchurch/webssh2/commit/9a9dbdd01cb522d060457c8a26ddf2ce9747211c))
+
 ## [5.1.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.0.1...webssh2-server-v5.1.0) (2026-06-17)
 
 
