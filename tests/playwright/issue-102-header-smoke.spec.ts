@@ -42,12 +42,12 @@ interface WebSSH2Config {
 async function getInjectedConfig(page: Page): Promise<WebSSH2Config | undefined> {
   return page.evaluate(() => {
     const el = document.getElementById('webssh2-config')
-    const content = el?.textContent
-    if (content === undefined || content === '') {
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+    if (el === null || el.textContent === null || el.textContent === '') {
       return undefined
     }
     try {
-      return JSON.parse(content) as WebSSH2Config
+      return JSON.parse(el.textContent) as WebSSH2Config
     } catch {
       return undefined
     }
