@@ -10,9 +10,10 @@
  *      as the other E2E SSH specs.
  *   3. Asserts the xterm terminal renders — proving the client read runtime
  *      config from the inert JSON block rather than the blocked inline script.
- *   4. Asserts no app-originated CSP violations occurred (the one expected
+ *   4. Asserts no app-originated CSP violations occurred. The one expected
  *      violation — the blocked legacy `window.webssh2Config = null;` inline
- *      script — is intentionally filtered out).
+ *      script — is counted structurally: exactly one blocked-inline-script
+ *      violation is required; any other violation kind fails the spec.
  *   5. (Strong) Evaluates in-page that the JSON config block is populated with
  *      a non-null object, confirming the JSON-block injection path works.
  *
@@ -86,7 +87,11 @@ test.describe('CSP enforcement — terminal boots from JSON config block (#546)'
         (m) => !/Executing inline script/i.test(m)
       )
       expect(otherViolations).toEqual([])
-      expect(inlineScriptViolations.length).toBeLessThanOrEqual(1)
+      // Exactly one: the blocked legacy inline script is a free positive proof
+      // that CSP enforcement is actually on — zero would mean enforcement
+      // silently broke and this spec was passing vacuously. If the legacy
+      // inline script is ever removed server-side, update this deliberately.
+      expect(inlineScriptViolations.length).toBe(1)
 
       // Strong assertion: evaluate in-page that the JSON config block exists
       // and contains a non-null parsed object.  This is the authoritative proof
