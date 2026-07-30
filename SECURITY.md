@@ -543,10 +543,10 @@ For reference, the following IOCs were published by Snyk:
 
 ## esbuild RCE via Deno module (GHSA-gv7w-rqvm-qjhr)
 
-As of 2026-06-16, we evaluated GHSA-gv7w-rqvm-qjhr, a remote code execution
-flaw in esbuild's Deno module (`lib/deno/mod.ts`) that downloads native
-binaries and writes them to disk with executable permissions without integrity
-verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
+As of 2026-07-30, we completed mitigation of GHSA-gv7w-rqvm-qjhr, a remote
+code execution flaw in esbuild's Deno module (`lib/deno/mod.ts`) that downloads
+native binaries and writes them to disk with executable permissions without
+integrity verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
 
 ### Exposure assessment
 
@@ -554,43 +554,38 @@ verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
 | --- | --- |
 | Affected versions | esbuild 0.17.0 - < 0.28.1 |
 | Severity | HIGH (CVSS 8.1) |
-| Our version | esbuild@0.28.1 (was 0.27.2) |
-| Dependency path | dev-only: `vitest` / `tsx` → `vite` → esbuild |
-| Status | **Patched** - pinned to 0.28.1 via `overrides` |
+| Mitigation | **Retired** — vulnerable range no longer resolvable; remaining esbuild is tsx's dev-only copy at 0.28.1 (patched) via natural resolution |
+| Dependency path | dev-only: `tsx` → `esbuild@0.28.1` (patched); `vitest` → `vite@8.1.4` (Rolldown/Oxc, no esbuild) |
+| Resolution | Vite 8 migration removes esbuild from the vite/vitest chain; tsx retains the patched 0.28.1 |
 
-### Exposure context
+### Mitigation history
 
-- esbuild is a **dev-only** dependency. webssh2 builds with `tsc`, dev-runs
-  with `tsx`, and tests with Vitest; esbuild never ships in a production
-  artifact. There is no `vite.config` and no `import 'vite'` in source — Vite
-  is present only as Vitest's internal engine.
-- The vulnerable code is in esbuild's **Deno** module. webssh2 runs under
-  **Node.js** (its install path uses npm `optionalDependencies` with integrity
-  hashes), and there is no Deno usage anywhere in the repo, so the affected
-  code path was never reachable. We were therefore not exploitable even before
-  the patch.
+**2026-06-16**: Initial assessment — esbuild@0.28.1 pinned via `overrides`
 
-### Action taken
+- The vulnerable code is in esbuild's **Deno** module; webssh2 runs under
+  **Node.js** only (no Deno usage), so the code path was never reachable.
+- However, for defense-in-depth, added `overrides.esbuild: "^0.28.1"` (pinned
+  to fixed release) and bumped Vite 7.3.2 → 7.3.5, Vitest 4.1.4 → 4.1.9.
+- esbuild 0.28.1 (published 2026-06-11) applied the quarantine exception for
+  HIGH-severity advisories.
+- Related advisory GHSA-g7r4-m6w7-qqqr (dev-server) also resolved.
 
-- Added `overrides.esbuild: "^0.28.1"` (resolves esbuild 0.28.1, the fixed
-  release) and bumped the `vite` override 7.3.2 → 7.3.5,
-  `vitest` / `@vitest/coverage-v8` 4.1.4 → 4.1.9, and `tsx` → `^4.22.4`.
-- The same bump also resolves the related esbuild dev-server advisory
-  GHSA-g7r4-m6w7-qqqr.
-- After the dependency bump, `npm audit --audit-level=high` reports 0
-  vulnerabilities; the patch commit (`40b8a7c`) landed with its full test run
-  passing.
-- esbuild 0.28.1 was published 2026-06-11, within the 14-day quarantine window;
-  the quarantine exception for HIGH-severity advisories was applied.
+**2026-07-30**: Cleanup complete — Vite 8 migration (issue [#550](https://github.com/billchurch/webssh2/issues/550))
 
-### Follow-up
-
-- [#550](https://github.com/billchurch/webssh2/issues/550) tracks the optional
-  cleanup of moving Vitest to Vite 8, which drops esbuild from the tree
-  entirely and lets the override be removed.
+- Upgraded Vitest to Vite 8.1.4 (Rolldown/Oxc backend), eliminating the vulnerable
+  esbuild chain: Vitest → Vite 8.1.4 no longer requires esbuild.
+- Retired `overrides.esbuild: "^0.28.1"` mitigation entirely — no longer needed.
+- esbuild still present as dev-only: `tsx@4.23.1` (TypeScript runner, esbuild-based
+  by design) requires `esbuild ~0.28.0`, which resolves to **0.28.1 (the fixed version)** by natural resolution.
+- webssh2_client upgraded to v5.4.0 (billchurch/webssh2_client#132), clearing
+  esbuild from the client build entirely.
+- Vite 8.1.4 override remains temporarily for supply-chain quarantine
+  (8.1.5 published within 14-day window). Will be dropped once a ≥14-day-old
+  Vite 8.x release becomes available.
+- `npm audit --audit-level=high` reports 0 vulnerabilities.
 
 ---
 
-**Last updated:** 2026-06-16
+**Last updated:** 2026-07-30
 
-**Next review:** 2026-09-16
+**Next review:** 2026-10-30
