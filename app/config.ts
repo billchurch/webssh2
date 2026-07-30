@@ -6,12 +6,14 @@ import { enhanceConfig, ok, err } from './utils/index.js'
 import {
   createNamespacedDebug,
   logThemingConfigWarning,
+  logTransportConfigWarning,
   logDeprecatedEnvVarWarning,
   logGeneratedSessionSecretWarning
 } from './logger.js'
 import { ConfigError } from './errors.js'
 import type { Config, ConfigValidationError } from './types/config.js'
 import { mapEnvironmentVariables } from './config/env-mapper.js'
+import { parseTransports } from './config/transport-parser.js'
 import {
   readConfigFile,
   resolveConfigFile,
@@ -32,6 +34,37 @@ import { ALGORITHM_ENV_VARS } from './constants/algorithm-env-vars.js'
 const debug = createNamespacedDebug('config')
 
 // Session secret will be generated inside loadEnhancedConfig if needed
+
+/**
+ * Normalize the config.json `options.transport` field into the validated
+ * array form the schema expects. Invalid or malformed values are dropped
+ * with a warning rather than failing config load (fail-safe to the
+ * client's own default, #549). This is the single normalization point for
+ * the config.json source; the env source is normalized separately in
+ * `resolveTransportEnv` (app/config/env-mapper.ts).
+ * @pure
+ */
+function normalizeFileConfigTransport(
+  fileConfig: Partial<Config>
+): { readonly config: Partial<Config>; readonly warning: string | undefined } {
+  const rawOptions = fileConfig.options as Record<string, unknown> | undefined
+  if (rawOptions === undefined || !('transport' in rawOptions)) {
+    return { config: fileConfig, warning: undefined }
+  }
+
+  const parsed = parseTransports(rawOptions['transport'])
+  const nextOptions: Record<string, unknown> = { ...rawOptions }
+  if (parsed.transports === undefined) {
+    delete nextOptions['transport']
+  } else {
+    nextOptions['transport'] = parsed.transports
+  }
+
+  return {
+    config: { ...fileConfig, options: nextOptions as unknown as Config['options'] },
+    warning: parsed.warning
+  }
+}
 
 async function loadFileConfig(
   resolution: ConfigFileResolution,
@@ -63,7 +96,13 @@ async function loadFileConfig(
     }])
   }
 
-  return ok(parseResult.value)
+  const { config: normalizedConfig, warning: transportWarning } =
+    normalizeFileConfigTransport(parseResult.value)
+  if (transportWarning !== undefined) {
+    logTransportConfigWarning({ source: 'config.json', reason: transportWarning })
+  }
+
+  return ok(normalizedConfig)
 }
 
 /**
@@ -169,6 +208,9 @@ export async function loadEnhancedConfig(
     mapEnvironmentVariables(resolvedEnv, {
       onThemingWarning: (warning) => {
         logThemingConfigWarning(warning)
+      },
+      onTransportWarning: (warning) => {
+        logTransportConfigWarning({ source: 'WEBSSH2_OPTIONS_TRANSPORT', reason: warning })
       }
     })
   )

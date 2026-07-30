@@ -36,6 +36,7 @@ export const LOG_EVENT_NAMES = [
   'prompt_error',
   // Configuration / theming
   'theming_config_invalid',
+  'transport_config_invalid',
   'security_posture',
   // Configuration / environment
   'env_var_deprecated',

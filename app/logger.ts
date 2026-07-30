@@ -84,6 +84,29 @@ export function logThemingConfigWarning(warning: ThemingConfigWarning): void {
   }
 }
 
+export interface TransportConfigWarning {
+  readonly source: string
+  readonly reason: string
+}
+
+export function logTransportConfigWarning(warning: TransportConfigWarning): void {
+  const result = defaultStructuredLogger.warn({
+    event: 'transport_config_invalid',
+    message: 'Transport configuration entry rejected',
+    context: {
+      status: 'failure',
+      reason: warning.reason
+    },
+    data: {
+      source: warning.source
+    }
+  })
+
+  if (!result.ok) {
+    console.warn('Failed to emit transport config warning log:', result.error)
+  }
+}
+
 export function logSecurityPostureWarning(warning: SecurityPostureWarning): void {
   const result = defaultStructuredLogger.warn({
     event: 'security_posture',

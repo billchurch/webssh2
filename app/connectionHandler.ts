@@ -53,13 +53,19 @@ function hasSessionCredentials(session: Sess): boolean {
 function buildSocketConfig(
   req: Request,
   isTelnet: boolean,
+  cfg: Config,
 ): Record<string, unknown> {
   const socketPath = isTelnet ? TELNET_DEFAULTS.IO_PATH : DEFAULTS.IO_PATH
+  const socketFragment: Record<string, unknown> = {
+    url: `${req.protocol}://${req.get('host')}`,
+    path: socketPath,
+  }
+  const transport = cfg.options.transport
+  if (Array.isArray(transport) && transport.length > 0) {
+    socketFragment['transports'] = transport
+  }
   const result: Record<string, unknown> = {
-    socket: {
-      url: `${req.protocol}://${req.get('host')}`,
-      path: socketPath,
-    },
+    socket: socketFragment,
     autoConnect: req.path.startsWith('/host/'),
   }
   if (isTelnet) {
@@ -243,7 +249,7 @@ export function buildTempConfig(
   opts?: ConnectionOptions,
 ): Partial<Config> {
   const isTelnet = opts?.protocol === 'telnet'
-  const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet)
+  const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet, cfg)
   Object.assign(tempConfig, buildConnectionMode(opts))
   Object.assign(tempConfig, buildSshCredentials(req.session, req))
   Object.assign(tempConfig, buildHeaderConfig(cfg, req.session))

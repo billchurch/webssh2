@@ -15,6 +15,7 @@ import {
   loadAdditionalThemes,
   type ThemeValidationWarning
 } from '../services/theming/theme-loader.js'
+import { parseTransports } from './transport-parser.js'
 
 /**
  * Optional callbacks invoked while mapping theming env vars. Lets the caller
@@ -23,6 +24,7 @@ import {
  */
 export interface EnvMapperHooks {
   readonly onThemingWarning?: (warning: ThemeValidationWarning) => void
+  readonly onTransportWarning?: (warning: string) => void
 }
 
 export interface EnvVarMap { 
@@ -394,6 +396,31 @@ function resolveThemingEnv(env: Record<string, string | undefined>): ThemingReso
   }
 }
 
+/** A transport-list assignment plus the warning raised while resolving it */
+interface TransportResolution {
+  readonly entries: readonly ConfigEntry[]
+  readonly warning: string | undefined
+}
+
+/**
+ * Resolve WEBSSH2_OPTIONS_TRANSPORT via the shared transport parser.
+ * Invalid values produce no entry (fail-safe to the client default).
+ * @pure
+ */
+function resolveTransportEnv(env: Record<string, string | undefined>): TransportResolution {
+  const raw = readEnvString(env, 'WEBSSH2_OPTIONS_TRANSPORT')
+  if (raw === undefined) {
+    return { entries: [], warning: undefined }
+  }
+
+  const parsed = parseTransports(raw)
+  if (parsed.transports === undefined) {
+    return { entries: [], warning: parsed.warning }
+  }
+
+  return { entries: [['options.transport', parsed.transports]], warning: undefined }
+}
+
 /**
  * Map environment variables to configuration object
  * Individual algorithm settings take precedence over preset values
@@ -407,12 +434,14 @@ export function mapEnvironmentVariables(
   hooks?: EnvMapperHooks
 ): Record<string, unknown> {
   const theming = resolveThemingEnv(env)
+  const transport = resolveTransportEnv(env)
   // Order matters: the preset supplies base algorithm values, and the
   // individual variables applied after it overwrite the ones they name.
   const entries = [
     ...collectPresetEntries(env),
     ...collectMappedEntries(env),
-    ...theming.entries
+    ...theming.entries,
+    ...transport.entries
   ]
 
   const config: Record<string, unknown> = {}
@@ -422,6 +451,10 @@ export function mapEnvironmentVariables(
 
   for (const warning of theming.warnings) {
     hooks?.onThemingWarning?.(warning)
+  }
+
+  if (transport.warning !== undefined) {
+    hooks?.onTransportWarning?.(transport.warning)
   }
 
   return config

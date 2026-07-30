@@ -206,6 +206,7 @@ const OptionsSchema = z.object({
   allowReconnect: z.boolean(),
   allowReplay: z.boolean(),
   replayCRLF: z.boolean().optional(),
+  transport: z.array(z.enum(['websocket', 'polling'])).nonempty().optional(),
   terminal: OptionsTerminalSchema,
   theming: ThemingSchema
 })
