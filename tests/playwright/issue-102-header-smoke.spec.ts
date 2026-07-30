@@ -9,14 +9,14 @@
  * requests via hasAnyHeaderKey) and the client (validates background via
  * `validateHeaderBackground`, renders default `#000` fallback on rejection).
  *
- * No SSH connection is required — the smokes assert on the rendered page's
- * `window.webssh2Config` object and the header `<div>`'s styling.
+ * No SSH connection is required — the smokes assert on the injected JSON config
+ * block and the header `<div>`'s styling.
  */
-/* global window */
+/* global document */
 import { test, expect, type Page } from '@playwright/test'
-import { BASE_URL } from './constants.js'
+import { BASE_URL, SSH_HOST, SSH_PORT, USERNAME, PASSWORD } from './constants.js'
 
-const SSH_QUERY = 'host=localhost&port=22'
+const SSH_QUERY = `host=${SSH_HOST}&port=${SSH_PORT}`
 
 // The Playwright config template (tests/playwright/assets/config.template.json)
 // sets header.background = "green" by default. When no URL override is applied,
@@ -39,20 +39,25 @@ interface WebSSH2Config {
   [key: string]: unknown
 }
 
-declare global {
-  interface Window {
-    webssh2Config?: WebSSH2Config
-  }
-}
-
 async function getInjectedConfig(page: Page): Promise<WebSSH2Config | undefined> {
-  return page.evaluate(() => window.webssh2Config)
+  return page.evaluate(() => {
+    const el = document.getElementById('webssh2-config')
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+    if (el === null || el.textContent === null || el.textContent === '') {
+      return undefined
+    }
+    try {
+      return JSON.parse(el.textContent) as WebSSH2Config
+    } catch {
+      return undefined
+    }
+  })
 }
 
 function extractConfigFromHtml(html: string): WebSSH2Config {
-  const match = html.match(/window\.webssh2Config = (\{.+?\});/s)
+  const match = /<script type="application\/json" id="webssh2-config">(.+?)<\/script>/s.exec(html)
   if (match?.[1] === undefined) {
-    throw new Error('window.webssh2Config not found in response HTML')
+    throw new Error('webssh2-config JSON block not found in response HTML')
   }
   return JSON.parse(match[1]) as WebSSH2Config
 }
@@ -172,23 +177,32 @@ test.describe('Issue #102 — headerStyle/Tailwind injection removal', () => {
     //
     // We assert by reading the POST response HTML — the rendered config
     // reflects what's in the session at the moment the response is produced.
-    const responseHtml = await page.evaluate(async (baseUrl) => {
-      const formData = new URLSearchParams({
-        host: 'localhost',
-        port: '22',
-        username: 'testuser',
-        password: 'testpassword',
-        'header.color': 'blue',
-      })
-      const res = await fetch(`${baseUrl}/ssh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
-        // include cookies (same-origin is default but be explicit)
-        credentials: 'include',
-      })
-      return res.text()
-    }, BASE_URL)
+    const responseHtml = await page.evaluate(
+      async ({ baseUrl, host, port, username, password }) => {
+        const formData = new URLSearchParams({
+          host,
+          port,
+          username,
+          password,
+          'header.color': 'blue',
+        })
+        const res = await fetch(`${baseUrl}/ssh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+          // include cookies (same-origin is default but be explicit)
+          credentials: 'include',
+        })
+        return res.text()
+      },
+      {
+        baseUrl: BASE_URL,
+        host: SSH_HOST,
+        port: String(SSH_PORT),
+        username: USERNAME,
+        password: PASSWORD,
+      }
+    )
 
     const postResponseCfg = extractConfigFromHtml(responseHtml)
     expect(
@@ -207,22 +221,26 @@ test.describe('Issue #102 — headerStyle/Tailwind injection removal', () => {
     const initialCfg = await getInjectedConfig(page)
     expect(initialCfg?.header).toMatchObject({ text: 'STALE' })
 
-    const responseHtml = await page.evaluate(async (baseUrl) => {
-      const formData = new URLSearchParams({
-        host: 'localhost',
-        port: '22',
-        username: 'testuser',
-        password: 'testpassword',
+    const responseHtml = await page.evaluate(
+      async ({ baseUrl, host, port, username, password }) => {
         // no header.* fields at all
-      })
-      const res = await fetch(`${baseUrl}/ssh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
-        credentials: 'include',
-      })
-      return res.text()
-    }, BASE_URL)
+        const formData = new URLSearchParams({ host, port, username, password })
+        const res = await fetch(`${baseUrl}/ssh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+          credentials: 'include',
+        })
+        return res.text()
+      },
+      {
+        baseUrl: BASE_URL,
+        host: SSH_HOST,
+        port: String(SSH_PORT),
+        username: USERNAME,
+        password: PASSWORD,
+      }
+    )
 
     const postResponseCfg = extractConfigFromHtml(responseHtml)
     // After clearing the session override, the rendered cfg falls back to the

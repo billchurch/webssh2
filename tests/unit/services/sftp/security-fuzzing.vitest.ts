@@ -370,16 +370,6 @@ describe('defense-in-depth: validator + escaping chain', () => {
       }
     })
 
-    it('blocks traversal out of allowed path', () => {
-      const result = validatePath('/home/user/../../etc/passwd', restrictedOptions)
-      expect(result.ok).toBe(false)
-    })
-
-    it('blocks blocked extension within allowed path', () => {
-      const result = validatePath('/home/user/malware.exe', restrictedOptions)
-      expect(result.ok).toBe(false)
-    })
-
     it('allows file with shell chars in allowed path', () => {
       const result = validatePath("/home/user/my 'special' file.txt", restrictedOptions)
       expect(result.ok).toBe(true)
@@ -388,8 +378,12 @@ describe('defense-in-depth: validator + escaping chain', () => {
       }
     })
 
-    it('rejects injection attempt that tries to escape allowed path', () => {
-      const result = validatePath("/home/user/../admin/'; rm -rf /", restrictedOptions)
+    it.each([
+      ['blocks traversal out of allowed path', '/home/user/../../etc/passwd'],
+      ['blocks blocked extension within allowed path', '/home/user/malware.exe'],
+      ['rejects injection attempt that tries to escape allowed path', "/home/user/../admin/'; rm -rf /"]
+    ])('%s', (_scenario, path) => {
+      const result = validatePath(path, restrictedOptions)
       expect(result.ok).toBe(false)
     })
   })

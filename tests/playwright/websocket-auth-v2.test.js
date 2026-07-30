@@ -18,6 +18,7 @@ import {
   executeAndVerifyCommand,
   connectAndWaitForTerminal,
   fillFormDirectly,
+  getTerminalContent,
   validCredentials,
   invalidCredentials,
   credentialsWithPort
@@ -34,6 +35,9 @@ test.describe('V2 WebSocket Interactive Authentication', () => {
 
     // Verify terminal is functional
     await executeAndVerifyCommand(page, 'whoami', TEST_CONFIG.validUsername)
+
+    const content = await getTerminalContent(page)
+    expect(content).toContain(TEST_CONFIG.validUsername)
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
@@ -93,6 +97,9 @@ test.describe('V2 WebSocket Basic Authentication', () => {
     // Verify terminal is functional
     await waitForV2Prompt(page)
     await executeAndVerifyCommand(page, 'echo "V2 Basic Auth works!"', 'V2 Basic Auth works!')
+
+    const content = await getTerminalContent(page)
+    expect(content).toContain('V2 Basic Auth works!')
   })
 
   test('should show auth error modal for invalid Basic Auth credentials', async ({ page }) => {
@@ -130,9 +137,14 @@ test.describe('V2 WebSocket Basic Authentication', () => {
     await waitForV2Prompt(page)
 
     // Execute multiple commands
-    await executeAndVerifyCommand(page, 'pwd', '/home/testuser')
+    await executeAndVerifyCommand(page, 'pwd', `/home/${TEST_CONFIG.validUsername}`)
     await executeAndVerifyCommand(page, 'ls -la', '.ssh')
     await executeAndVerifyCommand(page, 'uname -a', 'Linux')
+
+    // The last command's output is still on screen, proving the session
+    // survived all three commands rather than dropping partway through
+    const content = await getTerminalContent(page)
+    expect(content).toContain('Linux')
   })
 })
 
@@ -156,5 +168,9 @@ test.describe('V2 WebSocket Connection Resilience', () => {
     // Clean up
     await executeV2Command(page, `rm ${testFile}`)
     await executeAndVerifyCommand(page, `ls ${testFile}`, 'No such file')
+
+    // The file is gone at the end of the session it was created in
+    const content = await getTerminalContent(page)
+    expect(content).toContain('No such file')
   })
 })

@@ -211,20 +211,12 @@ describe('Prompt Validator', () => {
       { action: 'cancel', label: 'Cancel' }
     ]
 
-    it('should accept valid button action', () => {
-      const result = validateResponseAction('submit', buttons)
-
-      expect(result.ok).toBe(true)
-    })
-
-    it('should accept dismissed action', () => {
-      const result = validateResponseAction('dismissed', buttons)
-
-      expect(result.ok).toBe(true)
-    })
-
-    it('should accept timeout action', () => {
-      const result = validateResponseAction('timeout', buttons)
+    it.each([
+      ['valid button action', 'submit'],
+      ['dismissed action', 'dismissed'],
+      ['timeout action', 'timeout']
+    ])('should accept %s', (_description, action) => {
+      const result = validateResponseAction(action, buttons)
 
       expect(result.ok).toBe(true)
     })

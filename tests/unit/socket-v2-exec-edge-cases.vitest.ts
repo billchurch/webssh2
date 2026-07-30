@@ -37,15 +37,12 @@ describe('Socket V2 Exec Edge Cases', () => {
     // The command is coerced to string "123" and processed (no error emitted)
     // Note: service-socket-terminal.ts uses String() coercion for robustness
     const ssherrorEmits = emittedEvents.filter(e => e.event === 'ssherror')
-    expect(ssherrorEmits.length).toBe(0)
+    expect(ssherrorEmits).toHaveLength(0)
   })
 
   it('exec: processes exec requests through service layer', async () => {
     await setupAuthenticatedSocket(io, mockSocket)
-
-    // With services, exec requests are processed differently
-    // This test just verifies the socket handler accepts exec events
-    // without crashing (detailed exec testing is in exec-handler unit tests)
+    const emittedEvents = trackEmittedEvents(mockSocket)
 
     // Send exec request
     EventEmitter.prototype.emit.call(mockSocket, 'exec', {
@@ -57,7 +54,8 @@ describe('Socket V2 Exec Edge Cases', () => {
 
     await waitForAsync(3)
 
-    // Test passes if no exceptions were thrown
-    expect(true).toBe(true)
+    // The service layer streams the command output back without erroring
+    expect(emittedEvents.map(e => e.event)).not.toContain('ssherror')
+    expect(emittedEvents.map(e => e.event)).toContain('data')
   })
 })

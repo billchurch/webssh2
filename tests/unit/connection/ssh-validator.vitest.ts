@@ -227,7 +227,7 @@ describe('enhanceErrorMessage', () => {
     // Should truncate to 253 characters (max DNS label length)
     expect(result).toContain('DNS resolution failed')
     const match = /DNS resolution failed for '([^']+)'/.exec(result)
-    expect(match).not.toBe(null)
+    expect(match).not.toBeNull()
     if (match !== null) {
       expect(match[1]?.length).toBeLessThanOrEqual(253)
     }

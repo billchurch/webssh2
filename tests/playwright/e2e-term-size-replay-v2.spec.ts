@@ -138,8 +138,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       () => {
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const text = rows.map((row) => row.textContent ?? '').join('\n')
-        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
-        return /\d+\s+\d+/.test(text)
+        return /\b\d+\s+\d+\b/.test(text)
       },
       { timeout: TIMEOUTS.CONNECTION },
     )
@@ -152,8 +151,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
 
     // Look for any digit pair that looks like terminal dimensions (rows cols)
     // The output might be on a new line after the command
-    // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
-    const dimensionMatches = out.matchAll(/(\d+)\s+(\d+)/g) //NOSONAR
+    const dimensionMatches = out.matchAll(/\b(\d+)\s+(\d+)\b/g)
     const matches = Array.from(dimensionMatches)
 
     // Find the match that looks like terminal dimensions (not timestamps or other numbers)
@@ -205,8 +203,7 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
       () => {
         const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
         const text = rows.map((row) => row.textContent ?? '').join('\n')
-        // eslint-disable-next-line sonarjs/slow-regex -- digits and whitespace are disjoint character classes, so backtracking stays linear
-        return /\d+\s+\d+/.test(text)
+        return /\b\d+\s+\d+\b/.test(text)
       },
       { timeout: TIMEOUTS.CONNECTION },
     )
@@ -259,45 +256,25 @@ test.describe('V2 E2E: TERM, size, and replay credentials', () => {
     )
     // The client debounces the resize socket emission (RESIZE_DEBOUNCE_DELAY,
     // 150ms in webssh2_client) before notifying the server, and there is no
-    // client-visible DOM signal for "server applied the new PTY size". This
-    // settle time genuinely has no observable condition to synchronize on
-    // (see task-4 report), so a short fixed wait is kept intentionally.
-    // eslint-disable-next-line playwright/no-wait-for-timeout
-    await page.waitForTimeout(TIMEOUTS.SHORT_WAIT)
-
-    // Check size again (don't clear to preserve history)
-    await executeV2Command(page, 'stty size')
-
-    // Wait for the post-resize stty output to differ from the initial size
-    await page.waitForFunction(
-      (previousSize) => {
-        const rows = Array.from(document.querySelectorAll('.xterm-rows > div'))
-        const text = rows.map((row) => row.textContent ?? '').join('\n')
-        const matches = [...text.matchAll(/\b(\d+)\s+(\d+)\b/g)]
-        const last = matches.at(-1)
-        return last !== undefined && last[0] !== previousSize
-      },
-      initialSize,
-      { timeout: TIMEOUTS.CONNECTION },
-    )
-
-    // Get the new content after resize
-    const newOut: string = await getTerminalText()
-
-    // Find all size patterns in the output
-    const newSizeMatches: RegExpMatchArray[] = [...newOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
-
-    // The last match should be our new size
-    const lastSizeMatch: RegExpMatchArray | undefined = newSizeMatches.at(-1)
-
-    if (lastSizeMatch === undefined) {
-      throw new Error(`No size found after resize. Terminal output: ${newOut.slice(0, 500)}`)
-    }
-
-    const newSize: string = lastSizeMatch[0]
-
-    // Verify it's different from initial
-    expect(newSize).not.toBe(initialSize)
+    // client-visible DOM signal for "server applied the new PTY size". Rather
+    // than sleeping out the debounce, re-run `stty size` until the server
+    // reports a size that differs from the pre-resize one. Iterations that see
+    // no size at all report the initial size so the poll keeps retrying
+    // instead of passing on an empty reading.
+    let newSize: string = initialSize
+    await expect
+      .poll(
+        async () => {
+          // Check size again (don't clear to preserve history)
+          await executeV2Command(page, 'stty size')
+          const currentOut = await getTerminalText()
+          const currentMatches: RegExpMatchArray[] = [...currentOut.matchAll(/\b(\d+)\s+(\d+)\b/g)]
+          newSize = currentMatches.at(-1)?.[0] ?? initialSize
+          return newSize
+        },
+        { timeout: TIMEOUTS.CONNECTION },
+      )
+      .not.toBe(initialSize)
 
     // Verify we got reasonable values (not 0 0)
     expect(newSize).not.toBe('0 0')

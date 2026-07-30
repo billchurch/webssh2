@@ -35,12 +35,12 @@ describe('extractCspReport', () => {
   it('truncates over-long fields', () => {
     const long = 'x'.repeat(2000)
     const r = extractCspReport({ 'csp-report': { 'document-uri': long } })
-    expect(r.documentUri!.length).toBe(512)
+    expect(r.documentUri!).toHaveLength(512)
   })
 
   it('truncates script-sample to 80 chars', () => {
     const r = extractCspReport({ 'csp-report': { 'script-sample': 'y'.repeat(500) } })
-    expect(r.scriptSample!.length).toBe(80)
+    expect(r.scriptSample!).toHaveLength(80)
   })
 
   it('ignores non-string fields', () => {

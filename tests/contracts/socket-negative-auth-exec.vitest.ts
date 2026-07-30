@@ -84,6 +84,6 @@ describe('Socket.IO Negative: authenticate + exec env', () => {
     // This test verifies that exec request processes without error
     // No ssherror events should be emitted
     const errorEvents = mockSocket.emit.mock.calls.filter((c: unknown[]) => c[0] === 'ssherror')
-    expect(errorEvents.length).toBe(0)
+    expect(errorEvents).toHaveLength(0)
   })
 })

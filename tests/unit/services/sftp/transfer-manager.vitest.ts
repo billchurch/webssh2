@@ -605,7 +605,7 @@ describe('transfer-manager', () => {
       // TypeScript ensures this is a TransferId - if it compiles, it's correct
       // Just verify it's a string at runtime
       expect(typeof id).toBe('string')
-      expect(id.length).toBe(36) // UUID length
+      expect(id).toHaveLength(36) // UUID length
     })
   })
 })

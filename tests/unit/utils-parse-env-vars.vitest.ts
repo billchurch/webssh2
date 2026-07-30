@@ -12,19 +12,13 @@ describe('parseEnvVars', () => {
     expect(result).toEqual({ FOO: 'bar', BAR: 'baz' })
   })
 
-  it('rejects invalid keys overall (no valid pairs)', () => {
-    const result: Record<string, string> | null = parseEnvVars('foo:bar,A-B:1,1X:2')
-    expect(result).toEqual(null)
-  })
-
-  it('rejects dangerous values overall (no valid pairs)', () => {
-    const result: Record<string, string> | null = parseEnvVars('FOO:bar;rm -rf /,BAR:baz|whoami')
-    expect(result).toEqual(null)
-  })
-
-  it('ignores malformed entries', () => {
-    const result: Record<string, string> | null = parseEnvVars('A,A:, :B,A:B:C')
-    expect(result).toEqual(null)
+  it.each([
+    ['rejects invalid keys overall (no valid pairs)', 'foo:bar,A-B:1,1X:2'],
+    ['rejects dangerous values overall (no valid pairs)', 'FOO:bar;rm -rf /,BAR:baz|whoami'],
+    ['ignores malformed entries', 'A,A:, :B,A:B:C']
+  ])('%s', (_scenario, input) => {
+    const result: Record<string, string> | null = parseEnvVars(input)
+    expect(result).toBeNull()
   })
 
   it('applies key/value length caps and pair cap', () => {
@@ -39,7 +33,7 @@ describe('parseEnvVars', () => {
     const out: Record<string, string> | null = parseEnvVars(many)
     expect(out).not.toBeNull()
     if (out !== null) {
-      expect(Object.keys(out).length).toBe(50)
+      expect(Object.keys(out)).toHaveLength(50)
       expect(out['K0']).toBe('v0')
       expect(out['K49']).toBe('v49')
       expect(out['K59']).toBeUndefined()
