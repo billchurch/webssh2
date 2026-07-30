@@ -9,10 +9,10 @@
  * requests via hasAnyHeaderKey) and the client (validates background via
  * `validateHeaderBackground`, renders default `#000` fallback on rejection).
  *
- * No SSH connection is required — the smokes assert on the rendered page's
- * `window.webssh2Config` object and the header `<div>`'s styling.
+ * No SSH connection is required — the smokes assert on the injected JSON config
+ * block and the header `<div>`'s styling.
  */
-/* global window */
+/* global document */
 import { test, expect, type Page } from '@playwright/test'
 import { BASE_URL } from './constants.js'
 
@@ -39,20 +39,27 @@ interface WebSSH2Config {
   [key: string]: unknown
 }
 
-declare global {
-  interface Window {
-    webssh2Config?: WebSSH2Config
-  }
-}
-
 async function getInjectedConfig(page: Page): Promise<WebSSH2Config | undefined> {
-  return page.evaluate(() => window.webssh2Config)
+  return page.evaluate(() => {
+    const el = document.getElementById('webssh2-config')
+    const content = el?.textContent
+    if (content === undefined || content === '') {
+      return undefined
+    }
+    try {
+      return JSON.parse(content) as WebSSH2Config
+    } catch {
+      return undefined
+    }
+  })
 }
 
 function extractConfigFromHtml(html: string): WebSSH2Config {
-  const match = html.match(/window\.webssh2Config = (\{.+?\});/s)
+  const match = html.match(
+    /<script type="application\/json" id="webssh2-config">(.+?)<\/script>/s
+  )
   if (match?.[1] === undefined) {
-    throw new Error('window.webssh2Config not found in response HTML')
+    throw new Error('webssh2-config JSON block not found in response HTML')
   }
   return JSON.parse(match[1]) as WebSSH2Config
 }
