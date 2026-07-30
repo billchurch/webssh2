@@ -554,8 +554,8 @@ integrity verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
 | --- | --- |
 | Affected versions | esbuild 0.17.0 - < 0.28.1 |
 | Severity | HIGH (CVSS 8.1) |
-| Mitigation | **Retired** — vulnerable range no longer resolvable; remaining esbuild is tsx's dev-only copy at 0.28.1 (patched) via natural resolution |
-| Dependency path | dev-only: `tsx` → `esbuild@0.28.1` (patched); `vitest` → `vite@8.1.4` (Rolldown/Oxc, no esbuild) |
+| Mitigation | **Retired** — vulnerable range no longer resolved; remaining esbuild is tsx's dev-only copy at 0.28.1 (patched) via natural resolution |
+| Dependency path | dev-only: `tsx` → `esbuild@0.28.1` (patched); `vitest` → `vite@8.1.4` (Rolldown/Oxc, no esbuild). Vite 8 lists esbuild only as an optional peer, satisfied by tsx's copy — it does not pull esbuild itself |
 | Resolution | Vite 8 migration removes esbuild from the vite/vitest chain; tsx retains the patched 0.28.1 |
 
 ### Mitigation history
