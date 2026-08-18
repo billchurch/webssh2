@@ -12,3 +12,22 @@
 # Dockerfile once a release vendors brace-expansion >= 5.0.8, then remove
 # this entry.
 CVE-2026-14257
+
+# CVE-2026-69152 (GHSA-rgw5-rvv9-x895) — brace-expansion 5.0.7 DoS via
+# unbounded intermediate arrays (bypass of the CVE-2026-14257 mitigation).
+# Same vendored copy inside the global npm@11.18.0 as above; fixed in 5.0.9
+# (published 2026-07-30), which no npm release vendors yet (checked 11.19.0,
+# 2026-08-18). Same non-exploitability rationale as CVE-2026-14257. See
+# SECURITY.md → "CVE-2026-69152 (brace-expansion DoS bypass in bundled npm)".
+CVE-2026-69152
+
+# CVE-2026-69192 (GHSA-mwp4-54f8-5fhr) — ip-address 10.2.0 inconsistent
+# leading-zero octet parsing (SSRF / trust-boundary bypass). Vendored inside
+# the global npm@11.18.0 via socks-proxy-agent → socks → ip-address; only
+# exercised when npm itself is configured to use a SOCKS proxy. The
+# application never loads code from the global npm install and no
+# attacker-controlled addresses reach it. Fixed in 10.3.1 (published
+# 2026-07-25), not yet vendored by any npm release. See SECURITY.md →
+# "CVE-2026-69192 (ip-address SSRF in bundled npm)". Remove both entries when
+# the Dockerfile npm pin is bumped to a release vendoring the fixes.
+CVE-2026-69192
