@@ -106,9 +106,12 @@ export function buildTerminalDefaults(
   const req = context.socket.request as { session?: { envVars?: Record<string, string> } }
   const envVars = req.session?.envVars ?? {}
   const { initialTermSettings } = context.state
+  // Operator default (config.ssh.term) sits between session settings and the
+  // hard constant so clients that omit `term` still honour it (#572).
+  const configTerm = context.config.ssh.term === '' ? undefined : context.config.ssh.term
 
   return {
-    term: settings?.term ?? initialTermSettings.term ?? TERMINAL_DEFAULTS.DEFAULT_TERM,
+    term: settings?.term ?? initialTermSettings.term ?? configTerm ?? TERMINAL_DEFAULTS.DEFAULT_TERM,
     rows: settings?.rows ?? initialTermSettings.rows ?? TERMINAL_DEFAULTS.DEFAULT_ROWS,
     cols: settings?.cols ?? initialTermSettings.cols ?? TERMINAL_DEFAULTS.DEFAULT_COLS,
     env: envVars

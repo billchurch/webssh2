@@ -95,9 +95,23 @@ function buildConnectionMode(opts: ConnectionOptions | undefined): Record<string
   return result
 }
 
+/**
+ * Build the default ssh.sshterm fragment so manual page loads pick up
+ * config.ssh.term (billchurch/webssh2#572). Only the terminal type is
+ * injected — never host/port/credentials. Telnet TERM is governed by
+ * config.telnet.term server-side, so telnet routes get nothing here.
+ */
+function buildTermConfig(cfg: Config, isTelnet: boolean): Record<string, unknown> {
+  if (isTelnet || cfg.ssh.term === '') {
+    return {}
+  }
+  return { ssh: { sshterm: cfg.ssh.term } }
+}
+
 function buildSshCredentials(
   session: Sess | undefined,
   req: Request & { sessionID?: string },
+  defaultTerm: string,
 ): Record<string, unknown> {
   if (session == null || !hasSessionCredentials(session) || session.sshCredentials == null) {
     return {}
@@ -107,8 +121,10 @@ function buildSshCredentials(
     host: creds.host,
     port: creds.port,
   }
-  if (creds.term != null && creds.term !== '') {
-    sshFragment['sshterm'] = creds.term
+  // Session term > config.ssh.term > nothing (#572)
+  const term = creds.term == null || creds.term === '' ? defaultTerm : creds.term
+  if (term !== '') {
+    sshFragment['sshterm'] = term
   }
   const authType = session.usedBasicAuth === true ? 'Basic Auth' : (session.authMethod ?? 'Unknown')
   debug('Session-only auth enabled - credentials remain server-side: %O', {
@@ -251,7 +267,9 @@ export function buildTempConfig(
   const isTelnet = opts?.protocol === 'telnet'
   const tempConfig: Record<string, unknown> = buildSocketConfig(req as Request, isTelnet, cfg)
   Object.assign(tempConfig, buildConnectionMode(opts))
-  Object.assign(tempConfig, buildSshCredentials(req.session, req))
+  // Default term first; a session-supplied ssh fragment overwrites it wholesale.
+  Object.assign(tempConfig, buildTermConfig(cfg, isTelnet))
+  Object.assign(tempConfig, buildSshCredentials(req.session, req, cfg.ssh.term))
   Object.assign(tempConfig, buildHeaderConfig(cfg, req.session))
   Object.assign(tempConfig, buildTerminalConfig(cfg))
   return tempConfig

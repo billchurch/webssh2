@@ -98,7 +98,7 @@ WEBSSH2_CSP_FRAME_ANCESTORS="https://dashboard.example.com"
 | `WEBSSH2_SSH_PORT` | number | `22` | Default SSH port |
 | `WEBSSH2_SSH_LOCAL_ADDRESS` | string | `null` | Local address for SSH connections |
 | `WEBSSH2_SSH_LOCAL_PORT` | number | `null` | Local port for SSH connections |
-| `WEBSSH2_SSH_TERM` | string | `xterm-color` | Terminal type |
+| `WEBSSH2_SSH_TERM` | string | `xterm-256color` | Default terminal type for SSH sessions (manual and auto-connect); `?sshterm=` overrides per session |
 | `WEBSSH2_SSH_READY_TIMEOUT` | number | `20000` | Connection ready timeout (ms) |
 | `WEBSSH2_SSH_KEEPALIVE_INTERVAL` | number | `120000` | Keep-alive interval (ms) |
 | `WEBSSH2_SSH_KEEPALIVE_COUNT_MAX` | number | `10` | Maximum keep-alive count |

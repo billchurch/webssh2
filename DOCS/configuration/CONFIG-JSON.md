@@ -161,7 +161,7 @@ These settings are now managed client-side.
   "ssh": {
     "host": null,
     "port": 22,
-    "term": "xterm-color",
+    "term": "xterm-256color",
     "readyTimeout": 20000,
     "keepaliveInterval": 120000,
     "keepaliveCountMax": 10,

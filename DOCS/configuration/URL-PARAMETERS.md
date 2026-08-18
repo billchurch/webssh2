@@ -11,7 +11,7 @@ WebSSH2 supports configuration through URL query parameters, allowing you to cus
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `port` | integer | 22 | SSH port to connect to |
-| `sshterm` | string | xterm-color | Terminal type for the SSH session |
+| `sshterm` | string | `ssh.term` (default xterm-256color) | Terminal type for the SSH session |
 | `header` | string | - | Override the header text |
 | `headerBackground` | string | green | Header background color |
 | `env` | string | - | Environment variables for SSH session |
@@ -57,12 +57,12 @@ Specifies the SSH port on the target server.
 
 ### SSH Terminal Type
 
-Sets the terminal type for the SSH session. This affects how the terminal displays colors and special characters.
+Sets the terminal type for the SSH session. This affects how the terminal displays colors and special characters. When omitted, the server's `ssh.term` setting (`WEBSSH2_SSH_TERM`, default `xterm-256color`) is used for both manual and auto-connect sessions.
 
 Common values:
 
-- `xterm-color` (default)
-- `xterm-256color` (256 color support)
+- `xterm-256color` (default, 256 color support)
+- `xterm-color`
 - `xterm`
 - `vt100`
 - `linux`
