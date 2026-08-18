@@ -356,6 +356,55 @@ new-release quarantine (all published on or before 2026-07-14).
 
 ---
 
+## August 2026 npm audit findings (socket.io-parser, nanoid, brace-expansion)
+
+As of 2026-08-18, `npm audit --audit-level=high` reported three HIGH
+advisories. All were remediated the same day under the CVE exception to the
+14-day quarantine; each fix version was verified against its maintainer and
+publish date before adoption.
+
+### GHSA-2m8v-j782-fhvr (socket.io-parser zero-attachment memory exhaustion)
+
+| Aspect             | Status                                                                        |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Vulnerability type | Memory exhaustion via crafted binary packets declaring zero attachments       |
+| Affected versions  | 4.0.0 – 4.2.6                                                                 |
+| Our exposure       | **Production** — `socket.io@4.8.3` → `socket.io-parser`; our own `overrides` pinned 4.2.6 |
+| Status             | **Remediated 2026-08-18** — override bumped to 4.2.7 (published 2026-07-15)   |
+
+This is the only production-path finding. Any WebSocket client able to reach
+the Socket.IO endpoint could send the malformed packet, so it was treated as
+directly exploitable. `socket.io`'s own `~4.2.4` range resolves to 4.2.7
+naturally; the override is retained to make the floor explicit.
+
+### GHSA-2v37-7h3g-55p8 (nanoid infinite loop with zero-size custom generator)
+
+| Aspect             | Status                                                                        |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Vulnerability type | Denial of Service — custom generators loop indefinitely when `size` is 0      |
+| Affected versions  | < 3.3.18                                                                      |
+| Our exposure       | Dev toolchain only — `vitest` → `vite` → `postcss` → `nanoid@3.3.16`          |
+| Status             | **Remediated 2026-08-18** — new `overrides` pin `nanoid@3.3.18` (published 2026-08-07) |
+
+Not present in the production install (`npm ci --omit=dev`) or the Docker
+image. postcss's own floor (`^3.3.16`) is satisfied by the vulnerable
+version, so an explicit override was required to force the bump.
+
+### GHSA-rgw5-rvv9-x895 (brace-expansion DoS via unbounded intermediate arrays)
+
+| Aspect             | Status                                                                        |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Vulnerability type | Denial of Service — bypass of the CVE-2026-14257 mitigation                   |
+| Affected versions  | 4.0.0 – 5.0.8                                                                 |
+| Our exposure       | Dev toolchain only — `eslint-plugin-sonarjs` → `minimatch@10.2.6` → `brace-expansion@5.0.8` |
+| Status             | **Remediated 2026-08-18** — lockfile refreshed to 5.0.9 (published 2026-07-30) |
+
+Same posture as GHSA-mh99-v99m-4gvg above: devDependency only, lint glob
+patterns are first-party. No override needed — 5.0.9 sits inside minimatch's
+existing `^5.0.8` range.
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
 As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
