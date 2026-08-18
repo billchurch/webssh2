@@ -405,6 +405,57 @@ existing `^5.0.8` range.
 
 ---
 
+## Bundled-npm findings in the runtime image (Trivy, 2026-08-18)
+
+Trivy's image scan (`docker-image-scan` CI job) began flagging two HIGH CVEs
+on 2026-08-18. Both live under
+`/usr/local/lib/node_modules/npm/node_modules/` — the global `npm@11.18.0`
+pinned by the Dockerfile runtime stage — not in the application dependency
+tree. As of 2026-08-18 no published npm release (latest checked: 11.19.0,
+2026-07-29) vendors the fixed versions, so there is no upgrade path yet. Both
+are suppressed in `.trivyignore` with the assessments below.
+
+### CVE-2026-69152 (brace-expansion DoS bypass in bundled npm)
+
+| Aspect             | Status                                                                         |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Advisory           | GHSA-rgw5-rvv9-x895 (published 2026-08-03)                                     |
+| Vulnerability type | Denial of Service via unbounded intermediate arrays (bypasses CVE-2026-14257 fix) |
+| Affected versions  | 4.0.0 – 5.0.8 (fixed in 5.0.9, published 2026-07-30)                           |
+| Our exposure       | brace-expansion 5.0.7 vendored inside the pinned global `npm@11.18.0`          |
+| Status             | **Not exploitable** — same rationale as CVE-2026-14257 above                   |
+
+The application's own copy (dev toolchain, via minimatch) was moved to 5.0.9
+the same day — see the August 2026 npm audit section above. Only the bundled
+npm copy remains, and the container never invokes npm on attacker-controlled
+glob patterns.
+
+### CVE-2026-69192 (ip-address SSRF in bundled npm)
+
+| Aspect             | Status                                                                         |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Advisory           | GHSA-mwp4-54f8-5fhr (published 2026-08-03)                                     |
+| Vulnerability type | Inconsistent leading-zero octet parsing → SSRF / trust-boundary bypass         |
+| Affected versions  | < 10.3.1 (fixed in 10.3.1, published 2026-07-25)                               |
+| Our exposure       | ip-address 10.2.0 vendored inside `npm@11.18.0` via `socks-proxy-agent` → `socks` |
+| Status             | **Not exploitable** — code path only runs when npm uses a SOCKS proxy         |
+
+**Why we are not affected:**
+
+- `ip-address` is not a dependency of webssh2; it exists in the image solely
+  as npm's SOCKS proxy support. The application (`node dist/index.js`) never
+  loads code from `/usr/local/lib/node_modules/npm`.
+- The only in-container npm use is the operator-run `npm run hostkeys:prod`,
+  which does not talk to a registry or proxy.
+- `socks@2.8.9` declares `ip-address@^10.1.1`, so a future npm release that
+  refreshes its lockfile will pick up 10.3.1 automatically.
+
+**Re-evaluate on each npm release:** bump the Dockerfile `npm@11.18.0` pin
+once a release vendors brace-expansion >= 5.0.9 and ip-address >= 10.3.1,
+then remove both `.trivyignore` entries (and CVE-2026-14257's).
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
 As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
