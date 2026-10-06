@@ -405,6 +405,87 @@ existing `^5.0.8` range.
 
 ---
 
+## October 2026 npm audit findings (proxy-addr, engine.io, qs, vitest, brace-expansion, source-map-js)
+
+As of 2026-10-06, `npm audit` reported 8 advisories (1 CRITICAL, 3 HIGH,
+4 MODERATE); 5 were on the production path. The lockfile was regenerated with
+`npm install --before=2026-09-22` so every resolved version honors the 14-day
+quarantine. The single exception is `source-map-js@1.2.2` (HIGH, published
+2026-09-30), adopted under the CVE exception after verifying the publisher
+(`7rulnik`, same maintainer as 1.2.1) and reviewing the tarball diff (bounds
+on section offsets only; no new imports, network calls, or lifecycle scripts).
+
+Dependabot PR #576 was closed rather than merged: it bumped `vitest` to the
+5.x major (published < 14 days) while leaving `@vitest/coverage-v8` on 4.x,
+which broke `npm ci` with `ERESOLVE`.
+
+### GHSA-jqcg-44mw-7w3h (proxy-addr IP spoofing via IPv4-mapped IPv6 trust subnet)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | IP spoofing — IPv4-mapped IPv6 addresses match IPv4 trust subnets |
+| Affected versions | 1.1.0 – 2.0.7 (CRITICAL) |
+| Our exposure | **Production** — `express@5.2.1` → `proxy-addr@2.0.7` |
+| Status | **Remediated 2026-10-06** — lockfile refreshed to 2.0.8 (published 2026-09-15) |
+
+Not exploitable in our default configuration: the server never sets Express
+`trust proxy`, so `proxy-addr` trusts no hops and `req.ip` is always the
+socket peer address. Patched regardless because it is on the production path.
+2.0.8 sits inside Express's `~2.0.7` range; no override needed.
+
+### GHSA-2gc4-cqfq-p2gv (Engine.IO protocol revision mismatch DoS)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Denial of Service via protocol revision mismatch |
+| Affected versions | 6.6.0 – 6.6.9 (HIGH) |
+| Our exposure | **Production** — `socket.io@4.8.3` → `engine.io@6.6.9` |
+| Status | **Remediated 2026-10-06** — new `overrides` pin `engine.io@6.6.10` (published 2026-09-03) |
+
+Reachable by any client that can open a Socket.IO connection, so treated as
+directly exploitable. Pinned to 6.6.10 rather than 6.6.11 (published
+2026-09-24, inside the quarantine window).
+
+### GHSA-x5fp-wj9c-mxmx, GHSA-4mjr-xmp4-gh2g (qs array-limit bypass, isBuffer DoS)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Array-limit bypass via bracket-key comma parsing; DoS via attacker-controlled `isBuffer` |
+| Affected versions | < 6.16.0 (MODERATE) |
+| Our exposure | **Production** — `express` / `body-parser` → `qs`; our own `overrides` pinned 6.15.2 |
+| Status | **Remediated 2026-10-06** — override bumped to 6.16.0 (published 2026-08-29) |
+
+### GHSA-82fw-gwwq-j7x9 (Vitest path traversal via @vitest/mocker redirect mock)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Arbitrary file read via mock redirect |
+| Affected versions | 2.1.0 – 4.1.10 (MODERATE) |
+| Our exposure | Dev toolchain only — `vitest`, `@vitest/coverage-v8`, `@vitest/mocker` |
+| Status | **Remediated 2026-10-06** — pinned `vitest` and `@vitest/coverage-v8` to 4.1.11 (published 2026-08-18) |
+
+### GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr (brace-expansion DoS)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Stack exhaustion / quadratic-time expansion |
+| Affected versions | 4.0.0 – 5.0.10 (HIGH) |
+| Our exposure | Dev toolchain only — `eslint-plugin-sonarjs` → `minimatch` → `brace-expansion@5.0.9` |
+| Status | **Remediated 2026-10-06** — lockfile refreshed to 5.0.12 (published 2026-09-14) |
+
+### GHSA-68fv-2mgg-jv7q (source-map-js indexed source-map DoS)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Event-loop DoS via huge indexed source-map section offsets |
+| Affected versions | 1.0.0 – 1.2.1 (HIGH) |
+| Our exposure | Dev toolchain only — `vitest` → `vite` → `postcss` / `magicast` → `source-map-js` |
+| Status | **Remediated 2026-10-06** — lockfile refreshed to 1.2.2 under the CVE exception (see above) |
+
+Only first-party source maps are processed, so practical exposure was nil.
+
+---
+
 ## Bundled-npm findings in the runtime image (Trivy, 2026-08-18)
 
 Trivy's image scan (`docker-image-scan` CI job) began flagging two HIGH CVEs
@@ -453,6 +534,50 @@ glob patterns.
 **Re-evaluate on each npm release:** bump the Dockerfile `npm@11.18.0` pin
 once a release vendors brace-expansion >= 5.0.9 and ip-address >= 10.3.1,
 then remove both `.trivyignore` entries (and CVE-2026-14257's).
+
+**Resolved 2026-10-06:** the npm pin moved to 11.20.0, which vendors
+brace-expansion 5.0.9 and ip-address 10.5.0. The CVE-2026-14257,
+CVE-2026-69152 and CVE-2026-69192 entries were removed from `.trivyignore`.
+
+---
+
+## Bundled-npm and base-image findings in the runtime image (Trivy, 2026-10-06)
+
+On 2026-10-06 the `docker-image-scan` job reported 6 HIGH findings: OpenSSL
+in the Alpine base image, and `brace-expansion`, `tar` and `undici` vendored
+inside the global `npm@11.18.0`.
+
+| CVE | Package | Fixed in | Resolution |
+| --- | --- | --- | --- |
+| CVE-2026-14456 | `libcrypto3`, `libssl3` 3.5.7-r0 | 3.5.8-r0 | **Fixed** — base image digest bumped (see below) |
+| CVE-2026-73566 | `tar` 7.5.19 (bundled npm) | 7.5.21 | **Fixed** — npm pin 11.18.0 → 11.20.0 (vendors tar 7.5.22) |
+| CVE-2026-102276, CVE-2026-102278 | `brace-expansion` 5.0.9 (bundled npm) | 5.0.10 / 5.0.11 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+| CVE-2026-19534 | `undici` 6.28.0 (bundled npm) | 6.28.1 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+
+**Base image:** `node:22-alpine` digest moved from `sha256:e58326d0…` (Node
+22.22.3, OpenSSL 3.5.7-r0) to `sha256:0a7108bf…` (Node 22.23.3, Alpine
+3.24.2, OpenSSL 3.5.8-r0), built 2026-09-23. That is one day inside the
+14-day quarantine and is adopted under the HIGH-CVE exception: it is a Docker
+Official Image, and the change is the routine upstream rebuild.
+
+**npm pin:** 11.20.0 was published 2026-09-22 (14 days, quarantine
+satisfied) by the npm CLI team, with no install scripts. 11.21.0
+(2026-09-30) was checked and vendors the same vulnerable `brace-expansion`
+and `undici`, so moving past the quarantine would not have cleared anything.
+
+**Why the suppressed findings are not exploitable:**
+
+- The application (`node dist/index.js`) never loads code from
+  `/usr/local/lib/node_modules/npm`. The only in-container npm use is the
+  operator-run `npm run hostkeys:prod`, which runs a first-party script.
+- `brace-expansion` is only reached through npm's own glob handling of
+  first-party patterns; no attacker-controlled input reaches it.
+- `undici`'s flaw is in WebSocket subprotocol handling. npm never opens
+  WebSocket connections.
+
+**Re-evaluate on each npm release:** bump the Dockerfile npm pin once a
+release vendors brace-expansion >= 5.0.11 and undici >= 6.28.1, then remove
+the three `.trivyignore` entries.
 
 ---
 

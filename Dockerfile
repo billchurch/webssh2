@@ -5,7 +5,7 @@
 # (see .github/renovate.json). Docker resolves the pull via the digest;
 # the tag is documentation + Renovate metadata. The Sonar rule
 # docker:S8431 is suppressed for this file in sonar-project.properties.
-ARG BASE_IMAGE=node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd
+ARG BASE_IMAGE=node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
 
 # =============================================================================
 # Stage 1: Dependencies
@@ -72,7 +72,7 @@ WORKDIR /srv/webssh2
 # the runtime image for the operator host-key CLI (npm run hostkeys:prod).
 # Pinned exact per supply-chain policy; bump deliberately.
 RUN apk add --no-cache tini \
-  && npm install -g --ignore-scripts npm@11.18.0 \
+  && npm install -g --ignore-scripts npm@11.20.0 \
   && npm cache clean --force
 
 ENV NODE_ENV=production \

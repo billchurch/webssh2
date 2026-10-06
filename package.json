@@ -94,7 +94,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "8.66.0",
     "@typescript-eslint/parser": "8.66.0",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "baseline-browser-mapping": "2.11.12",
     "eslint": "10.8.0",
     "eslint-config-prettier": "^10.1.8",
@@ -106,7 +106,7 @@
     "supertest": "^7.1.4",
     "tsx": "4.23.5",
     "typescript": "^6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -129,6 +129,7 @@
     "path-to-regexp": "8.4.0",
     "vite": "8.1.4",
     "lightningcss": "1.32.0",
-    "qs": "6.15.2"
+    "qs": "6.16.0",
+    "engine.io": "6.6.10"
   }
 }
