@@ -535,6 +535,50 @@ glob patterns.
 once a release vendors brace-expansion >= 5.0.9 and ip-address >= 10.3.1,
 then remove both `.trivyignore` entries (and CVE-2026-14257's).
 
+**Resolved 2026-10-06:** the npm pin moved to 11.20.0, which vendors
+brace-expansion 5.0.9 and ip-address 10.5.0. The CVE-2026-14257,
+CVE-2026-69152 and CVE-2026-69192 entries were removed from `.trivyignore`.
+
+---
+
+## Bundled-npm and base-image findings in the runtime image (Trivy, 2026-10-06)
+
+On 2026-10-06 the `docker-image-scan` job reported 6 HIGH findings: OpenSSL
+in the Alpine base image, and `brace-expansion`, `tar` and `undici` vendored
+inside the global `npm@11.18.0`.
+
+| CVE | Package | Fixed in | Resolution |
+| --- | --- | --- | --- |
+| CVE-2026-14456 | `libcrypto3`, `libssl3` 3.5.7-r0 | 3.5.8-r0 | **Fixed** — base image digest bumped (see below) |
+| CVE-2026-73566 | `tar` 7.5.19 (bundled npm) | 7.5.21 | **Fixed** — npm pin 11.18.0 → 11.20.0 (vendors tar 7.5.22) |
+| CVE-2026-102276, CVE-2026-102278 | `brace-expansion` 5.0.9 (bundled npm) | 5.0.10 / 5.0.11 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+| CVE-2026-19534 | `undici` 6.28.0 (bundled npm) | 6.28.1 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+
+**Base image:** `node:22-alpine` digest moved from `sha256:e58326d0…` (Node
+22.22.3, OpenSSL 3.5.7-r0) to `sha256:0a7108bf…` (Node 22.23.3, Alpine
+3.24.2, OpenSSL 3.5.8-r0), built 2026-09-23. That is one day inside the
+14-day quarantine and is adopted under the HIGH-CVE exception: it is a Docker
+Official Image, and the change is the routine upstream rebuild.
+
+**npm pin:** 11.20.0 was published 2026-09-22 (14 days, quarantine
+satisfied) by the npm CLI team, with no install scripts. 11.21.0
+(2026-09-30) was checked and vendors the same vulnerable `brace-expansion`
+and `undici`, so moving past the quarantine would not have cleared anything.
+
+**Why the suppressed findings are not exploitable:**
+
+- The application (`node dist/index.js`) never loads code from
+  `/usr/local/lib/node_modules/npm`. The only in-container npm use is the
+  operator-run `npm run hostkeys:prod`, which runs a first-party script.
+- `brace-expansion` is only reached through npm's own glob handling of
+  first-party patterns; no attacker-controlled input reaches it.
+- `undici`'s flaw is in WebSocket subprotocol handling. npm never opens
+  WebSocket connections.
+
+**Re-evaluate on each npm release:** bump the Dockerfile npm pin once a
+release vendors brace-expansion >= 5.0.11 and undici >= 6.28.1, then remove
+the three `.trivyignore` entries.
+
 ---
 
 ## Shai-hulud 2.0 supply chain risk
