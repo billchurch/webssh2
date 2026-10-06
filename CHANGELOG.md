@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.2](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.1...webssh2-server-v5.2.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* **deps:** remediate proxy-addr, engine.io, qs and image-scan advisories ([#577](https://github.com/billchurch/webssh2/issues/577)) ([00f942b](https://github.com/billchurch/webssh2/commit/00f942be076978c26ebb17edce67c74ebbe381e1))
+
 ## [5.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.0...webssh2-server-v5.2.1) (2026-08-18)
 
 
