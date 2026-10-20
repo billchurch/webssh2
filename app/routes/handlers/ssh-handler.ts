@@ -6,6 +6,7 @@
 import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
+import { HTTP } from '../../constants/index.js'
 
 export interface SshRouteRequest {
   session: AuthSession
@@ -160,6 +161,28 @@ export const processReauthRequest = (
   return {
     keysToRemove: allKeysToRemove,
     redirectPath: '/ssh'
+  }
+}
+
+/**
+ * Process clear-credentials request
+ * Selects the same keys as re-authentication plus the session env vars.
+ * The caller removes the keys from the session and sends the response.
+ */
+export const processClearCredentialsRequest = (
+  session: AuthSession
+): Result<{ keysToRemove: string[], response: SshRouteResponse }> => {
+  const { keysToRemove } = processReauthRequest(session)
+
+  return {
+    ok: true,
+    value: {
+      keysToRemove: [...new Set([...keysToRemove, 'envVars'])],
+      response: {
+        status: HTTP.OK,
+        data: { message: HTTP.CREDENTIALS_CLEARED }
+      }
+    }
   }
 }
 
