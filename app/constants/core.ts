@@ -91,6 +91,8 @@ export const HTTP = {
   SAMESITE_POLICY: 'Strict',
   SESSION_SID: 'webssh2_sid',
   CREDENTIALS_CLEARED: 'Credentials cleared.',
+  INTERNAL_ERROR_MESSAGE: 'Internal server error',
+  INTERNAL_ERROR_TYPE: 'InternalError',
 } as const
 
 export const TERMINAL_LIMITS = {

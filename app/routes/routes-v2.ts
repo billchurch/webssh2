@@ -257,9 +257,6 @@ export function createRoutesV2(config: Config): Router {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
   
-  // Add error handler
-  router.use(createErrorHandler())
-
   /**
    * CSP violation report endpoint — unauthenticated, rate-limited, 8 kb cap.
    * Registered only when CSP is active (mode != 'off').
@@ -379,6 +376,9 @@ export function createRoutesV2(config: Config): Router {
     // Redirect to login
     res.redirect(redirectPath)
   })
+
+  // Error handler must come after the routes so it receives their errors
+  router.use(createErrorHandler())
 
   return router
 }

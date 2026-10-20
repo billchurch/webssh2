@@ -23,9 +23,6 @@ type ExpressRequest = Request & {
 export function createTelnetRoutes(config: Config): Router {
   const router = express.Router()
 
-  // Add error handler
-  router.use(createErrorHandler())
-
   /**
    * Root route - full connection mode, protocol: telnet
    */
@@ -126,6 +123,9 @@ export function createTelnetRoutes(config: Config): Router {
       }
     )
   }))
+
+  // Error handler must come after the routes so it receives their errors
+  router.use(createErrorHandler())
 
   return router
 }
