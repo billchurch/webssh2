@@ -25,9 +25,16 @@ const { createTelnetRoutes } = await import('../../app/routes/telnet-routes.js')
 const ATTACK_ENV = 'LANG:attacker,FOO:bar'
 const SSH_HOST = 'localhost'
 
-function buildConfig(): Config {
+const CONFIG_USER = 'operator'
+const CONFIG_PASSWORD = 'operator-secret' //NOSONAR
+
+function buildConfig(withConfigCredentials = false): Config {
   const config = createDefaultConfig(TEST_SESSION_SECRET_VALID)
   config.ssh.host = SSH_HOST
+  if (withConfigCredentials) {
+    config.user.name = CONFIG_USER
+    config.user.password = CONFIG_PASSWORD
+  }
   config.telnet = {
     enabled: true,
     defaultPort: TELNET_DEFAULTS.PORT,
@@ -44,8 +51,8 @@ function buildConfig(): Config {
   return config
 }
 
-function buildApp(): express.Express {
-  const config = buildConfig()
+function buildApp(withConfigCredentials = false): express.Express {
+  const config = buildConfig(withConfigCredentials)
   const app = express()
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
@@ -129,6 +136,36 @@ describe('env vars require credentials on the same request (#586)', () => {
     it('an unauthenticated GET /ssh/ clears env vars kept from an earlier login', async () => {
       const agent = request.agent(buildApp())
       await storedEnv(seedWithCredentials(agent, 'LANG:C'))
+
+      expect(await storedEnv(agent.get('/ssh/'))).toBeNull()
+    })
+  })
+
+  describe('operator-configured credentials do not count as request credentials', () => {
+    it.each([
+      ['GET /ssh/host/', '/ssh/host/'],
+      ['GET /ssh/host/localhost', `/ssh/host/${SSH_HOST}`],
+    ])('%s without Authorization ignores ?env=', async (_label, path) => {
+      const agent = request.agent(buildApp(true))
+      expect(await storedEnv(agent.get(path).query({ env: ATTACK_ENV }))).toBeNull()
+    })
+
+    it('anonymous GET /ssh/host/localhost clears env from an earlier credentialed login', async () => {
+      const agent = request.agent(buildApp(true))
+      expect(await storedEnv(seedWithCredentials(agent, 'LANG:C'))).toEqual({ LANG: 'C' })
+
+      expect(await storedEnv(agent.get(`/ssh/host/${SSH_HOST}`))).toBeNull()
+    })
+
+    it('Basic-auth GET /ssh/host/localhost still stores ?env=', async () => {
+      const agent = request.agent(buildApp(true))
+      expect(await storedEnv(seedWithCredentials(agent, 'LANG:C'))).toEqual({ LANG: 'C' })
+    })
+
+    it('POST /ssh/ without body credentials is rejected and stores nothing', async () => {
+      const agent = request.agent(buildApp(true))
+      const res = await agent.post('/ssh/').query({ env: ATTACK_ENV }).send({ host: SSH_HOST })
+      expect(res.status).toBe(400)
 
       expect(await storedEnv(agent.get('/ssh/'))).toBeNull()
     })

@@ -19,7 +19,7 @@ WebSSH2 supports passing environment variables through URL parameters, allowing 
 
 Send `env` in the POST body (or query) of `POST /ssh` or `POST /ssh/host/:host` together with the credentials.
 
-`env` on a request without credentials (for example `/ssh?env=...` before the login form, or any `/telnet` route) is ignored. Such a request also clears env vars kept from an earlier login, so a crafted link cannot pre-fill variables for a login the user performs later. Each credentialed request replaces any earlier env vars; one without `env` clears them.
+`env` on a request without credentials (for example `/ssh?env=...` before the login form, or any `/telnet` route) is ignored. Operator credentials from `user.name`/`user.password` do not count: on `/ssh/host/...` the request must send its own `Authorization` header for `env` to be used. Such a request also clears env vars kept from an earlier login, so a crafted link cannot pre-fill variables for a login the user performs later. Each credentialed request replaces any earlier env vars; one without `env` clears them.
 
 **Tips:**
 - Use `&env=...` when adding to an existing query string; do not add a second `?`

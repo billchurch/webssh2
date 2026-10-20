@@ -2,6 +2,7 @@
 // Refactored routes using pure handlers and adapters
 
 import express, { type Router, type Request, type Response } from 'express'
+import basicAuth from 'basic-auth'
 import handleConnection from '../connectionHandler.js'
 import { createNamespacedDebug, logCspViolation } from '../logger.js'
 import { createAuthMiddleware } from '../middleware.js'
@@ -150,8 +151,12 @@ async function handleSshGetRoute(
   )
 
   updateSessionCredentials(expressReq.session, connectionResult.value)
-  // Credentials were validated above, so this request may set env vars (#586)
-  processAuthParameters(routeRequest.query, expressReq.session, { acceptEnv: true })
+  // Only a request carrying its own Basic Auth credentials may set env vars.
+  // Credentials the auth middleware filled in from config.user do not count,
+  // or an anonymous link could pre-seed env for the operator login (#586).
+  processAuthParameters(routeRequest.query, expressReq.session, {
+    acceptEnv: basicAuth(req) !== undefined
+  })
 
   // Determine connection mode based on whether host was provided in URL
   // 'host-locked' means the host/port are fixed from the URL and cannot be changed
@@ -243,6 +248,8 @@ async function handlePostAuthRoute(
   // detectSourceType in header-processor checks POST keys first, so when both
   // are present the POST body wins.
   const source = { ...expressReq.query, ...bodyWithHost }
+  // processPostAuthRequest only succeeds when the body itself carries
+  // username and password, so this request may set env vars (#586)
   processAuthParameters(source, expressReq.session, { acceptEnv: true })
 
   // Serve the client page
