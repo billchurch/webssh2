@@ -165,6 +165,39 @@ Additional notes:
 - Prefer the narrowest CIDR ranges possible and pair them with
   network-level egress controls
 
+## Running behind a reverse proxy (`http.trustProxy`)
+
+By default the server ignores `X-Forwarded-For`, `X-Forwarded-Proto` and
+`X-Forwarded-Host`. Behind a TLS-terminating proxy this means every request
+looks like plain HTTP from the proxy's address: no `Strict-Transport-Security`
+header, the `connect-src` variant that also allows `http://` and `ws://`, a
+session cookie without `Secure`, and per-IP limits (such as the
+`POST /ssh/csp-report` throttle) keyed on the proxy's address.
+
+Set `http.trustProxy` (`WEBSSH2_HTTP_TRUST_PROXY`) to tell the server which
+peers may set those headers. It is passed to Express's `trust proxy` setting.
+When it is set, requests forwarded as HTTPS get HSTS, the strict CSP variant,
+a `Secure` session cookie and an `https://` socket URL, and `req.ip` is the
+client address the proxy reports.
+
+| Value | Meaning |
+| --- | --- |
+| unset, `false`, `0` or `[]` (default) | Trust no proxy; behavior is unchanged |
+| `["10.0.0.5", "10.1.0.0/16", "loopback"]` | Trust only these peers (recommended) |
+| `1`, `2`, … | Trust that many hops in front of the server |
+| `true` | Trust every peer |
+
+> **Warning:** Do not use `true` (or a hop count) when clients can reach the
+> gateway directly, bypassing the proxy. Any client could then send its own
+> `X-Forwarded-Proto` and `X-Forwarded-For` headers, choose the IP address the
+> server logs and rate-limits by, and make plain-HTTP requests look like HTTPS.
+> Prefer a list of the proxy's own addresses, and make sure the proxy
+> overwrites (not appends to) `X-Forwarded-Proto`.
+
+`sso.trustedProxies` is not affected: it is always matched against the
+address of the peer that opened the TCP connection, never against
+`X-Forwarded-For`.
+
 ## Client bundle integrity verification
 
 This gateway serves a pre-built browser bundle from the `webssh2_client` npm
@@ -428,9 +461,9 @@ which broke `npm ci` with `ERESOLVE`.
 | Our exposure | **Production** — `express@5.2.1` → `proxy-addr@2.0.7` |
 | Status | **Remediated 2026-10-06** — lockfile refreshed to 2.0.8 (published 2026-09-15) |
 
-Not exploitable in our default configuration: the server never sets Express
-`trust proxy`, so `proxy-addr` trusts no hops and `req.ip` is always the
-socket peer address. Patched regardless because it is on the production path.
+Not exploitable in our default configuration: the server sets Express
+`trust proxy` only when `http.trustProxy` is configured (unset by default), so
+`proxy-addr` trusts no hops and `req.ip` is always the socket peer address. Patched regardless because it is on the production path.
 2.0.8 sits inside Express's `~2.0.7` range; no override needed.
 
 ### GHSA-2gc4-cqfq-p2gv (Engine.IO protocol revision mismatch DoS)

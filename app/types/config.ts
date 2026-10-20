@@ -333,11 +333,27 @@ export interface TelnetConfig {
 }
 
 /**
+ * Value of http.trustProxy, passed to Express's `trust proxy` setting:
+ * trust every hop (boolean), a number of hops, or a list of proxy
+ * addresses, CIDR ranges and named ranges (loopback, linklocal, uniquelocal).
+ */
+export type TrustProxySetting = boolean | number | string[]
+
+/**
+ * HTTP configuration
+ */
+export interface HttpConfig {
+  origins: string[]
+  /** Unset by default: X-Forwarded-* headers are ignored. */
+  trustProxy?: TrustProxySetting
+}
+
+/**
  * Main configuration interface
  */
 export interface Config {
   listen: { ip: string; port: number }
-  http: { origins: string[] }
+  http: HttpConfig
   user: {
     name: string | null
     password: string | null

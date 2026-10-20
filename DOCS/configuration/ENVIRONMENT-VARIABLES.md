@@ -41,6 +41,7 @@ WEBSSH2_HEADER_TEXT="Production Environment"
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `WEBSSH2_HTTP_ORIGINS` | array | `["*:*"]` | CORS allowed origins (comma-separated or JSON) |
+| `WEBSSH2_HTTP_TRUST_PROXY` | boolean, number or array | unset | Which proxies may set `X-Forwarded-*` headers (Express `trust proxy`). `true`/`false`, a hop count, or a comma-separated list of IPs, CIDR ranges and `loopback`/`linklocal`/`uniquelocal`. See [Running behind a reverse proxy](./CONFIG-JSON.md#running-behind-a-reverse-proxy-httptrustproxy) |
 
 #### Array Format Examples
 
@@ -51,6 +52,24 @@ WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com,api.test.com"
 # JSON array format
 WEBSSH2_HTTP_ORIGINS='["localhost:3000","*.example.com","api.test.com"]'
 ```
+
+#### Trust Proxy Examples
+
+```bash
+# Trust only the TLS-terminating proxy at 10.0.0.5 (recommended)
+WEBSSH2_HTTP_TRUST_PROXY="10.0.0.5"
+
+# Trust a proxy subnet and a proxy on the same host
+WEBSSH2_HTTP_TRUST_PROXY="10.1.0.0/16,loopback"
+
+# Trust one hop, whatever its address
+WEBSSH2_HTTP_TRUST_PROXY=1
+```
+
+Leave it unset when clients connect to the gateway directly. Do not use `true`
+or a hop count if clients can reach the gateway without going through the
+proxy: they could then forge `X-Forwarded-Proto` and `X-Forwarded-For`. An
+invalid value stops the server at startup with a config validation error.
 
 ### Content Security Policy
 

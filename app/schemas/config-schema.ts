@@ -3,6 +3,7 @@
 
 import { z } from 'zod'
 import { LOG_EVENT_NAMES } from '../logging/event-catalog.js'
+import { isValidTrustProxyEntry } from '../config/trust-proxy.js'
 
 /**
  * IPv4 validation function
@@ -60,11 +61,37 @@ const ListenSchema = z.object({
   port: z.number().int().min(1).max(65535)
 })
 
+const TRUST_PROXY_TYPE_MESSAGE =
+  'trustProxy must be true, false, a hop count (non-negative integer), ' +
+  'or a list of proxy IP addresses / CIDR ranges'
+
+/**
+ * http.trustProxy schema: the Express `trust proxy` forms that are safe to
+ * express in config (no functions, no free-form strings)
+ */
+const TrustProxySchema = z.union(
+  [
+    z.boolean(),
+    z.number()
+      .int({ error: TRUST_PROXY_TYPE_MESSAGE })
+      .nonnegative({ error: TRUST_PROXY_TYPE_MESSAGE }),
+    z.array(
+      z.string().refine(isValidTrustProxyEntry, {
+        error: (issue) =>
+          `Invalid trustProxy entry "${String(issue.input)}": expected an IP address, ` +
+          'a CIDR range, or one of loopback, linklocal, uniquelocal'
+      })
+    )
+  ],
+  { error: TRUST_PROXY_TYPE_MESSAGE }
+)
+
 /**
  * HTTP configuration schema
  */
 const HttpSchema = z.object({
-  origins: z.array(z.string())
+  origins: z.array(z.string()),
+  trustProxy: TrustProxySchema.optional()
 })
 
 /**

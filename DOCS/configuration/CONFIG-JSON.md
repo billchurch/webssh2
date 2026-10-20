@@ -115,7 +115,7 @@ Renamed and expanded options:
 Notes:
 
 - The CSP mode and key directives are controlled via the `csp` config block and `WEBSSH2_CSP_*` environment variables — see [Security Headers & CSP](#security-headers--csp-reference).
-- HSTS (`Strict-Transport-Security`) is set only when the request is HTTPS (`req.secure`).
+- HSTS (`Strict-Transport-Security`) is set only when the request is HTTPS (`req.secure`). Behind a TLS-terminating proxy, set [`http.trustProxy`](#running-behind-a-reverse-proxy-httptrustproxy) so forwarded HTTPS requests count.
 
 ### 3. Terminal Configuration
 
@@ -235,9 +235,50 @@ The security-headers middleware applies a set of standard headers on every respo
 - `X-XSS-Protection`: `1; mode=block`
 - `Referrer-Policy`: `strict-origin-when-cross-origin`
 - `Permissions-Policy`: disables geolocation, microphone, camera
-- `Strict-Transport-Security`: 1 year (HTTPS requests only); max-age is `DEFAULTS.HSTS_MAX_AGE_SECONDS`.
+- `Strict-Transport-Security`: 1 year (HTTPS requests only, see [`http.trustProxy`](#running-behind-a-reverse-proxy-httptrustproxy)); max-age is `DEFAULTS.HSTS_MAX_AGE_SECONDS`.
 - `X-Frame-Options`: derived from `csp.frameAncestors` — see below.
 - `Content-Security-Policy` / `Content-Security-Policy-Report-Only`: controlled by the `csp` config block — see below.
+
+### Running behind a reverse proxy (`http.trustProxy`)
+
+`http.trustProxy` tells the server which peers may set `X-Forwarded-For`,
+`X-Forwarded-Proto` and `X-Forwarded-Host`. It is unset by default, and then
+these headers are ignored and nothing changes for direct deployments.
+
+```json
+{
+  "http": {
+    "origins": ["https://webssh.example.com"],
+    "trustProxy": ["10.0.0.5"]
+  }
+}
+```
+
+Accepted values (passed to Express's `trust proxy` setting):
+
+| Value | Meaning |
+| --- | --- |
+| unset, `false`, `0` or `[]` (default) | Trust no proxy |
+| list of strings | Trust only peers that match: IPv4/IPv6 addresses, CIDR ranges (`10.0.0.0/8`, `fd00::/8`), or `loopback`, `linklocal`, `uniquelocal` |
+| positive integer | Trust that many hops in front of the server |
+| `true` | Trust every peer |
+
+Anything else (for example a hostname, a netmask, or a string such as `"yes"`)
+fails config validation at startup with an error that names `http.trustProxy`.
+
+When a request comes from a trusted peer with `X-Forwarded-Proto: https`:
+
+- `Strict-Transport-Security` is sent.
+- The strict CSP `connect-src` variant (only `https://` and `wss://` origins) is used.
+- The session cookie is marked `Secure` (the cookie uses `secure: 'auto'` whenever `trustProxy` is set).
+- The socket URL injected into the client page uses `https://`.
+- `req.ip` is the client address from `X-Forwarded-For`, so per-IP limits and logs see the real client.
+
+`sso.trustedProxies` keeps matching the address of the connecting peer, not `X-Forwarded-For`.
+
+**Warning:** do not use `true` or a hop count if clients can reach the gateway
+without going through the proxy. They could then forge these headers. Prefer the
+proxy's own addresses. See SECURITY.md, "Running behind a reverse proxy".
 
 ### Content Security Policy (CSP)
 

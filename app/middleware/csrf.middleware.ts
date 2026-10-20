@@ -45,19 +45,20 @@ const isTrustedProxy = (req: Request, trustedProxies: readonly string[]): boolea
   if (trustedProxies.length === 0) {
     return false
   }
-  const candidateIp = getClientIp(req)
-  if (candidateIp === undefined) {
+  const peerIp = getPeerIp(req)
+  if (peerIp === undefined) {
     return false
   }
-  return trustedProxies.includes(candidateIp)
+  return trustedProxies.includes(peerIp)
 }
 
-const getClientIp = (req: Request): string | undefined => {
-  if (typeof req.ip === 'string' && req.ip !== '') {
-    return req.ip
-  }
+// sso.trustedProxies names the proxy that connects to us, so match the TCP
+// peer. req.ip is not used: with http.trustProxy set it is the client address
+// taken from X-Forwarded-For, which the client can influence.
+const getPeerIp = (req: Request): string | undefined => {
   const socket = req.socket as { remoteAddress?: string } | undefined
-  return socket?.remoteAddress
+  const address = socket?.remoteAddress
+  return typeof address === 'string' && address !== '' ? address : undefined
 }
 
 const hasSsoHeaders = (req: Request): boolean => {
