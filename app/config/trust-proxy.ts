@@ -31,7 +31,8 @@ export function isTrustProxyEnabled(setting: TrustProxySetting | undefined): boo
 
 /**
  * Check one trust-list entry: an IPv4/IPv6 address, a CIDR range with a
- * prefix length valid for its address family, or a named range.
+ * prefix length valid for its address family, or a named range. The prefix
+ * must be at least 1: Express (proxy-addr) rejects /0 at startup.
  * @pure
  */
 export function isValidTrustProxyEntry(entry: string): boolean {
@@ -50,7 +51,8 @@ export function isValidTrustProxyEntry(entry: string): boolean {
     return false
   }
   const maxPrefix = family === 4 ? 32 : 128
-  return Number.parseInt(prefix, 10) <= maxPrefix
+  const length = Number.parseInt(prefix, 10)
+  return length >= 1 && length <= maxPrefix
 }
 
 /**

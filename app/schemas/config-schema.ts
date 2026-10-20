@@ -79,7 +79,8 @@ const TrustProxySchema = z.union(
       z.string().refine(isValidTrustProxyEntry, {
         error: (issue) =>
           `Invalid trustProxy entry "${String(issue.input)}": expected an IP address, ` +
-          'a CIDR range, or one of loopback, linklocal, uniquelocal'
+          'a CIDR range (prefix 1-32 for IPv4, 1-128 for IPv6), ' +
+          'or one of loopback, linklocal, uniquelocal'
       })
     )
   ],

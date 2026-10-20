@@ -37,7 +37,7 @@ describe('isValidTrustProxyEntry', () => {
   it.each([
     '10.0.0.1',
     '10.0.0.0/8',
-    '0.0.0.0/0',
+    '0.0.0.0/1',
     '192.168.1.0/32',
     '::1',
     'fd00::/8',
@@ -55,6 +55,9 @@ describe('isValidTrustProxyEntry', () => {
     'Loopback',
     '10.0.0.256',
     '10.0.0.0/33',
+    '0.0.0.0/0',
+    '::/0',
+    '10.0.0.0/0',
     '10.0.0.0/',
     '10.0.0.0/-1',
     '10.0.0.0/8/8',
@@ -127,6 +130,13 @@ describe('http.trustProxy schema validation', () => {
       expect(result.ok && result.value.http.trustProxy).toEqual(value)
     }
   )
+
+  it.each(['0.0.0.0/0', '::/0'])('rejects the /0 range %s', (entry) => {
+    const result = validate([entry])
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.message).toContain(`"${entry}"`)
+    expect(!result.ok && result.error.message).toContain('prefix 1-32 for IPv4, 1-128 for IPv6')
+  })
 
   it('names the bad entry in an address list', () => {
     const result = validate(['10.0.0.1', 'proxy.example.com'])

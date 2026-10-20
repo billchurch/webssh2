@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import request from 'supertest'
 import type { Application } from 'express'
 import { createAppAsync } from '../../app/app.js'
-import { createDefaultConfig } from '../../app/config/config-processor.js'
+import { createDefaultConfig, processConfig } from '../../app/config/config-processor.js'
 import { TEST_SESSION_SECRET_VALID } from '@tests/test-constants.js'
 import type { Config, TrustProxySetting } from '../../app/types/config.js'
 
@@ -200,5 +200,33 @@ describe('sso.trustedProxies with http.trustProxy set', () => {
     const app = buildApp(true, withSso([peer]))
     const res = await request(app).post('/ssh/').set(FORWARDED_HTTPS).send({})
     expect(res.text).not.toBe('CSRF token validation failed')
+  })
+})
+
+describe('http.trustProxy values the schema accepts', () => {
+  // Every value that passes config validation must also be accepted by
+  // Express's `trust proxy` compiler, or the server fails at startup.
+  it.each([
+    [true],
+    [1],
+    [['10.0.0.0/8']],
+    [['0.0.0.0/1', '128.0.0.0/1']],
+    [['::/1', '8000::/1']],
+    [['10.0.0.1/32', '::1/128', 'fd00::/8', 'fe80::1%eth0']],
+    [['::ffff:10.0.0.0/104', '1.2.3.4', 'loopback', 'linklocal', 'uniquelocal']],
+  ])('starts the app with %j', (value) => {
+    const secret: string = TEST_SESSION_SECRET_VALID
+    const defaults = createDefaultConfig(secret)
+    const fileConfig = { http: { origins: ['*:*'], trustProxy: value } } as Partial<Config>
+    const result = processConfig(defaults, fileConfig)
+    expect(result.ok).toBe(true)
+    expect(() => result.ok && createAppAsync(result.value)).not.toThrow()
+  })
+
+  it.each([['0.0.0.0/0'], ['::/0']])('rejects %s in config validation', (entry) => {
+    const secret: string = TEST_SESSION_SECRET_VALID
+    const defaults = createDefaultConfig(secret)
+    const fileConfig = { http: { origins: ['*:*'], trustProxy: [entry] } } as Partial<Config>
+    expect(processConfig(defaults, fileConfig).ok).toBe(false)
   })
 })

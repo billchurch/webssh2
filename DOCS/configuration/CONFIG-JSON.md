@@ -259,11 +259,13 @@ Accepted values (passed to Express's `trust proxy` setting):
 | Value | Meaning |
 | --- | --- |
 | unset, `false`, `0` or `[]` (default) | Trust no proxy |
-| list of strings | Trust only peers that match: IPv4/IPv6 addresses, CIDR ranges (`10.0.0.0/8`, `fd00::/8`), or `loopback`, `linklocal`, `uniquelocal` |
+| list of strings | Trust only peers that match: IPv4/IPv6 addresses, CIDR ranges (`10.0.0.0/8`, `fd00::/8`; prefix 1-32 for IPv4, 1-128 for IPv6), or `loopback`, `linklocal`, `uniquelocal` |
 | positive integer | Trust that many hops in front of the server |
 | `true` | Trust every peer |
 
-Anything else (for example a hostname, a netmask, or a string such as `"yes"`)
+A `/0` range such as `0.0.0.0/0` is rejected because Express does not accept it;
+use `true` to trust every peer. Anything else that is not listed (for example a
+hostname, a netmask, or a string such as `"yes"`)
 fails config validation at startup with an error that names `http.trustProxy`.
 
 When a request comes from a trusted peer with `X-Forwarded-Proto: https`:
