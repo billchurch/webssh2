@@ -8,6 +8,7 @@ import { HTTP, TELNET_DEFAULTS } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 import { processAuthParameters, type AuthSession } from '../auth/auth-utils.js'
 import { asyncRouteHandler, createErrorHandler } from './adapters/express-adapter.js'
+import { createPostOriginGuards } from '../middleware/csrf.middleware.js'
 
 const debug = createNamespacedDebug('routes:telnet')
 
@@ -25,6 +26,9 @@ export function createTelnetRoutes(config: Config): Router {
 
   // Add error handler
   router.use(createErrorHandler())
+
+  // CSRF origin check for the credential POST routes (#580)
+  const postOriginGuards = createPostOriginGuards(config)
 
   /**
    * Root route - full connection mode, protocol: telnet
@@ -87,7 +91,7 @@ export function createTelnetRoutes(config: Config): Router {
   /**
    * POST root - SSO form submission for telnet
    */
-  router.post('/', asyncRouteHandler(async (req: Request, res: Response) => {
+  router.post('/', ...postOriginGuards, asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     debug('POST / - Telnet SSO form submission')
 
@@ -109,7 +113,7 @@ export function createTelnetRoutes(config: Config): Router {
   /**
    * POST /host/:host - SSO form submission with host locked
    */
-  router.post('/host/:host', asyncRouteHandler(async (req: Request, res: Response) => {
+  router.post('/host/:host', ...postOriginGuards, asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     const hostParam = expressReq.params['host']
     const host = typeof hostParam === 'string' ? hostParam : undefined

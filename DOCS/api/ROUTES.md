@@ -79,7 +79,7 @@ WebSSH2 validates SSH credentials immediately upon receiving HTTP Basic Auth cre
   - Clean separation from Basic Auth routes
   - Better integration with SSO systems (SAML, OAuth)
   - More secure credential handling
-  - Compatible with CSRF protection
+  - Protected against CSRF by the origin check (`http.allowedPostOrigins`; see SECURITY.md)
   - Supports complex authentication flows
   - Better suited for programmatic access
   - No session credential conflicts
