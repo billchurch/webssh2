@@ -141,6 +141,7 @@ Format: `KEY:value,KEY2:value2`
 - Variable names must match the pattern `^[A-Z][A-Z0-9_]*$`
 - Values cannot contain shell special characters
 - SSH server must allow variables via `AcceptEnv`
+- If the operator sets `ssh.envAllowlist`, only listed names are forwarded; `?env=` on a link opened before login is filtered the same way
 - See [Environment Forwarding](../features/ENVIRONMENT-FORWARDING.md) for details
 
 ## Complex Examples

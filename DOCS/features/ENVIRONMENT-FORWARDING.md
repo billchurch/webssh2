@@ -123,7 +123,9 @@ JSON array format:
 WEBSSH2_SSH_ENV_ALLOWLIST='["FOO","BAR","VIM_FILE"]'
 ```
 
-When an allowlist is provided, only listed keys are forwarded to the SSH session (after format/value checks).
+When an allowlist is provided, only listed keys are forwarded to the SSH session (after format/value checks). Other keys are dropped silently, and the `webssh2:ssh-config` debug log records the dropped key names (never their values). An empty allowlist (`[]` or `WEBSSH2_SSH_ENV_ALLOWLIST=""`) forwards nothing. Leave the setting unset to forward every valid key.
+
+The allowlist applies to every source of environment variables, including `?env=` on links opened before login. Operators who don't want links to pre-fill variables should set an allowlist.
 
 ## Example Usage
 
