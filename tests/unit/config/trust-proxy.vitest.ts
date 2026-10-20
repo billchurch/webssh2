@@ -28,19 +28,19 @@ describe('isTrustProxyEnabled', () => {
     expect(isTrustProxyEnabled(value)).toBe(false)
   })
 
-  it.each([true, 1, 2, ['10.0.0.1']])('is on for %j', (value) => {
+  it.each([true, 1, 2, ['10.0.0.1']])('is on for %j', (value) => { //NOSONAR - test fixture address
     expect(isTrustProxyEnabled(value)).toBe(true)
   })
 })
 
 describe('isValidTrustProxyEntry', () => {
   it.each([
-    '10.0.0.1',
-    '10.0.0.0/8',
+    '10.0.0.1', //NOSONAR - test fixture address
+    '10.0.0.0/8', //NOSONAR - test fixture address
     '0.0.0.0/1',
-    '192.168.1.0/32',
+    '192.168.1.0/32', //NOSONAR - test fixture address
     '::1',
-    'fd00::/8',
+    'fd00::/8', //NOSONAR - test fixture address
     '2001:db8::/128',
     'loopback',
     'linklocal',
@@ -54,15 +54,15 @@ describe('isValidTrustProxyEntry', () => {
     'proxy.example.com',
     'Loopback',
     '10.0.0.256',
-    '10.0.0.0/33',
+    '10.0.0.0/33', //NOSONAR - test fixture address
     '0.0.0.0/0',
     '::/0',
-    '10.0.0.0/0',
+    '10.0.0.0/0', //NOSONAR - test fixture address
     '10.0.0.0/',
     '10.0.0.0/-1',
     '10.0.0.0/8/8',
     '10.0.0.0/255.0.0.0',
-    'fd00::/129',
+    'fd00::/129', //NOSONAR - test fixture address
     '/8',
     ' 10.0.0.1',
   ])('rejects %j', (entry) => {
@@ -78,9 +78,9 @@ describe('parseTrustProxyEnv', () => {
     ['0', 0],
     ['2', 2],
     [' 1 ', 1],
-    ['10.0.0.1', ['10.0.0.1']],
-    ['10.0.0.1, 10.0.0.0/8,loopback', ['10.0.0.1', '10.0.0.0/8', 'loopback']],
-    ['["10.0.0.1","::1"]', ['10.0.0.1', '::1']],
+    ['10.0.0.1', ['10.0.0.1']], //NOSONAR - test fixture address
+    ['10.0.0.1, 10.0.0.0/8,loopback', ['10.0.0.1', '10.0.0.0/8', 'loopback']], //NOSONAR - test fixture address
+    ['["10.0.0.1","::1"]', ['10.0.0.1', '::1']], //NOSONAR - test fixture address
     ['yes', ['yes']],
   ])('parses %j', (raw, expected) => {
     expect(parseTrustProxyEnv(raw)).toEqual(expected)
@@ -97,7 +97,7 @@ describe('WEBSSH2_HTTP_TRUST_PROXY mapping', () => {
     expect(getTrustProxy(mapEnvironmentVariables({ WEBSSH2_HTTP_TRUST_PROXY: '1' }))).toBe(1)
     expect(
       getTrustProxy(mapEnvironmentVariables({ WEBSSH2_HTTP_TRUST_PROXY: '10.0.0.1,10.1.0.0/16' }))
-    ).toEqual(['10.0.0.1', '10.1.0.0/16'])
+    ).toEqual(['10.0.0.1', '10.1.0.0/16']) //NOSONAR - test fixture address
   })
 
   it('leaves http.trustProxy unset when the variable is unset or empty', () => {
@@ -122,7 +122,7 @@ describe('http.trustProxy schema validation', () => {
     expect(result.ok && 'trustProxy' in result.value.http).toBe(false)
   })
 
-  it.each([true, false, 0, 3, [], ['10.0.0.1', '10.0.0.0/8', '::1', 'loopback']])(
+  it.each([true, false, 0, 3, [], ['10.0.0.1', '10.0.0.0/8', '::1', 'loopback']])( //NOSONAR - test fixture address
     'accepts %j',
     (value) => {
       const result = validate(value)
@@ -139,7 +139,7 @@ describe('http.trustProxy schema validation', () => {
   })
 
   it('names the bad entry in an address list', () => {
-    const result = validate(['10.0.0.1', 'proxy.example.com'])
+    const result = validate(['10.0.0.1', 'proxy.example.com']) //NOSONAR - test fixture address
     expect(result.ok).toBe(false)
     expect(!result.ok && result.error.message).toContain('http.trustProxy')
     expect(!result.ok && result.error.message).toContain('"proxy.example.com"')

@@ -209,11 +209,11 @@ describe('http.trustProxy values the schema accepts', () => {
   it.each([
     [true],
     [1],
-    [['10.0.0.0/8']],
-    [['0.0.0.0/1', '128.0.0.0/1']],
-    [['::/1', '8000::/1']],
-    [['10.0.0.1/32', '::1/128', 'fd00::/8', 'fe80::1%eth0']],
-    [['::ffff:10.0.0.0/104', '1.2.3.4', 'loopback', 'linklocal', 'uniquelocal']],
+    [['10.0.0.0/8']], //NOSONAR - test fixture addresses
+    [['0.0.0.0/1', '128.0.0.0/1']], //NOSONAR - test fixture addresses
+    [['::/1', '8000::/1']], //NOSONAR - test fixture addresses
+    [['10.0.0.1/32', '::1/128', 'fd00::/8', 'fe80::1%eth0']], //NOSONAR - test fixture addresses
+    [['::ffff:10.0.0.0/104', '1.2.3.4', 'loopback', 'linklocal', 'uniquelocal']], //NOSONAR - test fixture addresses
   ])('starts the app with %j', (value) => {
     const secret: string = TEST_SESSION_SECRET_VALID
     const defaults = createDefaultConfig(secret)
