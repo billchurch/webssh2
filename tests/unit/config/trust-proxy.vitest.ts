@@ -86,6 +86,17 @@ describe('parseTrustProxyEnv', () => {
     expect(parseTrustProxyEnv(raw)).toEqual(expected)
   })
 
+  it.each([
+    [',', ['', '']],
+    [' , ', ['', '']],
+    ['10.0.0.1,,', ['10.0.0.1', '', '']], //NOSONAR - test fixture address
+    ['["10.0.0.1"', ['["10.0.0.1"']], //NOSONAR - test fixture address
+    ['[10.0.0.1]', ['[10.0.0.1]']], //NOSONAR - test fixture address
+    ['[1, true]', ['1', 'true']],
+  ])('keeps malformed list %j for the schema to reject', (raw, expected) => {
+    expect(parseTrustProxyEnv(raw)).toEqual(expected)
+  })
+
   it.each(['', '   '])('treats %j as unset', (raw) => {
     expect(parseTrustProxyEnv(raw)).toBeUndefined()
   })
@@ -136,6 +147,22 @@ describe('http.trustProxy schema validation', () => {
     expect(result.ok).toBe(false)
     expect(!result.ok && result.error.message).toContain(`"${entry}"`)
     expect(!result.ok && result.error.message).toContain('prefix 1-32 for IPv4, 1-128 for IPv6')
+  })
+
+  it.each([',', ' , ', '10.0.0.1,,', ',10.0.0.1', '["10.0.0.1"', '[1]', '[]x'])( //NOSONAR - test fixture address
+    'fails validation for the malformed env value %j',
+    (raw) => {
+      const envConfig = mapEnvironmentVariables({ WEBSSH2_HTTP_TRUST_PROXY: raw })
+      const result = processConfig(createDefaultConfig(SECRET), undefined, envConfig)
+      expect(result.ok).toBe(false)
+      expect(!result.ok && result.error.message).toContain('http.trustProxy')
+    }
+  )
+
+  it('accepts an explicit empty JSON list from the env as "trust nothing"', () => {
+    const envConfig = mapEnvironmentVariables({ WEBSSH2_HTTP_TRUST_PROXY: '[]' })
+    const result = processConfig(createDefaultConfig(SECRET), undefined, envConfig)
+    expect(result.ok && result.value.http.trustProxy).toEqual([])
   })
 
   it('names the bad entry in an address list', () => {

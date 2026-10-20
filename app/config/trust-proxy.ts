@@ -3,7 +3,6 @@
 
 import { isIP } from 'node:net'
 import type { TrustProxySetting } from '../types/config.js'
-import { parseArrayValue } from './env-parser.js'
 
 /** Named address ranges Express (proxy-addr) accepts in a trust list */
 const NAMED_RANGES: ReadonlySet<string> = new Set(['loopback', 'linklocal', 'uniquelocal'])
@@ -56,6 +55,27 @@ export function isValidTrustProxyEntry(entry: string): boolean {
 }
 
 /**
+ * Split an address list from the environment. Unlike the generic array
+ * parser, nothing is dropped: empty items (",", "10.0.0.1,,") and malformed
+ * JSON are kept as entries so the schema rejects them by name.
+ * @pure
+ */
+function parseTrustProxyList(value: string): string[] {
+  if (value.startsWith('[') && value.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(value) as unknown
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => (typeof item === 'string' ? item : JSON.stringify(item)))
+      }
+    } catch {
+      // Not valid JSON: report the whole value as one invalid entry
+    }
+    return [value]
+  }
+  return value.split(',').map((item) => item.trim())
+}
+
+/**
  * Parse WEBSSH2_HTTP_TRUST_PROXY. `true`/`false` become booleans, a plain
  * integer becomes a hop count, and anything else is read as a comma-separated
  * (or JSON array) list of addresses. The result is checked by the config
@@ -79,5 +99,5 @@ export function parseTrustProxyEnv(raw: string): TrustProxySetting | undefined {
   if (DECIMAL_DIGITS.test(value)) {
     return Number.parseInt(value, 10)
   }
-  return parseArrayValue(value)
+  return parseTrustProxyList(value)
 }
