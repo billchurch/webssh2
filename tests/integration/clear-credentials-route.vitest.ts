@@ -8,7 +8,7 @@ import { createRoutesV2 } from '../../app/routes/routes-v2.js'
 import { createDefaultConfig } from '../../app/config/config-processor.js'
 import { createSessionMiddleware } from '../../app/middleware/session.middleware.js'
 import { BasicAuthProvider } from '../../app/auth/providers/basic-auth.provider.js'
-import { HTTP } from '../../app/constants/index.js'
+import { HEADERS, HTTP } from '../../app/constants/index.js'
 import type { AuthSession } from '../../app/auth/auth-utils.js'
 import {
   TEST_PASSWORD,
@@ -66,6 +66,7 @@ function buildApp(): Application {
 const expectClearedResponse = (res: request.Response): void => {
   expect(res.status).toBe(HTTP.OK)
   expect(res.body).toEqual({ message: HTTP.CREDENTIALS_CLEARED })
+  expect(res.headers[HEADERS.CLEAR_SITE_DATA.toLowerCase()]).toBe('"cookies"')
 }
 
 describe('GET /ssh/clear-credentials', () => {

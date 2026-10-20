@@ -3,7 +3,7 @@ import {
   processClearCredentialsRequest,
   processReauthRequest
 } from '../../../app/routes/handlers/ssh-handler.js'
-import { HTTP } from '../../../app/constants/index.js'
+import { HEADERS, HTTP } from '../../../app/constants/index.js'
 import type { AuthSession } from '../../../app/auth/auth-utils.js'
 import { TEST_PASSWORD, TEST_USERNAME } from '../../test-constants.js'
 
@@ -24,7 +24,7 @@ const credentialSession = (): AuthSession => ({
 })
 
 describe('processClearCredentialsRequest', () => {
-  it('selects the credential keys and returns the unchanged 200 response', () => {
+  it('selects the credential keys and returns a 200 that clears browser credentials', () => {
     const result = processClearCredentialsRequest(credentialSession())
 
     expect(result.ok).toBe(true)
@@ -44,6 +44,7 @@ describe('processClearCredentialsRequest', () => {
     expect(result.value.keysToRemove).not.toContain('csrfToken')
     expect(result.value.response).toEqual({
       status: HTTP.OK,
+      headers: { [HEADERS.CLEAR_SITE_DATA]: '"cookies"' },
       data: { message: HTTP.CREDENTIALS_CLEARED }
     })
   })

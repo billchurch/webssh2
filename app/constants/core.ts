@@ -91,6 +91,8 @@ export const HTTP = {
   SAMESITE_POLICY: 'Strict',
   SESSION_SID: 'webssh2_sid',
   CREDENTIALS_CLEARED: 'Credentials cleared.',
+  // Makes the browser drop its cookies and cached HTTP Basic credentials for this origin
+  CLEAR_SITE_DATA_COOKIES: '"cookies"',
 } as const
 
 export const TERMINAL_LIMITS = {
@@ -110,6 +112,7 @@ export const HEADERS = {
   REFERRER_POLICY: 'Referrer-Policy',
   PERMISSIONS_POLICY: 'Permissions-Policy',
   STRICT_TRANSPORT_SECURITY: 'Strict-Transport-Security',
+  CLEAR_SITE_DATA: 'Clear-Site-Data',
 } as const
 
 export const TELNET_DEFAULTS = {
