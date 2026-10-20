@@ -90,16 +90,33 @@ export function processHeaderParameters(
 }
 
 /**
- * Process environment variables from URL query or POST body
- * Wrapper for backward compatibility - mutates session
+ * Process environment variables from URL query or POST body.
+ *
+ * Env vars are only taken from a request that also carries credentials
+ * (`acceptEnv: true`), and each such request fully replaces any earlier
+ * value. Every other request clears session.envVars, so an unauthenticated
+ * link (e.g. GET /ssh/?env=...) cannot pre-seed env vars for a login the
+ * user performs later (#586).
+ *
+ * Wrapper for backward compatibility - mutates session.
  */
 export function processEnvironmentVariables(
   source: Record<string, unknown>,
-  session: AuthSession
+  session: AuthSession,
+  acceptEnv = false
 ): void {
-  const envVars = extractEnvironmentVars(source)
+  const envVars = acceptEnv ? extractEnvironmentVars(source) : null
   if (envVars != null) {
     session.envVars = envVars
+    return
+  }
+
+  if (!acceptEnv && source['env'] !== undefined) {
+    debug('Ignoring env parameter on a request without credentials')
+  }
+  if (session.envVars !== undefined) {
+    delete session.envVars
+    debug('Env vars cleared from session')
   }
 }
 
@@ -243,8 +260,17 @@ export function extractPostCredentials(
  * Process all authentication parameters from source (query/body)
  * Wrapper for backward compatibility
  */
-export function processAuthParameters(source: Record<string, unknown>, session: AuthSession): void {
+export interface AuthParameterOptions {
+  /** True only when this request also carries credentials (#586) */
+  acceptEnv?: boolean
+}
+
+export function processAuthParameters(
+  source: Record<string, unknown>,
+  session: AuthSession,
+  options: AuthParameterOptions = {}
+): void {
   processHeaderParameters(source, session)
-  processEnvironmentVariables(source, session)
+  processEnvironmentVariables(source, session, options.acceptEnv === true)
   processSessionRecordingParams(source, session)
 }

@@ -26,6 +26,9 @@ export function createTelnetRoutes(config: Config): Router {
   // Add error handler
   router.use(createErrorHandler())
 
+  // Telnet routes never carry credentials, so processAuthParameters ignores
+  // and clears any `env` parameter on them (#586)
+
   /**
    * Root route - full connection mode, protocol: telnet
    */

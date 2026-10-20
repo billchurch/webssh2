@@ -62,7 +62,7 @@ WebSSH2 supports non-interactive command execution over SSH using the SSH2 exec 
 ## Security Notes
 
 - Exec requests respect the same SSH authentication and authorization as shells
-- You can provide environment variables via query (`env=FOO:bar,BAZ:qux`) which are applied to both shell and exec sessions
+- You can provide environment variables via query (`env=FOO:bar,BAZ:qux`) on a request that carries credentials (Basic Auth `/ssh/host/...` or a POST login); they are applied to both shell and exec sessions
 - All exec commands are subject to the same security policies as interactive sessions
 
 ## Example Usage
@@ -153,7 +153,7 @@ You can pass environment variables to exec commands in two ways:
 
 2. **Via URL query parameters:**
    ```text
-   http://localhost:2222/ssh?env=MY_VAR:value,OTHER_VAR:value2
+   http://localhost:2222/ssh/host/example.com?env=MY_VAR:value,OTHER_VAR:value2
    ```
 
 ### Terminal Settings

@@ -150,7 +150,8 @@ async function handleSshGetRoute(
   )
 
   updateSessionCredentials(expressReq.session, connectionResult.value)
-  processAuthParameters(routeRequest.query, expressReq.session)
+  // Credentials were validated above, so this request may set env vars (#586)
+  processAuthParameters(routeRequest.query, expressReq.session, { acceptEnv: true })
 
   // Determine connection mode based on whether host was provided in URL
   // 'host-locked' means the host/port are fixed from the URL and cannot be changed
@@ -242,7 +243,7 @@ async function handlePostAuthRoute(
   // detectSourceType in header-processor checks POST keys first, so when both
   // are present the POST body wins.
   const source = { ...expressReq.query, ...bodyWithHost }
-  processAuthParameters(source, expressReq.session)
+  processAuthParameters(source, expressReq.session, { acceptEnv: true })
 
   // Serve the client page
   await handleConnection(expressReq, res, {
@@ -279,7 +280,8 @@ export function createRoutesV2(config: Config): Router {
   router.get('/', asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     debug('GET / - Root route accessed')
-    
+
+    // No credentials on this request: env is ignored and cleared (#586)
     processAuthParameters(expressReq.query, expressReq.session)
     await handleConnection(expressReq, res)
   }))

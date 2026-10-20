@@ -141,7 +141,8 @@ Format: `KEY:value,KEY2:value2`
 - Variable names must match the pattern `^[A-Z][A-Z0-9_]*$`
 - Values cannot contain shell special characters
 - SSH server must allow variables via `AcceptEnv`
-- If the operator sets `ssh.envAllowlist`, only listed names are forwarded; `?env=` on a link opened before login is filtered the same way
+- `env` is accepted only on a request that also carries credentials (`/ssh/host/...` with HTTP Basic Auth, or a POST login). On `/ssh` without credentials and on `/telnet` routes it is ignored, and any env vars kept from an earlier login are cleared
+- If the operator sets `ssh.envAllowlist`, only listed names are forwarded
 - See [Environment Forwarding](../features/ENVIRONMENT-FORWARDING.md) for details
 
 ## Complex Examples
@@ -161,7 +162,7 @@ http://localhost:2222/ssh/host/prod-server?header=PRODUCTION&headerBackground=%2
 ### Testing Environment with Debugging
 
 ```text
-http://localhost:2222/ssh?port=2244&env=DEBUG:webssh2:*,LOG_LEVEL:debug&header=TEST%20SERVER&headerBackground=%23FFA500
+http://localhost:2222/ssh/host/test-server?port=2244&env=DEBUG:webssh2:*,LOG_LEVEL:debug&header=TEST%20SERVER&headerBackground=%23FFA500
 ```
 
 ## URL Encoding
