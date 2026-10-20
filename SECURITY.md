@@ -780,7 +780,7 @@ integrity verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
 | Affected versions | esbuild 0.17.0 - < 0.28.1 |
 | Severity | HIGH (CVSS 8.1) |
 | Mitigation | **Retired** — vulnerable range no longer resolved; remaining esbuild is tsx's dev-only copy at 0.28.1 (patched) via natural resolution |
-| Dependency path | dev-only: `tsx` → `esbuild@0.28.1` (patched); `vitest` → `vite@8.1.4` (Rolldown/Oxc, no esbuild). Vite 8 lists esbuild only as an optional peer, satisfied by tsx's copy — it does not pull esbuild itself |
+| Dependency path | dev-only: `tsx` → `esbuild@0.28.1` (patched); `vitest` → `vite@8.3.3` (Rolldown/Oxc, no esbuild). Vite 8 lists esbuild only as an optional peer, satisfied by tsx's copy — it does not pull esbuild itself |
 | Resolution | Vite 8 migration removes esbuild from the vite/vitest chain; tsx retains the patched 0.28.1 |
 
 ### Mitigation history
@@ -809,8 +809,25 @@ integrity verification when `NPM_CONFIG_REGISTRY` is attacker-controlled.
   Vite 8.x release becomes available.
 - `npm audit --audit-level=high` reports 0 vulnerabilities.
 
+**2026-10-20**: Quarantine pins retired (issue [#585](https://github.com/billchurch/webssh2/issues/585))
+
+- Removed the temporary `overrides` pins `vite: 8.1.4` and `lightningcss: 1.32.0`.
+  Both now resolve from `vitest`'s own range. The lockfile was regenerated with
+  `npm install --before=2026-10-06T22:00:00Z`, so every changed version is at
+  least 14 days old.
+- Resolved versions (dev-only, via `vitest@4.1.11`): `vite@8.3.3` (published
+  2026-10-06), `lightningcss@1.33.0` (published 2026-07-20), `rolldown@1.2.12`
+  (published 2026-09-30). `vite@8.3.3` was published by the same GitHub Actions
+  trusted publisher as earlier releases.
+- The exact pin had started to block a patch: `vite@8.1.4` falls in the
+  vulnerable range of GHSA-698v-4r3x-3vcv, GHSA-r825-w8mm-5pxw and
+  GHSA-587h-7wmj-h5pm (HIGH, bundled `launch-editor`, Windows dev server only;
+  fixed in 8.1.6 / 8.2.4 / 8.3.3). Not reachable from the production install
+  or the Docker image, and webssh2 does not run the Vite dev server.
+- `npm audit --audit-level=high` reports 0 vulnerabilities.
+
 ---
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-10-20
 
 **Next review:** 2026-10-30
