@@ -2,6 +2,7 @@
 // Pure functions for processing header customization
 
 import { createNamespacedDebug } from '../logger.js'
+import { validateCssColor } from '../validation/config.js'
 
 const debug = createNamespacedDebug('auth:header')
 
@@ -76,6 +77,21 @@ export function validateHeaderValue(value: unknown): string | null {
 }
 
 /**
+ * Validate a header background value
+ * Applies the same CSS color check used for the config-file
+ * `header.background`; anything else is dropped so the configured or
+ * default background is used instead.
+ * Pure function - no side effects
+ */
+export function validateHeaderBackground(value: unknown): string | null {
+  const sanitized = validateHeaderValue(value)
+  if (sanitized == null) {
+    return null
+  }
+  return validateCssColor(sanitized) ?? null
+}
+
+/**
  * Returns true if `source` carries any header-related key — current
  * (`header`, `headerBackground`, `header.name`, `header.background`) or
  * legacy (`headerStyle`, `header.color`).
@@ -140,7 +156,7 @@ export function createHeaderOverride(
   _sourceType: SourceType
 ): HeaderOverride | null {
   const text = validateHeaderValue(values.header)
-  const background = validateHeaderValue(values.background)
+  const background = validateHeaderBackground(values.background)
 
   if (text == null && background == null) {
     return null
