@@ -636,6 +636,15 @@ directly exploitable. Pinned to 6.6.10 rather than 6.6.11 (published
 
 Only first-party source maps are processed, so practical exposure was nil.
 
+### GHSA-587h-7wmj-h5pm, GHSA-r825-w8mm-5pxw, GHSA-698v-4r3x-3vcv (launch-editor in vite)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Editor-launch command injection and Windows path checks in the `launch-editor` code bundled by the vite dev server |
+| Affected versions | vite 8.0.0 – 8.1.5 (one HIGH, two MODERATE; published 2026-10-20) |
+| Our exposure | Dev toolchain only — `vitest` → `vite`. The project never runs the vite dev server, and vite is not in the runtime image |
+| Status | **Remediated 2026-10-20** — the stale `vite` override was dropped in #589, so `vitest` now resolves the patched `vite` 8.3.3 |
+
 ---
 
 ## Bundled-npm findings in the runtime image (Trivy, 2026-08-18)

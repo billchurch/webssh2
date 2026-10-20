@@ -42,7 +42,7 @@ describe('http.allowedPostOrigins schema', () => {
     'https://portal.example.com/login',
     'https://*.example.com',
     'null',
-    'ftp://x'
+    'ftp://x' // NOSONAR - insecure scheme the validator must reject
   ])('fails validation for %s and names the entry', (entry) => {
     const result = validateConfigSchema(withOrigins(['https://ok.example', entry]))
     expect(result.ok).toBe(false)

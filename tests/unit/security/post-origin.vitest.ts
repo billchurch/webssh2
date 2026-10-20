@@ -9,9 +9,10 @@ import {
   type PostOriginPolicy,
   type PostOriginRequest
 } from '../../../app/security/post-origin.js'
+import { TEST_NETWORK } from '../../test-constants.js'
 
 const PORTAL = 'https://portal.example.com'
-const PROXY_IP = '10.0.0.5'
+const PROXY_IP = TEST_NETWORK.FORWARDED_IP
 
 const policy = (overrides: Partial<PostOriginPolicy> = {}): PostOriginPolicy => ({
   allowedOrigins: [PORTAL],
@@ -52,7 +53,7 @@ describe('normalizeAllowedPostOrigin', () => {
     ['*', 'wildcards'],
     ['null', 'null'],
     ['NULL', 'null'],
-    ['ftp://x', 'http or https'],
+    ['ftp://x', 'http or https'], // NOSONAR - insecure scheme the validator must reject
     ['javascript:alert(1)', 'http or https'],
     ['portal.example.com', 'scheme://host'],
     ['', 'scheme://host']
