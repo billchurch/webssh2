@@ -31,6 +31,12 @@ function createTestApp(error: Error, logError: RouteErrorLogger): express.Applic
   return app
 }
 
+function mountRouter(router: express.Router): express.Application {
+  const app = express()
+  app.use(router)
+  return app
+}
+
 describe('createErrorHandler', () => {
   it('returns a generic 500 body for an unexpected error', async () => {
     const logError = vi.fn<RouteErrorLogger>()
@@ -99,6 +105,48 @@ describe('createErrorHandler', () => {
     expect(logError).not.toHaveBeenCalled()
   })
 
+  it('keeps a 4xx status set on the error and sends only the status text', async () => {
+    const logError = vi.fn<RouteErrorLogger>()
+    const error = Object.assign(new URIError("Failed to decode param '%ZZ'"), { status: 400 })
+    const app = createTestApp(error, logError)
+
+    const response = await request(app).get('/boom')
+
+    expect(response.status).toBe(HTTP.BAD_REQUEST)
+    expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
+    expect(response.text).not.toContain('%ZZ')
+    expect(logError).not.toHaveBeenCalled()
+  })
+
+  it('keeps a 5xx status set on the error but sends the generic body', async () => {
+    const logError = vi.fn<RouteErrorLogger>()
+    const error = Object.assign(new Error(`${SECRET_PATH} unavailable`), { statusCode: 503 })
+    const app = createTestApp(error, logError)
+
+    const response = await request(app).get('/boom')
+
+    expect(response.status).toBe(503)
+    expect(response.body).toEqual({
+      error: HTTP.INTERNAL_ERROR_MESSAGE,
+      type: HTTP.INTERNAL_ERROR_TYPE
+    })
+    expect(logError).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a status outside the error range', async () => {
+    const logError = vi.fn<RouteErrorLogger>()
+    const error = Object.assign(new Error('odd status'), { status: 200 })
+    const app = createTestApp(error, logError)
+
+    const response = await request(app).get('/boom')
+
+    expect(response.status).toBe(HTTP.INTERNAL_SERVER_ERROR)
+    expect(response.body).toEqual({
+      error: HTTP.INTERNAL_ERROR_MESSAGE,
+      type: HTTP.INTERNAL_ERROR_TYPE
+    })
+  })
+
   it('logs but does not write when headers were already sent', () => {
     const logError = vi.fn<RouteErrorLogger>()
     const handler = createErrorHandler({ logError })
@@ -135,4 +183,28 @@ describe('route error handler placement', () => {
     expect(layer?.route).toBeUndefined()
     expect(layer?.handle.length).toBe(4)
   })
+
+  it.each(['/host/%ZZ', '/host/%E0%A4%A'])(
+    'returns 400 from the SSH routes for a malformed host URL %s',
+    async (path) => {
+      const app = mountRouter(createRoutesV2(createDefaultConfig(TEST_SECRET)))
+
+      const response = await request(app).get(path)
+
+      expect(response.status).toBe(HTTP.BAD_REQUEST)
+      expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
+    }
+  )
+
+  it.each(['/host/%ZZ', '/host/%E0%A4%A'])(
+    'returns 400 from the telnet routes for a malformed host URL %s',
+    async (path) => {
+      const app = mountRouter(createTelnetRoutes(createDefaultConfig(TEST_SECRET)))
+
+      const response = await request(app).get(path)
+
+      expect(response.status).toBe(HTTP.BAD_REQUEST)
+      expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
+    }
+  )
 })

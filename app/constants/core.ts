@@ -93,6 +93,7 @@ export const HTTP = {
   CREDENTIALS_CLEARED: 'Credentials cleared.',
   INTERNAL_ERROR_MESSAGE: 'Internal server error',
   INTERNAL_ERROR_TYPE: 'InternalError',
+  CLIENT_ERROR_MESSAGE: 'Bad request',
 } as const
 
 export const TERMINAL_LIMITS = {
