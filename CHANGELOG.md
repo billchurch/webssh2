@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.1...webssh2-server-v6.0.0) (2026-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* the server no longer fills the legacy `window.webssh2Config` inline script. Custom client deployments must use a client that reads the JSON config block (webssh2_client 5.1.0 or newer). The bundled client is pinned to 6.0.0, so default deployments are not affected.
+
+### Features
+
+* pin webssh2_client 6.0.0, drop legacy config injection ([#588](https://github.com/billchurch/webssh2/issues/588)) ([#597](https://github.com/billchurch/webssh2/issues/597)) ([4642c9e](https://github.com/billchurch/webssh2/commit/4642c9e5e0f9b7b9a32a9a4fe253be402794ec39))
+
+
+### Bug Fixes
+
+* **deps:** remediate proxy-addr, engine.io, qs and image-scan advisories ([#577](https://github.com/billchurch/webssh2/issues/577)) ([00f942b](https://github.com/billchurch/webssh2/commit/00f942be076978c26ebb17edce67c74ebbe381e1))
+
 ## [5.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.0...webssh2-server-v5.2.1) (2026-08-18)
 
 
