@@ -24,9 +24,6 @@ type ExpressRequest = Request & {
 export function createTelnetRoutes(config: Config): Router {
   const router = express.Router()
 
-  // Add error handler
-  router.use(createErrorHandler())
-
   // CSRF origin check for the credential POST routes (#580)
   const postOriginGuards = createPostOriginGuards(config)
 
@@ -130,6 +127,9 @@ export function createTelnetRoutes(config: Config): Router {
       }
     )
   }))
+
+  // Error handler must come after the routes so it receives their errors
+  router.use(createErrorHandler())
 
   return router
 }

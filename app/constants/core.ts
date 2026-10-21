@@ -92,6 +92,8 @@ export const HTTP = {
   SAMESITE_POLICY: 'Strict',
   SESSION_SID: 'webssh2_sid',
   CREDENTIALS_CLEARED: 'Credentials cleared.',
+  INTERNAL_ERROR_MESSAGE: 'Internal server error',
+  INTERNAL_ERROR_TYPE: 'InternalError',
   // Makes the browser drop its cookies and cached HTTP Basic credentials for this origin
   CLEAR_SITE_DATA_COOKIES: '"cookies"',
 } as const

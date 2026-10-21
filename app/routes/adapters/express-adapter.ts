@@ -5,7 +5,8 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
-import { createNamespacedDebug } from '../../logger.js'
+import { createNamespacedDebug, logError } from '../../logger.js'
+import type { LogContext } from '../../logging/log-context.js'
 import { HTTP } from '../../constants/index.js'
 import type { SshRouteResponse, SshRouteRequest } from '../handlers/ssh-handler.js'
 import { createSafeKey, safeSet } from '../../utils/safe-property-access.js'
@@ -166,45 +167,86 @@ export const createSessionCleaner = (
   }
 }
 
-/**
- * Error handler implementation
- */
-function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  debug('Route error:', err)
+export type RouteErrorLogger = (message: string, error: Error, context?: Partial<LogContext>) => void
 
-  // Check if response already sent
-  if (res.headersSent) {
-    return
-  }
-
-  // Map error types to HTTP responses
-  let statusCode: number
-  if (err.name === 'ValidationError') {
-    statusCode = 400
-  } else if (err.name === 'AuthenticationError') {
-    statusCode = HTTP.UNAUTHORIZED
-  } else if (err.name === 'ConfigError') {
-    statusCode = HTTP.INTERNAL_SERVER_ERROR
-  } else {
-    statusCode = HTTP.INTERNAL_SERVER_ERROR
-  }
-
-  res.status(statusCode).json({
-    error: err.message,
-    type: err.name
-  })
+export interface ErrorHandlerDependencies {
+  readonly logError?: RouteErrorLogger
 }
 
 /**
- * Create error response handler
+ * Map an error to its HTTP status code
  */
-export const createErrorHandler = (): ((
+const getRouteErrorStatus = (err: Error): number => {
+  if (err.name === 'ValidationError') {
+    return HTTP.BAD_REQUEST
+  }
+  if (err.name === 'AuthenticationError') {
+    return HTTP.UNAUTHORIZED
+  }
+  return HTTP.INTERNAL_SERVER_ERROR
+}
+
+/**
+ * Whether Express's router raised the error while decoding a route
+ * parameter (for example /host/%ZZ), before any route code ran.
+ * The router sets status 400 on that URIError.
+ */
+const isRouterDecodeError = (err: Error): boolean =>
+  err instanceof URIError && (err as URIError & { status?: unknown }).status === HTTP.BAD_REQUEST
+
+/**
+ * Create error response handler.
+ * ValidationError and AuthenticationError keep their user-facing message.
+ * Every other error gets a generic 500 body, and the full error is logged
+ * on the server only.
+ */
+export const createErrorHandler = (
+  deps: ErrorHandlerDependencies = {}
+): ((
   err: Error,
   req: Request,
   res: Response,
   next: NextFunction
 ) => void) => {
-  return errorHandler
+  const logRouteError = deps.logError ?? logError
+
+  return (err: Error, req: Request, res: Response, next: NextFunction): void => {
+    debug('Route error:', err)
+
+    // Leave malformed request paths to Express, which answers 400 as it did
+    // before this handler was registered after the routes
+    if (isRouterDecodeError(err)) {
+      next(err)
+      return
+    }
+
+    const statusCode = getRouteErrorStatus(err)
+
+    if (statusCode === HTTP.INTERNAL_SERVER_ERROR) {
+      logRouteError('Unhandled route error', err, {
+        reason: err.name,
+        ...(req.ip === undefined ? {} : { clientIp: req.ip })
+      })
+    }
+
+    // Check if response already sent
+    if (res.headersSent) {
+      return
+    }
+
+    if (statusCode === HTTP.INTERNAL_SERVER_ERROR) {
+      res.status(statusCode).json({
+        error: HTTP.INTERNAL_ERROR_MESSAGE,
+        type: HTTP.INTERNAL_ERROR_TYPE
+      })
+      return
+    }
+
+    res.status(statusCode).json({
+      error: err.message,
+      type: err.name
+    })
+  }
 }
 
 /**
