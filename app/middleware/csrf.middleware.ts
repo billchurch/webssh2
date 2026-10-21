@@ -1,55 +1,115 @@
 // app/middleware/csrf.middleware.ts
-// CSRF protection middleware
+// CSRF protection for the credential POST routes (#580).
+// Thin adapter around the pure decision in app/security/post-origin.ts.
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import { HTTP, DEFAULTS } from '../constants/index.js'
 import type { Config } from '../types/config.js'
+import { createAppStructuredLogger, createNamespacedDebug } from '../logger.js'
+import type { StructuredLogger } from '../logging/structured-logger.js'
+import {
+  evaluatePostOrigin,
+  isPostOriginCheckActive,
+  normalizeAllowedPostOrigin,
+  type PostOriginDecision,
+  type PostOriginPolicy,
+  type PostOriginRequest
+} from '../security/post-origin.js'
+
+const debug = createNamespacedDebug('middleware:csrf')
+
+export interface CSRFMiddlewareDeps {
+  readonly logger?: StructuredLogger
+}
 
 /**
- * Create CSRF protection middleware
+ * Create the origin check for the credential POST routes. Mount it only on
+ * those routes, and only when isPostOriginCheckActive(config) is true.
  * @param config - Application configuration
+ * @param deps - Optional logger (tests inject one)
  * @returns Express middleware handler
  */
-export function createCSRFMiddleware(config: Config): RequestHandler {
+export function createCSRFMiddleware(
+  config: Config,
+  deps: CSRFMiddlewareDeps = {}
+): RequestHandler {
+  const policy = buildPolicy(config)
+  const logger = deps.logger ?? createAppStructuredLogger({ config })
+
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!config.sso.csrfProtection) {
+    const request = extractPostOriginRequest(req)
+    const decision = evaluatePostOrigin(request, policy)
+
+    if (decision.accept) {
+      if (decision.step === 'no-browser-headers') {
+        debug('POST %s accepted without Origin or Sec-Fetch-Site (non-browser client)', req.originalUrl)
+      }
       next()
       return
     }
 
-    if (isTrustedProxy(req, config.sso.trustedProxies)) {
-      next()
-      return
-    }
-
-    if (hasSsoHeaders(req)) {
-      next()
-      return
-    }
-
-    if (req.method === 'POST' && !isValidCsrfToken(req)) {
-      res.status(HTTP.FORBIDDEN).send('CSRF token validation failed')
-      return
-    }
-
-    next()
+    logRejection(logger, req, request, decision)
+    res.status(HTTP.FORBIDDEN).json({ error: HTTP.FORBIDDEN_MESSAGE })
   }
 }
 
-type RequestWithSession = Request & {
-  session?: Record<string, unknown> | null
-  body?: unknown
+/**
+ * Middleware list for a credential POST route: the origin check when it is
+ * active, otherwise nothing (POST behavior unchanged).
+ */
+export function createPostOriginGuards(config: Config): RequestHandler[] {
+  return isPostOriginCheckActive(config) ? [createCSRFMiddleware(config)] : []
 }
 
-const isTrustedProxy = (req: Request, trustedProxies: readonly string[]): boolean => {
-  if (trustedProxies.length === 0) {
-    return false
+function buildPolicy(config: Config): PostOriginPolicy {
+  // Entries were validated at config load; re-normalizing keeps hand-built
+  // configs (tests, embedders) matching the same canonical form.
+  const allowedOrigins = (config.http.allowedPostOrigins ?? []).flatMap((entry) => {
+    const normalized = normalizeAllowedPostOrigin(entry)
+    return normalized.ok ? [normalized.value] : []
+  })
+  return {
+    allowedOrigins,
+    ssoEnabled: config.sso.enabled,
+    trustedProxies: config.sso.trustedProxies
   }
-  const candidateIp = getClientIp(req)
-  if (candidateIp === undefined) {
-    return false
+}
+
+function extractPostOriginRequest(req: Request): PostOriginRequest {
+  return {
+    origin: toHeaderString(req.headers.origin),
+    secFetchSite: toHeaderString(req.headers['sec-fetch-site']),
+    clientIp: getClientIp(req),
+    hasSsoHeader: hasSsoHeaders(req)
   }
-  return trustedProxies.includes(candidateIp)
+}
+
+function logRejection(
+  logger: StructuredLogger,
+  req: Request,
+  request: PostOriginRequest,
+  decision: PostOriginDecision
+): void {
+  // Never log the body: it carries the posted credentials.
+  const result = logger.warn({
+    event: 'policy_block',
+    message: 'Credential POST rejected by origin check',
+    context: {
+      subsystem: 'security',
+      status: 'failure',
+      reason: `post_origin_${decision.step}`,
+      ...(request.clientIp === undefined ? {} : { clientIp: request.clientIp })
+    },
+    data: {
+      route: req.originalUrl,
+      origin: request.origin ?? null,
+      secFetchSite: request.secFetchSite ?? null,
+      step: decision.step
+    }
+  })
+  if (!result.ok) {
+    debug('Failed to emit origin check rejection log: %O', result.error)
+  }
 }
 
 const getClientIp = (req: Request): string | undefined => {
@@ -66,47 +126,6 @@ const hasSsoHeaders = (req: Request): boolean => {
   return usernameHeader != null || sessionHeader != null
 }
 
-const isValidCsrfToken = (req: Request): boolean => {
-  const enrichedRequest = req as RequestWithSession
-  const sessionToken = extractSessionToken(enrichedRequest)
-  if (sessionToken === undefined) {
-    return false
-  }
-  const requestToken = extractRequestToken(enrichedRequest)
-  return requestToken === sessionToken
-}
-
-const extractSessionToken = (req: RequestWithSession): string | undefined => {
-  const session = req.session
-  if (!isObjectLike(session)) {
-    return undefined
-  }
-  return session['csrfToken'] as string | undefined
-}
-
-const extractRequestToken = (req: RequestWithSession): string | undefined => {
-  const bodyToken = extractBodyToken(normalizeBody(req.body))
-  if (bodyToken !== undefined) {
-    return bodyToken
-  }
-  return toHeaderString(req.headers['x-csrf-token'])
-}
-
-const normalizeBody = (body: unknown): Record<string, unknown> | undefined => {
-  if (!isPlainRecord(body)) {
-    return undefined
-  }
-  return body
-}
-
-const extractBodyToken = (body: Record<string, unknown> | undefined): string | undefined => {
-  if (body == null) {
-    return undefined
-  }
-  const csrfCandidate = body['_csrf']
-  return typeof csrfCandidate === 'string' && csrfCandidate !== '' ? csrfCandidate : undefined
-}
-
 const toHeaderString = (value: string | string[] | undefined): string | undefined => {
   if (typeof value === 'string') {
     return value
@@ -115,12 +134,4 @@ const toHeaderString = (value: string | string[] | undefined): string | undefine
     return value[0]
   }
   return undefined
-}
-
-const isObjectLike = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null
-}
-
-const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
-  return isObjectLike(value) && !Array.isArray(value)
 }
