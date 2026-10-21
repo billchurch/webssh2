@@ -13,7 +13,13 @@ import { createEphemeralSessionStore } from './ephemeral-session-store.js'
  * @returns Express session middleware
  */
 export function createSessionMiddleware(config: Config): RequestHandler {
-  const cookie: session.CookieOptions = {}
+  // Explicit SameSite (#580). Lax still sends the cookie on the top-level
+  // navigation that follows a portal's credential POST, and matches what
+  // browsers already apply when the attribute is missing.
+  const cookie: session.CookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+  }
   // Behind a trusted TLS-terminating proxy, mark the cookie Secure on
   // requests Express sees as HTTPS. Left unset otherwise so direct
   // deployments keep their current cookie attributes.
@@ -26,7 +32,7 @@ export function createSessionMiddleware(config: Config): RequestHandler {
     resave: false,
     saveUninitialized: true,
     name: config.session.name,
-    store: createEphemeralSessionStore(),
     cookie,
+    store: createEphemeralSessionStore(),
   })
 }

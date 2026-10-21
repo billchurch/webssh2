@@ -42,6 +42,7 @@ export const ENV_VAR_MAPPING: Record<string, EnvVarMap> = {
   WEBSSH2_LISTEN_IP: { path: 'listen.ip', type: 'string' },
   WEBSSH2_LISTEN_PORT: { path: 'listen.port', type: 'number' },
   WEBSSH2_HTTP_ORIGINS: { path: 'http.origins', type: 'array' },
+  WEBSSH2_HTTP_ALLOWED_POST_ORIGINS: { path: 'http.allowedPostOrigins', type: 'array' },
   WEBSSH2_USER_NAME: { path: 'user.name', type: 'string' },
   WEBSSH2_USER_PASSWORD: { path: 'user.password', type: 'string' },
   WEBSSH2_USER_PRIVATE_KEY: { path: 'user.privateKey', type: 'string' },

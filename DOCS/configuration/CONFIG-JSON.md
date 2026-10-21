@@ -361,6 +361,71 @@ The policy shipped in Phase 2 removes `'unsafe-inline'` from `script-src` (made 
 
 During the deprecation window, the client HTML still contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies configuration instead), but it produces **one expected `csp_violation` report per page load**. This report is demoted to `debug` log level so operators do not mistake it for a regression. It will be removed in a future major release.
 
+### Credential POST Origin Allowlist (`http.allowedPostOrigins`)
+
+`http.allowedPostOrigins` lists the sites that may POST credentials to
+`POST /ssh`, `POST /ssh/host/:host`, `POST /telnet` and
+`POST /telnet/host/:host` from another origin. It protects those routes
+against cross-site request forgery. It is separate from `http.origins`,
+which controls Socket.IO CORS only.
+
+| Option | Type | Default | Env var |
+| --- | --- | --- | --- |
+| `http.allowedPostOrigins` | `string[]` | unset | `WEBSSH2_HTTP_ALLOWED_POST_ORIGINS` |
+
+```json
+{
+  "http": {
+    "origins": ["*:*"],
+    "allowedPostOrigins": ["https://portal.example.com", "https://intranet.example.com:8443"]
+  }
+}
+```
+
+**Entry format.** Each entry is a bare origin, `scheme://host[:port]`,
+with an `http` or `https` scheme. Matching is exact but ignores case and
+the scheme's default port (`:443` / `:80`): `HTTPS://Portal.Example.com:443`
+matches `https://portal.example.com`. One trailing `/` is accepted and
+removed. Enter internationalized host names in `xn--` (punycode) form.
+
+**Validation errors.** The server refuses to start, and names the bad
+entry, when an entry:
+
+- has a path, query string, fragment or user info
+  (`https://portal.example.com/login`)
+- uses a wildcard (`https://*.example.com`, `*`)
+- is `null`
+- uses another scheme (`ftp://x`) or is not a URL (`portal.example.com`)
+
+For example:
+
+```text
+Configuration validation failed: http.allowedPostOrigins.0: allowedPostOrigins entry "https://portal.example.com/login" is invalid: must be a bare origin scheme://host[:port] with no path, query, fragment or credentials
+```
+
+**When the check runs.** When `allowedPostOrigins` is not empty, or when
+`sso.enabled` and `sso.csrfProtection` are both `true`. Otherwise the
+routes accept every POST, as before. With SSO enabled, requests from
+`sso.trustedProxies` IPs or with the SSO username or session header skip
+the check.
+
+**Decision table.** Evaluated in this order; the first match wins.
+
+| # | Request | Result |
+| --- | --- | --- |
+| 1 | `Sec-Fetch-Site: same-origin` | Accept |
+| 2a | `Origin: null` | Reject |
+| 2b | `Origin` listed in `allowedPostOrigins` | Accept |
+| 2c | `Origin` present, not listed | Reject |
+| 3 | Neither `Origin` nor `Sec-Fetch-Site` present | Accept (debug log) |
+| 4 | Anything else (for example `Sec-Fetch-Site: same-site`, `cross-site` or `none` without a listed `Origin`) | Reject |
+
+A rejected POST gets `403 {"error":"Forbidden"}` and a `policy_block`
+log event. See [SECURITY.md](../../SECURITY.md#credential-post-csrf-protection)
+for the per-header table, worked examples and the default risk, and
+[ADR 0001](../adr/0001-origin-allowlist-for-credential-posts.md) for the
+design reasons.
+
 ### Centralized Constants
 
 Common defaults live in `app/constants.ts`:

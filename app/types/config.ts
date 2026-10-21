@@ -344,6 +344,8 @@ export type TrustProxySetting = boolean | number | string[]
  */
 export interface HttpConfig {
   origins: string[]
+  /** Origins allowed to POST credentials cross-site (see SECURITY.md, #580) */
+  allowedPostOrigins?: string[]
   /** Unset by default: X-Forwarded-* headers are ignored. */
   trustProxy?: TrustProxySetting
 }

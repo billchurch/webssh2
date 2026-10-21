@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import { LOG_EVENT_NAMES } from '../logging/event-catalog.js'
 import { isValidTrustProxyEntry } from '../config/trust-proxy.js'
+import { normalizeAllowedPostOrigin } from '../security/post-origin.js'
 
 /**
  * IPv4 validation function
@@ -88,10 +89,24 @@ const TrustProxySchema = z.union(
 )
 
 /**
+ * One `http.allowedPostOrigins` entry: a bare http/https origin, stored in
+ * canonical form. Bad entries fail startup with the entry named.
+ */
+const AllowedPostOriginSchema = z.string().transform((entry, ctx) => {
+  const normalized = normalizeAllowedPostOrigin(entry)
+  if (normalized.ok) {
+    return normalized.value
+  }
+  ctx.addIssue({ code: 'custom', message: normalized.error })
+  return z.NEVER
+})
+
+/**
  * HTTP configuration schema
  */
 const HttpSchema = z.object({
   origins: z.array(z.string()),
+  allowedPostOrigins: z.array(AllowedPostOriginSchema).optional(),
   trustProxy: TrustProxySchema.optional()
 })
 
