@@ -23,8 +23,12 @@ const STRICT_CONNECT_SRC = `connect-src 'self' https://${ORIGIN} wss://${ORIGIN}
 const PLAIN_CONNECT_SRC = `${STRICT_CONNECT_SRC} http://${ORIGIN} ws://${ORIGIN}`
 
 // Session cookie attributes without and with http.trustProxy over HTTPS
-const PLAIN_COOKIE_ATTRIBUTES = ['Path=/', 'HttpOnly', 'SameSite=Lax']
-const SECURE_COOKIE_ATTRIBUTES = ['Path=/', 'HttpOnly', 'Secure', 'SameSite=Lax']
+const PLAIN_COOKIE_ATTRIBUTES = ['Path=/', 'Expires=<date>', 'HttpOnly', 'SameSite=Lax']
+const SECURE_COOKIE_ATTRIBUTES = ['Path=/', 'Expires=<date>', 'HttpOnly', 'Secure', 'SameSite=Lax']
+
+// Only a response that writes to the session sets the session cookie; a
+// query option is stored in the session, so this page load carries one.
+const SSH_PAGE = '/ssh/?header=probe'
 
 // Headers whose values differ per response; compared by presence only.
 const VOLATILE_HEADERS = new Set(['date', 'etag', 'set-cookie'])
@@ -71,7 +75,7 @@ function cookieAttributes(headers: Record<string, unknown>): string[] {
   const cookies = headers['set-cookie'] as string[] | undefined
   expect(cookies).toHaveLength(1)
   const [, ...attributes] = (cookies as string[])[0].split('; ')
-  return attributes
+  return attributes.map((attribute) => (attribute.startsWith('Expires=') ? 'Expires=<date>' : attribute))
 }
 
 function connectSrcOf(headers: Record<string, unknown>): string {
@@ -84,8 +88,8 @@ function socketUrlOf(html: string): string | undefined {
 }
 
 describe('http.trustProxy unset (default)', () => {
-  it('serves GET /ssh/ with the direct-deployment headers and cookie attributes', async () => {
-    const res = await request(buildApp()).get('/ssh/')
+  it('serves the /ssh/ page with the direct-deployment headers and cookie attributes', async () => {
+    const res = await request(buildApp()).get(SSH_PAGE)
     expect(res.status).toBe(200)
     expect(stableHeaders(res.headers)).toEqual({
       'x-content-type-options': 'nosniff',
@@ -112,8 +116,8 @@ describe('http.trustProxy unset (default)', () => {
 
   it('ignores X-Forwarded-* headers entirely', async () => {
     const app = buildApp()
-    const plain = await request(app).get('/ssh/')
-    const forwarded = await request(app).get('/ssh/').set(FORWARDED_HTTPS)
+    const plain = await request(app).get(SSH_PAGE)
+    const forwarded = await request(app).get(SSH_PAGE).set(FORWARDED_HTTPS)
     expect(stableHeaders(forwarded.headers)).toEqual(stableHeaders(plain.headers))
     expect(cookieAttributes(forwarded.headers)).toEqual(PLAIN_COOKIE_ATTRIBUTES)
     expect(socketUrlOf(forwarded.text)).toMatch(/^http:\/\//)
@@ -125,8 +129,8 @@ describe('http.trustProxy unset (default)', () => {
   })
 
   it.each([false, 0, [] as string[]])('treats %j like unset', async (value) => {
-    const baseline = await request(buildApp()).get('/ssh/').set(FORWARDED_HTTPS)
-    const res = await request(buildApp(value)).get('/ssh/').set(FORWARDED_HTTPS)
+    const baseline = await request(buildApp()).get(SSH_PAGE).set(FORWARDED_HTTPS)
+    const res = await request(buildApp(value)).get(SSH_PAGE).set(FORWARDED_HTTPS)
     expect(stableHeaders(res.headers)).toEqual(stableHeaders(baseline.headers))
     expect(cookieAttributes(res.headers)).toEqual(PLAIN_COOKIE_ATTRIBUTES)
   })
@@ -134,7 +138,7 @@ describe('http.trustProxy unset (default)', () => {
 
 describe('http.trustProxy: true behind a TLS-terminating proxy', () => {
   it('sends HSTS, the strict CSP variant and a Secure cookie for X-Forwarded-Proto: https', async () => {
-    const res = await request(buildApp(true)).get('/ssh/').set(FORWARDED_HTTPS)
+    const res = await request(buildApp(true)).get(SSH_PAGE).set(FORWARDED_HTTPS)
     expect(res.status).toBe(200)
     expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains')
     expect(connectSrcOf(res.headers)).toBe(STRICT_CONNECT_SRC)
@@ -148,7 +152,7 @@ describe('http.trustProxy: true behind a TLS-terminating proxy', () => {
   })
 
   it('keeps plain-HTTP behavior when the proxy forwards http', async () => {
-    const res = await request(buildApp(true)).get('/ssh/').set('X-Forwarded-Proto', 'http')
+    const res = await request(buildApp(true)).get(SSH_PAGE).set('X-Forwarded-Proto', 'http')
     expect(res.headers['strict-transport-security']).toBeUndefined()
     expect(connectSrcOf(res.headers)).toBe(PLAIN_CONNECT_SRC)
     expect(cookieAttributes(res.headers)).toEqual(PLAIN_COOKIE_ATTRIBUTES)
@@ -158,7 +162,7 @@ describe('http.trustProxy: true behind a TLS-terminating proxy', () => {
 describe('http.trustProxy as a proxy address list', () => {
   it('ignores X-Forwarded-* headers from a peer that is not listed', async () => {
     const app = buildApp(['192.0.2.10'])
-    const res = await request(app).get('/ssh/').set(FORWARDED_HTTPS)
+    const res = await request(app).get(SSH_PAGE).set(FORWARDED_HTTPS)
     expect(res.headers['strict-transport-security']).toBeUndefined()
     expect(connectSrcOf(res.headers)).toBe(PLAIN_CONNECT_SRC)
     expect(cookieAttributes(res.headers)).toEqual(PLAIN_COOKIE_ATTRIBUTES)
@@ -172,7 +176,7 @@ describe('http.trustProxy as a proxy address list', () => {
     'honors X-Forwarded-* headers from a listed peer (%j)',
     async (...list) => {
       const app = buildApp(list)
-      const res = await request(app).get('/ssh/').set(FORWARDED_HTTPS)
+      const res = await request(app).get(SSH_PAGE).set(FORWARDED_HTTPS)
       expect(res.headers['strict-transport-security']).toBeDefined()
       expect(cookieAttributes(res.headers)).toContain('Secure')
 

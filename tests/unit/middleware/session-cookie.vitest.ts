@@ -33,7 +33,8 @@ function sessionCookie(res: request.Response): string {
 
 describe('session cookie attributes', () => {
   it('sets an explicit SameSite=Lax and HttpOnly on GET /ssh', async () => {
-    const res = await request(buildApp()).get('/ssh')
+    // A query option is stored in the session, so the response sets the cookie.
+    const res = await request(buildApp()).get('/ssh?header=probe')
     expect(res.status).toBe(200)
     const cookie = sessionCookie(res)
     expect(cookie).toMatch(/;\s*SameSite=Lax/i)
