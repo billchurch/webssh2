@@ -33,6 +33,7 @@ function createTestApp(error: Error, logError: RouteErrorLogger): express.Applic
 
 function mountRouter(router: express.Router): express.Application {
   const app = express()
+  app.set('env', 'production')
   app.use(router)
   return app
 }
@@ -105,37 +106,13 @@ describe('createErrorHandler', () => {
     expect(logError).not.toHaveBeenCalled()
   })
 
-  it('keeps a 4xx status set on the error and sends only the status text', async () => {
+  it.each([
+    ['status', 404],
+    ['status', 400],
+    ['statusCode', 503]
+  ])('maps an error with %s %i to the generic 500', async (property, value) => {
     const logError = vi.fn<RouteErrorLogger>()
-    const error = Object.assign(new URIError("Failed to decode param '%ZZ'"), { status: 400 })
-    const app = createTestApp(error, logError)
-
-    const response = await request(app).get('/boom')
-
-    expect(response.status).toBe(HTTP.BAD_REQUEST)
-    expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
-    expect(response.text).not.toContain('%ZZ')
-    expect(logError).not.toHaveBeenCalled()
-  })
-
-  it('keeps a 5xx status set on the error but sends the generic body', async () => {
-    const logError = vi.fn<RouteErrorLogger>()
-    const error = Object.assign(new Error(`${SECRET_PATH} unavailable`), { statusCode: 503 })
-    const app = createTestApp(error, logError)
-
-    const response = await request(app).get('/boom')
-
-    expect(response.status).toBe(503)
-    expect(response.body).toEqual({
-      error: HTTP.INTERNAL_ERROR_MESSAGE,
-      type: HTTP.INTERNAL_ERROR_TYPE
-    })
-    expect(logError).toHaveBeenCalledTimes(1)
-  })
-
-  it('ignores a status outside the error range', async () => {
-    const logError = vi.fn<RouteErrorLogger>()
-    const error = Object.assign(new Error('odd status'), { status: 200 })
+    const error = Object.assign(new Error(SECRET_PATH), { [property]: value })
     const app = createTestApp(error, logError)
 
     const response = await request(app).get('/boom')
@@ -145,6 +122,32 @@ describe('createErrorHandler', () => {
       error: HTTP.INTERNAL_ERROR_MESSAGE,
       type: HTTP.INTERNAL_ERROR_TYPE
     })
+    expect(response.text).not.toContain('/secret/path')
+    expect(logError).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps a URIError raised by route code to the generic 500', async () => {
+    const logError = vi.fn<RouteErrorLogger>()
+    const app = createTestApp(new URIError(`URI malformed in ${SECRET_PATH}`), logError)
+
+    const response = await request(app).get('/boom')
+
+    expect(response.status).toBe(HTTP.INTERNAL_SERVER_ERROR)
+    expect(response.text).not.toContain('/secret/path')
+  })
+
+  it('passes a router parameter decoding error on to Express', () => {
+    const logError = vi.fn<RouteErrorLogger>()
+    const handler = createErrorHandler({ logError })
+    const status = vi.fn()
+    const next = vi.fn()
+    const error = Object.assign(new URIError("Failed to decode param '%ZZ'"), { status: 400 })
+
+    handler(error, {} as Request, { headersSent: false, status } as unknown as Response, next)
+
+    expect(next).toHaveBeenCalledWith(error)
+    expect(status).not.toHaveBeenCalled()
+    expect(logError).not.toHaveBeenCalled()
   })
 
   it('logs but does not write when headers were already sent', () => {
@@ -192,7 +195,7 @@ describe('route error handler placement', () => {
       const response = await request(app).get(path)
 
       expect(response.status).toBe(HTTP.BAD_REQUEST)
-      expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
+      expect(response.text).toContain('Bad Request')
     }
   )
 
@@ -204,7 +207,7 @@ describe('route error handler placement', () => {
       const response = await request(app).get(path)
 
       expect(response.status).toBe(HTTP.BAD_REQUEST)
-      expect(response.body).toEqual({ error: 'Bad Request', type: 'URIError' })
+      expect(response.text).toContain('Bad Request')
     }
   )
 })

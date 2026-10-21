@@ -1,7 +1,6 @@
 // app/routes/adapters/express-adapter.ts
 // Express adapter for pure route handlers
 
-import { STATUS_CODES } from 'node:http'
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
@@ -174,27 +173,6 @@ export interface ErrorHandlerDependencies {
   readonly logError?: RouteErrorLogger
 }
 
-const MAX_ERROR_STATUS = 599
-const STATUS_TEXT = new Map(Object.entries(STATUS_CODES))
-
-/**
- * Read an HTTP error status set on the error by Express or a dependency,
- * such as the 400 on a URIError from route parameter decoding
- */
-const getErrorStatusProperty = (err: Error): number | undefined => {
-  const { status, statusCode } = err as Error & { status?: unknown; statusCode?: unknown }
-  const candidate = typeof status === 'number' ? status : statusCode
-  if (
-    typeof candidate === 'number' &&
-    Number.isInteger(candidate) &&
-    candidate >= HTTP.BAD_REQUEST &&
-    candidate <= MAX_ERROR_STATUS
-  ) {
-    return candidate
-  }
-  return undefined
-}
-
 /**
  * Map an error to its HTTP status code
  */
@@ -205,20 +183,22 @@ const getRouteErrorStatus = (err: Error): number => {
   if (err.name === 'AuthenticationError') {
     return HTTP.UNAUTHORIZED
   }
-  return getErrorStatusProperty(err) ?? HTTP.INTERNAL_SERVER_ERROR
+  return HTTP.INTERNAL_SERVER_ERROR
 }
 
 /**
- * Whether the error message is written to be shown to users
+ * Whether Express's router raised the error while decoding a route
+ * parameter (for example /host/%ZZ), before any route code ran.
+ * The router sets status 400 on that URIError.
  */
-const hasUserFacingMessage = (err: Error): boolean =>
-  err.name === 'ValidationError' || err.name === 'AuthenticationError'
+const isRouterDecodeError = (err: Error): boolean =>
+  err instanceof URIError && (err as URIError & { status?: unknown }).status === HTTP.BAD_REQUEST
 
 /**
  * Create error response handler.
  * ValidationError and AuthenticationError keep their user-facing message.
- * Other 4xx errors keep the status set on the error and get its status text.
- * 5xx errors get a generic body, and the full error is logged on the server only.
+ * Every other error gets a generic 500 body, and the full error is logged
+ * on the server only.
  */
 export const createErrorHandler = (
   deps: ErrorHandlerDependencies = {}
@@ -230,12 +210,19 @@ export const createErrorHandler = (
 ) => void) => {
   const logRouteError = deps.logError ?? logError
 
-  return (err: Error, req: Request, res: Response, _next: NextFunction): void => {
+  return (err: Error, req: Request, res: Response, next: NextFunction): void => {
     debug('Route error:', err)
+
+    // Leave malformed request paths to Express, which answers 400 as it did
+    // before this handler was registered after the routes
+    if (isRouterDecodeError(err)) {
+      next(err)
+      return
+    }
 
     const statusCode = getRouteErrorStatus(err)
 
-    if (statusCode >= HTTP.INTERNAL_SERVER_ERROR) {
+    if (statusCode === HTTP.INTERNAL_SERVER_ERROR) {
       logRouteError('Unhandled route error', err, {
         reason: err.name,
         ...(req.ip === undefined ? {} : { clientIp: req.ip })
@@ -247,7 +234,7 @@ export const createErrorHandler = (
       return
     }
 
-    if (statusCode >= HTTP.INTERNAL_SERVER_ERROR) {
+    if (statusCode === HTTP.INTERNAL_SERVER_ERROR) {
       res.status(statusCode).json({
         error: HTTP.INTERNAL_ERROR_MESSAGE,
         type: HTTP.INTERNAL_ERROR_TYPE
@@ -255,18 +242,8 @@ export const createErrorHandler = (
       return
     }
 
-    if (hasUserFacingMessage(err)) {
-      res.status(statusCode).json({
-        error: err.message,
-        type: err.name
-      })
-      return
-    }
-
-    // Other 4xx errors (for example from Express) may echo request input,
-    // so send only the standard status text
     res.status(statusCode).json({
-      error: STATUS_TEXT.get(String(statusCode)) ?? HTTP.CLIENT_ERROR_MESSAGE,
+      error: err.message,
       type: err.name
     })
   }
