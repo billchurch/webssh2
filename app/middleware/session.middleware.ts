@@ -17,6 +17,13 @@ export function createSessionMiddleware(config: Config): RequestHandler {
     resave: false,
     saveUninitialized: true,
     name: config.session.name,
+    // Explicit SameSite (#580). Lax still sends the cookie on the top-level
+    // navigation that follows a portal's credential POST, and matches what
+    // browsers already apply when the attribute is missing.
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+    },
     store: createEphemeralSessionStore(),
   })
 }

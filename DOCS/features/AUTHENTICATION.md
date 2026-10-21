@@ -38,7 +38,7 @@ WebSSH2 supports multiple authentication methods depending on the route used. Th
   - Clean separation from Basic Auth routes (no session conflicts)
   - Better integration with SSO systems
   - More secure credential handling
-  - Compatible with CSRF protection
+  - Protected against CSRF by the origin check (`http.allowedPostOrigins`; see SECURITY.md)
   - Supports complex authentication flows
   - Better suited for programmatic access
   - Flexible parameter passing (body and/or query params)
@@ -178,7 +178,7 @@ This ensures browsers display user-friendly error pages while API clients receiv
 ### Why Migrate?
 
 - **SSO Integration:** POST auth works better with SAML, OAuth, and other SSO systems
-- **Security:** More secure credential handling with CSRF protection
+- **Security:** More secure credential handling, with an origin check against CSRF (`http.allowedPostOrigins`)
 - **Programmatic Access:** Better suited for API integration and automation
 - **Future-Proof:** Basic Auth support may be removed in future versions
 

@@ -4,7 +4,7 @@
 import express, { type Router, type Request, type Response } from 'express'
 import handleConnection from '../connectionHandler.js'
 import { createNamespacedDebug, logCspViolation } from '../logger.js'
-import { createAuthMiddleware } from '../middleware.js'
+import { createAuthMiddleware, createPostOriginGuards } from '../middleware.js'
 import { processAuthParameters, type AuthSession } from '../auth/auth-utils.js'
 import { HTTP } from '../constants/index.js'
 import type { Config } from '../types/config.js'
@@ -256,6 +256,8 @@ async function handlePostAuthRoute(
 export function createRoutesV2(config: Config): Router {
   const router = express.Router()
   const auth = createAuthMiddleware(config)
+  // CSRF origin check for the credential POST routes (#580)
+  const postOriginGuards = createPostOriginGuards(config)
   
   // Add error handler
   router.use(createErrorHandler())
@@ -312,7 +314,7 @@ export function createRoutesV2(config: Config): Router {
   /**
    * POST authentication route for SSO/API integration
    */
-  router.post('/', asyncRouteHandler(async (req: Request, res: Response) => {
+  router.post('/', ...postOriginGuards, asyncRouteHandler(async (req: Request, res: Response) => {
     debug('POST / - SSO authentication route')
     await handlePostAuthRoute(req, res, config)
   }))
@@ -321,7 +323,7 @@ export function createRoutesV2(config: Config): Router {
    * POST /host/:host route for SSO forms that post to specific host endpoints
    * Allows posting to /ssh/host/:host (when mounted under /ssh)
    */
-  router.post('/host/:host', asyncRouteHandler(async (req: Request, res: Response) => {
+  router.post('/host/:host', ...postOriginGuards, asyncRouteHandler(async (req: Request, res: Response) => {
     const expressReq = req as unknown as ExpressRequest
     const hostParam = expressReq.params['host']
     // Express route params are always strings for named params, but type allows string[]

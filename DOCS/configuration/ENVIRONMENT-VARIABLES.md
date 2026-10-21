@@ -41,6 +41,7 @@ WEBSSH2_HEADER_TEXT="Production Environment"
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `WEBSSH2_HTTP_ORIGINS` | array | `["*:*"]` | CORS allowed origins (comma-separated or JSON) |
+| `WEBSSH2_HTTP_ALLOWED_POST_ORIGINS` | array | unset | Origins allowed to POST credentials cross-site to the `/ssh` and `/telnet` POST routes (comma-separated or JSON). See [Credential POST origin allowlist](#credential-post-origin-allowlist) |
 
 #### Array Format Examples
 
@@ -51,6 +52,53 @@ WEBSSH2_HTTP_ORIGINS="localhost:3000,*.example.com,api.test.com"
 # JSON array format
 WEBSSH2_HTTP_ORIGINS='["localhost:3000","*.example.com","api.test.com"]'
 ```
+
+#### Credential POST origin allowlist
+
+`WEBSSH2_HTTP_ALLOWED_POST_ORIGINS` maps to `http.allowedPostOrigins`.
+It protects `POST /ssh`, `POST /ssh/host/:host`, `POST /telnet` and
+`POST /telnet/host/:host` against cross-site request forgery. It does
+not affect `WEBSSH2_HTTP_ORIGINS`, which controls Socket.IO CORS.
+
+```bash
+# One portal
+WEBSSH2_HTTP_ALLOWED_POST_ORIGINS="https://portal.example.com"
+
+# Several portals, comma-separated or JSON
+WEBSSH2_HTTP_ALLOWED_POST_ORIGINS="https://portal.example.com,https://intranet.example.com:8443"
+WEBSSH2_HTTP_ALLOWED_POST_ORIGINS='["https://portal.example.com","https://intranet.example.com:8443"]'
+```
+
+Entry format:
+
+- Each entry is a bare origin, `scheme://host[:port]`, with an `http` or
+  `https` scheme
+- Matching ignores case and the default port (`:443` / `:80`), so
+  `HTTPS://Portal.Example.com:443` matches `https://portal.example.com`
+- One trailing `/` is accepted and removed
+
+The server refuses to start, and names the bad entry, if an entry has a
+path, query string, fragment or user info, uses a wildcard (`*`), is
+`null`, or uses another scheme. For example,
+`https://portal.example.com/login`, `https://*.example.com`, `null` and
+`ftp://x` all fail.
+
+The check runs when this list is not empty, or when
+`WEBSSH2_SSO_ENABLED` and `WEBSSH2_SSO_CSRF_PROTECTION` are both `true`.
+When it runs, requests are judged in this order (first match wins):
+
+| # | Request | Result |
+| --- | --- | --- |
+| 1 | `Sec-Fetch-Site: same-origin` | Accept |
+| 2a | `Origin: null` | Reject |
+| 2b | `Origin` listed in `allowedPostOrigins` | Accept |
+| 2c | `Origin` present, not listed | Reject |
+| 3 | Neither `Origin` nor `Sec-Fetch-Site` present | Accept (debug log) |
+| 4 | Anything else (for example `Sec-Fetch-Site: same-site`, `cross-site` or `none` without a listed `Origin`) | Reject |
+
+**With this variable unset and SSO off, cross-site credential POSTs are
+accepted.** See [SECURITY.md](../../SECURITY.md#credential-post-csrf-protection)
+for the full table, the SSO bypasses and worked examples.
 
 ### Content Security Policy
 
@@ -729,7 +777,7 @@ WEBSSH2_THEMING_DEFAULT_THEME="Acme Corp"
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `WEBSSH2_SSO_ENABLED` | boolean | `false` | Enable SSO authentication via trusted headers |
-| `WEBSSH2_SSO_CSRF_PROTECTION` | boolean | `true` | Enable CSRF protection for SSO endpoints |
+| `WEBSSH2_SSO_CSRF_PROTECTION` | boolean | `false` | With SSO enabled, run the credential POST origin check even when `WEBSSH2_HTTP_ALLOWED_POST_ORIGINS` is empty (same-origin POSTs only) |
 | `WEBSSH2_SSO_TRUSTED_PROXIES` | array | `[]` | IP addresses/subnets of trusted reverse proxies (comma-separated or JSON) |
 | `WEBSSH2_SSO_HEADER_USERNAME` | string | `null` | HTTP header containing the username |
 | `WEBSSH2_SSO_HEADER_PASSWORD` | string | `null` | HTTP header containing the password |
@@ -749,7 +797,7 @@ WEBSSH2_SSO_HEADER_PASSWORD="X-Auth-Password"
 #### SSO Security Notes
 
 - **Trusted Proxies**: Only configure trusted proxy IPs/subnets. Requests from untrusted sources will have SSO headers ignored.
-- **CSRF Protection**: Keep enabled unless your reverse proxy handles CSRF protection.
+- **CSRF Protection**: Keep enabled unless your reverse proxy handles CSRF protection. It checks the browser's `Origin` / `Sec-Fetch-Site` headers; add any portal that posts credentials from another site to `WEBSSH2_HTTP_ALLOWED_POST_ORIGINS`. Requests from trusted proxies or with the SSO username or session header skip the check.
 - **Header Security**: Ensure your reverse proxy strips incoming SSO headers from client requests to prevent header injection attacks.
 
 ## Data Type Formats
