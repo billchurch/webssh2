@@ -241,7 +241,8 @@ If you need to rollback to v0.2.x:
 
 3. **Install previous version:**
    ```bash
-   npm install webssh2-server@0.2.24
+   git checkout v0.2.24
+   npm install --production
    ```
 
 ## Getting Help

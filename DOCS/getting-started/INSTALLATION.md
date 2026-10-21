@@ -106,17 +106,14 @@ docker run -d \
 
 See [Docker Setup Guide](./DOCKER.md) for advanced Docker configuration.
 
-## Method 3: Using npm Global Install
+## Note: No npm Install for the Server
 
-```bash
-# Install globally (coming soon)
-npm install -g webssh2-server
-
-# Run
-webssh2-server
-```
-
-**Note:** Global npm installation is planned for future releases.
+The `webssh2-server` package on npm is deprecated and frozen at 4.0.0. It does
+not receive new releases. To install a current server, use Method 1, the release
+tarball attached to each
+[GitHub release](https://github.com/billchurch/webssh2/releases)
+(`webssh2-server-vX.Y.Z`), or the container image from Method 2. See the
+[Build Guide](../BUILD.md) for what the release tarball contains.
 
 ## Platform-Specific Instructions
 
