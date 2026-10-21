@@ -17,6 +17,7 @@ import {
   processPostAuthRequest,
   createAuthSessionUpdates,
   processReauthRequest,
+  processClearCredentialsRequest,
   validateConnectionParameters,
   sanitizeCredentialsForLogging,
   type SshRouteRequest,
@@ -335,19 +336,23 @@ export function createRoutesV2(config: Config): Router {
   /**
    * Clear credentials route
    */
-  router.get('/clear-credentials', createRouteHandler(
-    (_request: SshRouteRequest) => {
-      debug('Clearing SSH credentials from session')
-      return {
-        ok: true as const,
-        value: {
-          status: HTTP.OK,
-          data: { message: HTTP.CREDENTIALS_CLEARED }
-        }
-      }
-    },
-    config
-  ))
+  router.get('/clear-credentials', (req: Request, res: Response) => {
+    const expressReq = req as unknown as ExpressRequest
+    debug('Clearing SSH credentials from session')
+
+    const result = processClearCredentialsRequest(expressReq.session)
+    if (!result.ok) {
+      res.status(HTTP.INTERNAL_SERVER_ERROR).json({ error: result.error.message })
+      return
+    }
+
+    const session = expressReq.session as unknown as Record<string, unknown>
+    for (const key of result.value.keysToRemove) {
+      Reflect.deleteProperty(session, key)
+    }
+
+    applyRouteResponse(result.value.response, res)
+  })
 
   /**
    * Force reconnect route
