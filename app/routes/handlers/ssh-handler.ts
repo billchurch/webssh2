@@ -7,6 +7,7 @@ import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
 import { HEADERS, HTTP } from '../../constants/index.js'
+import { isConfiguredSshTarget } from '../../middleware/auth-processor.js'
 
 export interface SshRouteRequest {
   session: AuthSession
@@ -112,18 +113,64 @@ export const processPostAuthRequest = (
 }
 
 /**
+ * Check that every host and port a POST request supplies (URL path, body or
+ * query) names the configured ssh.host/ssh.port. Used when the request relies
+ * on server-configured credentials, so no field can point them elsewhere.
+ */
+export const hasOnlyConfiguredTargetFields = (
+  config: Config,
+  body: Record<string, unknown>,
+  query: Record<string, unknown>,
+  hostOverride?: string
+): boolean => {
+  const hostCandidates: unknown[] = [
+    hostOverride,
+    body['host'],
+    body['hostname'],
+    query['host'],
+    query['hostname']
+  ]
+  const portCandidates: unknown[] = [body['port'], query['port']]
+
+  const hostsOk = hostCandidates.every(candidate =>
+    isUnset(candidate) ||
+    (typeof candidate === 'string' && isConfiguredSshTarget(config, candidate, config.ssh.port))
+  )
+  const portsOk = portCandidates.every(candidate =>
+    isUnset(candidate) || toPortNumber(candidate) === config.ssh.port
+  )
+
+  return hostsOk && portsOk
+}
+
+const isUnset = (value: unknown): boolean =>
+  value === undefined || value === null || value === ''
+
+const toPortNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string' && /^\d{1,5}$/.test(value)) {
+    return Number(value)
+  }
+  return undefined
+}
+
+/**
  * Create session updates from successful authentication
  */
 export const createAuthSessionUpdates = (
   credentials: SshCredentials,
-  connection: SshConnectionParams
+  connection: SshConnectionParams,
+  credentialSource?: 'config'
 ): Record<string, unknown> => {
   return {
     sshCredentials: {
       ...credentials,
       host: connection.host,
       port: connection.port,
-      term: connection.term
+      term: connection.term,
+      ...(credentialSource === undefined ? {} : { credentialSource })
     },
     sshHost: connection.host,
     sshPort: connection.port,

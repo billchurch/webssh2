@@ -165,6 +165,50 @@ Additional notes:
 - Prefer the narrowest CIDR ranges possible and pair them with
   network-level egress controls
 
+### Server-configured credentials only reach `ssh.host`
+
+When you set `user.name` together with `user.password` or `user.privateKey`
+(or the matching `WEBSSH2_USER_*` variables), the gateway uses those
+credentials for visitors who do not log in themselves. Since 6.0.0 they are
+pinned to the configured `ssh.host` and `ssh.port`:
+
+- `GET /ssh/host/<host>` and `?port=<n>` must name the configured host and
+  port. Any other host or port gets `403 Forbidden` with the error
+  `Server-configured credentials can only be used for the configured SSH host and port`.
+  No SSH connection is opened.
+- With `sso.enabled`, a `POST /ssh` or `POST /ssh/host/<host>` that falls
+  back to the configured credentials follows the same rule for the path,
+  body and query `host`/`port`.
+- The socket never auto-connects with server-configured credentials to any
+  other target.
+- If `ssh.host` is not set, server-configured credentials are never used.
+
+Visitors who send their own credentials (HTTP Basic Auth, a POST form with
+`username` and `password`, or the login dialog) can still choose the host
+and port, limited only by `ssh.allowedSubnets`.
+
+The gateway refuses the request instead of silently dropping the configured
+credentials and showing a login dialog. A refusal opens no connection to the
+requested target at all and makes the misuse visible in logs and to the
+caller.
+
+An empty `ssh.allowedSubnets` still means "any destination" for
+user-supplied credentials, even when server-configured credentials are set.
+If you run a gateway with configured credentials, set `ssh.allowedSubnets`
+to the configured host as well, so that no visitor can use the gateway to
+reach other hosts:
+
+```json
+{
+  "user": { "name": "kiosk", "password": "..." },
+  "ssh": {
+    "host": "10.0.0.5",
+    "port": 22,
+    "allowedSubnets": ["10.0.0.5/32"]
+  }
+}
+```
+
 ## Running behind a reverse proxy (`http.trustProxy`)
 
 By default the server ignores `X-Forwarded-For`, `X-Forwarded-Proto` and

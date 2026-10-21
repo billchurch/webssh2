@@ -97,6 +97,7 @@ Renamed and expanded options:
 ### 1. Authentication Options
 
 - Added support for SSH private key authentication via `user.privateKey` and passphrase encrypted private keys via `user.passphrase`
+- Since 6.0.0, server-configured credentials (`user.name` plus `user.password` or `user.privateKey`) are only used for the configured `ssh.host` and `ssh.port`. A request that names another host or port in the URL, query string or POST body gets `403 Forbidden` instead of connecting with those credentials. If `ssh.host` is not set, the configured credentials are never used. Credentials that the visitor supplies are not affected. See [Server-configured credentials only reach `ssh.host`](../../SECURITY.md#server-configured-credentials-only-reach-sshhost).
 - Removed `user.overridebasic` option
 - Added keyboard-interactive authentication controls
 

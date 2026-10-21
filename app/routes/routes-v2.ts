@@ -11,6 +11,11 @@ import { HTTP } from '../constants/index.js'
 import type { Config } from '../types/config.js'
 import { createSafeKey, safeGet } from '../utils/safe-property-access.js'
 import { evaluateAuthMethodPolicy } from '../auth/auth-method-policy.js'
+import {
+  CONFIG_CREDENTIALS_TARGET_ERROR,
+  isConfigCredentialSource,
+  isConfiguredSshTarget
+} from '../middleware/auth-processor.js'
 
 // Import pure handlers
 import {
@@ -20,6 +25,7 @@ import {
   processReauthRequest,
   processClearCredentialsRequest,
   validateConnectionParameters,
+  hasOnlyConfiguredTargetFields,
   sanitizeCredentialsForLogging,
   type SshRouteRequest,
   type SshConnectionParams
@@ -146,6 +152,18 @@ async function handleSshGetRoute(
     return
   }
 
+  if (
+    isConfigCredentialSource(routeRequest.session.sshCredentials) &&
+    !isConfiguredSshTarget(config, connectionResult.value.host, connectionResult.value.port)
+  ) {
+    debug('Blocking SSH GET: server-configured credentials requested for a non-configured target')
+    applyRouteResponse({
+      status: HTTP.FORBIDDEN,
+      data: { error: CONFIG_CREDENTIALS_TARGET_ERROR }
+    }, res)
+    return
+  }
+
   debug(
     'SSH credentials validated (policy check only), serving client:',
     sanitizeCredentialsForLogging(credentialResult.value, connectionResult.value)
@@ -231,10 +249,28 @@ async function handlePostAuthRoute(
     return
   }
 
+  // Credentials filled in from config by the SSO middleware are pinned to ssh.host/ssh.port
+  const usesConfigCredentials = res.locals['webssh2ConfigCredentials'] === true
+  if (
+    usesConfigCredentials &&
+    (
+      !isConfiguredSshTarget(config, authResult.value.connection.host, authResult.value.connection.port) ||
+      !hasOnlyConfiguredTargetFields(config, baseBody, routeRequest.query, hostOverride)
+    )
+  ) {
+    debug('Blocking POST auth: server-configured credentials requested for a non-configured target')
+    applyRouteResponse({
+      status: HTTP.FORBIDDEN,
+      data: { error: CONFIG_CREDENTIALS_TARGET_ERROR }
+    }, res)
+    return
+  }
+
   // Create and apply session updates
   const sessionUpdates = createAuthSessionUpdates(
     authResult.value.credentials,
-    authResult.value.connection
+    authResult.value.connection,
+    usesConfigCredentials ? 'config' : undefined
   )
   Object.assign(expressReq.session, sessionUpdates)
 

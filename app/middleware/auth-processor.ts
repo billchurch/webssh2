@@ -80,6 +80,50 @@ export function extractConfigCredentials(config: Config): SshCredentials | null 
 }
 
 /**
+ * Error message returned when a request tries to send server-configured
+ * credentials to a host or port other than the configured `ssh.host`/`ssh.port`
+ */
+export const CONFIG_CREDENTIALS_TARGET_ERROR =
+  'Server-configured credentials can only be used for the configured SSH host and port'
+
+/**
+ * Check if a host/port pair is the operator-configured SSH target.
+ * Server-configured credentials (`user.*`) may only be sent to this target.
+ * Pure function - no side effects
+ *
+ * @param config - Application configuration
+ * @param host - Requested SSH host
+ * @param port - Requested SSH port
+ * @returns True only when `ssh.host` is set and both host and port match it
+ */
+export function isConfiguredSshTarget(
+  config: Config,
+  host: string | null | undefined,
+  port: number | null | undefined
+): boolean {
+  const configuredHost = config.ssh.host
+  if (configuredHost == null || configuredHost === '' || host == null || host === '') {
+    return false
+  }
+
+  return host.toLowerCase() === configuredHost.toLowerCase() && port === config.ssh.port
+}
+
+/**
+ * Check if session credentials were loaded from server configuration
+ * Pure function - no side effects
+ *
+ * @param credentials - Session SSH credentials
+ * @returns True when the credentials carry the server-configured marker
+ */
+export function isConfigCredentialSource(credentials: unknown): boolean {
+  if (credentials == null || typeof credentials !== 'object') {
+    return false
+  }
+  return (credentials as Record<string, unknown>)['credentialSource'] === 'config'
+}
+
+/**
  * Process basic auth credentials
  * Pure function - no side effects
  * 
@@ -150,7 +194,9 @@ export function createSessionData(
     sshCredentials: {
       username: authResult.credentials.username,
       host: config.ssh.host,
-      port: config.ssh.port
+      port: config.ssh.port,
+      // Marks server-configured credentials so they stay pinned to ssh.host/ssh.port
+      ...(authResult.source === 'config' ? { credentialSource: 'config' } : {})
     },
     usedBasicAuth: authResult.usedBasicAuth
   }

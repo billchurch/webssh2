@@ -157,6 +157,8 @@ WEBSSH2_CSP_FRAME_ANCESTORS="https://dashboard.example.com"
 | `WEBSSH2_USER_PRIVATE_KEY` | string | `null` | Default private key (base64 encoded or file path) |
 | `WEBSSH2_USER_PASSPHRASE` | string | `null` | Passphrase for encrypted private keys |
 
+These defaults are only used for the configured `WEBSSH2_SSH_HOST` and `WEBSSH2_SSH_PORT`. Requests that name another host or port get `403 Forbidden`, and the defaults are never used when no SSH host is set. See [Server-configured credentials only reach `ssh.host`](../../SECURITY.md#server-configured-credentials-only-reach-sshhost).
+
 ### SSH Configuration
 
 | Variable | Type | Default | Description |

@@ -7,6 +7,7 @@ import { isValidCredentials, type Credentials } from '../validation/index.js'
 import { maskSensitive } from '../utils/data-masker.js'
 import type { Config } from '../types/config.js'
 import type { AuthSession } from './auth-utils.js'
+import { isConfigCredentialSource, isConfiguredSshTarget } from '../middleware/auth-processor.js'
 import {
   BasicAuthProvider,
   PostAuthProvider,
@@ -55,7 +56,7 @@ export class UnifiedAuthPipeline {
 
   constructor(
     private readonly req: ExtendedRequest,
-    _config: Config
+    private readonly config: Config
   ) {
     this.detectAuthProvider()
   }
@@ -68,6 +69,13 @@ export class UnifiedAuthPipeline {
     // This ensures fresh credentials are prompted instead of reusing cached failed ones
     if (this.req.session?.authFailed === true) {
       debug('Skipping Basic Auth due to recent auth failure, using Manual Auth provider')
+      this.provider = new ManualAuthProvider()
+      return
+    }
+
+    // Server-configured credentials may only auto-connect to ssh.host/ssh.port
+    if (this.hasUnpinnedConfigCredentials()) {
+      debug('Ignoring server-configured credentials for a non-configured target, using Manual Auth provider')
       this.provider = new ManualAuthProvider()
       return
     }
@@ -89,6 +97,14 @@ export class UnifiedAuthPipeline {
     // Default to Manual Auth
     debug('Using Manual Auth provider')
     this.provider = new ManualAuthProvider()
+  }
+
+  private hasUnpinnedConfigCredentials(): boolean {
+    const creds = this.req.session?.sshCredentials
+    if (creds == null || !isConfigCredentialSource(creds)) {
+      return false
+    }
+    return !isConfiguredSshTarget(this.config, creds.host, creds.port)
   }
 
   /**

@@ -11,7 +11,7 @@ import type { Config } from '../types/config.js'
  * @returns Express middleware handler
  */
 export function createSSOAuthMiddleware(config: Config): RequestHandler {
-  return (req: Request, _res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!isPost(req)) {
       next()
       return
@@ -24,6 +24,8 @@ export function createSSOAuthMiddleware(config: Config): RequestHandler {
 
     if (shouldApplyDefaults(config)) {
       applyDefaultCredentials(req, config)
+      // Lets routes pin these credentials to the configured ssh.host/ssh.port
+      res.locals['webssh2ConfigCredentials'] = true
     }
 
     next()
