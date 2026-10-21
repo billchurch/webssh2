@@ -8,6 +8,63 @@ describe('processHeaderParameters', () => {
     expect(session.headerOverride).toEqual({ text: 'hello', background: 'green' })
   })
 
+  it('does not store an invalid GET background in the session (#583)', () => {
+    const session: AuthSession = {}
+    processHeaderParameters({ headerBackground: 'url(https://example.test/p.png)' }, session)
+    expect(session.headerOverride).toBeUndefined()
+
+    processHeaderParameters({ header: 'x', headerBackground: 'red;position:fixed' }, session)
+    expect(session.headerOverride).toEqual({ text: 'x' })
+  })
+
+  it('does not store an invalid POST background in the session (#583)', () => {
+    const session: AuthSession = {}
+    processHeaderParameters({ 'header.background': 'red;position:fixed' }, session)
+    expect(session.headerOverride).toBeUndefined()
+
+    processHeaderParameters(
+      { 'header.name': 'x', 'header.background': 'url(https://example.test/p.png)' },
+      session
+    )
+    expect(session.headerOverride).toEqual({ text: 'x' })
+  })
+
+  it('drops a previous background when a GET sends only an invalid background (#583)', () => {
+    const session: AuthSession = {}
+    processHeaderParameters({ header: 'Previous request', headerBackground: 'red' }, session)
+    expect(session.headerOverride).toEqual({ text: 'Previous request', background: 'red' })
+
+    processHeaderParameters({ headerBackground: 'url(https://example.test/p.png)' }, session)
+    expect(session.headerOverride).toBeUndefined()
+  })
+
+  it('drops a previous background when a POST sends only an invalid background (#583)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Previous request', background: 'red' }
+    }
+    processHeaderParameters({ 'header.background': 'red;position:fixed' }, session)
+    expect(session.headerOverride).toBeUndefined()
+  })
+
+  it('does not store a long invalid background in the session (#583)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Previous request', background: 'red' }
+    }
+    processHeaderParameters(
+      { headerBackground: `red${' '.repeat(97)};position:fixed` },
+      session
+    )
+    expect(session.headerOverride).toBeUndefined()
+  })
+
+  it('replaces a previous background when the header text is valid and the background is not (#583)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Previous request', background: 'red' }
+    }
+    processHeaderParameters({ header: 'x', headerBackground: 'red;position:fixed' }, session)
+    expect(session.headerOverride).toEqual({ text: 'x' })
+  })
+
   it('replaces (does not merge) existing headerOverride from prior request', () => {
     const session: AuthSession = {
       headerOverride: { text: 'old', background: 'red' }
