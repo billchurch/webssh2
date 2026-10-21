@@ -172,7 +172,7 @@ WEBSSH2_CSP_FRAME_ANCESTORS="https://dashboard.example.com"
 | `WEBSSH2_SSH_ALLOWED_SUBNETS` | array | `[]` | Allowed subnets - IPv4/IPv6 CIDR notation (comma-separated) |
 | `WEBSSH2_SSH_ALWAYS_SEND_KEYBOARD_INTERACTIVE` | boolean | `false` | Always send keyboard-interactive prompts to client |
 | `WEBSSH2_SSH_DISABLE_INTERACTIVE_AUTH` | boolean | `false` | Disable interactive authentication |
-| `WEBSSH2_SSH_ENV_ALLOWLIST` | array | `[]` | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Caps: max 50 pairs; key length ≤ 32; value length ≤ 512. |
+| `WEBSSH2_SSH_ENV_ALLOWLIST` | array | unset | Only these environment variable names are forwarded to SSH (comma-separated or JSON). Enforced for every source (URL `?env=`, POST body). Unset forwards all valid names; an empty value forwards none. When set, caps also apply: max 50 pairs; key length ≤ 32; value length ≤ 512. |
 | `WEBSSH2_AUTH_ALLOWED` | array | `password,keyboard-interactive,publickey` | Ordered allow list of SSH auth methods. Unknown tokens are ignored. If the list resolves to empty, startup fails. |
 | `WEBSSH2_SSH_MAX_EXEC_OUTPUT_BYTES` | number | `10485760` (10MB) | Maximum bytes buffered for exec command output before truncation |
 | `WEBSSH2_SSH_OUTPUT_RATE_LIMIT_BYTES_PER_SEC` | number | `0` (unlimited) | Rate limit for shell output streams (bytes/second). `0` disables rate limiting |

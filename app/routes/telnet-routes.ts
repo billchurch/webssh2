@@ -27,6 +27,9 @@ export function createTelnetRoutes(config: Config): Router {
   // CSRF origin check for the credential POST routes (#580)
   const postOriginGuards = createPostOriginGuards(config)
 
+  // Telnet routes never put credentials into the session, so
+  // processAuthParameters ignores and clears any `env` parameter on them (#586)
+
   /**
    * Root route - full connection mode, protocol: telnet
    */

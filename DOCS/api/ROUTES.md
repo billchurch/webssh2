@@ -168,6 +168,8 @@ All routes support the following query parameters:
 | `headerBackground` | string  | green       | Header background color                               |
 | `env`              | string  | -           | Comma-separated env pairs (e.g., `FOO:bar,BAR:baz`)   |
 
+`env` is honored only on a request that also carries credentials (`/ssh/host/:host` with its own HTTP Basic Auth header, or `POST /ssh` with username and password in the body). Credentials filled in from `user.name`/`user.password` do not count. On `/ssh` without credentials and on `/telnet` routes it is ignored and clears env vars kept from an earlier login.
+
 ### Example with Query Parameters
 
 ```text

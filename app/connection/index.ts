@@ -17,8 +17,3 @@ export {
   validateSshCredentials,
   type SshValidationResult,
 } from './ssh-connection-validator.js'
-
-export {
-  filterEnvironmentVariables,
-  isAllowedEnvVar,
-} from './environment-filter.js'

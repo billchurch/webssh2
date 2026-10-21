@@ -8,17 +8,18 @@ WebSSH2 supports passing environment variables through URL parameters, allowing 
 
 ## Quick Examples
 
-Both routes are supported:
+`env` is accepted only on a request that also carries credentials:
 
-### Without Auto-connect (Login Form)
-```text
-/ssh?env=FOO:bar,BAR:baz
-```
-
-### With Auto-connect (Host in URL)
+### With Auto-connect (Host in URL, HTTP Basic Auth)
 ```text
 /ssh/host/localhost?port=2244&env=FOO:bar,BAR:baz
 ```
+
+### With a POST login (SSO / API)
+
+Send `env` in the POST body (or query) of `POST /ssh` or `POST /ssh/host/:host` together with the credentials.
+
+`env` on a request without credentials (for example `/ssh?env=...` before the login form, or any `/telnet` route) is ignored. Operator credentials from `user.name`/`user.password` do not count: on `/ssh/host/...` the request must send its own `Authorization` header for `env` to be used. Such a request also clears env vars kept from an earlier login, so a crafted link cannot pre-fill variables for a login the user performs later. Each credentialed request replaces any earlier env vars; one without `env` clears them.
 
 **Tips:**
 - Use `&env=...` when adding to an existing query string; do not add a second `?`
@@ -64,10 +65,7 @@ http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt
 http://localhost:2222/ssh/host/example.com?env=VIM_FILE:config.txt,CUSTOM_ENV:test
 ```
 
-### With Login Form
-```text
-http://localhost:2222/ssh?env=VIM_FILE:config.txt,CUSTOM_ENV:test
-```
+`env` on the login-form route (`/ssh?env=...`) is ignored, because that request carries no credentials.
 
 ## Security Considerations
 
@@ -123,7 +121,9 @@ JSON array format:
 WEBSSH2_SSH_ENV_ALLOWLIST='["FOO","BAR","VIM_FILE"]'
 ```
 
-When an allowlist is provided, only listed keys are forwarded to the SSH session (after format/value checks).
+When an allowlist is provided, only listed keys are forwarded to the SSH session (after format/value checks). Other keys are dropped silently, and the `webssh2:ssh-config` debug log records the dropped key names (never their values). An empty allowlist (`[]` or `WEBSSH2_SSH_ENV_ALLOWLIST=""`) forwards nothing. Leave the setting unset to forward every valid key.
+
+The allowlist applies to every source of environment variables (Basic Auth URL `?env=`, POST body).
 
 ## Example Usage
 

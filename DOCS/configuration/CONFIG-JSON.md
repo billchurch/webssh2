@@ -507,9 +507,11 @@ See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for details.
 
 ### SSH Environment Variable Allowlist
 
-Control which environment variable names are forwarded to the SSH session. If unset or empty, WebSSH2 applies format/value filtering but does not restrict by name beyond that.
+Control which environment variable names are forwarded to the SSH session. The allowlist is enforced on every source of environment variables (URL `?env=`, POST body) before the shell opens.
 
-- `ssh.envAllowlist` (array of strings): Only names in this list are forwarded, e.g. `['VIM_FILE','CUSTOM_ENV']`.
+- Unset (the default): every name that passes the format/value checks is forwarded.
+- Empty list (`[]`): no environment variables are forwarded.
+- `ssh.envAllowlist` (array of strings): Only names in this list are forwarded, e.g. `['VIM_FILE','CUSTOM_ENV']`. Other names are dropped silently; the `webssh2:ssh-config` debug log records the dropped names (never their values).
 - Env var: `WEBSSH2_SSH_ENV_ALLOWLIST` can be provided as comma-separated or JSON array.
 
 Notes:

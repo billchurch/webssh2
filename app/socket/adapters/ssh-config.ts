@@ -5,6 +5,7 @@ import type { Services, KeyboardInteractiveHandler } from '../../services/interf
 import { TERMINAL_DEFAULTS } from '../../constants/terminal.js'
 import type { AdapterContext } from './service-socket-shared.js'
 import { createNamespacedDebug } from '../../logger.js'
+import { filterEnvironmentVariables } from '../../validation/environment.js'
 
 const debug = createNamespacedDebug('ssh-config')
 
@@ -94,6 +95,28 @@ export function buildSSHConfig(
   return result
 }
 
+/**
+ * Apply the operator's ssh.envAllowlist to the session's env vars.
+ * Unset allowlist keeps every var; an empty list keeps none.
+ * Dropped key names (never values) are logged.
+ */
+function applyEnvAllowlist(
+  envVars: Record<string, string>,
+  allowlist: string[] | undefined
+): Record<string, string> {
+  if (allowlist === undefined) {
+    return envVars
+  }
+
+  const filtered = filterEnvironmentVariables(envVars, allowlist)
+  const dropped = Object.keys(envVars).filter((key) => !Object.hasOwn(filtered, key))
+  if (dropped.length > 0) {
+    debug('Dropped env vars filtered by ssh.envAllowlist', { keys: dropped })
+  }
+
+  return filtered
+}
+
 export function buildTerminalDefaults(
   settings: TerminalSettings | undefined,
   context: AdapterContext
@@ -104,7 +127,7 @@ export function buildTerminalDefaults(
   env: Record<string, string>
 } {
   const req = context.socket.request as { session?: { envVars?: Record<string, string> } }
-  const envVars = req.session?.envVars ?? {}
+  const envVars = applyEnvAllowlist(req.session?.envVars ?? {}, context.config.ssh.envAllowlist)
   const { initialTermSettings } = context.state
   // Operator default (config.ssh.term) sits between session settings and the
   // hard constant so clients that omit `term` still honour it (#572).

@@ -77,8 +77,7 @@
         "ecdsa-sha2-nistp521",
         "ssh-rsa"
       ]
-    },
-    "envAllowlist": []
+    }
   },
   "header": {
     "text": null,

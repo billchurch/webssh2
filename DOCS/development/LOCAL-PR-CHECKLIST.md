@@ -45,7 +45,7 @@ This doc tracks the local work for the environment allowlist feature, safer env 
 ## Manual Verification
 
 1. `DEBUG=webssh2:* npm run start`
-2. Visit `/ssh/host/localhost?port=2244&env=FOO:bar,BAR:baz` (or `/ssh?env=...`), login
+2. Visit `/ssh/host/localhost?port=2244&env=FOO:bar,BAR:baz` and log in with HTTP Basic Auth (`/ssh?env=...` without credentials is ignored)
 3. Confirm logs:
    - `routes: Parsed environment variables: { FOO: 'bar', BAR: 'baz' }`
    - `ssh: shell: ... env options: { env: { TERM: 'xterm-color', FOO: 'bar', BAR: 'baz' } }`
