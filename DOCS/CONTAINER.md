@@ -12,7 +12,6 @@ After downloading and extracting `webssh2-<version>.tar.gz`, the release root co
 ./manifest.json
 ./package.json
 ./package-lock.json
-./scripts/postinstall.js
 ./scripts/prestart.js
 ```
 
@@ -27,17 +26,13 @@ All commands must execute from this extracted root so the npm scripts resolve co
    ```bash
    npm ci --omit=dev --ignore-scripts
    ```
-5. Optionally install native helpers if your runtime requires them.
-   ```bash
-   npm run prepare:runtime
-   ```
-6. Launch WebSSH2.
+5. Launch WebSSH2.
    ```bash
    NODE_ENV=production npm start
    ```
 
-`npm run prepare:runtime` currently loads any optional native dependencies. It becomes a no-op when
-`dist/` and `manifest.json` are already present.
+The release does not need a separate native-helper step. `npm run prepare:runtime` is kept only
+so existing pipelines that call it keep working; it installs nothing and can be removed from them.
 
 > **Note:** Extraction via `tar` preserves file permissions. If your pipeline rewrites the
 > bundle, make sure the JavaScript files in `scripts/` stay readable so Node can execute them.
@@ -58,7 +53,6 @@ mkdir -p /opt/webssh2
 tar -xzf "${ASSET}.tar.gz" -C /opt/webssh2 --strip-components=0
 cd /opt/webssh2
 npm ci --omit=dev --ignore-scripts
-npm run prepare:runtime
 NODE_ENV=production npm start
 ```
 

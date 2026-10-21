@@ -862,9 +862,37 @@ Regardless of current status, this project aims to reduce supply chain risk thro
 - GitHub Actions workflows are restricted to known, reviewed actions from trusted sources.
 - Secret scanning is enabled for this repository.
 - npm lifecycle scripts are avoided where possible and are never used to download and execute remote code.
+  The project defines no `preinstall`, `install` or `postinstall` script of its own, and no project
+  script runs `npm install` (see [Install-time lifecycle scripts](#install-time-lifecycle-scripts)).
 - Cloud IAM policies are configured so that developer or CI credentials cannot directly access production infrastructure.
 
 For more information about detection logic or mitigations, contact the security team via [GitHub Security Advisories](https://github.com/billchurch/WebSSH2/security/advisories).
+
+---
+
+## Install-time lifecycle scripts
+
+As of 2026-10-20, the project no longer ships `scripts/postinstall.js`. That
+script ran on every `npm install` (and from `npm run prepare:runtime`, which CI
+called after `npm ci --ignore-scripts`) and installed a platform-specific
+`@rollup/rollup-*` native binary with `npm install <pkg> --no-save` and no
+version. Because the package was resolved outside `package-lock.json`, it
+skipped lockfile pinning, `npm ci` integrity checks and the 14-day quarantine
+for new releases.
+
+| Aspect | Status |
+| --- | --- |
+| Why it was safe to remove | Vitest now runs on Vite 8 (Rolldown/Oxc); no package in the lockfile depends on `rollup` or `@rollup/rollup-*` |
+| `postinstall` | Removed from `package.json` |
+| `prepare:runtime` | Kept as a no-op for downstream pipelines that call it; it installs nothing |
+| CI (`.github/workflows/ci.yml`), devcontainer setup | No longer call `prepare:runtime`; installs stay `npm ci --ignore-scripts` plus `npm rebuild better-sqlite3` |
+| Docker image | Never ran the script; unchanged apart from a comment |
+| Release tarball | No longer includes `scripts/postinstall.js` |
+| Regression test | `tests/unit/scripts/lifecycle-scripts.vitest.ts` fails if an install-time lifecycle script or an unpinned `npm install` returns |
+
+Any native binary a future dependency needs must arrive through the lockfile
+(for example as a pinned `optionalDependencies` entry gated by `os`/`cpu`),
+never from a script that installs packages at install time.
 
 ---
 

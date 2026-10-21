@@ -22,7 +22,7 @@ type ArtifactPaths = {
   readonly tarballPath: string
   readonly checksumPath: string
 }
-const SCRIPT_FILES = ['postinstall.js', 'prestart.js'] as const
+const SCRIPT_FILES = ['prestart.js'] as const
 
 type ReleasePaths = {
   readonly workspace: string

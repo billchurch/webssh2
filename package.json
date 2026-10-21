@@ -52,8 +52,7 @@
     "zod": "^4.1.12"
   },
   "scripts": {
-    "postinstall": "node scripts/postinstall.js",
-    "prepare:runtime": "node scripts/postinstall.js",
+    "prepare:runtime": "echo prepare:runtime: no native helpers to install",
     "prestart": "node scripts/prestart.js",
     "start": "node dist/index.js",
     "lint": "eslint app tests scripts",

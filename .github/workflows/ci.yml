@@ -42,10 +42,7 @@ jobs:
       - name: Restore native/runtime dependencies
         # better-sqlite3 is the only runtime-critical native module (host-key
         # store); its prebuilt binding is fetched by its install script.
-        # prepare:runtime is this repo's own postinstall, run explicitly.
-        run: |
-          npm rebuild better-sqlite3
-          npm run prepare:runtime
+        run: npm rebuild better-sqlite3
 
       - name: Lint
         run: npm run lint

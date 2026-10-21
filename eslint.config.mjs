@@ -266,7 +266,7 @@ export default [
   {
     files: ['scripts/**/*.{ts,js}'],
     rules: {
-      // Postinstall and CLI scripts legitimately resolve binaries from PATH.
+      // CLI scripts legitimately resolve binaries from PATH.
       // Mirrors sonar-project.properties exclusion of typescript:S4036 for scripts/**.
       'sonarjs/no-os-command-from-path': 'off',
     },
