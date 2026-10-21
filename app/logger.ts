@@ -193,6 +193,26 @@ export function logGeneratedSessionSecretWarning(): void {
   }
 }
 
+export type ProcessErrorKind = 'uncaught_exception' | 'unhandled_rejection'
+
+export function logProcessError(kind: ProcessErrorKind, error: unknown, action: string): void {
+  const normalized = error instanceof Error ? error : new Error(String(error))
+  const result = defaultStructuredLogger.error({
+    event: 'process_error',
+    message: `Process-level ${kind.replace('_', ' ')}; ${action}`,
+    context: {
+      status: 'failure',
+      reason: kind
+    },
+    error: normalized
+  })
+
+  if (!result.ok) {
+    console.error('Failed to emit process error log:', result.error)
+    console.error(normalized)
+  }
+}
+
 export function logError(message: string, error?: Error, context?: Partial<LogContext>): void {
   const structuredContext: LogContext = {
     status: 'failure',

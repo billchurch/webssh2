@@ -198,6 +198,24 @@ client address the proxy reports.
 address of the peer that opened the TCP connection, never against
 `X-Forwarded-For`.
 
+## Process-level error handling
+
+Every client socket event is validated before it reaches a handler, and each
+handler catches its own errors, so a malformed message gets an error reply
+instead of reaching the process level. As a last resort the server also
+installs process handlers (`app/process-guards.ts`):
+
+| Event | Behavior |
+| --- | --- |
+| `unhandledRejection` | Logged as `process_error`; the server keeps serving |
+| `uncaughtException` | Logged as `process_error`; the server exits with code 1 after a short flush delay |
+
+The server exits on an uncaught exception because Node.js does not guarantee
+consistent state after one, and a half-working gateway is worse than a clean
+restart. Run the server under a supervisor that restarts it: a Docker or
+Compose restart policy (`--restart unless-stopped`), systemd `Restart=always`,
+or a Kubernetes Deployment.
+
 ## Client bundle integrity verification
 
 This gateway serves a pre-built browser bundle from the `webssh2_client` npm

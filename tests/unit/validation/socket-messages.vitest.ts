@@ -500,69 +500,44 @@ describe('Socket Message Validation', () => {
   })
 
   describe('validateControlMessage', () => {
-    it('should validate valid control actions', () => {
-      const actions = [CONTROL_ACTIONS.REAUTH, CONTROL_ACTIONS.CLEAR_CREDENTIALS, CONTROL_ACTIONS.DISCONNECT]
-
-      for (const action of actions) {
-        const result = validateControlMessage({ action })
+    it('should accept every supported control action', () => {
+      for (const action of [CONTROL_ACTIONS.REAUTH, CONTROL_ACTIONS.REPLAY_CREDENTIALS]) {
+        const result = validateControlMessage(action)
         expect(result.ok).toBe(true)
         if (result.ok) {
-          expect(result.value.action).toBe(action)
+          expect(result.value).toBe(action)
         }
       }
     })
 
-    it('should normalize action case', () => {
-      const result = validateControlMessage({ action: CONTROL_ACTIONS.REAUTH.toUpperCase() })
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.value.action).toBe(CONTROL_ACTIONS.REAUTH)
+    it('should reject actions that differ in case or whitespace', () => {
+      for (const action of [CONTROL_ACTIONS.REAUTH.toUpperCase(), ` ${CONTROL_ACTIONS.REAUTH} `]) {
+        const result = validateControlMessage(action)
+        expect(result.ok).toBe(false)
       }
     })
 
-    it('should trim action whitespace', () => {
-      const result = validateControlMessage({ action: `  ${CONTROL_ACTIONS.DISCONNECT}  ` })
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.value.action).toBe(CONTROL_ACTIONS.DISCONNECT)
-      }
-    })
-
-    it('should reject missing action', () => {
-      const result = validateControlMessage({})
+    it('should reject unknown actions without echoing them', () => {
+      const result = validateControlMessage('x'.repeat(10_000))
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.error.message).toContain('Action is required')
+        expect(result.error.message).toBe('Unknown control action')
       }
     })
 
-    it('should reject empty action', () => {
-      const result = validateControlMessage({ action: '   ' })
+    it.each([
+      ['null', null],
+      ['undefined', undefined],
+      ['a number', 42],
+      ['an object', { action: CONTROL_ACTIONS.REAUTH }],
+      ['an array', [CONTROL_ACTIONS.REAUTH]]
+    ])('should reject %s', (_label, value) => {
+      const result = validateControlMessage(value)
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.error.message).toContain('Action is required')
-      }
-    })
-
-    it('should reject unknown action', () => {
-      const result = validateControlMessage({ action: 'unknown' })
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.message).toContain('Unknown control action')
-      }
-    })
-
-    it('should reject non-object data', () => {
-      const result = validateControlMessage('invalid')
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error.message).toContain('must be an object')
+        expect(result.error.message).toBe('Control message must be a string')
       }
     })
   })

@@ -503,13 +503,21 @@ export class ServiceSocketSftp {
 
       // Start streaming in the background (don't await - fire and forget)
       // The streaming will emit events as chunks are read
-      void sftp.streamDownloadChunks(
+      sftp.streamDownloadChunks(
         ids.connectionId,
         transferId,
         request.remotePath,
         result.value.fileSize,
         downloadCallbacks
-      )
+      ).catch((error: unknown) => {
+        // The stream normally reports failures through onError; this covers a rejection
+        this.context.debug('Download stream failed:', error)
+        downloadCallbacks.onError({
+          code: 'SFTP_CHUNK_ERROR',
+          message: 'Download failed',
+          transferId
+        })
+      })
     } else {
       this.emitSftpError('download', result.error)
       this.logSftpOperation('download_start', 'failure', Date.now() - startTime, {

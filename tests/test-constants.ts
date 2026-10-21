@@ -391,16 +391,14 @@ export const TEST_TIMEOUTS = {
 // ============================================================================
 
 interface ControlActionsConstants {
-  readonly REAUTH: string
-  readonly CLEAR_CREDENTIALS: string
-  readonly DISCONNECT: string
+  readonly REAUTH: 'reauth'
+  readonly REPLAY_CREDENTIALS: 'replayCredentials'
 }
 
-// Control actions for socket messages
+// Control actions for socket messages (bare strings on the wire)
 export const CONTROL_ACTIONS: ControlActionsConstants = {
   REAUTH: 'reauth',
-  CLEAR_CREDENTIALS: 'clear-credentials',
-  DISCONNECT: 'disconnect'
+  REPLAY_CREDENTIALS: 'replayCredentials'
 } as const
 
 // ============================================================================

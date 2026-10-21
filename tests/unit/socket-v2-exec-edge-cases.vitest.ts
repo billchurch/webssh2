@@ -26,18 +26,17 @@ describe('Socket V2 Exec Edge Cases', () => {
     socketHandler(io, mockConfig, mockServices)
   })
 
-  it('exec: non-string command is coerced to string', async () => {
+  it('exec: non-string command is rejected at the adapter boundary', async () => {
     await setupAuthenticatedSocket(io, mockSocket)
     const emittedEvents = trackEmittedEvents(mockSocket)
 
-    // Send exec request with non-string command (gets coerced to string by service-socket-terminal)
     EventEmitter.prototype.emit.call(mockSocket, 'exec', { command: 123 })
     await waitForAsync(2)
 
-    // The command is coerced to string "123" and processed (no error emitted)
-    // Note: service-socket-terminal.ts uses String() coercion for robustness
     const ssherrorEmits = emittedEvents.filter(e => e.event === 'ssherror')
-    expect(ssherrorEmits).toHaveLength(0)
+    expect(ssherrorEmits).toHaveLength(1)
+    expect(String(ssherrorEmits[0]?.payload)).toMatch(/Invalid exec payload/)
+    expect(emittedEvents.map(e => e.event)).not.toContain('data')
   })
 
   it('exec: processes exec requests through service layer', async () => {

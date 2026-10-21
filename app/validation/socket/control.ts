@@ -1,33 +1,27 @@
 import type { Result } from '../../types/result.js'
-import {
-  ensureRecord,
-  validateStringField
-} from './helpers.js'
-import { ACTION_FIELD, VALID_CONTROL_ACTIONS } from './fields.js'
+import { VALID_CONTROL_ACTIONS, type ControlAction } from './fields.js'
 
-export const validateControlMessage = (data: unknown): Result<{ action: string }> => {
-  const recordResult = ensureRecord(data, 'Control data must be an object')
-  if (!recordResult.ok) {
-    return recordResult
-  }
+const isControlAction = (value: string): value is ControlAction =>
+  (VALID_CONTROL_ACTIONS as readonly string[]).includes(value)
 
-  const control = recordResult.value
-  const actionResult = validateStringField(control, ACTION_FIELD, {
-    required: true,
-    errorMessage: 'Action is required and must be a non-empty string',
-    trim: true
-  })
-  if (!actionResult.ok) {
-    return actionResult
-  }
-
-  const action = (actionResult.value as string).toLowerCase()
-  if (!VALID_CONTROL_ACTIONS.has(action)) {
+/**
+ * Validate the payload of the `control` socket event: a bare action string.
+ * The value is not echoed in errors because it is client-controlled.
+ */
+export const validateControlMessage = (data: unknown): Result<ControlAction> => {
+  if (typeof data !== 'string') {
     return {
       ok: false,
-      error: new Error(`Unknown control action: ${action}`)
+      error: new Error('Control message must be a string')
     }
   }
 
-  return { ok: true, value: { action } }
+  if (!isControlAction(data)) {
+    return {
+      ok: false,
+      error: new Error('Unknown control action')
+    }
+  }
+
+  return { ok: true, value: data }
 }

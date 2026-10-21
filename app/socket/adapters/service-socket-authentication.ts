@@ -11,6 +11,7 @@ import type { AdapterContext } from './service-socket-shared.js'
 import type { ServiceSocketPrompt } from './service-socket-prompt.js'
 import type { KeyboardInteractiveContext, KeyboardInteractiveHandler, TelnetConnectionConfig } from '../../services/interfaces.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
+import { validateAuthMessage } from '../../validation/socket-messages.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
 import { PROMPT_INPUT_TYPES } from '../../constants/prompt.js'
 import { TELNET_DEFAULTS } from '../../constants/core.js'
@@ -40,7 +41,9 @@ export class ServiceSocketAuthentication {
         this.context.state.originalAuthMethod = authPipeline.getAuthMethod()
         debug(`Client already authenticated via ${this.context.state.originalAuthMethod}, auto-connecting`)
 
-        void this.handleAuthentication(creds as AuthCredentials)
+        this.handleAuthentication(creds as AuthCredentials).catch((error: unknown) => {
+          this.context.debug('Initial authentication failed:', error)
+        })
       }
 
       return
@@ -178,6 +181,14 @@ export class ServiceSocketAuthentication {
     )
   }
 
+  /**
+   * Reply to an `authenticate` payload that failed boundary validation, on the
+   * same channel as any other failed login so the client can prompt again.
+   */
+  rejectInvalidCredentials(reason: string): void {
+    this.emitAuthFailure('Invalid credentials', { validation_error: reason })
+  }
+
   async handleKeyboardInteractiveResponse(responses: string[]): Promise<void> {
     if (responses.length < 2 || responses[0] === undefined || responses[1] === undefined) {
       this.emitAuthFailure('Invalid authentication response')
@@ -189,15 +200,20 @@ export class ServiceSocketAuthentication {
       return
     }
 
-    const credentials: AuthCredentials = {
+    // Apply the same field bounds as a normal authenticate payload
+    const validation = validateAuthMessage({
       username: responses[0],
       password: responses[1],
       host: this.context.config.ssh.host,
       port: this.context.config.ssh.port
+    })
+    if (!validation.ok) {
+      this.rejectInvalidCredentials(validation.error.message)
+      return
     }
     this.context.state.requestedKeyboardInteractive = true
 
-    await this.handleAuthentication(credentials)
+    await this.handleAuthentication(validation.value)
   }
 
   async handleAuthentication(credentials: AuthCredentials): Promise<void> {

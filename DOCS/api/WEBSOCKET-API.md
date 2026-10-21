@@ -146,6 +146,17 @@ This behavior can be overridden:
 ## Error Handling
 
 - The client should listen for `ssherror` events and handle them appropriately (e.g., displaying error messages to the user).
+- The server validates every client event payload before acting on it. String fields have length limits (username and host 256, password and passphrase 4096, private key 65536, terminal type 64, exec command 65536 characters), and `rows`/`cols` must be integers from 1 to 9999. In the `terminal` event, a dimension of `0` means "not measured yet" and the server default applies.
+- The server answers an invalid payload as follows; the reason never repeats the submitted value:
+
+  | Event | Reply |
+  | --- | --- |
+  | `authenticate` | `authentication` with `action: "auth_result"`, `success: false`, `message: "Invalid credentials"` |
+  | `terminal`, `resize`, `data`, `exec`, `control`, `prompt-response` | `ssherror` with the message `Invalid <event> payload: <reason>` |
+  | `sftp-*` | `sftp-error` with `code: "SFTP_INVALID_REQUEST"` (or `SFTP_NOT_ENABLED` when SFTP is off) |
+  | `hostkey:verify-response` | No reply; the server treats it as a rejected host key |
+
+- Length limits apply to the string as sent, before any trimming. Keyboard-interactive `responses` sent with `authenticate` get the same username and password limits, and rejection reasons are capped at 200 characters.
 
 ## UI Updates
 

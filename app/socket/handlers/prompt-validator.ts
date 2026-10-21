@@ -128,7 +128,8 @@ function validateResponseInputs(
   for (const [key, value] of entries) {
     // Validate key format
     if (!PROMPT_PATTERNS.INPUT_KEY.test(key)) {
-      return { ok: false, error: new Error(`Invalid input key format: ${key}`) }
+      // Do not echo the key: it is client-controlled and unbounded until it passes this check
+      return { ok: false, error: new Error('Invalid input key format') }
     }
 
     // Validate value is string

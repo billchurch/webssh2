@@ -4,11 +4,12 @@ import { createConnectionId } from '../../types/branded.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
 import type { LogLevel } from '../../logging/levels.js'
 import type { LogStatus } from '../../logging/log-context.js'
+import type { ControlAction } from '../../validation/socket-messages.js'
 
 export class ServiceSocketControl {
   constructor(private readonly context: AdapterContext) {}
 
-  handleControl(message: string): void {
+  handleControl(message: ControlAction): void {
     switch (message) {
       case 'replayCredentials':
         this.handleReplayCredentials()
@@ -16,9 +17,11 @@ export class ServiceSocketControl {
       case 'reauth':
         this.handleReauth()
         break
-      default:
-        this.context.debug('Unknown control message:', message)
+      default: {
+        const unhandled: never = message
+        this.context.debug('Unknown control message:', unhandled)
         break
+      }
     }
   }
 
@@ -27,11 +30,13 @@ export class ServiceSocketControl {
 
     if (this.context.state.connectionId !== null) {
       const connId = createConnectionId(this.context.state.connectionId)
-      if (this.context.protocol === 'telnet' && this.context.services.telnet !== undefined) {
-        void this.context.services.telnet.disconnect(connId)
-      } else {
-        void this.context.services.ssh.disconnect(connId)
-      }
+      const pending = this.context.protocol === 'telnet' && this.context.services.telnet !== undefined
+        ? this.context.services.telnet.disconnect(connId)
+        : this.context.services.ssh.disconnect(connId)
+      // The socket is already gone; a failed teardown is logged, never left unhandled
+      pending.catch((error: unknown) => {
+        this.context.debug('Connection teardown failed:', error)
+      })
     }
 
     if (this.context.state.sessionId !== null) {

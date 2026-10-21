@@ -29,6 +29,12 @@ export const VALIDATION_LIMITS = {
   MAX_COMMAND_LENGTH: 65536,
   MAX_TERMINAL_TYPE_LENGTH: 64,
   MAX_PATH_LENGTH: 4096,
+  MAX_PASSWORD_LENGTH: 4096,
+  MAX_PASSPHRASE_LENGTH: 4096,
+  MAX_PRIVATE_KEY_LENGTH: 65536,
+
+  // Keyboard-interactive responses sent with the authenticate event
+  MAX_KEYBOARD_INTERACTIVE_RESPONSES: 16,
   
   // Port numbers
   MIN_PORT: 1,

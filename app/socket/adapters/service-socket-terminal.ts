@@ -1,5 +1,5 @@
 import type { AdapterContext, SSH2Stream } from './service-socket-shared.js'
-import type { TerminalSettings } from '../../types/contracts/v1/socket.js'
+import type { TerminalSettings, ExecRequestPayload } from '../../types/contracts/v1/socket.js'
 import type { SessionId } from '../../types/branded.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { VALIDATION_MESSAGES } from '../../constants/validation.js'
@@ -14,6 +14,19 @@ interface TerminalConfig {
   rows: number
   cols: number
   env: Record<string, string>
+}
+
+interface TerminalDimensions {
+  rows: number
+  cols: number
+}
+
+function isDimensions(value: unknown): value is TerminalDimensions {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const { rows, cols } = value as Record<string, unknown>
+  return Number.isInteger(rows) && Number.isInteger(cols)
 }
 
 /** Mutable state for SSH-to-WebSocket backpressure control */
@@ -53,16 +66,29 @@ export class ServiceSocketTerminal {
     }
   }
 
-  handleResize(dimensions: { rows: number; cols: number }): void {
+  handleResize(dimensions: unknown): void {
+    if (!isDimensions(dimensions)) {
+      this.context.debug('Resize ignored: invalid dimensions')
+      return
+    }
+
     if (this.context.state.sessionId === null) {
       this.context.debug('Resize ignored: No session ID yet')
       return
     }
 
-    const terminalResult = this.context.services.terminal.getTerminal(this.context.state.sessionId)
+    try {
+      this.applyResize(this.context.state.sessionId, dimensions)
+    } catch (error) {
+      this.context.debug('Resize error:', error)
+    }
+  }
+
+  private applyResize(sessionId: SessionId, dimensions: TerminalDimensions): void {
+    const terminalResult = this.context.services.terminal.getTerminal(sessionId)
 
     if (terminalResult.ok && terminalResult.value !== null) {
-      const result = this.context.services.terminal.resize(this.context.state.sessionId, dimensions)
+      const result = this.context.services.terminal.resize(sessionId, dimensions)
 
       if (result.ok) {
         emitSocketLog(this.context, 'info', 'pty_resize', 'Terminal resized', {
@@ -78,7 +104,7 @@ export class ServiceSocketTerminal {
         })
       }
     } else {
-      this.context.debug('Resize ignored: Terminal not created yet for session', this.context.state.sessionId)
+      this.context.debug('Resize ignored: Terminal not created yet for session', sessionId)
       this.context.state.initialTermSettings.rows = dimensions.rows
       this.context.state.initialTermSettings.cols = dimensions.cols
       emitSocketLog(this.context, 'debug', 'pty_resize', 'Resize deferred until terminal is ready', {
@@ -95,7 +121,7 @@ export class ServiceSocketTerminal {
     }
   }
 
-  private resizeTelnet(dimensions: { rows: number; cols: number }): void {
+  private resizeTelnet(dimensions: TerminalDimensions): void {
     const telnetService = this.context.services.telnet
     if (telnetService === undefined || this.context.state.connectionId === null) {
       return
@@ -112,20 +138,32 @@ export class ServiceSocketTerminal {
     }
   }
 
-  handleData(data: string): void {
-    this.context.state.shellStream?.write(data)
+  handleData(data: unknown): void {
+    const stream = this.context.state.shellStream
+    if (stream === null) {
+      return
+    }
+
+    // Writable.write throws on anything other than a string or Buffer
+    if (typeof data !== 'string' && !Buffer.isBuffer(data)) {
+      this.context.debug('Data ignored: payload is not a string or Buffer')
+      return
+    }
+
+    try {
+      stream.write(data)
+    } catch (error) {
+      this.context.debug('Shell write failed:', error)
+    }
   }
 
-  async handleExec(request: unknown): Promise<void> {
+  async handleExec(request: ExecRequestPayload): Promise<void> {
     if (this.context.state.connectionId === null) {
       this.context.socket.emit(SOCKET_EVENTS.SSH_ERROR, VALIDATION_MESSAGES.NO_SSH_CONNECTION)
       return
     }
 
-    const command =
-      typeof request === 'object' && request !== null && 'command' in (request as Record<string, unknown>)
-        ? String((request as { command: string }).command)
-        : ''
+    const { command } = request
 
     try {
       const connectionId = createConnectionIdentifier(this.context)

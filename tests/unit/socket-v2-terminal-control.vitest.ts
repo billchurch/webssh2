@@ -44,7 +44,7 @@ describe('Socket V2 Terminal and Control', () => {
     expect(failedAuth).toBeUndefined()
   })
 
-  it('resize: silently ignores invalid resize values', async () => {
+  it('resize: rejects invalid resize values with an ssherror', async () => {
     const emittedEvents = await setupAuthenticatedSocketWithTracking(io, mockSocket)
 
     // First create shell with defaults via terminal event
@@ -56,12 +56,13 @@ describe('Socket V2 Terminal and Control', () => {
     // Now send invalid resize payload
     await emitSocketEvent(mockSocket, 'resize', { rows: 'NaN', cols: 'oops' })
 
-    // V2 should silently ignore invalid resize values without emitting errors
+    // Invalid values never reach the terminal service; the client gets an error
     const errorEvents = filterEventsByType(emittedEvents, 'ssherror')
-    expect(errorEvents).toHaveLength(0)
+    expect(errorEvents).toHaveLength(1)
+    expect(String(errorEvents[0]?.payload)).toMatch(/Invalid resize payload/)
   })
 
-  it('control: silently ignores invalid control commands (V2 improvement)', async () => {
+  it('control: rejects invalid control commands without console warnings', async () => {
     await setupAuthenticatedSocket(io, mockSocket)
 
     // Mock console.warn to ensure it's NOT called (V2 improvement)

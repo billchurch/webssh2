@@ -16,6 +16,11 @@ export const LOG_EVENT_NAMES = [
   'csp_violation',
   'error',
   'credential_replay',
+  // Socket boundary events
+  'socket_payload_invalid',
+  'socket_handler_error',
+  // Process-level failures
+  'process_error',
   // SFTP events
   'sftp_list',
   'sftp_stat',

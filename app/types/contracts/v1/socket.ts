@@ -174,25 +174,11 @@ export interface TerminalSettings {
   env?: Record<string, string>
 }
 
-// Client → Server: exec request
+// Client → Server: exec request. The server runs `command` on the existing
+// SSH connection and streams stdout/stderr back on the `data` event; any other
+// fields in the payload are ignored.
 export interface ExecRequestPayload {
   command: string
-  pty?: boolean
-  term?: string
-  cols?: number
-  rows?: number
-  env?: Record<string, string>
-  timeoutMs?: number
-}
-
-export interface ExecDataPayload {
-  type: 'stdout' | 'stderr'
-  data: string
-}
-
-export interface ExecExitPayload {
-  code: number | null
-  signal: string | null
 }
 
 // Client → Server events
@@ -260,9 +246,6 @@ export interface ServerToClientEvents {
   updateUI: (payload: { element: string; value: unknown }) => void
   // Request client to open terminal
   getTerminal: (open: boolean) => void
-  // Exec streaming
-  'exec-data': (payload: ExecDataPayload) => void
-  'exec-exit': (payload: ExecExitPayload) => void
   // Error channels
   ssherror: (message: string) => void
   error?: (message: string) => void

@@ -22,12 +22,20 @@ const COMMAND_ERROR_MESSAGE = 'Command is required and must be a non-empty strin
 
 type ExecDimensions = Partial<Record<'cols' | 'rows', number>>
 
-const validateCommand = (exec: Record<string, unknown>): Result<string> => {
+const validateCommand = (exec: Record<string, unknown>, trim = true): Result<string> => {
   const commandSource = safeGet(exec, COMMAND_KEY)
   if (typeof commandSource !== 'string') {
     return {
       ok: false,
       error: new Error(COMMAND_ERROR_MESSAGE)
+    }
+  }
+
+  // Check the raw length: trimming first would let padding bypass the limit
+  if (commandSource.length > VALIDATION_LIMITS.MAX_COMMAND_LENGTH) {
+    return {
+      ok: false,
+      error: new Error(`command exceeds maximum length of ${VALIDATION_LIMITS.MAX_COMMAND_LENGTH}`)
     }
   }
 
@@ -39,7 +47,7 @@ const validateCommand = (exec: Record<string, unknown>): Result<string> => {
     }
   }
 
-  return { ok: true, value: command }
+  return { ok: true, value: trim ? command : commandSource }
 }
 
 const resolveDimensions = (
@@ -97,4 +105,18 @@ export const validateExecMessage = (data: unknown): Result<ExecCommand> => {
   }
 
   return { ok: true, value: validated }
+}
+
+/**
+ * Validate the payload of the `exec` socket event. The server only runs
+ * `command` (sent as-is, not trimmed); other fields are ignored, not checked.
+ */
+export const validateExecRequestMessage = (data: unknown): Result<{ command: string }> => {
+  const recordResult = ensureRecord(data, 'Exec data must be an object')
+  if (!recordResult.ok) {
+    return recordResult
+  }
+
+  const commandResult = validateCommand(recordResult.value, false)
+  return commandResult.ok ? { ok: true, value: { command: commandResult.value } } : commandResult
 }

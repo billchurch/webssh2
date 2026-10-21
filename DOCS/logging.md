@@ -90,6 +90,9 @@ The `connection_failure` event includes an `errorType` field with one of:
 | `policy_block` | Action denied by security policy |
 | `csp_violation` | Content-Security-Policy violation report received at `/ssh/csp-report` (report-only or enforce mode); rate-limited; the expected legacy-inline-script violation is demoted to debug during the deprecation window |
 | `error` | Unexpected system failure (include `error_code` and `reason`) |
+| `socket_payload_invalid` | Client socket event payload failed validation and was rejected; `data.socket_event` names the event, `reason` the validation error (never the payload) |
+| `socket_handler_error` | A socket event handler threw or rejected; the client gets a generic `ssherror` |
+| `process_error` | An exception or promise rejection reached the process level; `reason` is `uncaught_exception` (the server exits with code 1 for its supervisor to restart) or `unhandled_rejection` (the server keeps running) |
 
 #### SFTP Events
 

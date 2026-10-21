@@ -5,10 +5,13 @@
 import { initializeServerAsync } from './app/app.js'
 import { createNamespacedDebug } from './app/logger.js'
 import { handleError } from './app/errors.js'
+import { installProcessErrorHandlers } from './app/process-guards.js'
 
 export { initializeServerAsync } from './app/app.js'
 
 const debug = createNamespacedDebug('main')
+
+installProcessErrorHandlers()
 
 try {
   debug('Starting WebSSH2 server with async initialization...')

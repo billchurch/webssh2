@@ -1,6 +1,6 @@
 import type { Result } from '../../types/result.js'
 import { VALIDATION_LIMITS } from '../../constants/index.js'
-import type { AuthCredentials } from './types.js'
+import type { AuthCredentials, AuthenticateMessage } from './types.js'
 import {
   ensureRecord,
   validateStringField,
@@ -13,6 +13,8 @@ import {
   USERNAME_FIELD,
   HOST_FIELD,
   PORT_FIELD,
+  FORWARD_ALL_PROMPTS_FIELD,
+  RESPONSES_FIELD,
   AUTH_OPTIONAL_FIELDS,
   AUTH_DIMENSION_FIELDS
 } from './fields.js'
@@ -138,5 +140,52 @@ export const validateAuthMessage = (data: unknown): Result<AuthCredentials> => {
     optionalDimensionsResult.value
   )
 
+  if (safeGet(creds, FORWARD_ALL_PROMPTS_FIELD.key) === true) {
+    credentials.forwardAllKeyboardInteractivePrompts = true
+  }
+
   return { ok: true, value: credentials }
+}
+
+const RESPONSES_ERROR_MESSAGE =
+  `Responses must be an array of at most ${VALIDATION_LIMITS.MAX_KEYBOARD_INTERACTIVE_RESPONSES} ` +
+  `strings of at most ${VALIDATION_LIMITS.MAX_PASSWORD_LENGTH} characters`
+
+const isBoundedResponse = (value: unknown): value is string =>
+  typeof value === 'string' && value.length <= VALIDATION_LIMITS.MAX_PASSWORD_LENGTH
+
+const validateKeyboardInteractiveResponses = (value: unknown): Result<string[]> => {
+  if (
+    !Array.isArray(value) ||
+    value.length > VALIDATION_LIMITS.MAX_KEYBOARD_INTERACTIVE_RESPONSES ||
+    !value.every(isBoundedResponse)
+  ) {
+    return { ok: false, error: new Error(RESPONSES_ERROR_MESSAGE) }
+  }
+
+  return { ok: true, value: [...value] }
+}
+
+/**
+ * Validate the payload of the `authenticate` socket event, which carries
+ * either a credential object or keyboard-interactive `{ responses }`.
+ */
+export const validateAuthenticateMessage = (data: unknown): Result<AuthenticateMessage> => {
+  const recordResult = ensureRecord(data, 'Authentication data must be an object')
+  if (!recordResult.ok) {
+    return recordResult
+  }
+
+  const responses = safeGet(recordResult.value, RESPONSES_FIELD.key)
+  if (responses !== undefined) {
+    const responsesResult = validateKeyboardInteractiveResponses(responses)
+    return responsesResult.ok
+      ? { ok: true, value: { kind: 'keyboard-interactive', responses: responsesResult.value } }
+      : responsesResult
+  }
+
+  const credentialsResult = validateAuthMessage(recordResult.value)
+  return credentialsResult.ok
+    ? { ok: true, value: { kind: 'credentials', credentials: credentialsResult.value } }
+    : credentialsResult
 }

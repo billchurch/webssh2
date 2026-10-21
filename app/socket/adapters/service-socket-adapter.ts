@@ -10,10 +10,9 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
-  SocketData,
-  AuthCredentials,
-  TerminalSettings
+  SocketData
 } from '../../types/contracts/v1/socket.js'
+import type { Result } from '../../types/result.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { createNamespacedDebug, createAppStructuredLogger } from '../../logger.js'
 import {
@@ -26,8 +25,25 @@ import { ServiceSocketControl } from './service-socket-control.js'
 import { ServiceSocketSftp } from './service-socket-sftp.js'
 import { ServiceSocketPrompt } from './service-socket-prompt.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
+import {
+  validateAuthenticateMessage,
+  validateTerminalSettingsMessage,
+  validateResizeMessage,
+  validateDataMessage,
+  validateExecRequestMessage,
+  validateControlMessage
+} from '../../validation/socket-messages.js'
+import {
+  registerGuardedListener,
+  describeInboundEvent,
+  acceptPayload,
+  ignorePayload
+} from './socket-event-guard.js'
+import { validatePromptResponse } from '../handlers/prompt-validator.js'
 
 const debug = createNamespacedDebug('socket:service-adapter')
+
+type InboundEvent = keyof ClientToServerEvents | typeof SOCKET_EVENTS.DISCONNECT
 
 interface SocketHandshakeLike {
   headers?: Record<string, string | string[]>
@@ -97,58 +113,57 @@ export class ServiceSocketAdapter {
   }
 
   private setupEventHandlers(): void {
-    this.socket.onAny((event, ...args) => {
-      if (event === SOCKET_EVENTS.AUTH && args.length > 0) {
-        const authData = args[0] as AuthCredentials
-        const maskedArgs = [{
-          ...authData,
-          password: authData.password !== undefined && authData.password !== '' ? '***MASKED***' : '',
-          privateKey: authData.privateKey !== undefined && authData.privateKey !== '' ? '***MASKED***' : '',
-          passphrase: authData.passphrase !== undefined && authData.passphrase !== '' ? '***MASKED***' : ''
-        }]
-        debug(`Received event '${event}' with args:`, maskedArgs)
-        return
+    this.socket.onAny((event: string, ...args: unknown[]) => {
+      try {
+        debug(`Received event '${event}' with args:`, describeInboundEvent(event, args))
+      } catch {
+        // Debug output must never break event dispatch
       }
-
-      debug(`Received event '${event}' with args:`, args)
     })
 
-    this.socket.on(SOCKET_EVENTS.AUTH, async (credentials: AuthCredentials | { responses: string[] }) => {
-      // Keyboard-interactive responses are SSH-only
-      if ('responses' in credentials) {
-        if (this.protocol === 'ssh') {
-          await this.auth.handleKeyboardInteractiveResponse(credentials.responses)
+    this.on(
+      SOCKET_EVENTS.AUTH,
+      validateAuthenticateMessage,
+      async (message) => {
+        if (message.kind === 'keyboard-interactive') {
+          // Keyboard-interactive responses are SSH-only
+          if (this.protocol === 'ssh') {
+            await this.auth.handleKeyboardInteractiveResponse(message.responses)
+          }
+          return
         }
-        return
+
+        await this.auth.handleAuthentication(message.credentials)
+      },
+      (error) => {
+        this.auth.rejectInvalidCredentials(error.message)
       }
+    )
 
-      await this.auth.handleAuthentication(credentials)
-    })
-
-    this.socket.on(SOCKET_EVENTS.TERMINAL, async (settings: TerminalSettings) => {
+    this.on(SOCKET_EVENTS.TERMINAL, validateTerminalSettingsMessage, async (settings) => {
       await this.terminal.handleTerminal(settings)
     })
 
-    this.socket.on(SOCKET_EVENTS.RESIZE, dimensions => {
+    this.on(SOCKET_EVENTS.RESIZE, validateResizeMessage, (dimensions) => {
       this.terminal.handleResize(dimensions)
     })
 
-    this.socket.on(SOCKET_EVENTS.DATA, data => {
+    this.on(SOCKET_EVENTS.DATA, validateDataMessage, (data) => {
       this.terminal.handleData(data)
     })
 
     // Exec is SSH-only
     if (this.protocol === 'ssh') {
-      this.socket.on(SOCKET_EVENTS.EXEC, request => {
-        void this.terminal.handleExec(request)
+      this.on(SOCKET_EVENTS.EXEC, validateExecRequestMessage, async (request) => {
+        await this.terminal.handleExec(request)
       })
     }
 
-    this.socket.on(SOCKET_EVENTS.CONTROL, message => {
-      this.control.handleControl(message)
+    this.on(SOCKET_EVENTS.CONTROL, validateControlMessage, (action) => {
+      this.control.handleControl(action)
     })
 
-    this.socket.on(SOCKET_EVENTS.DISCONNECT, () => {
+    this.on(SOCKET_EVENTS.DISCONNECT, ignorePayload, () => {
       this.control.handleDisconnect()
       if (this.protocol === 'ssh') {
         this.sftp.handleDisconnect()
@@ -156,49 +171,41 @@ export class ServiceSocketAdapter {
       this.prompt.handleDisconnect()
     })
 
-    // Prompt system event handler
-    this.socket.on(SOCKET_EVENTS.PROMPT_RESPONSE, response => {
-      void this.prompt.handlePromptResponse(response)
+    this.on(SOCKET_EVENTS.PROMPT_RESPONSE, validatePromptResponse, async (response) => {
+      await this.prompt.handlePromptResponse(response)
     })
 
-    // SFTP event handlers (SSH-only)
+    // SFTP event handlers (SSH-only, validated by the SFTP adapter)
     if (this.protocol === 'ssh') {
-      this.socket.on(SOCKET_EVENTS.SFTP_LIST, request => {
-        void this.sftp.handleList(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_STAT, request => {
-        void this.sftp.handleStat(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_MKDIR, request => {
-        void this.sftp.handleMkdir(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_DELETE, request => {
-        void this.sftp.handleDelete(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_START, request => {
-        void this.sftp.handleUploadStart(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CHUNK, request => {
-        void this.sftp.handleUploadChunk(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_UPLOAD_CANCEL, request => {
-        this.sftp.handleUploadCancel(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_START, request => {
-        void this.sftp.handleDownloadStart(request)
-      })
-
-      this.socket.on(SOCKET_EVENTS.SFTP_DOWNLOAD_CANCEL, request => {
-        this.sftp.handleDownloadCancel(request)
-      })
+      this.setupSftpHandlers()
     }
+  }
+
+  private setupSftpHandlers(): void {
+    const sftpHandlers: ReadonlyArray<[InboundEvent, (request: unknown) => void | Promise<void>]> = [
+      [SOCKET_EVENTS.SFTP_LIST, request => this.sftp.handleList(request)],
+      [SOCKET_EVENTS.SFTP_STAT, request => this.sftp.handleStat(request)],
+      [SOCKET_EVENTS.SFTP_MKDIR, request => this.sftp.handleMkdir(request)],
+      [SOCKET_EVENTS.SFTP_DELETE, request => this.sftp.handleDelete(request)],
+      [SOCKET_EVENTS.SFTP_UPLOAD_START, request => this.sftp.handleUploadStart(request)],
+      [SOCKET_EVENTS.SFTP_UPLOAD_CHUNK, request => this.sftp.handleUploadChunk(request)],
+      [SOCKET_EVENTS.SFTP_UPLOAD_CANCEL, request => { this.sftp.handleUploadCancel(request) }],
+      [SOCKET_EVENTS.SFTP_DOWNLOAD_START, request => this.sftp.handleDownloadStart(request)],
+      [SOCKET_EVENTS.SFTP_DOWNLOAD_CANCEL, request => { this.sftp.handleDownloadCancel(request) }]
+    ]
+
+    for (const [event, handler] of sftpHandlers) {
+      this.on(event, acceptPayload, handler)
+    }
+  }
+
+  private on<T>(
+    event: InboundEvent,
+    validate: (payload: unknown) => Result<T>,
+    handle: (payload: T) => void | Promise<void>,
+    onInvalid?: (error: Error) => void
+  ): void {
+    registerGuardedListener(this.context, event, validate, handle, onInvalid)
   }
 
   private logSessionInit(): void {

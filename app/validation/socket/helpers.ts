@@ -57,9 +57,10 @@ export const parseIntInRange = (
 export const validatePort = (value: unknown): Result<number> => {
   const str = toValidationString(value)
   if (!isPort(str)) {
+    // Do not echo the value: it is client-controlled and may be arbitrarily long
     return {
       ok: false,
-      error: new Error(`Invalid port: ${str}`)
+      error: new Error('Invalid port')
     }
   }
 
@@ -101,6 +102,14 @@ export const validateStringField = <Name extends string>(
     return {
       ok: false,
       error: new Error(options.errorMessage ?? typeMessage)
+    }
+  }
+
+  // Check the raw length: trimming first would let padding bypass the limit
+  if (field.maxLength !== undefined && value.length > field.maxLength) {
+    return {
+      ok: false,
+      error: new Error(`${field.name} exceeds maximum length of ${field.maxLength}`)
     }
   }
 

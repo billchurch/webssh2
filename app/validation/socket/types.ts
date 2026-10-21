@@ -8,12 +8,19 @@ export interface AuthCredentials {
   term?: string
   cols?: number
   rows?: number
+  forwardAllKeyboardInteractivePrompts?: boolean
 }
 
 export interface TerminalConfig {
   term?: string
   rows: number
   cols: number
+}
+
+export interface TerminalSettingsUpdate {
+  term?: string
+  rows?: number
+  cols?: number
 }
 
 export interface ResizeParams {
@@ -30,3 +37,7 @@ export interface ExecCommand {
   rows?: number
   timeoutMs?: number
 }
+
+export type AuthenticateMessage =
+  | { kind: 'credentials'; credentials: AuthCredentials }
+  | { kind: 'keyboard-interactive'; responses: string[] }
