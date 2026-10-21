@@ -294,7 +294,7 @@ Environment variables are strings. WebSSH2 automatically converts:
 
 Server-side configuration is also delivered to the browser at page-load time via
 an inert `<script type="application/json" id="webssh2-config">` block (CSP-safe).
-The legacy `window.webssh2Config` inline-script method is deprecated. See
+The legacy `window.webssh2Config` inline-script method was removed in 6.0.0. See
 [Client Architecture — Configuration Injection](../architecture/CLIENT.md#configuration-injection)
 for the full contract.
 

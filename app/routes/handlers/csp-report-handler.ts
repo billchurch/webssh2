@@ -28,30 +28,20 @@ const { json } = bodyParser
 const debug = createNamespacedDebug('security:csp-report')
 
 const CSP_TYPES = ['application/csp-report', 'application/reports+json', 'application/json']
-const LEGACY_INLINE_SAMPLE = 'window.webssh2Config'
 
 export interface CspReportRouteOptions {
   readonly rateLimit: RateLimiterOptions
   /** Emits the violation. Production wires this to logCspViolation. */
   readonly onViolation: (
     report: ExtractedCspReport,
-    meta: { clientIp?: string; userAgent?: string; isLegacy: boolean }
+    meta: { clientIp?: string; userAgent?: string }
   ) => void
   /** Injectable clock (ms) for deterministic tests. Defaults to Date.now. */
   readonly now?: () => number
 }
 
-function isLegacyInlineViolation(report: ExtractedCspReport): boolean {
-  const hasSample = report.scriptSample?.includes(LEGACY_INLINE_SAMPLE) === true
-  const isInlineUri = report.blockedUri === 'inline'
-  return hasSample || isInlineUri
-}
-
-function buildMeta(
-  req: Request,
-  isLegacy: boolean
-): { clientIp?: string; userAgent?: string; isLegacy: boolean } {
-  const meta: { clientIp?: string; userAgent?: string; isLegacy: boolean } = { isLegacy }
+function buildMeta(req: Request): { clientIp?: string; userAgent?: string } {
+  const meta: { clientIp?: string; userAgent?: string } = {}
   if (req.ip !== undefined) {
     meta.clientIp = req.ip
   }
@@ -80,9 +70,8 @@ export function registerCspReportRoute(router: Router, options: CspReportRouteOp
 
   const handleReport = (req: Request, res: Response): void => {
     const report = extractCspReport(req.body)
-    const isLegacy = isLegacyInlineViolation(report)
-    debug('csp violation (legacy=%s): %o', isLegacy, report)
-    const meta = buildMeta(req, isLegacy)
+    debug('csp violation: %o', report)
+    const meta = buildMeta(req)
     options.onViolation(report, meta)
     res.setHeader('Cache-Control', 'no-store')
     res.status(204).end()

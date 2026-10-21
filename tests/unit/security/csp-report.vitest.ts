@@ -9,7 +9,7 @@ describe('extractCspReport', () => {
         'violated-directive': 'script-src',
         'blocked-uri': 'inline',
         disposition: 'enforce',
-        'script-sample': 'window.webssh2Config = null;'
+        'script-sample': 'alert(1)'
       }
     })
     expect(r).toMatchObject({

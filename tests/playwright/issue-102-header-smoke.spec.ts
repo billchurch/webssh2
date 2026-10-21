@@ -25,9 +25,9 @@ const SSH_QUERY = `host=${SSH_HOST}&port=${SSH_PORT}`
 // a "no header at all" case.
 const DEFAULT_HEADER: HeaderConfig = { background: 'green' }
 
-// The header bar and the footer/status bar both use `z-[99] h-6`. They differ
+// The header bar and the footer/status bar both use `z-99 h-6` (Tailwind 4; `z-[99]` before client 6.0.0). They differ
 // on border direction: header has border-b (below), footer has border-t (above).
-const HEADER_BAR_SELECTOR = String.raw`div.z-\[99\].border-b`
+const HEADER_BAR_SELECTOR = 'div.z-99.border-b'
 
 interface HeaderConfig {
   text?: string
@@ -88,7 +88,7 @@ test.describe('Issue #102 — headerStyle/Tailwind injection removal', () => {
     const cfg = await getInjectedConfig(page)
     expect(cfg?.header).toMatchObject({ text: 'Production', background: '#ff00aa' })
 
-    // The header bar is the `z-[99]` div with border-b (below the menu).
+    // The header bar is the `z-99` div with border-b (below the menu).
     const header = page.locator(HEADER_BAR_SELECTOR)
     await expect(header).toBeVisible()
     await expect(header).toContainText('Production')
@@ -162,7 +162,7 @@ test.describe('Issue #102 — headerStyle/Tailwind injection removal', () => {
   })
 
   test('S6: legacy POST header.color preserves prior session override', async ({ page }) => {
-    // Step 1: Set override via GET. window.webssh2Config gets baked with header.
+    // Step 1: Set override via GET. The injected JSON config block gets baked with header.
     await page.goto(
       `${BASE_URL}/ssh?${SSH_QUERY}&header=KEEP&headerBackground=${encodeURIComponent('#ff00aa')}`
     )

@@ -129,7 +129,6 @@ export function logSecurityPostureWarning(warning: SecurityPostureWarning): void
 export interface CspViolationMeta {
   readonly clientIp?: string
   readonly userAgent?: string
-  readonly isLegacy: boolean
 }
 
 export function logCspViolation(report: ExtractedCspReport, meta: CspViolationMeta): void {
@@ -146,9 +145,7 @@ export function logCspViolation(report: ExtractedCspReport, meta: CspViolationMe
     context,
     data: { ...report } as Record<string, unknown>
   }
-  const result = meta.isLegacy
-    ? defaultStructuredLogger.debug(entry)
-    : defaultStructuredLogger.warn(entry)
+  const result = defaultStructuredLogger.warn(entry)
   if (!result.ok) {
     console.warn('Failed to emit csp_violation log:', result.error)
   }

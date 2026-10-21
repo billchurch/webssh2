@@ -1,6 +1,6 @@
 // tests/integration/csp-report.vitest.ts
 // Integration tests for the hardened POST /ssh/csp-report endpoint.
-// Tests cover: content-type acceptance, legacy inline demotion flag, per-IP
+// Tests cover: content-type acceptance, per-IP
 // throttling (runs BEFORE body parsing), application/reports+json shape, and
 // mode-gating via createRoutesV2.
 
@@ -15,7 +15,7 @@ import { TEST_SESSION_SECRET_VALID } from '@tests/test-constants.js'
 
 interface CapturedViolation {
   report: ExtractedCspReport
-  meta: { isLegacy: boolean; clientIp?: string; userAgent?: string }
+  meta: { clientIp?: string; userAgent?: string }
 }
 
 const DEFAULT_RATE_LIMIT = { capacity: 5, refillPerSec: 0, maxKeys: 100 }
@@ -54,10 +54,10 @@ describe('POST /ssh/csp-report', () => {
     expect(res.headers['cache-control']).toBe('no-store')
     expect(captured).toHaveLength(1)
     expect(captured[0].report).toMatchObject({ directive: 'script-src', blockedUri: 'https://evil' })
-    expect(captured[0].meta.isLegacy).toBe(false)
+    expect(captured[0].meta).not.toHaveProperty('isLegacy')
   })
 
-  it('flags legacy inline violation (blocked-uri inline) as isLegacy=true', async () => {
+  it('emits a blocked inline script like any other violation (no legacy demotion)', async () => {
     const captured: CapturedViolation[] = []
     await request(makeApp(captured))
       .post('/ssh/csp-report')
@@ -71,24 +71,9 @@ describe('POST /ssh/csp-report', () => {
           }
         })
       )
-    expect(captured[0].meta.isLegacy).toBe(true)
-  })
-
-  it('flags legacy inline violation by script-sample alone (even without blocked-uri inline)', async () => {
-    const captured: CapturedViolation[] = []
-    await request(makeApp(captured))
-      .post('/ssh/csp-report')
-      .set('Content-Type', 'application/csp-report')
-      .send(
-        JSON.stringify({
-          'csp-report': {
-            'violated-directive': 'script-src',
-            'blocked-uri': 'https://cdn.example',
-            'script-sample': 'window.webssh2Config ='
-          }
-        })
-      )
-    expect(captured[0].meta.isLegacy).toBe(true)
+    expect(captured).toHaveLength(1)
+    expect(captured[0].report).toMatchObject({ directive: 'script-src', blockedUri: 'inline' })
+    expect(captured[0].meta).not.toHaveProperty('isLegacy')
   })
 
   it('throttles repeated posts from one IP — emits no more than capacity, always 204', async () => {

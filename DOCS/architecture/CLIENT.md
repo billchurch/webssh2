@@ -32,14 +32,14 @@ The client module provides:
 The server integrates with the client module by:
 
 1. **Serving static files** from `/client/public`
-2. **Injecting configuration** via an inert JSON `<script type="application/json">` block (with legacy `window.webssh2Config` fallback)
+2. **Injecting configuration** via an inert JSON `<script type="application/json">` block
 3. **Managing WebSocket connections** for terminal I/O
 4. **Handling authentication** and session management
 
 ### Configuration Injection
 
 The server passes runtime configuration to the client by injecting an inert JSON
-data block into the served HTML page. This is the **primary mechanism** and is
+data block into the served HTML page. This is the **only mechanism** and is
 fully CSP-compatible — it survives a strict `script-src 'self'` policy because
 the element is not an executable script:
 
@@ -56,19 +56,12 @@ the element is not an executable script:
 The client reads this block at startup via `readInjectedConfig()` by looking up
 `document.getElementById('webssh2-config')` and parsing its text content.
 
-For backward compatibility, the gateway also injects the same configuration
-values into a conventional executable script block immediately after:
-
-```html
-<script>window.webssh2Config = { /* same config */ };</script>
-```
-
-> **Deprecated:** The `window.webssh2Config` inline-script method is deprecated
-> and will be removed in a future major release. Integrators who currently set
-> `window.webssh2Config` from their own inline scripts should migrate to reading
-> the JSON data block (`<script type="application/json" id="webssh2-config">`).
-> See [billchurch/webssh2_client#125](https://github.com/billchurch/webssh2_client/issues/125)
-> for migration details.
+> **Removed in 6.0.0:** The legacy `window.webssh2Config` inline script is no
+> longer filled in. Custom client builds must read the JSON data block
+> (`<script type="application/json" id="webssh2-config">`), which the client
+> supports from 5.1.0. The bundled client is pinned, so this matters only for
+> custom client deployments. See
+> [billchurch/webssh2#588](https://github.com/billchurch/webssh2/issues/588).
 
 ### WebSocket Protocol
 

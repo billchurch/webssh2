@@ -358,9 +358,9 @@ The policy shipped in Phase 2 removes `'unsafe-inline'` from `script-src` (made 
 - The CSP header advertises the endpoint via `report-uri` and `report-to` / `Reporting-Endpoints`
 - Operators should also apply an upstream/reverse-proxy rate limit on `POST /ssh/csp-report`
 
-#### Legacy inline-script transition note
+#### No violations on a normal page load
 
-During the deprecation window, the client HTML still contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies configuration instead), but it produces **one expected `csp_violation` report per page load**. This report is demoted to `debug` log level so operators do not mistake it for a regression. It will be removed in a future major release.
+The server injects runtime config only through the inert JSON config block, and the bundled client contains no executable inline script, so a normal page load produces no `csp_violation` reports. Every report is logged at `warn` level. The legacy `window.webssh2Config` inline script was removed in 6.0.0; a custom client build must read the JSON config block (client 5.1.0 or newer).
 
 ### Credential POST Origin Allowlist (`http.allowedPostOrigins`)
 

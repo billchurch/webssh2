@@ -126,9 +126,9 @@ A `security_posture` warning is also logged when `enforce` mode is combined with
 
 `POST /ssh/csp-report` receives violation reports from browsers. It is intentionally unauthenticated so browsers can reach it without session cookies. The endpoint is per-IP intake rate-limited (default burst 10, steady-state ~10 requests/minute, throttled before the body is parsed), body-capped at 8 KB, and always returns `204`. It logs a structured `csp_violation` event, which is itself additionally rate-limited to 60 events/minute by the default logging controls. Operators should additionally rate-limit `POST /ssh/csp-report` at the reverse proxy or load balancer.
 
-**Expected legacy-inline-script violation:**
+**No violations on a normal page load:**
 
-During the current deprecation window, the client HTML contains a legacy `window.webssh2Config = null;` inline script. Under `enforce` mode this script is blocked harmlessly (the JSON config block supplies the configuration), but it generates **one `csp_violation` report per page load**. This report is demoted to `debug` log level — it is not a regression and does not indicate an attack. It will be removed in a future major release.
+Since 6.0.0 the server injects runtime config only through the inert `<script type="application/json" id="webssh2-config">` block, and the bundled client (6.0.0+) contains no executable inline script. A normal page load produces no `csp_violation` reports, and every report is logged at `warn` level. Custom client builds must read the JSON config block (client 5.1.0 or newer); the legacy `window.webssh2Config` inline script is no longer filled in.
 
 ### No target-host restrictions by default
 
