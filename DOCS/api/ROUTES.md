@@ -145,7 +145,9 @@ const response = await fetch('/ssh', {
 - **URL:** `http(s)://your-webssh2-server/ssh/clear-credentials`
 - **Method:** GET
 - **Purpose:** Clears stored SSH credentials from session
-- **Response:** 200 OK with body: `"Credentials cleared"`
+- **Behavior:** Removes the stored credentials, the auth method flags (`usedBasicAuth`, `authMethod`), the session environment variables and the other keys `/ssh/reauth` removes. The session itself is kept. A WebSocket connection made afterwards does not authenticate with the removed credentials. The response also sends `Clear-Site-Data: "cookies"`, so the browser drops its cached HTTP Basic credentials and the next `/ssh/host/` visit asks for a new login.
+- **Response:** 200 OK with header `Clear-Site-Data: "cookies"` and JSON body: `{ "message": "Credentials cleared." }`
+- **Note:** `Clear-Site-Data` applies to the whole origin. The browser also deletes every other cookie for this host, including the WebSSH2 session cookie. Browsers honor the header only over HTTPS or on `localhost`.
 
 ### `/ssh/force-reconnect` - Force Re-authentication
 
