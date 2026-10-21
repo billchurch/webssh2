@@ -16,6 +16,37 @@
 
 * **deps:** remediate proxy-addr, engine.io, qs and image-scan advisories ([#577](https://github.com/billchurch/webssh2/issues/577)) ([00f942b](https://github.com/billchurch/webssh2/commit/00f942be076978c26ebb17edce67c74ebbe381e1))
 
+### Security
+
+This release fixes six security advisories. Upgrade to 6.0.0.
+
+* **Malformed Socket.IO payload crashes the gateway** ([GHSA-6v87-h5f7-hqq6](https://github.com/billchurch/webssh2/security/advisories/GHSA-6v87-h5f7-hqq6), high): every inbound socket event is now validated at the adapter boundary, and no listener can throw or reject unhandled. A bad payload gets an error reply instead of stopping the process.
+* **Operator-configured SSH credentials sent to any host** ([GHSA-vc7c-49x6-7g9h](https://github.com/billchurch/webssh2/security/advisories/GHSA-vc7c-49x6-7g9h), high): credentials from `user.name`/`user.password`/`user.privateKey` (or `WEBSSH2_USER_*`) are now only used for the configured `ssh.host` and `ssh.port`. Any other host or port in the URL or a POST is refused with `403`.
+* **Socket event validators not enforced** ([GHSA-cgqv-7q5h-q67v](https://github.com/billchurch/webssh2/security/advisories/GHSA-cgqv-7q5h-q67v), moderate): the existing validators for auth, terminal, resize, data, exec, control and prompt-response now run on every event (fixed together with GHSA-6v87).
+* **Anonymous sessions never expired** ([GHSA-pwv6-24w8-v9hw](https://github.com/billchurch/webssh2/security/advisories/GHSA-pwv6-24w8-v9hw), moderate): session cookies now have `maxAge` set from `session.sessionTimeout`, requests that store nothing no longer create a session, and the in-memory store is capped (oldest evicted first).
+* **Same SSH username shared a session id** ([GHSA-g2j7-2x75-hf3j](https://github.com/billchurch/webssh2/security/advisories/GHSA-g2j7-2x75-hf3j), moderate): every login now gets its own session id, so one user's disconnect can no longer cancel another's SFTP transfers or state.
+* **Unpinned install-time package** ([GHSA-j74r-rhr2-49g8](https://github.com/billchurch/webssh2/security/advisories/GHSA-j74r-rhr2-49g8), moderate): the `postinstall` script that installed an unversioned `@rollup/rollup-*` package is removed; nothing needs it since Vite 8. `prepare:runtime` is kept as a no-op for existing pipelines. The Docker image was not affected.
+
+### Also in this release
+
+* **Debug logging** ([#579](https://github.com/billchurch/webssh2/issues/579)): `DEBUG=webssh2:*` no longer prints keyboard-interactive responses, prompt answers or keystrokes.
+* **CSRF on login routes** ([#580](https://github.com/billchurch/webssh2/issues/580)): new `http.allowedPostOrigins` option (`WEBSSH2_HTTP_ALLOWED_POST_ORIGINS`). When it has entries, or SSO with `csrfProtection` is on, credential POSTs to `/ssh` and `/telnet` must be same-origin or from a listed origin. The old token check, which could never pass, is removed, and the session cookie sets `SameSite=Lax`. Without the option, POSTs are accepted as before.
+* **`/ssh/clear-credentials`** ([#581](https://github.com/billchurch/webssh2/issues/581)): now actually clears the stored credentials from the session.
+* **Trust proxy support** ([#582](https://github.com/billchurch/webssh2/issues/582)): new `http.trustProxy` option. Behind a TLS-terminating proxy you get HSTS, a `Secure` session cookie, the strict CSP and the right client IP and socket URL. Off by default.
+* **`headerBackground`** ([#583](https://github.com/billchurch/webssh2/issues/583)): the query value is validated as a CSS color, like the config value.
+* **Error responses** ([#584](https://github.com/billchurch/webssh2/issues/584)): 500 responses return a generic message; details are logged on the server.
+* **Dependency pins** ([#585](https://github.com/billchurch/webssh2/issues/585)): stale `vite`/`lightningcss` overrides removed, which also clears the vite launch-editor advisory.
+* **`?env=`** ([#586](https://github.com/billchurch/webssh2/issues/586)): env vars from the URL are only taken on the request that carries credentials.
+* **Bundled client 6.0.0**: see the [webssh2_client 6.0.0 release](https://github.com/billchurch/webssh2_client/releases/tag/v6.0.0) for its three security fixes and Tailwind CSS 4.
+
+### Upgrading
+
+* **Kiosk-style deployments** that set `user.name` with `user.password` or `user.privateKey` and link to `/ssh/host/<other-host>` now get `403`. Point those links at the configured `ssh.host`, or have users log in with their own credentials. Setting `ssh.allowedSubnets` is recommended (see `SECURITY.md`).
+* **Behind a reverse proxy**, set `http.trustProxy` to get HSTS and `Secure` cookies.
+* **Portals that POST credentials** from another origin should list it in `http.allowedPostOrigins`, which turns the origin check on.
+* **Custom client builds** must read the JSON config block (webssh2_client 5.1.0 or newer); see Breaking Changes.
+* **Build pipelines** no longer need `npm run prepare:runtime`.
+
 ## [5.2.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.0...webssh2-server-v5.2.1) (2026-08-18)
 
 
