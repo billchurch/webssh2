@@ -38,7 +38,8 @@ export interface PostOriginDecision {
 export interface PostOriginRequest {
   readonly origin: string | undefined
   readonly secFetchSite: string | undefined
-  readonly clientIp: string | undefined
+  /** Address of the TCP peer, never X-Forwarded-For (see http.trustProxy) */
+  readonly peerIp: string | undefined
   readonly hasSsoHeader: boolean
 }
 
@@ -133,7 +134,7 @@ function evaluateSsoBypass(
   }
   // A trusted SSO proxy forwards the user's POST server-side; it has already
   // authenticated the user, so its requests are not browser CSRF.
-  if (request.clientIp !== undefined && policy.trustedProxies.includes(request.clientIp)) {
+  if (request.peerIp !== undefined && policy.trustedProxies.includes(request.peerIp)) {
     return { accept: true, step: 'sso-trusted-proxy' }
   }
   // A cross-site HTML form cannot set custom headers, and fetch() cannot

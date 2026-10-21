@@ -201,6 +201,12 @@ server {
 }
 ```
 
+Set `WEBSSH2_HTTP_TRUST_PROXY` to the proxy's address (for example
+`-e WEBSSH2_HTTP_TRUST_PROXY=172.18.0.2`, or the proxy network's CIDR range) so
+the gateway honors `X-Forwarded-Proto` and `X-Forwarded-For`. It then sends HSTS
+and a `Secure` session cookie and logs the real client IP. See
+[Running behind a reverse proxy](../configuration/CONFIG-JSON.md#running-behind-a-reverse-proxy-httptrustproxy).
+
 ## Kubernetes Deployment
 
 ### Basic Deployment

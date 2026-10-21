@@ -3,6 +3,7 @@
 
 import { z } from 'zod'
 import { LOG_EVENT_NAMES } from '../logging/event-catalog.js'
+import { isValidTrustProxyEntry } from '../config/trust-proxy.js'
 import { normalizeAllowedPostOrigin } from '../security/post-origin.js'
 
 /**
@@ -61,6 +62,32 @@ const ListenSchema = z.object({
   port: z.number().int().min(1).max(65535)
 })
 
+const TRUST_PROXY_TYPE_MESSAGE =
+  'trustProxy must be true, false, a hop count (non-negative integer), ' +
+  'or a list of proxy IP addresses / CIDR ranges'
+
+/**
+ * http.trustProxy schema: the Express `trust proxy` forms that are safe to
+ * express in config (no functions, no free-form strings)
+ */
+const TrustProxySchema = z.union(
+  [
+    z.boolean(),
+    z.number()
+      .int({ error: TRUST_PROXY_TYPE_MESSAGE })
+      .nonnegative({ error: TRUST_PROXY_TYPE_MESSAGE }),
+    z.array(
+      z.string().refine(isValidTrustProxyEntry, {
+        error: (issue) =>
+          `Invalid trustProxy entry "${String(issue.input)}": expected an IP address, ` +
+          'a CIDR range (prefix 1-32 for IPv4, 1-128 for IPv6), ' +
+          'or one of loopback, linklocal, uniquelocal'
+      })
+    )
+  ],
+  { error: TRUST_PROXY_TYPE_MESSAGE }
+)
+
 /**
  * One `http.allowedPostOrigins` entry: a bare http/https origin, stored in
  * canonical form. Bad entries fail startup with the entry named.
@@ -79,7 +106,8 @@ const AllowedPostOriginSchema = z.string().transform((entry, ctx) => {
  */
 const HttpSchema = z.object({
   origins: z.array(z.string()),
-  allowedPostOrigins: z.array(AllowedPostOriginSchema).optional()
+  allowedPostOrigins: z.array(AllowedPostOriginSchema).optional(),
+  trustProxy: TrustProxySchema.optional()
 })
 
 /**

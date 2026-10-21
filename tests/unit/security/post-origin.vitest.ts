@@ -24,7 +24,7 @@ const policy = (overrides: Partial<PostOriginPolicy> = {}): PostOriginPolicy => 
 const request = (overrides: Partial<PostOriginRequest> = {}): PostOriginRequest => ({
   origin: undefined,
   secFetchSite: undefined,
-  clientIp: '192.0.2.10',
+  peerIp: '192.0.2.10',
   hasSsoHeader: false,
   ...overrides
 })
@@ -163,7 +163,7 @@ describe('evaluatePostOrigin SSO bypasses', () => {
 
   it('accepts a trusted proxy IP when SSO is enabled', () => {
     expect(evaluatePostOrigin(
-      request({ ...crossSite, clientIp: PROXY_IP }),
+      request({ ...crossSite, peerIp: PROXY_IP }),
       policy({ ssoEnabled: true, trustedProxies: [PROXY_IP] })
     )).toEqual({ accept: true, step: 'sso-trusted-proxy' })
   })
@@ -177,7 +177,7 @@ describe('evaluatePostOrigin SSO bypasses', () => {
 
   it('ignores both bypasses when SSO is disabled', () => {
     expect(evaluatePostOrigin(
-      request({ ...crossSite, clientIp: PROXY_IP, hasSsoHeader: true }),
+      request({ ...crossSite, peerIp: PROXY_IP, hasSsoHeader: true }),
       policy({ ssoEnabled: false, trustedProxies: [PROXY_IP] })
     )).toEqual({ accept: false, step: 'unlisted-origin' })
   })

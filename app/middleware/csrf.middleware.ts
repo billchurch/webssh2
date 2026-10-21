@@ -79,7 +79,7 @@ function extractPostOriginRequest(req: Request): PostOriginRequest {
   return {
     origin: toHeaderString(req.headers.origin),
     secFetchSite: toHeaderString(req.headers['sec-fetch-site']),
-    clientIp: getClientIp(req),
+    peerIp: getPeerIp(req),
     hasSsoHeader: hasSsoHeaders(req)
   }
 }
@@ -91,6 +91,7 @@ function logRejection(
   decision: PostOriginDecision
 ): void {
   // Never log the body: it carries the posted credentials.
+  const clientIp = getClientIp(req)
   const result = logger.warn({
     event: 'policy_block',
     message: 'Credential POST rejected by origin check',
@@ -98,7 +99,7 @@ function logRejection(
       subsystem: 'security',
       status: 'failure',
       reason: `post_origin_${decision.step}`,
-      ...(request.clientIp === undefined ? {} : { clientIp: request.clientIp })
+      ...(clientIp === undefined ? {} : { clientIp })
     },
     data: {
       route: req.originalUrl,
@@ -110,6 +111,16 @@ function logRejection(
   if (!result.ok) {
     debug('Failed to emit origin check rejection log: %O', result.error)
   }
+}
+
+// sso.trustedProxies names the proxy that connects to us, so the bypass
+// matches the TCP peer. req.ip is not used for it: with http.trustProxy set
+// it is the client address taken from X-Forwarded-For, which the client can
+// influence. Logs still record req.ip, the real client behind a trusted proxy.
+const getPeerIp = (req: Request): string | undefined => {
+  const socket = req.socket as { remoteAddress?: string } | undefined
+  const address = socket?.remoteAddress
+  return typeof address === 'string' && address !== '' ? address : undefined
 }
 
 const getClientIp = (req: Request): string | undefined => {
