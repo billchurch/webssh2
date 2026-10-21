@@ -1,4 +1,4 @@
-import type { AdapterContext } from './service-socket-shared.js'
+import { releaseSession, type AdapterContext } from './service-socket-shared.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
 import { createConnectionId } from '../../types/branded.js'
 import { emitSocketLog } from '../../logging/socket-logger.js'
@@ -40,8 +40,7 @@ export class ServiceSocketControl {
     }
 
     if (this.context.state.sessionId !== null) {
-      this.context.services.terminal.destroy(this.context.state.sessionId)
-      this.context.services.session.delete(this.context.state.sessionId)
+      releaseSession(this.context.services, this.context.state.sessionId)
     }
 
     this.context.state.storedPassword = null

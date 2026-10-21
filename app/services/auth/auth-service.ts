@@ -59,11 +59,8 @@ export class AuthServiceImpl implements AuthService {
         return Promise.resolve(err(new Error(validationError)))
       }
 
-      const cachedSession = this.findCachedSession(credentials)
-      if (cachedSession !== null) {
-        return Promise.resolve(ok(cachedSession))
-      }
-
+      // Every login gets its own session id. Never reuse one by username:
+      // store state, terminals and SFTP transfer ownership are keyed by it.
       const authResult = this.issueNewSession(credentials)
       this.cacheAuthentication(authResult)
 
@@ -114,22 +111,6 @@ export class AuthServiceImpl implements AuthService {
       hasPrivateKey: typeof credentials.privateKey === 'string' && credentials.privateKey !== '',
       hasPassphrase: typeof credentials.passphrase === 'string' && credentials.passphrase !== ''
     })
-  }
-
-  private findCachedSession(credentials: Credentials): AuthResult | null {
-    const now = Date.now()
-    for (const [, cached] of this.authCache.entries()) {
-      if (cached.username === credentials.username && cached.expiresAt > now) {
-        return {
-          sessionId: cached.sessionId,
-          userId: cached.userId,
-          username: cached.username,
-          method: cached.method,
-          expiresAt: cached.expiresAt
-        }
-      }
-    }
-    return null
   }
 
   private issueNewSession(credentials: Credentials): AuthResult {

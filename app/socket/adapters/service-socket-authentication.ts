@@ -7,7 +7,7 @@ import type {
 import type { SftpStatusResponse } from '../../types/contracts/v1/sftp.js'
 import type { Credentials } from '../../validation/credentials.js'
 import type { SessionId, AuthMethodToken } from '../../types/branded.js'
-import type { AdapterContext } from './service-socket-shared.js'
+import { releaseSession, type AdapterContext } from './service-socket-shared.js'
 import type { ServiceSocketPrompt } from './service-socket-prompt.js'
 import type { KeyboardInteractiveContext, KeyboardInteractiveHandler, TelnetConnectionConfig } from '../../services/interfaces.js'
 import { SOCKET_EVENTS } from '../../constants/socket-events.js'
@@ -217,6 +217,7 @@ export class ServiceSocketAuthentication {
   }
 
   async handleAuthentication(credentials: AuthCredentials): Promise<void> {
+    let issuedSessionId: SessionId | null = null
     try {
       this.initializeAuthAttempt(credentials)
       this.logAuthAttempt(credentials)
@@ -230,6 +231,7 @@ export class ServiceSocketAuthentication {
       if (authResult === null) {
         return
       }
+      issuedSessionId = authResult.sessionId
 
       // Branch connection based on protocol
       const connectionResult = this.context.protocol === 'telnet'
@@ -237,12 +239,24 @@ export class ServiceSocketAuthentication {
         : await this.connectSSH(authCredentials, authResult.sessionId)
 
       if (connectionResult === null) {
+        releaseSession(this.context.services, authResult.sessionId)
         return
       }
 
       this.finalizeAuthentication(authCredentials, authResult.sessionId, connectionResult.id)
     } catch (error) {
+      this.releaseIssuedSession(issuedSessionId)
       this.handleAuthenticationError(error)
+    }
+  }
+
+  /**
+   * Release a session issued by a failed attempt, unless the socket has
+   * already adopted it as its current session.
+   */
+  private releaseIssuedSession(sessionId: SessionId | null): void {
+    if (sessionId !== null && sessionId !== this.context.state.sessionId) {
+      releaseSession(this.context.services, sessionId)
     }
   }
 
@@ -514,6 +528,13 @@ export class ServiceSocketAuthentication {
     sessionId: SessionId,
     connectionId: string
   ): void {
+    // A reauthentication replaces the socket's session; free the old one
+    const previousSessionId = this.context.state.sessionId
+    if (previousSessionId !== null && previousSessionId !== sessionId) {
+      this.context.services.sftp?.cancelSessionTransfers(previousSessionId)
+      releaseSession(this.context.services, previousSessionId)
+    }
+
     this.context.state.connectionId = connectionId
     this.context.state.sessionId = sessionId
     this.context.state.username = authCredentials.username

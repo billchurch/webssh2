@@ -63,3 +63,14 @@ export function createAdapterSharedState(): AdapterSharedState {
     requestedKeyboardInteractive: false
   }
 }
+
+/**
+ * Free the server-side state held for a session id: terminal entry,
+ * auth cache entry and store state. Each login issues its own id, so an
+ * id that is no longer the socket's current one must be released here.
+ */
+export function releaseSession(services: Services, sessionId: SessionId): void {
+  services.terminal.destroy(sessionId)
+  void services.auth.revokeSession(sessionId)
+  services.session.delete(sessionId)
+}

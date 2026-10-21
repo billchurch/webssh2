@@ -5,9 +5,27 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
 import { AuthServiceImpl } from '../../../app/services/auth/auth-service.js'
 import type { Credentials } from '../../../app/services/interfaces.js'
-import { createSessionId } from '../../../app/types/branded.js'
-import { TEST_USERNAME, TEST_PASSWORD, TEST_SSH } from '../../test-constants.js'
+import { createSessionId, createTransferId, type SessionId } from '../../../app/types/branded.js'
+import { TransferManager } from '../../../app/services/sftp/transfer-manager.js'
+import { TEST_USERNAME, TEST_PASSWORD, TEST_PASSWORDS, TEST_SSH } from '../../test-constants.js'
 import { createMockStore, createMockDependencies } from '../../test-utils.js'
+
+async function loginWithTestUsername(
+  authService: AuthServiceImpl,
+  password: string,
+  host: string
+): Promise<SessionId> {
+  const result = await authService.authenticate({
+    username: TEST_USERNAME,
+    password,
+    host,
+    port: TEST_SSH.PORT
+  })
+  if (!result.ok) {
+    throw result.error
+  }
+  return result.value.sessionId
+}
 
 describe('AuthService', () => {
   let authService: AuthServiceImpl
@@ -91,7 +109,7 @@ describe('AuthService', () => {
       }
     })
 
-    it('should use cached session if valid', async () => {
+    it('should issue a fresh session for each login', async () => {
       const credentials: Credentials = {
         username: TEST_USERNAME,
         password: TEST_PASSWORD,
@@ -99,16 +117,15 @@ describe('AuthService', () => {
         port: TEST_SSH.PORT
       }
 
-      // First authentication
       const result1 = await authService.authenticate(credentials)
-      expect(result1.ok).toBe(true)
-
-      // Second authentication should use cache
       const result2 = await authService.authenticate(credentials)
-      expect(result2.ok).toBe(true)
 
-      // Store should only be created once
-      expect(mockStore.createSession).toHaveBeenCalledTimes(1)
+      expect(result1.ok && result2.ok).toBe(true)
+      if (result1.ok && result2.ok) {
+        expect(result2.value.sessionId).not.toBe(result1.value.sessionId)
+        expect(result2.value.userId).not.toBe(result1.value.userId)
+      }
+      expect(mockStore.createSession).toHaveBeenCalledTimes(2)
     })
 
     it('should handle privateKey authentication', async () => {
@@ -125,6 +142,79 @@ describe('AuthService', () => {
       if (result.ok) {
         expect(result.value.method).toBe('manual')
       }
+    })
+  })
+
+  describe('logins with the same username', () => {
+    it('should give each login its own session id', async () => {
+      const first = await loginWithTestUsername(authService, TEST_PASSWORD, TEST_SSH.HOST)
+      const second = await loginWithTestUsername(authService, TEST_PASSWORDS.secret, TEST_SSH.IP_ADDRESS)
+
+      expect(second).not.toBe(first)
+      expect(mockStore.createSession).toHaveBeenNthCalledWith(1, first)
+      expect(mockStore.createSession).toHaveBeenNthCalledWith(2, second)
+    })
+
+    it('should key each login\'s transfers by its own session id', async () => {
+      const first = await loginWithTestUsername(authService, TEST_PASSWORD, TEST_SSH.HOST)
+      const second = await loginWithTestUsername(authService, TEST_PASSWORDS.secret, TEST_SSH.IP_ADDRESS)
+
+      const transfers = new TransferManager({
+        maxConcurrentTransfers: 2,
+        defaultRateLimitBytesPerSec: 0
+      })
+      const firstTransfer = createTransferId('transfer-first')
+      const secondTransfer = createTransferId('transfer-second')
+      for (const [transferId, sessionId] of [
+        [firstTransfer, first],
+        [secondTransfer, second]
+      ] as const) {
+        const started = transfers.startTransfer({
+          transferId,
+          sessionId,
+          direction: 'upload',
+          remotePath: '/tmp/file.txt',
+          fileName: 'file.txt',
+          totalBytes: 100
+        })
+        expect(started.ok).toBe(true)
+      }
+
+      // The first login cannot act on the second login's transfer
+      expect(transfers.verifyOwnership(secondTransfer, first).ok).toBe(false)
+      expect(transfers.verifyOwnership(secondTransfer, second).ok).toBe(true)
+
+      // Cancelling by the first login's id leaves the second one alone
+      // (socket disconnect is covered in service-socket-disconnect-isolation)
+      transfers.cancelSessionTransfers(first)
+
+      expect(transfers.getTransfer(firstTransfer)).toBeUndefined()
+      expect(transfers.getTransfer(secondTransfer)).toBeDefined()
+      expect(transfers.verifyOwnership(secondTransfer, second).ok).toBe(true)
+    })
+
+    it('should keep the other login valid when one is revoked', async () => {
+      const mockState = {
+        auth: {
+          status: 'authenticated' as const,
+          username: TEST_USERNAME,
+          method: 'manual' as const,
+          timestamp: Date.now(),
+          errorMessage: null
+        }
+      };
+      (mockStore.getState as Mock).mockReturnValue(mockState)
+
+      const first = await loginWithTestUsername(authService, TEST_PASSWORD, TEST_SSH.HOST)
+      const second = await loginWithTestUsername(authService, TEST_PASSWORDS.secret, TEST_SSH.IP_ADDRESS)
+
+      const revoked = await authService.revokeSession(first)
+      expect(revoked.ok).toBe(true)
+
+      expect(authService.validateSession(first)).toEqual({ ok: true, value: false })
+      expect(authService.validateSession(second)).toEqual({ ok: true, value: true })
+      expect(mockStore.removeSession).toHaveBeenCalledWith(first)
+      expect(mockStore.removeSession).not.toHaveBeenCalledWith(second)
     })
   })
 

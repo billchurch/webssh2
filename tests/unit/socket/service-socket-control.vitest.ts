@@ -83,3 +83,24 @@ describe('ServiceSocketControl logging', () => {
     expect(entry?.entry.context?.reason).toContain('not permitted')
   })
 })
+
+describe('ServiceSocketControl disconnect', () => {
+  it('releases the auth session of this socket only', () => {
+    const { control, context } = createContext()
+    const revokeSession = vi.fn(() => Promise.resolve({ ok: true, value: undefined }))
+    const deleteSession = vi.fn()
+    context.services = {
+      ...context.services,
+      ssh: { disconnect: vi.fn(() => Promise.resolve()) },
+      auth: { revokeSession },
+      session: { delete: deleteSession }
+    } as unknown as Services
+
+    control.handleDisconnect()
+
+    expect(revokeSession).toHaveBeenCalledTimes(1)
+    expect(revokeSession).toHaveBeenCalledWith('session-log')
+    expect(deleteSession).toHaveBeenCalledWith('session-log')
+    expect(context.state.sessionId).toBeNull()
+  })
+})
