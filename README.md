@@ -23,7 +23,7 @@ WebSSH2 server bundles a matching version of the [`webssh2_client`](https://gith
 | 5.x | ^4.0.0 | `headerStyle` / `header.color` removed ([#102](https://github.com/billchurch/webssh2_client/issues/102)) |
 | 4.x | ^3.x | Theming UI support (3.7.0+) |
 
-Operators using the published Docker image or installing `webssh2` from npm get the correct client automatically. The matrix matters if you self-build the client, link a local fork, or pin to a different client version than the server's dependency declares.
+Operators using the published Docker image (`ghcr.io/billchurch/webssh2` or `docker.io/billchurch/webssh2`) or the release tarball attached to each [GitHub release](https://github.com/billchurch/webssh2/releases) (`webssh2-server-vX.Y.Z`) get the correct client automatically. The matrix matters if you self-build the client, link a local fork, or pin to a different client version than the server's dependency declares.
 
 ## Quick Start
 
