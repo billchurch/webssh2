@@ -25,6 +25,7 @@ const createContext = (protocol: 'ssh' | 'telnet', services: Record<string, unkn
     config: { ssh: {}, options: {} },
     services: {
       terminal: { destroy: vi.fn(ok) },
+      auth: { revokeSession: vi.fn(() => Promise.resolve(ok())) },
       session: { delete: vi.fn(ok) },
       ...services
     },
