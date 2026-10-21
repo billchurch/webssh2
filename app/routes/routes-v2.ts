@@ -268,9 +268,6 @@ export function createRoutesV2(config: Config): Router {
   // CSRF origin check for the credential POST routes (#580)
   const postOriginGuards = createPostOriginGuards(config)
   
-  // Add error handler
-  router.use(createErrorHandler())
-
   /**
    * CSP violation report endpoint — unauthenticated, rate-limited, 8 kb cap.
    * Registered only when CSP is active (mode != 'off').
@@ -395,6 +392,9 @@ export function createRoutesV2(config: Config): Router {
     // Redirect to login
     res.redirect(redirectPath)
   })
+
+  // Error handler must come after the routes so it receives their errors
+  router.use(createErrorHandler())
 
   return router
 }
