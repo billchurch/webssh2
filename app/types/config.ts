@@ -337,7 +337,11 @@ export interface TelnetConfig {
  */
 export interface Config {
   listen: { ip: string; port: number }
-  http: { origins: string[] }
+  http: {
+    origins: string[]
+    /** Origins allowed to POST credentials cross-site (see SECURITY.md, #580) */
+    allowedPostOrigins?: string[]
+  }
   user: {
     name: string | null
     password: string | null
