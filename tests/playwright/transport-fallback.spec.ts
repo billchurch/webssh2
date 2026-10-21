@@ -1,4 +1,3 @@
-/* global window */
 /**
  * E2E proof of operator-forced Socket.IO transport fallback (#549 / #131).
  *
@@ -80,18 +79,69 @@ function stopGateway(gateway: Gateway): void {
   gateway.proc.kill()
 }
 
-async function activeTransport(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const socket = (
-      window as unknown as {
-        webssh2Socket?: { io: { engine: { transport: { name: string } } } }
-      }
-    ).webssh2Socket
-    if (socket === undefined) {
-      throw new Error('webssh2Socket not present on window')
+// Socket.IO traffic for this gateway, observed from outside the page so the
+// spec doesn't rely on any client-exposed global.
+const SOCKET_IO_PATH = '/ssh/socket.io'
+// engine.io UPGRADE packet: the client sends it on the probe WebSocket once
+// the probe succeeds, and from then on that WebSocket carries the session.
+const ENGINE_IO_UPGRADE_PACKET = '5'
+
+interface ObservedWebSocket {
+  readonly url: URL
+  upgraded: boolean
+  closed: boolean
+}
+
+interface TransportObserver {
+  readonly pollingRequests: string[]
+  readonly websockets: ObservedWebSocket[]
+}
+
+function observeTransport(page: Page): TransportObserver {
+  const observer: TransportObserver = { pollingRequests: [], websockets: [] }
+
+  page.on('request', (request) => {
+    const url = new URL(request.url())
+    if (url.pathname.startsWith(SOCKET_IO_PATH) && url.searchParams.get('transport') === 'polling') {
+      observer.pollingRequests.push(request.url())
     }
-    return socket.io.engine.transport.name
   })
+
+  page.on('websocket', (ws) => {
+    const url = new URL(ws.url())
+    if (!url.pathname.startsWith(SOCKET_IO_PATH)) {
+      return
+    }
+    const observed: ObservedWebSocket = { url, upgraded: false, closed: false }
+    observer.websockets.push(observed)
+    ws.on('framesent', (frame) => {
+      if (frame.payload === ENGINE_IO_UPGRADE_PACKET) {
+        observed.upgraded = true
+      }
+    })
+    ws.on('close', () => {
+      observed.closed = true
+    })
+  })
+
+  return observer
+}
+
+/**
+ * The transport currently carrying the Socket.IO session, as seen on the wire.
+ *
+ * A WebSocket opened without a `sid` is a direct WebSocket session. One opened
+ * with a `sid` is an upgrade probe from long-polling, and only becomes the
+ * active transport once the client sends the UPGRADE packet on it.
+ */
+function activeTransport(observer: TransportObserver): 'websocket' | 'polling' | 'none' {
+  const carryingSession = observer.websockets.some(
+    (ws) => !ws.closed && (!ws.url.searchParams.has('sid') || ws.upgraded)
+  )
+  if (carryingSession) {
+    return 'websocket'
+  }
+  return observer.pollingRequests.length > 0 ? 'polling' : 'none'
 }
 
 test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
@@ -103,12 +153,7 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
       WEBSSH2_OPTIONS_TRANSPORT: 'polling',
     })
     try {
-      const socketIoWsConnections: string[] = []
-      page.on('websocket', (ws) => {
-        if (ws.url().includes('/ssh/socket.io')) {
-          socketIoWsConnections.push(ws.url())
-        }
-      })
+      const observer = observeTransport(page)
 
       await connectWithBasicAuth(
         page,
@@ -119,11 +164,11 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
         TEST_CONFIG.sshPort
       )
 
-      await expect.poll(() => activeTransport(page)).toBe('polling')
+      await expect.poll(() => activeTransport(observer)).toBe('polling')
       // With only 'polling' advertised server-side, engine.io's handshake
       // never lists 'websocket' as an available upgrade, so the client has
       // nothing to attempt — no timing race to guard against here.
-      expect(socketIoWsConnections).toHaveLength(0)
+      expect(observer.websockets).toHaveLength(0)
     } finally {
       stopGateway(gateway)
     }
@@ -134,6 +179,8 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
       WEBSSH2_OPTIONS_TRANSPORT: 'polling,websocket',
     })
     try {
+      const observer = observeTransport(page)
+
       await connectWithBasicAuth(
         page,
         gateway.baseUrl,
@@ -144,8 +191,12 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
       )
 
       await expect
-        .poll(() => activeTransport(page), { timeout: TRANSPORT_UPGRADE_TIMEOUT })
+        .poll(() => activeTransport(observer), { timeout: TRANSPORT_UPGRADE_TIMEOUT })
         .toBe('websocket')
+      // The session started on long-polling and moved over by upgrading the
+      // probe WebSocket, not by opening a fresh one.
+      expect(observer.pollingRequests.length).toBeGreaterThan(0)
+      expect(observer.websockets.some((ws) => ws.upgraded)).toBe(true)
     } finally {
       stopGateway(gateway)
     }
@@ -154,6 +205,8 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
   test('no transport config keeps websocket-first default', async ({ page }) => {
     const gateway = await startGateway(DEFAULT_TRANSPORT_PORT, {})
     try {
+      const observer = observeTransport(page)
+
       await connectWithBasicAuth(
         page,
         gateway.baseUrl,
@@ -163,7 +216,10 @@ test.describe('operator-forced Socket.IO transport (#549/#131)', () => {
         TEST_CONFIG.sshPort
       )
 
-      await expect.poll(() => activeTransport(page)).toBe('websocket')
+      await expect.poll(() => activeTransport(observer)).toBe('websocket')
+      // websocket-first: the session opens straight on a WebSocket and never
+      // needs long-polling.
+      expect(observer.pollingRequests).toHaveLength(0)
     } finally {
       stopGateway(gateway)
     }
