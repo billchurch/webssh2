@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 import {
   detectSourceType,
   validateHeaderValue,
+  validateHeaderBackground,
   extractHeaderValues,
   createHeaderOverride,
   mergeHeaderOverride,
@@ -63,6 +64,42 @@ describe('validateHeaderValue', () => {
     const longString = 'a'.repeat(150)
     const result = validateHeaderValue(longString)
     expect(result).toHaveLength(100)
+  })
+})
+
+describe('validateHeaderBackground (#583)', () => {
+  it('accepts colors that validateCssColor accepts', () => {
+    expect(validateHeaderBackground('red')).toBe('red')
+    expect(validateHeaderBackground('#336699')).toBe('#336699')
+    expect(validateHeaderBackground('rgb(51, 102, 153)')).toBe('rgb(51, 102, 153)')
+    expect(validateHeaderBackground('hsl(210, 50, 40)')).toBe('hsl(210, 50, 40)')
+  })
+
+  it('rejects values that are not CSS colors', () => {
+    expect(validateHeaderBackground('url(https://example.test/p.png)')).toBeNull()
+    expect(validateHeaderBackground('red;position:fixed')).toBeNull()
+    expect(validateHeaderBackground('red}body{display:none')).toBeNull()
+    expect(validateHeaderBackground('"red"')).toBeNull()
+  })
+
+  it('returns null for empty or non-string values', () => {
+    expect(validateHeaderBackground('')).toBeNull()
+    expect(validateHeaderBackground(null)).toBeNull()
+    expect(validateHeaderBackground(undefined)).toBeNull()
+    expect(validateHeaderBackground(['red'])).toBeNull()
+  })
+
+  it('rejects values containing control characters instead of stripping them', () => {
+    expect(validateHeaderBackground('re\x00d')).toBeNull()
+    expect(validateHeaderBackground('red\n')).toBeNull()
+    expect(validateHeaderBackground('red\t')).toBeNull()
+  })
+
+  it('rejects values over 100 characters instead of truncating them', () => {
+    const longInvalid = `red${' '.repeat(97)};position:fixed`
+    expect(validateHeaderBackground(longInvalid)).toBeNull()
+    expect(validateHeaderBackground(`#${'a'.repeat(100)}`)).toBeNull()
+    expect(validateHeaderBackground(`red${' '.repeat(97)}`)).toBe(`red${' '.repeat(97)}`)
   })
 })
 
@@ -216,6 +253,57 @@ describe('processHeaderParams', () => {
       text: 'Dashboard',
       background: '#333'
     })
+  })
+
+  it('keeps valid GET backgrounds (#583)', () => {
+    expect(processHeaderParams({ header: 'x', headerBackground: 'red' })).toEqual({
+      text: 'x',
+      background: 'red'
+    })
+    expect(processHeaderParams({ headerBackground: '#336699' })).toEqual({
+      background: '#336699'
+    })
+  })
+
+  it('drops invalid GET backgrounds but keeps the header text (#583)', () => {
+    expect(
+      processHeaderParams({ headerBackground: 'url(https://example.test/p.png)' })
+    ).toBeNull()
+    expect(processHeaderParams({ headerBackground: 'red;position:fixed' })).toBeNull()
+    expect(
+      processHeaderParams({ header: 'x', headerBackground: 'red;position:fixed' })
+    ).toEqual({ text: 'x' })
+  })
+
+  it('drops an invalid background whose invalid part is past 100 characters (#583)', () => {
+    const longInvalid = `red${' '.repeat(97)};position:fixed`
+    expect(processHeaderParams({ headerBackground: longInvalid })).toBeNull()
+    expect(processHeaderParams({ 'header.background': longInvalid })).toBeNull()
+    expect(processHeaderParams({ header: 'x', headerBackground: longInvalid })).toEqual({
+      text: 'x'
+    })
+  })
+
+  it('keeps valid POST backgrounds (#583)', () => {
+    expect(
+      processHeaderParams({ 'header.name': 'x', 'header.background': 'red' })
+    ).toEqual({ text: 'x', background: 'red' })
+    expect(processHeaderParams({ 'header.background': '#336699' })).toEqual({
+      background: '#336699'
+    })
+  })
+
+  it('drops invalid POST backgrounds but keeps the header text (#583)', () => {
+    expect(
+      processHeaderParams({ 'header.background': 'url(https://example.test/p.png)' })
+    ).toBeNull()
+    expect(processHeaderParams({ 'header.background': 'red;position:fixed' })).toBeNull()
+    expect(
+      processHeaderParams({
+        'header.name': 'x',
+        'header.background': 'url(https://example.test/p.png)'
+      })
+    ).toEqual({ text: 'x' })
   })
 
   it('returns null for legacy-only sources', () => {

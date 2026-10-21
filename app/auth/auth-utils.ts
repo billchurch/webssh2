@@ -10,6 +10,8 @@ import type { Config } from '../types/config.js'
 import {
   processHeaderParams,
   hasAnyHeaderKey,
+  detectSourceType,
+  SourceType as HeaderSourceType,
   type HeaderOverride,
 } from './header-processor.js'
 export type { HeaderOverride, HeaderValues, SourceType } from './header-processor.js'
@@ -60,13 +62,26 @@ export interface AuthCredentials {
 }
 
 /**
+ * True when the request carries only legacy header keys (`headerStyle`,
+ * `header.color`) and none of the current ones.
+ */
+function isLegacyOnlyHeaderRequest(
+  source: Record<string, unknown> | undefined
+): boolean {
+  return detectSourceType(source) === HeaderSourceType.NONE && hasAnyHeaderKey(source)
+}
+
+/**
  * Process header customization parameters from URL query or POST body.
  *
  * Each request's override fully replaces any prior request's override
  * (no field-wise merge across requests). When the current request has
  * no override, any stale headerOverride is cleared. This prevents an
  * unauthenticated GET from pre-seeding session.headerOverride for a
- * subsequent authenticated request to inherit.
+ * subsequent authenticated request to inherit. A request whose header
+ * values are all rejected (e.g. an invalid background, #583) also clears
+ * it, so the configured or default header is used. Only a legacy-only
+ * request leaves the existing override untouched (#102).
  *
  * Wrapper for backward compatibility - mutates session.
  */
@@ -81,10 +96,10 @@ export function processHeaderParameters(
     debug('Header override set in session: %O', override)
   } else if (
     session.headerOverride != null &&
-    !hasAnyHeaderKey(source)
+    !isLegacyOnlyHeaderRequest(source)
   ) {
     delete session.headerOverride
-    debug('Header override cleared from session (no header keys in request)')
+    debug('Header override cleared from session (no valid header values in request)')
   }
   // else: legacy-only request — leave existing override untouched (#102)
 }
