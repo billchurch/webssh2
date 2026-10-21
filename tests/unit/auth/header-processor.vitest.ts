@@ -89,9 +89,17 @@ describe('validateHeaderBackground (#583)', () => {
     expect(validateHeaderBackground(['red'])).toBeNull()
   })
 
-  it('strips control characters before checking the color', () => {
-    expect(validateHeaderBackground('re\x00d')).toBe('red')
-    expect(validateHeaderBackground('red\n')).toBe('red')
+  it('rejects values containing control characters instead of stripping them', () => {
+    expect(validateHeaderBackground('re\x00d')).toBeNull()
+    expect(validateHeaderBackground('red\n')).toBeNull()
+    expect(validateHeaderBackground('red\t')).toBeNull()
+  })
+
+  it('rejects values over 100 characters instead of truncating them', () => {
+    const longInvalid = `red${' '.repeat(97)};position:fixed`
+    expect(validateHeaderBackground(longInvalid)).toBeNull()
+    expect(validateHeaderBackground(`#${'a'.repeat(100)}`)).toBeNull()
+    expect(validateHeaderBackground(`red${' '.repeat(97)}`)).toBe(`red${' '.repeat(97)}`)
   })
 })
 
@@ -265,6 +273,15 @@ describe('processHeaderParams', () => {
     expect(
       processHeaderParams({ header: 'x', headerBackground: 'red;position:fixed' })
     ).toEqual({ text: 'x' })
+  })
+
+  it('drops an invalid background whose invalid part is past 100 characters (#583)', () => {
+    const longInvalid = `red${' '.repeat(97)};position:fixed`
+    expect(processHeaderParams({ headerBackground: longInvalid })).toBeNull()
+    expect(processHeaderParams({ 'header.background': longInvalid })).toBeNull()
+    expect(processHeaderParams({ header: 'x', headerBackground: longInvalid })).toEqual({
+      text: 'x'
+    })
   })
 
   it('keeps valid POST backgrounds (#583)', () => {

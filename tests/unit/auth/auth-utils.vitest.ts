@@ -46,6 +46,17 @@ describe('processHeaderParameters', () => {
     expect(session.headerOverride).toBeUndefined()
   })
 
+  it('does not store a long invalid background in the session (#583)', () => {
+    const session: AuthSession = {
+      headerOverride: { text: 'Previous request', background: 'red' }
+    }
+    processHeaderParameters(
+      { headerBackground: `red${' '.repeat(97)};position:fixed` },
+      session
+    )
+    expect(session.headerOverride).toBeUndefined()
+  })
+
   it('replaces a previous background when the header text is valid and the background is not (#583)', () => {
     const session: AuthSession = {
       headerOverride: { text: 'Previous request', background: 'red' }
