@@ -6,6 +6,7 @@
 import type { Result } from '../../types/result.js'
 import type { Config } from '../../types/config.js'
 import type { AuthSession } from '../../auth/auth-utils.js'
+import { HEADERS, HTTP } from '../../constants/index.js'
 
 export interface SshRouteRequest {
   session: AuthSession
@@ -160,6 +161,31 @@ export const processReauthRequest = (
   return {
     keysToRemove: allKeysToRemove,
     redirectPath: '/ssh'
+  }
+}
+
+/**
+ * Process clear-credentials request
+ * Selects the same keys as re-authentication plus the session env vars.
+ * The response asks the browser to drop cached Basic credentials, so the
+ * next /ssh/host/ visit cannot restore the session without a new login.
+ * The caller removes the keys from the session and sends the response.
+ */
+export const processClearCredentialsRequest = (
+  session: AuthSession
+): Result<{ keysToRemove: string[], response: SshRouteResponse }> => {
+  const { keysToRemove } = processReauthRequest(session)
+
+  return {
+    ok: true,
+    value: {
+      keysToRemove: [...new Set([...keysToRemove, 'envVars'])],
+      response: {
+        status: HTTP.OK,
+        headers: { [HEADERS.CLEAR_SITE_DATA]: HTTP.CLEAR_SITE_DATA_COOKIES },
+        data: { message: HTTP.CREDENTIALS_CLEARED }
+      }
+    }
   }
 }
 
