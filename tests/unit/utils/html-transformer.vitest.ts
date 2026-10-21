@@ -32,23 +32,23 @@ describe('transformAssetPaths', () => {
   })
 })
 
+const JSON_BLOCK = '<script type="application/json" id="webssh2-config">null</script>'
+
 describe('injectConfig', () => {
   it('should inject configuration object', () => {
-    const html = '<script>window.webssh2Config = null;</script>'
     const config = { test: 'value', nested: { key: 'data' } }
     
-    const result = injectConfig(html, config)
+    const result = injectConfig(JSON_BLOCK, config)
     
-    expect(result).toBe('<script>window.webssh2Config = {"test":"value","nested":{"key":"data"}};</script>')
+    expect(result).toBe('<script type="application/json" id="webssh2-config">{"test":"value","nested":{"key":"data"}}</script>')
   })
   
   it('should handle empty config', () => {
-    const html = '<script>window.webssh2Config = null;</script>'
     const config = {}
     
-    const result = injectConfig(html, config)
+    const result = injectConfig(JSON_BLOCK, config)
     
-    expect(result).toBe('<script>window.webssh2Config = {};</script>')
+    expect(result).toBe('<script type="application/json" id="webssh2-config">{}</script>')
   })
   
   it('should not modify HTML without config placeholder', () => {
@@ -63,12 +63,12 @@ describe('injectConfig', () => {
 
 describe('transformHtml', () => {
   it('should apply both transformations', () => {
-    const html = '<link href="styles.css"><script>window.webssh2Config = null;</script>'
+    const html = `<link href="styles.css">${JSON_BLOCK}`
     const config = { theme: 'dark' }
 
     const result = transformHtml(html, config)
 
-    expect(result).toBe('<link href="/ssh/assets/styles.css"><script>window.webssh2Config = {"theme":"dark"};</script>')
+    expect(result).toBe('<link href="/ssh/assets/styles.css"><script type="application/json" id="webssh2-config">{"theme":"dark"}</script>')
   })
 
   it('should be pure - not mutate inputs', () => {
@@ -86,7 +86,7 @@ describe('transformHtml', () => {
 })
 
 describe('injectConfig — script-safe escaping', () => {
-  const HOST = '<script>window.webssh2Config = null;</script>'
+  const HOST = JSON_BLOCK
 
   it('escapes </script> in admin string fields', () => {
     const config = { name: '</script><script>alert(1)</script>' }
@@ -116,7 +116,7 @@ describe('injectConfig — script-safe escaping', () => {
 })
 
 describe('injectConfigWithThemingString', () => {
-  const HOST = '<script>window.webssh2Config = null;</script>'
+  const HOST = JSON_BLOCK
 
   it('splices theming JSON into a non-empty config', () => {
     const html = injectConfigWithThemingString(
@@ -125,14 +125,14 @@ describe('injectConfigWithThemingString', () => {
       '{"enabled":false}'
     )
     expect(html).toBe(
-      '<script>window.webssh2Config = {"autoConnect":true,"theming":{"enabled":false}};</script>'
+      '<script type="application/json" id="webssh2-config">{"autoConnect":true,"theming":{"enabled":false}}</script>'
     )
   })
 
   it('handles empty config without producing malformed JSON', () => {
     const html = injectConfigWithThemingString(HOST, {}, '{"enabled":false}')
     expect(html).toBe(
-      '<script>window.webssh2Config = {"theming":{"enabled":false}};</script>'
+      '<script type="application/json" id="webssh2-config">{"theming":{"enabled":false}}</script>'
     )
     expect(html).not.toContain('{,')
   })
@@ -164,7 +164,7 @@ describe('injectConfigWithThemingString', () => {
 describe('JSON config block injection', () => {
   const NEW_CLIENT_HTML =
     '<script type="application/json" id="webssh2-config">null</script>\n' +
-    '<script>window.webssh2Config = null;</script>'
+    '<script type="module" src="./webssh2.js"></script>'
 
   it('injects config into the JSON block as a parseable object', () => {
     const result = injectConfig(NEW_CLIENT_HTML, { a: 1, nested: { b: 'x' } })
@@ -174,16 +174,18 @@ describe('JSON config block injection', () => {
     expect(JSON.parse(match![1])).toEqual({ a: 1, nested: { b: 'x' } })
   })
 
-  it('also replaces the legacy window placeholder on a new-client template', () => {
+  it('leaves the rest of the template untouched', () => {
     const result = injectConfig(NEW_CLIENT_HTML, { a: 1 })
-    expect(result).toContain('window.webssh2Config = {"a":1};')
-    expect(result).not.toContain('window.webssh2Config = null;')
+    expect(result).toBe(
+      '<script type="application/json" id="webssh2-config">{"a":1}</script>\n' +
+        '<script type="module" src="./webssh2.js"></script>'
+    )
   })
 
-  it('is a no-op for the JSON block on an old-client template (legacy still replaced)', () => {
+  it('no longer fills the removed legacy window.webssh2Config placeholder', () => {
     const oldClient = '<script>window.webssh2Config = null;</script>'
     const result = injectConfig(oldClient, { a: 1 })
-    expect(result).toBe('<script>window.webssh2Config = {"a":1};</script>')
+    expect(result).toBe(oldClient)
   })
 
   it('hard XSS gate: attacker header.text cannot break out of the JSON block', () => {

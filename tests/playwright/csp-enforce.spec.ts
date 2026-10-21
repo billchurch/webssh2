@@ -10,12 +10,12 @@
  *      as the other E2E SSH specs.
  *   3. Asserts the xterm terminal renders — proving the client read runtime
  *      config from the inert JSON block rather than the blocked inline script.
- *   4. Asserts no app-originated CSP violations occurred. The one expected
- *      violation — the blocked legacy `window.webssh2Config = null;` inline
- *      script — is counted structurally: exactly one blocked-inline-script
- *      violation is required; any other violation kind fails the spec.
+ *   4. Asserts zero CSP violations on a normal page load: the client ships no
+ *      executable inline script (#588).
  *   5. (Strong) Evaluates in-page that the JSON config block is populated with
  *      a non-null object, confirming the JSON-block injection path works.
+ *   6. Injects an inline script probe and asserts it is blocked, proving the
+ *      policy is actually enforced (so step 4 cannot pass vacuously).
  *
  * Run requirements: ENABLE_E2E_SSH=1 plus the Docker/container SSH test server.
  * Without those, the spec is skipped (same guard as the other E2E SSH specs).
@@ -74,24 +74,8 @@ test.describe('CSP enforcement — terminal boots from JSON config block (#546)'
       // The terminal canvas must be present in the DOM.
       await expect(page.locator('.xterm-screen')).toBeVisible({ timeout: TIMEOUTS.CONNECTION })
 
-      // Assert no app-breaking CSP violations.
-      // The one benign/expected violation is the blocked legacy inline
-      // `window.webssh2Config = ...` script. Chromium's violation message
-      // never includes script source (only a per-content sha256), so the
-      // legacy script can't be matched by name: instead allow at most ONE
-      // blocked-inline-script violation and require zero of any other kind.
-      const inlineScriptViolations = cspMessages.filter((m) =>
-        /Executing inline script/i.test(m)
-      )
-      const otherViolations = cspMessages.filter(
-        (m) => !/Executing inline script/i.test(m)
-      )
-      expect(otherViolations).toEqual([])
-      // Exactly one: the blocked legacy inline script is a free positive proof
-      // that CSP enforcement is actually on — zero would mean enforcement
-      // silently broke and this spec was passing vacuously. If the legacy
-      // inline script is ever removed server-side, update this deliberately.
-      expect(inlineScriptViolations).toHaveLength(1)
+      // A normal page load must produce no CSP violations at all.
+      expect(cspMessages).toEqual([])
 
       // Strong assertion: evaluate in-page that the JSON config block exists
       // and contains a non-null parsed object.  This is the authoritative proof
@@ -110,6 +94,22 @@ test.describe('CSP enforcement — terminal boots from JSON config block (#546)'
         }
       })
       expect(blockOk).toBe(true)
+
+      // Positive proof that CSP is enforced: an inline script added to the
+      // page must be blocked (it never runs) and report exactly one violation.
+      // page.evaluate itself runs over the DevTools protocol and is not
+      // subject to the page's CSP; the <script> element it adds is.
+      const probeRan = await page.evaluate(() => {
+        const probe = document.createElement('script')
+        probe.textContent = 'document.documentElement.dataset.cspProbe = "ran"'
+        document.body.append(probe)
+        return document.documentElement.dataset.cspProbe === 'ran'
+      })
+      expect(probeRan).toBe(false)
+      await expect
+        .poll(() => cspMessages.filter((m) => /Executing inline script/i.test(m)).length)
+        .toBe(1)
+      expect(cspMessages).toHaveLength(1)
     }
   )
 })

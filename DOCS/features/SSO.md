@@ -278,14 +278,15 @@ npm test -- tests/post-auth.test.js
 
 ### What's Sent to Client
 
-```javascript
-// Client receives only:
-window.webssh2Config = {
-  socket: { url: "...", path: "/ssh/socket.io" },
-  ssh: { host: "server.com", port: 22 },
-  autoConnect: true
+```html
+<!-- Client receives only (no username, password, or private keys): -->
+<script type="application/json" id="webssh2-config">
+{
+  "socket": { "url": "...", "path": "/ssh/socket.io" },
+  "ssh": { "host": "server.com", "port": 22 },
+  "autoConnect": true
 }
-// No username, password, or private keys!
+</script>
 ```
 
 ## Security Considerations

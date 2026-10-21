@@ -13,16 +13,13 @@ export function transformAssetPaths(html: string, basePath: string = '/ssh/asset
   return html.replaceAll(/(src|href)="(?!http|\/\/)/g, `$1="${basePath}`)
 }
 
-/** Placeholder string in the client HTML that gets replaced with the runtime config. */
-const CONFIG_PLACEHOLDER = 'window.webssh2Config = null;'
-
-/** Inert JSON data block placeholder (client >= 5.1.0); preferred injection point. */
+/** Inert JSON data block placeholder in the client HTML, replaced with the runtime config. */
 const JSON_BLOCK_PLACEHOLDER =
   '<script type="application/json" id="webssh2-config">null</script>'
 
 /**
  * Script-safe escape for embedding JSON inside an HTML `<script>` element
- * (executable or `type="application/json"`). Escapes the only sequences that
+ * (here `type="application/json"`). Escapes the only sequences that
  * can break out of a script element or terminate JS parsing:
  *   - `<`        -> `<`  (prevents `</script>` and `<!--`; JSON.parse restores `<`)
  *   - U+2028     -> `\u2028`
@@ -42,23 +39,19 @@ export function serializeConfig(config: unknown): string {
   return escapeForScript(JSON.stringify(config))
 }
 
-/** Inject a pre-serialized, script-safe JSON string into both placeholders. */
+/** Inject a pre-serialized, script-safe JSON string into the JSON block placeholder. */
 function injectSerialized(html: string, serialized: string): string {
-  return html
-    .replace(
-      JSON_BLOCK_PLACEHOLDER,
-      `<script type="application/json" id="webssh2-config">${serialized}</script>`
-    )
-    .replace(CONFIG_PLACEHOLDER, `window.webssh2Config = ${serialized};`)
+  return html.replace(
+    JSON_BLOCK_PLACEHOLDER,
+    `<script type="application/json" id="webssh2-config">${serialized}</script>`
+  )
 }
 
 /**
  * Inject configuration into HTML. Pure function.
  *
- * Replaces both the inert JSON data block (preferred by client >= 5.1.0) and
- * the legacy `window.webssh2Config` inline script (transition fallback for
- * older/custom client builds). On an old-client template lacking the JSON
- * block, the block replacement is a harmless no-op.
+ * Replaces the inert JSON data block that the client (>= 5.1.0) reads its
+ * runtime config from. A template without the block is returned unchanged.
  */
 export function injectConfig(html: string, config: unknown): string {
   return injectSerialized(html, serializeConfig(config))
@@ -71,7 +64,7 @@ export function transformHtml(html: string, config: unknown, basePath?: string):
 
 /**
  * Inject configuration merged with a pre-serialized, script-safe theming JSON
- * slice, into both placeholders. `configWithoutTheming` is narrowed to a plain
+ * slice, into the JSON block placeholder. `configWithoutTheming` is narrowed to a plain
  * object so it cannot serialize to a non-object form. Edge case: an empty base
  * object yields `{"theming":<json>}` rather than `{,"theming":<json>}`.
  *

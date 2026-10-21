@@ -12,7 +12,7 @@ import type { AdditionalTheme, ThemingConfig } from '../../app/types/config.js'
  * well under a single millisecond on average, even for ~64 KiB payloads.
  */
 
-const HOST = '<script>window.webssh2Config = null;</script>'
+const HOST = '<script type="application/json" id="webssh2-config">null</script>'
 
 const PADDING_64K = 'x'.repeat(64 * 1024)
 
