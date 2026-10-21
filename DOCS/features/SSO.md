@@ -14,7 +14,7 @@ WebSSH2 now supports secure Single Sign-On (SSO) authentication via HTTP POST re
 - **Zero Credential Exposure**: No passwords, usernames, or keys in HTML/JavaScript
 - **Backward Compatibility**: Existing GET routes with Basic Auth remain unchanged
 - **Session Management**: Credentials stored securely in HTTPOnly Express sessions
-- **CSRF Protection**: Optional CSRF token validation for enhanced security
+- **CSRF Protection**: Optional origin check (`Origin` / `Sec-Fetch-Site`) on the credential POST routes
 - **Customizable Headers**: Support for custom terminal headers and styling
 
 ## Configuration
@@ -65,13 +65,36 @@ Alternatively, add the following configuration to your `config.json`:
 | Option | Environment Variable | Type | Description | Default |
 |--------|---------------------|------|-------------|---------|
 | `enabled` | `WEBSSH2_SSO_ENABLED` | boolean | Enable/disable SSO functionality | `false` |
-| `csrfProtection` | `WEBSSH2_SSO_CSRF_PROTECTION` | boolean | Enable CSRF token validation for POST requests | `false` |
-| `trustedProxies` | `WEBSSH2_SSO_TRUSTED_PROXIES` | array/string | IP addresses for trusted proxy servers (bypasses CSRF) | `[]` |
+| `csrfProtection` | `WEBSSH2_SSO_CSRF_PROTECTION` | boolean | Check `Origin` / `Sec-Fetch-Site` on credential POSTs. Same-origin POSTs and origins in `http.allowedPostOrigins` pass | `false` |
+| `trustedProxies` | `WEBSSH2_SSO_TRUSTED_PROXIES` | array/string | IP addresses for trusted proxy servers (bypass the CSRF origin check) | `[]` |
 | `headerMapping.username` | `WEBSSH2_SSO_HEADER_USERNAME` | string | Header name for username mapping | `x-apm-username` |
 | `headerMapping.password` | `WEBSSH2_SSO_HEADER_PASSWORD` | string | Header name for password mapping | `x-apm-password` |
 | `headerMapping.session` | `WEBSSH2_SSO_HEADER_SESSION` | string | Header name for session mapping | `x-apm-session` |
 
 **Note:** Environment variables override config.json settings when both are present.
+
+### CSRF protection for credential POSTs
+
+With `csrfProtection` on, `POST /ssh`, `POST /ssh/host/:host` and the
+telnet equivalents accept a request only when:
+
+- it comes from a trusted proxy IP, or carries the `x-apm-username` or
+  `x-apm-session` header, or
+- the browser marks it `Sec-Fetch-Site: same-origin`, or
+- its `Origin` is listed in `http.allowedPostOrigins`
+  (`WEBSSH2_HTTP_ALLOWED_POST_ORIGINS`), or
+- it has neither an `Origin` nor a `Sec-Fetch-Site` header (curl,
+  scripts, server-to-server)
+
+If your SSO portal posts a login form from its own site, add the
+portal's origin to `http.allowedPostOrigins`:
+
+```bash
+export WEBSSH2_HTTP_ALLOWED_POST_ORIGINS="https://portal.example.com"
+```
+
+Other requests get `403 {"error":"Forbidden"}`. The full decision table
+is in [SECURITY.md](../../SECURITY.md#credential-post-csrf-protection).
 
 ## API Endpoints
 
@@ -270,7 +293,7 @@ window.webssh2Config = {
 1. **Always use HTTPS** in production to encrypt credentials in transit
 2. **Session-only authentication** ensures credentials never reach the browser
 3. **HTTPOnly cookies** prevent JavaScript access to session tokens
-4. **Enable CSRF protection** when not using trusted proxies
+4. **Enable CSRF protection** (or set `http.allowedPostOrigins`) when not using trusted proxies
 5. **Configure trusted proxies** carefully to prevent unauthorized access
 6. **Validate all input** on the server side
 7. **Implement rate limiting** to prevent brute force attacks
@@ -302,7 +325,7 @@ All existing routes remain functional:
 ### Common Issues
 
 1. **401 Unauthorized**: Check username/password correctness
-2. **403 Forbidden**: CSRF token validation failed
+2. **403 Forbidden** with `{"error":"Forbidden"}`: the CSRF origin check rejected the POST. Look for the `policy_block` log event; its `step` shows which rule failed. Add the posting site to `http.allowedPostOrigins`
 3. **Connection Timeout**: Verify host is reachable
 4. **Session Issues**: Clear cookies and retry
 

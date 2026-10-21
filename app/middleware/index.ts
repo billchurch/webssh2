@@ -7,7 +7,6 @@ import { createSessionMiddleware } from './session.middleware.js'
 import { createBodyParserMiddleware } from './body-parser.middleware.js'
 import { createCookieMiddleware } from './cookie.middleware.js'
 import { createSSOAuthMiddleware } from './sso.middleware.js'
-import { createCSRFMiddleware } from './csrf.middleware.js'
 import type { Config } from '../types/config.js'
 
 // Re-export individual middleware creators
@@ -16,7 +15,7 @@ export { createSessionMiddleware } from './session.middleware.js'
 export { createBodyParserMiddleware } from './body-parser.middleware.js'
 export { createCookieMiddleware } from './cookie.middleware.js'
 export { createSSOAuthMiddleware } from './sso.middleware.js'
-export { createCSRFMiddleware } from './csrf.middleware.js'
+export { createCSRFMiddleware, createPostOriginGuards } from './csrf.middleware.js'
 
 /**
  * Apply all middleware to the Express application
@@ -40,9 +39,9 @@ export function applyMiddleware(
   // Body parsing
   app.use(createBodyParserMiddleware())
   
-  // SSO-related middleware (conditional)
+  // SSO-related middleware (conditional). The CSRF origin check is mounted
+  // per route on the credential POST routes (see createPostOriginGuards).
   if (config.sso.enabled) {
-    app.use(createCSRFMiddleware(config))
     app.use(createSSOAuthMiddleware(config))
   }
   

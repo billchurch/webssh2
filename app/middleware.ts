@@ -9,5 +9,6 @@ export {
   createCookieMiddleware,
   createSSOAuthMiddleware,
   createCSRFMiddleware,
+  createPostOriginGuards,
   applyMiddleware,
 } from './middleware/index.js'
