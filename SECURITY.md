@@ -222,6 +222,158 @@ bypassable.
 The script also honors `WEBSSH2_CLIENT_DIR` to point verification at a bundle
 extracted from elsewhere (used for the Docker image check).
 
+## Credential POST CSRF protection
+
+WebSSH2 accepts credentials on four POST routes, so that an outside
+portal can post a login into the gateway:
+
+- `POST /ssh` and `POST /ssh/host/:host`
+- `POST /telnet` and `POST /telnet/host/:host`
+
+These requests are cross-site by design, so they cannot carry a CSRF
+token. Instead, WebSSH2 checks the `Origin` and `Sec-Fetch-Site` headers
+that the browser sets, against an allowlist that you configure. The
+reasons for this design are in
+[ADR 0001](DOCS/adr/0001-origin-allowlist-for-credential-posts.md).
+
+### Default risk
+
+| Config key | Default | Exposure |
+| --- | --- | --- |
+| `http.allowedPostOrigins` | unset | **With this option unset and `sso.enabled` off, cross-site credential POSTs are accepted.** Any web page can make a visitor's browser POST a username, password and host of the attacker's choice (login CSRF). The visitor then gets a terminal on a host and account that the attacker controls, and anything they type there goes to the attacker |
+
+The default stays permissive so that an upgrade does not break existing
+portal integrations. If you do not post credentials from another site,
+or you know which sites do, set the allowlist.
+
+### When the check runs
+
+The check runs on the four routes above, and on no other route, when
+either of these is true:
+
+- `http.allowedPostOrigins` is not empty
+- `sso.enabled` and `sso.csrfProtection` are both `true`
+
+When neither is true, the routes accept every POST, as before.
+
+When `sso.enabled` is `true`, two kinds of request skip the check:
+
+- requests from an IP in `sso.trustedProxies`
+- requests that carry the `x-apm-username` or `x-apm-session` header
+
+A cross-site HTML form cannot set custom headers, and `fetch()` cannot
+set them on a cross-site request without passing a CORS preflight,
+which WebSSH2 does not grant on these routes. So this bypass does not
+weaken the CSRF protection.
+
+### Decision table
+
+The rules are evaluated in this order. The first match wins.
+
+| # | Request | Result |
+| --- | --- | --- |
+| 1 | `Sec-Fetch-Site: same-origin` | Accept |
+| 2a | `Origin: null` | Reject |
+| 2b | `Origin` listed in `allowedPostOrigins` | Accept |
+| 2c | `Origin` present, not listed | Reject |
+| 3 | Neither `Origin` nor `Sec-Fetch-Site` present | Accept (debug log) |
+| 4 | Anything else | Reject |
+
+The same rules, one row per header combination:
+
+| `Origin` | `Sec-Fetch-Site` | Step | Result |
+| --- | --- | --- | --- |
+| any or absent | `same-origin` | 1 | Accept |
+| `null` | absent, `same-site`, `cross-site` or `none` | 2a | Reject |
+| listed | absent, `same-site`, `cross-site` or `none` | 2b | Accept |
+| not listed (or malformed) | absent, `same-site`, `cross-site` or `none` | 2c | Reject |
+| absent | absent | 3 | Accept |
+| absent | `same-site` | 4 | Reject |
+| absent | `cross-site` | 4 | Reject |
+| absent | `none` | 4 | Reject |
+
+Notes:
+
+- With `sso.csrfProtection` on and an empty allowlist, step 2b can never
+  match. Only same-origin POSTs (and the SSO bypasses) pass.
+- Same-origin is detected only from `Sec-Fetch-Site`. WebSSH2 never
+  compares `Origin` with `Host`, because that gives the wrong answer
+  behind a TLS-terminating proxy.
+- Step 3 exists because every current browser sends `Origin` on a
+  cross-site POST. A request with neither header comes from curl, a
+  script or another server, and cannot carry a victim's cookies.
+
+### Allowlist entries
+
+Each entry must be a bare origin, `scheme://host[:port]`, with an `http`
+or `https` scheme. Matching ignores case and the scheme's default port
+(`:443` for https, `:80` for http), so `HTTPS://Portal.Example.com:443`
+matches `https://portal.example.com`. One trailing `/` is accepted and
+removed.
+
+The server refuses to start if an entry has a path, query string,
+fragment or user info, uses a wildcard (`*`), is `null`, or uses another
+scheme. The error names the bad entry. Enter internationalized host
+names in their `xn--` (punycode) form.
+
+```json
+{
+  "http": {
+    "allowedPostOrigins": ["https://portal.example.com"]
+  }
+}
+```
+
+```bash
+WEBSSH2_HTTP_ALLOWED_POST_ORIGINS="https://portal.example.com"
+```
+
+### Rejections
+
+A rejected POST gets `403` with the body `{"error":"Forbidden"}`. The
+server logs a `policy_block` event at warn level, with
+`reason: post_origin_<step>` and the route, `Origin`, `Sec-Fetch-Site`
+and step in the event details. The posted body, which holds the
+credentials, is never logged.
+
+### Examples
+
+**An outside portal.** A login page at `https://portal.example.com`
+posts a form to `https://ssh.example.com/ssh/host/server1`. Set:
+
+```bash
+WEBSSH2_HTTP_ALLOWED_POST_ORIGINS="https://portal.example.com"
+```
+
+The browser sends `Origin: https://portal.example.com` and
+`Sec-Fetch-Site: same-site` or `cross-site`. Step 2b accepts it. A form
+on any other site is rejected at step 2c.
+
+**SSO behind a trusted proxy.** An access proxy at `10.0.0.5`
+authenticates users and forwards their POST to WebSSH2:
+
+```bash
+WEBSSH2_SSO_ENABLED=true
+WEBSSH2_SSO_CSRF_PROTECTION=true
+WEBSSH2_SSO_TRUSTED_PROXIES="10.0.0.5"
+```
+
+Requests from `10.0.0.5`, and requests with the `x-apm-username` header,
+skip the check. A cross-site form posted straight to WebSSH2 from
+another site is rejected. If users also post from a portal page, add its
+origin to `WEBSSH2_HTTP_ALLOWED_POST_ORIGINS`.
+
+**A curl or script integration.** A script posts credentials:
+
+```bash
+curl -X POST https://ssh.example.com/ssh/host/server1 \
+  -d username=deploy -d password="$PASSWORD"
+```
+
+curl sends neither `Origin` nor `Sec-Fetch-Site`, so step 3 accepts it
+whatever the allowlist holds. If the script sets an `Origin` header,
+that origin must be on the list.
+
 ## Security Disclosure Policy
 
 - **Private Disclosure**: We request that you give us reasonable time to address the issue before public disclosure
@@ -483,6 +635,15 @@ directly exploitable. Pinned to 6.6.10 rather than 6.6.11 (published
 | Status | **Remediated 2026-10-06** — lockfile refreshed to 1.2.2 under the CVE exception (see above) |
 
 Only first-party source maps are processed, so practical exposure was nil.
+
+### GHSA-587h-7wmj-h5pm, GHSA-r825-w8mm-5pxw, GHSA-698v-4r3x-3vcv (launch-editor in vite)
+
+| Aspect | Status |
+| --- | --- |
+| Vulnerability type | Editor-launch command injection and Windows path checks in the `launch-editor` code bundled by the vite dev server |
+| Affected versions | vite 8.0.0 – 8.1.5 (one HIGH, two MODERATE; published 2026-10-20) |
+| Our exposure | Dev toolchain only — `vitest` → `vite`. The project never runs the vite dev server, and vite is not in the runtime image |
+| Status | **Remediated 2026-10-20** — the stale `vite` override was dropped in #589, so `vitest` now resolves the patched `vite` 8.3.3 |
 
 ---
 
