@@ -16,6 +16,7 @@ import {
   type ThemeValidationWarning
 } from '../services/theming/theme-loader.js'
 import { parseTransports } from './transport-parser.js'
+import { parseTrustProxyEnv } from './trust-proxy.js'
 
 /**
  * Optional callbacks invoked while mapping theming env vars. Lets the caller
@@ -423,6 +424,21 @@ function resolveTransportEnv(env: Record<string, string | undefined>): Transport
 }
 
 /**
+ * Resolve WEBSSH2_HTTP_TRUST_PROXY. Its value can be a boolean, a hop count
+ * or an address list, so it is parsed here rather than via ENV_VAR_MAPPING.
+ * @pure
+ */
+function collectTrustProxyEntries(env: Record<string, string | undefined>): readonly ConfigEntry[] {
+  const raw = readEnvString(env, 'WEBSSH2_HTTP_TRUST_PROXY')
+  if (raw === undefined) {
+    return []
+  }
+
+  const parsed = parseTrustProxyEnv(raw)
+  return parsed === undefined ? [] : [['http.trustProxy', parsed]]
+}
+
+/**
  * Map environment variables to configuration object
  * Individual algorithm settings take precedence over preset values
  * @param env - Environment variables object
@@ -441,6 +457,7 @@ export function mapEnvironmentVariables(
   const entries = [
     ...collectPresetEntries(env),
     ...collectMappedEntries(env),
+    ...collectTrustProxyEntries(env),
     ...theming.entries,
     ...transport.entries
   ]

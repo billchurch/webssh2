@@ -25,6 +25,7 @@ import type { Services } from './services/interfaces.js'
 import { setHandlerThemingConfig } from './connectionHandler.js'
 import { setLoadedThemingForInjection } from './services/theming/index.js'
 import { cacheControlForAsset } from './utils/static-cache.js'
+import { isTrustProxyEnabled } from './config/trust-proxy.js'
 
 const debug = createNamespacedDebug('app')
 
@@ -45,6 +46,12 @@ export function createAppAsync(appConfig: Config): {
 } {
   const app = express()
   app.disable('x-powered-by')
+  // Must precede every middleware that reads req.secure, req.ip or
+  // req.protocol (security headers, session cookie, rate limiting).
+  const { trustProxy } = appConfig.http
+  if (isTrustProxyEnabled(trustProxy)) {
+    app.set('trust proxy', trustProxy)
+  }
   try {
     const clientPath = getClientPublicPath()
     const { sessionMiddleware } = applyMiddleware(app, appConfig)
