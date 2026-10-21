@@ -2,6 +2,7 @@
 // Pure functions for processing header customization
 
 import { createNamespacedDebug } from '../logger.js'
+import { validateCssColor } from '../validation/config.js'
 
 const debug = createNamespacedDebug('auth:header')
 
@@ -54,6 +55,18 @@ export function detectSourceType(source: Record<string, unknown> | undefined): S
   return SourceType.NONE
 }
 
+const MAX_HEADER_VALUE_LENGTH = 100
+
+/**
+ * True for control characters (U+0000-U+001F and U+007F)
+ */
+function isControlChar(char: string): boolean {
+  const codePoint = char.codePointAt(0)
+  if (codePoint == null) {return true}
+
+  return codePoint <= 0x1f || codePoint === 0x7f
+}
+
 /**
  * Validate header value
  * Pure function - no side effects
@@ -65,14 +78,29 @@ export function validateHeaderValue(value: unknown): string | null {
   // Limit length and remove control characters for security
   // Control characters (U+0000-U+001F and U+007F) must be removed to prevent header injection attacks
   return Array.from(value)
-    .slice(0, 100)
-    .filter((char) => {
-      const codePoint = char.codePointAt(0)
-      if (codePoint == null) {return false}
-
-      return codePoint > 0x1f && codePoint !== 0x7f
-    })
+    .slice(0, MAX_HEADER_VALUE_LENGTH)
+    .filter((char) => !isControlChar(char))
     .join('')
+}
+
+/**
+ * Validate a header background value
+ * The whole value must pass the same CSS color check used for the
+ * config-file `header.background`. Unlike the header text it is never
+ * truncated or stripped, since that could cut off the invalid part
+ * (#583); over-long values and control characters are rejected instead,
+ * so the configured or default background is used.
+ * Pure function - no side effects
+ */
+export function validateHeaderBackground(value: unknown): string | null {
+  if (typeof value !== 'string' || value === '') {
+    return null
+  }
+  const chars = Array.from(value)
+  if (chars.length > MAX_HEADER_VALUE_LENGTH || chars.some(isControlChar)) {
+    return null
+  }
+  return validateCssColor(value) ?? null
 }
 
 /**
@@ -140,7 +168,7 @@ export function createHeaderOverride(
   _sourceType: SourceType
 ): HeaderOverride | null {
   const text = validateHeaderValue(values.header)
-  const background = validateHeaderValue(values.background)
+  const background = validateHeaderBackground(values.background)
 
   if (text == null && background == null) {
     return null
