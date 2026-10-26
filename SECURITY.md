@@ -865,6 +865,34 @@ latest bundle between digest bumps.
 
 ---
 
+## Dependency and bundled-npm findings (2026-10-26)
+
+On 2026-10-26 `npm audit --audit-level=high` and the `docker-image-scan`
+job reported three HIGH findings.
+
+| Advisories | Package | Fixed in | Resolution |
+| --- | --- | --- | --- |
+| CVE-2026-111181, GHSA-27r3-jxmh-p828 | `body-parser` 2.3.0 | 2.4.0 | **Fixed** — bumped to 2.4.0 |
+| CVE-2023-54404, GHSA-mrhx-c7xc-m3w5 | `zod` 4.4.3 | 4.6.6 | **Fixed** — bumped to 4.6.6 |
+| CVE-2026-109869 | `undici` 6.28.0 (bundled npm) | 6.29.1 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+
+**Quarantine:** `body-parser` 2.4.0 was published 2026-10-22, inside the
+14-day quarantine, and is adopted under the HIGH-CVE exception. It was
+published by the Express maintainers through npm trusted publishing (GitHub
+OIDC). It raises `content-type` to 2.1.0 (2026-08-13, quarantine satisfied).
+`zod` 4.6.6 was published 2026-10-11 (quarantine satisfied).
+
+**Why the suppressed finding is not exploitable:** npm 11.21.1 and 12.2.1,
+the latest releases, both vendor `undici` 6.29.0. Inside npm, `undici` is only
+used by node-gyp to download Node headers when compiling native addons. The
+runtime image never compiles addons, and the application never loads code from
+`/usr/local/lib/node_modules/npm`.
+
+**Re-evaluate on each npm release:** bump the Dockerfile npm pin once a
+release vendors `undici` >= 6.29.1, then remove the `.trivyignore` entry.
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
 As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
