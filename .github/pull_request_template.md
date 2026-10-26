@@ -10,6 +10,7 @@
 - [ ] No Socket.IO event name/payload changes
 - [ ] `npm run typecheck` (if configured) passes
 - [ ] `npm test`/`vitest` passes
+- [ ] `npm run check:all` passes (lint, typecheck, unit, integration and E2E tests)
 - [ ] Updated docs (TS-MIGRATTE.md or relevant DOCS/* if needed)
 
 ## Checkpoint (optional)

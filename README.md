@@ -485,7 +485,7 @@ For full configuration options, see [Environment Variables](./DOCS/configuration
 
 ## Release Workflow Overview
 
-- **Development**: Run `npm install` (or `npm ci`) and continue using scripts such as `npm run dev` and `npm run build`. The TypeScript sources remain the source of truth.
+- **Development**: Run `npm install` (or `npm ci`) and continue using scripts such as `npm run dev` and `npm run build`. The TypeScript sources remain the source of truth. Run `npm run check:all` (lint, typecheck, unit and E2E tests) before each commit and before a release.
 - **Release pipeline**: Use `npm ci --omit=dev`, `npm run build`, then `node dist/scripts/create-release-artifact.js` to produce `webssh2-<version>.tar.gz`, `manifest.json`, and a `.sha256` checksum. GNU tar is required to guarantee deterministic archives.
 - **Packaged consumers (containers, downstream services)**: Download and verify the tarball, extract it, run `npm ci --omit=dev` from the extracted root (alongside `package.json`), and start with `NODE_ENV=production npm start`. The `prestart` script detects the precompiled bundle and skips rebuilding.
 

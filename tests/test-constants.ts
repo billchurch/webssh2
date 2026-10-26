@@ -411,6 +411,8 @@ export const CONTROL_ACTIONS: ControlActionsConstants = {
 export const DOCKER_CONFIG = {
   CONTAINER: 'webssh2-e2e-sshd',
   IMAGE: 'ghcr.io/billchurch/ssh_test:alpine',
+  // Apple Container Runtime refuses less than 200 MiB; Docker accepts this too
+  MEMORY: '256m',
 } as const
 
 // Invalid test values for negative testing

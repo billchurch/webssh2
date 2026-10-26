@@ -17,6 +17,8 @@ Welcome! This guide explains how to set up a dev environment, coding standards, 
 - Lint: `npm run lint` (lints app + tests, autofix: `npm run lint:fix`)
 - Tests: `npm run test` (includes unit + integration)
 - Typecheck only: `npm run typecheck`
+- E2E tests (Playwright + SSH test container): `npm run test:e2e`
+- Full check before each commit: `npm run check:all` (lint, typecheck, unit + integration tests, E2E tests)
 
 ## Project Conventions
 
@@ -54,6 +56,7 @@ Welcome! This guide explains how to set up a dev environment, coding standards, 
 - [ ] Build succeeds (`npm run build`)
 - [ ] Lint passes (app + tests): `npm run lint`
 - [ ] Tests pass locally (`npm run test`)
+- [ ] Full check passes (`npm run check:all`)
 - [ ] No new `any`, no disabled rules without justification
 - [ ] Constants used (no magic literals); docs updated as needed
 - [ ] Security: no dynamic object injection; input validated

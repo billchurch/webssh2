@@ -165,8 +165,8 @@ describe('credential POST routes with http.allowedPostOrigins', () => {
 })
 
 describe('credential POST routes with SSO csrfProtection and no allowlist', () => {
-  // Loopback address Express reports for supertest requests
-  const PROXY_IP = '::ffff:127.0.0.1' // NOSONAR - test loopback address
+  // Peer address Express reports for supertest requests (tests/setup/supertest-loopback.ts)
+  const PROXY_IP = '127.0.0.1' // NOSONAR - test loopback address
   const ssoConfig = buildConfig({ sso: { enabled: true, csrfProtection: true, trustedProxies: [PROXY_IP] } })
   const app = buildApp(ssoConfig)
   const crossSite = { Origin: EVIL, 'Sec-Fetch-Site': 'cross-site' }

@@ -59,7 +59,8 @@ npx playwright test --headed
 - `npm run test:e2e:debug` - Run tests with debug output
 - `npm run e2e:setup` - Install Playwright with dependencies
 - `npm run test` - Run unit tests
-- `npm run test:all` - Run all tests (unit + integration)
+- `npm run test:all` - Run all tests (unit + integration, then E2E)
+- `npm run check:all` - Lint, typecheck, then `test:all`; the full pre-commit check
 
 ## Test Configuration
 
@@ -245,7 +246,7 @@ If you need to run tests with a manual SSH server:
 ```bash
 # Start test SSH container with Docker
 docker run --rm -d \
-  --cpus 1 --memory 128m \
+  --cpus 1 --memory 256m \
   -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \
@@ -253,7 +254,7 @@ docker run --rm -d \
 
 # Or with Apple Container Runtime
 container run --rm -d \
-  --cpus 1 --memory 128m \
+  --cpus 1 --memory 256m \
   -p 2289:22 \
   -e SSH_USER=testuser \
   -e SSH_PASSWORD=testpassword \

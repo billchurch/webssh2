@@ -37,6 +37,7 @@ export const INVALID_PORT = INVALID_TEST_VALUES.INVALID_PORT
 // Docker configuration - use from DOCKER_CONFIG
 export const DOCKER_CONTAINER = DOCKER_CONFIG.CONTAINER
 export const DOCKER_IMAGE = DOCKER_CONFIG.IMAGE
+export const DOCKER_MEMORY = DOCKER_CONFIG.MEMORY
 
 // Timeout configuration - use from TEST_TIMEOUTS
 export const TIMEOUTS = {

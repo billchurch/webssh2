@@ -67,6 +67,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "npm run lint && npm run typecheck && npm run test:all",
+    "check:all": "npm run check",
     "check:fix": "npm run lint:fix && npm run typecheck && npm run test:all",
     "verify": "npm run check",
     "e2e:setup": "playwright install --with-deps",
