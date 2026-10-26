@@ -40,7 +40,7 @@ Please include as much of the following information as possible:
 
 When deploying WebSSH2:
 
-- Always use HTTPS/TLS in production environments
+- Always use HTTPS/TLS in production environments. WebSSH2 assumes it runs behind a TLS-terminating reverse proxy (see [Running behind a reverse proxy](#running-behind-a-reverse-proxy-httptrustproxy)); do not expose it directly over plain HTTP
 - Implement proper authentication mechanisms
 - Follow the principle of least privilege for SSH access
 - Keep Node.js and all dependencies up to date
@@ -840,12 +840,30 @@ the three `.trivyignore` entries.
 
 ## Node.js 22.23.4 runtime and CA bundle update (2026-10-26)
 
+**Fixed in 6.0.1.** Pull the 6.0.1 Docker image, or later, to get both fixes
+below.
+
+This is a Docker image fix. Both issues are in the Node.js binary and the
+system trust store that ship in the base image, not in WebSSH2's own code. If
+you run WebSSH2 on your own Node.js, update Node.js to 22.23.4, 24.22.1 or
+26.12.1 (or later) and update your OS `ca-certificates` package.
+
 | Item | Detail |
 | --- | --- |
-| CVE | CVE-2026-111497 (Node.js, fixed in 22.23.4 / 24.22.1 / 26.12.1) |
-| Affected component | Node.js runtime in the Docker image (22.23.3) |
-| Exposure | **Affected** — the runtime image shipped Node 22.23.3 |
-| Resolution | **Fixed** — base image moved to Node 22.23.4 |
+| Released in | 6.0.1 (2026-10-26) |
+| Issues | CVE-2026-111497 (Node.js, fixed in 22.23.4 / 24.22.1 / 26.12.1); eMudhra intermediate CA distrust |
+| Affected component | Node.js runtime and CA bundle in the Docker image (Node 22.23.3), not WebSSH2 code |
+| Exposure | **Affected** — Docker images for 6.0.0 and earlier shipped Node 22.23.3 |
+| Resolution | **Fixed in 6.0.1** — base image moved to Node 22.23.4 with a refreshed CA bundle |
+
+**Reverse proxy deployments:** a TLS-terminating proxy in front of WebSSH2 is
+the expected deployment, but on its own it does not remove exposure to
+CVE-2026-111497. Most proxies pass request bodies through unchanged, so the
+gateway still decodes them. Upgrade to 6.0.1.
+
+The trust store change only affects outbound TLS connections that WebSSH2
+makes, such as syslog over TLS. It does not change the TLS that browsers see,
+which the proxy terminates.
 
 **Base image:** `node:22-alpine` digest moved from `sha256:0a7108bf…` (Node
 22.23.3, Alpine 3.24.2, `ca-certificates-bundle` 20260909-r0) to

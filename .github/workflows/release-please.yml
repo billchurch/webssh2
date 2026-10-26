@@ -78,15 +78,3 @@ jobs:
       # docker-publish.yml listens for release:published and fires automatically
       # because the release above was created via the App token (not GITHUB_TOKEN).
       # No explicit workflow_dispatch is needed here.
-
-      # Delegate downstream notification to notify-downstreams.yml. The App token
-      # (with Actions: write) can dispatch workflows; GITHUB_TOKEN cannot.
-      - name: Trigger downstream notifier
-        if: ${{ steps.release.outputs.release_created }}
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
-        run: |
-          gh workflow run notify-downstreams.yml \
-            --ref main \
-            -f release_tag="$RELEASE_TAG"

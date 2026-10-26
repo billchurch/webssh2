@@ -397,6 +397,7 @@ jobs:
         if: ${{ needs.prepare.outputs.has_release == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.effective_ref_name }}
           SEMVER_FULL: ${{ needs.prepare.outputs.semver_full }}
           SEMVER_MINOR: ${{ needs.prepare.outputs.semver_minor }}
