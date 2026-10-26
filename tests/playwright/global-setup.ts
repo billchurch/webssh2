@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as net from 'node:net'
-import { DOCKER_CONTAINER, DOCKER_IMAGE, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
+import { DOCKER_CONTAINER, DOCKER_IMAGE, DOCKER_MEMORY, SSH_PORT, USERNAME, PASSWORD, TIMEOUTS } from './constants.js'
 import { getContainerRuntime } from './container-runtime.js'
 
 async function waitForPort(host: string, port: number, timeoutMs = TIMEOUTS.DOCKER_WAIT): Promise<void> {
@@ -33,7 +33,7 @@ export default async function globalSetup() {
     image: DOCKER_IMAGE,
     ports: [{ host: SSH_PORT, container: 22 }],
     cpus: 1,
-    memory: '128m',
+    memory: DOCKER_MEMORY,
     env: {
       SSH_USER: USERNAME,
       SSH_PASSWORD: PASSWORD,

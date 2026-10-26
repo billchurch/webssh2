@@ -6,6 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.vitest.{js,ts,tsx}'],
+    setupFiles: ['./tests/setup/supertest-loopback.ts'],
     coverage: {
       provider: 'v8',
       all: false,

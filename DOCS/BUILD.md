@@ -18,6 +18,16 @@ the behaviour of the previous tooling.
 
 ## Release Artifact Pipeline
 
+Before cutting a release, run the full check on a clean checkout:
+
+```bash
+npm ci
+npm run check:all
+```
+
+It runs lint, typecheck, the unit and integration tests and the E2E tests
+(which start the SSH test container; see `tests/playwright/README.md`).
+
 Releases publish a tarball that contains only the files required to run WebSSH2 in production:
 
 1. Install dependencies without development packages.
