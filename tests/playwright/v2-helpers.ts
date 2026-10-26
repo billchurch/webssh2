@@ -208,7 +208,12 @@ export async function checkForV2AuthError(page: Page, timeout = TIMEOUTS.DEFAULT
 }
 
 /**
- * Fills in the V2 login form
+ * Fills in the V2 login form.
+ *
+ * The login modal moves focus to its first empty field from a short timer
+ * after it opens. If that timer fires while a field is being filled, the
+ * text lands in the wrong field (for example host "localhost4422"), so the
+ * values are checked and the form is filled again until they hold.
  */
 export async function fillV2LoginForm(page: Page, options: {
   host: string
@@ -216,10 +221,20 @@ export async function fillV2LoginForm(page: Page, options: {
   username: string
   password: string
 }): Promise<void> {
-  await page.fill('[name="host"]', options.host)
-  await page.fill('[name="port"]', options.port)
-  await page.fill('[name="username"]', options.username)
-  await page.fill('[name="password"]', options.password)
+  const fields: Array<[string, string]> = [
+    ['[name="host"]', options.host],
+    ['[name="port"]', options.port],
+    ['[name="username"]', options.username],
+    ['[name="password"]', options.password]
+  ]
+  await expect(async () => {
+    for (const [selector, value] of fields) {
+      await page.fill(selector, value)
+    }
+    for (const [selector, value] of fields) {
+      await expect(page.locator(selector)).toHaveValue(value, { timeout: TIMEOUTS.SHORT_WAIT })
+    }
+  }).toPass({ timeout: TIMEOUTS.DEFAULT })
 }
 
 /**
@@ -295,10 +310,7 @@ export async function connectAndWaitForTerminal(page: Page, options: {
  * Fills form fields directly without using helper
  */
 export async function fillFormDirectly(page: Page, host: string, port: string | number, username: string, password: string): Promise<void> {
-  await page.fill('[name="host"]', host)
-  await page.fill('[name="port"]', port.toString())
-  await page.fill('[name="username"]', username)
-  await page.fill('[name="password"]', password)
+  await fillV2LoginForm(page, { host, port: port.toString(), username, password })
   await page.click('button:has-text("Connect")')
 }
 
