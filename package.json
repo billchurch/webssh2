@@ -25,7 +25,7 @@
     "Bill Church <wmchurch@gmail.com>"
   ],
   "engines": {
-    "node": ">= 22"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "packageManager": "npm@11.6.4",
   "bugs": {

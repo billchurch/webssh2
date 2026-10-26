@@ -838,6 +838,33 @@ the three `.trivyignore` entries.
 
 ---
 
+## Node.js 22.23.4 runtime and CA bundle update (2026-10-26)
+
+| Item | Detail |
+| --- | --- |
+| CVE | CVE-2026-111497 (Node.js, fixed in 22.23.4 / 24.22.1 / 26.12.1) |
+| Affected component | Node.js runtime in the Docker image (22.23.3) |
+| Exposure | **Affected** — the runtime image shipped Node 22.23.3 |
+| Resolution | **Fixed** — base image moved to Node 22.23.4 |
+
+**Base image:** `node:22-alpine` digest moved from `sha256:0a7108bf…` (Node
+22.23.3, Alpine 3.24.2, `ca-certificates-bundle` 20260909-r0) to
+`sha256:fe4f6d74…` (Node 22.23.4, Alpine 3.24.3, `ca-certificates-bundle`
+20261020-r0, OpenSSL 3.5.9-r0), built 2026-10-21. That is inside the 14-day
+quarantine and is adopted under the HIGH-CVE exception: it is a Docker
+Official Image, and the change is the upstream Node security release.
+
+**CA bundle:** the same Node release and Alpine `ca-certificates-bundle`
+20261020-r0 remove the eMudhra roots distrusted after the October 2026
+intermediate CA incident. The runtime stage now also runs
+`apk upgrade ca-certificates-bundle` so the system store tracks Alpine's
+latest bundle between digest bumps.
+
+**Other pins:** CI workflows use `node-version: '^22.23.4'`, and
+`engines.node` is `^22.23.4 || ^24.22.1 || >=26.12.1`.
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
 As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.
