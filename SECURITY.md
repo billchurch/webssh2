@@ -838,6 +838,61 @@ the three `.trivyignore` entries.
 
 ---
 
+## Node.js 22.23.4 runtime and CA bundle update (2026-10-26)
+
+| Item | Detail |
+| --- | --- |
+| CVE | CVE-2026-111497 (Node.js, fixed in 22.23.4 / 24.22.1 / 26.12.1) |
+| Affected component | Node.js runtime in the Docker image (22.23.3) |
+| Exposure | **Affected** — the runtime image shipped Node 22.23.3 |
+| Resolution | **Fixed** — base image moved to Node 22.23.4 |
+
+**Base image:** `node:22-alpine` digest moved from `sha256:0a7108bf…` (Node
+22.23.3, Alpine 3.24.2, `ca-certificates-bundle` 20260909-r0) to
+`sha256:fe4f6d74…` (Node 22.23.4, Alpine 3.24.3, `ca-certificates-bundle`
+20261020-r0, OpenSSL 3.5.9-r0), built 2026-10-21. That is inside the 14-day
+quarantine and is adopted under the HIGH-CVE exception: it is a Docker
+Official Image, and the change is the upstream Node security release.
+
+**CA bundle:** the same Node release and Alpine `ca-certificates-bundle`
+20261020-r0 remove the eMudhra roots distrusted after the October 2026
+intermediate CA incident. The runtime stage now also runs
+`apk upgrade ca-certificates-bundle` so the system store tracks Alpine's
+latest bundle between digest bumps.
+
+**Other pins:** CI workflows use `node-version: '^22.23.4'`, and
+`engines.node` is `^22.23.4 || ^24.22.1 || >=26.12.1`.
+
+---
+
+## Dependency and bundled-npm findings (2026-10-26)
+
+On 2026-10-26 `npm audit --audit-level=high` and the `docker-image-scan`
+job reported three HIGH findings.
+
+| Advisories | Package | Fixed in | Resolution |
+| --- | --- | --- | --- |
+| CVE-2026-111181, GHSA-27r3-jxmh-p828 | `body-parser` 2.3.0 | 2.4.0 | **Fixed** — bumped to 2.4.0 |
+| CVE-2023-54404, GHSA-mrhx-c7xc-m3w5 | `zod` 4.4.3 | 4.6.6 | **Fixed** — bumped to 4.6.6 |
+| CVE-2026-109869 | `undici` 6.28.0 (bundled npm) | 6.29.1 | **Suppressed** in `.trivyignore` — no npm release vendors the fix |
+
+**Quarantine:** `body-parser` 2.4.0 was published 2026-10-22, inside the
+14-day quarantine, and is adopted under the HIGH-CVE exception. It was
+published by the Express maintainers through npm trusted publishing (GitHub
+OIDC). It raises `content-type` to 2.1.0 (2026-08-13, quarantine satisfied).
+`zod` 4.6.6 was published 2026-10-11 (quarantine satisfied).
+
+**Why the suppressed finding is not exploitable:** npm 11.21.1 and 12.2.1,
+the latest releases, both vendor `undici` 6.29.0. Inside npm, `undici` is only
+used by node-gyp to download Node headers when compiling native addons. The
+runtime image never compiles addons, and the application never loads code from
+`/usr/local/lib/node_modules/npm`.
+
+**Re-evaluate on each npm release:** bump the Dockerfile npm pin once a
+release vendors `undici` >= 6.29.1, then remove the `.trivyignore` entry.
+
+---
+
 ## Shai-hulud 2.0 supply chain risk
 
 As of 2026-01-27, automated checks for Shai-hulud 2.0 indicators of compromise (IoCs) found **no evidence of compromise** in this repository.

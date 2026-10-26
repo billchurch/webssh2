@@ -19,3 +19,13 @@ CVE-2026-102278
 # from the global npm install. Same SECURITY.md section as above. Remove once
 # the npm pin moves to a release vendoring undici >= 6.28.1.
 CVE-2026-19534
+
+# CVE-2026-109869 — undici DoS via unhandled stream error, vendored inside the
+# global npm@11.20.0 (bundles undici 6.28.0; fixed in 6.29.1). No npm release
+# vendors the fix yet (latest checked: 11.21.1 and 12.2.1, both undici 6.29.0).
+# Inside npm, undici is only reached by node-gyp's header download, which the
+# runtime image never runs; the application never loads code from the global
+# npm install. See SECURITY.md → "Dependency and bundled-npm findings
+# (2026-10-26)". Remove once the npm pin moves to a release vendoring
+# undici >= 6.29.1.
+CVE-2026-109869
