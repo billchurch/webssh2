@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.1](https://github.com/billchurch/webssh2/compare/webssh2-server-v6.0.0...webssh2-server-v6.0.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **docker:** move runtime to Node 22.23.4 and refresh CA bundle ([#601](https://github.com/billchurch/webssh2/issues/601)) ([39b1e7f](https://github.com/billchurch/webssh2/commit/39b1e7ff438e325cc74da323a37d27379622bc8a))
+
 ## [6.0.0](https://github.com/billchurch/webssh2/compare/webssh2-server-v5.2.1...webssh2-server-v6.0.0) (2026-10-21)
 
 
